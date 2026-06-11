@@ -1,33 +1,47 @@
 {% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}My Profile | Examly{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>My Profile Details</h2>
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        {% if profile.profile_picture %}
+                            <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle mb-3" style="width:96px; height:96px; object-fit:cover; border: 3px solid var(--color-primary-light);">
+                        {% else %}
+                            <img src="{% static 'images/default_profile.png' %}" alt="Default Profile" class="rounded-circle mb-3" style="width:96px; height:96px; object-fit:cover; border: 3px solid var(--color-primary-light);">
+                        {% endif %}
+                        <h3 class="fw-bold mb-1">{{ profile.full_name|default:"Teacher" }}</h3>
+                        <span class="role-badge"><i class="bi bi-person-workspace"></i> Teacher</span>
+                    </div>
 
-    <table class="table table-bordered">
-        <tr>
-            <th>Full Name</th>
-            <td>{{ profile.full_name }}</td>
-        </tr>
-        <tr>
-            <th>Bio</th>
-            <td>{{ profile.bio }}</td>
-        </tr>
-        <tr>
-            <th>Subject</th>
-            <td>{{ profile.subject }}</td>
-        </tr>
-        <tr>
-            <th>Profile Picture</th>
-            <td>
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" width="100">
-                {% else %}
-                    <em>No picture uploaded</em>
-                {% endif %}
-            </td>
-        </tr>
-    </table>
+                    <table class="table table-examly align-middle mb-4">
+                        <tbody>
+                            <tr>
+                                <th class="ps-3" style="width: 35%;"><i class="bi bi-envelope me-2 text-primary"></i>Email</th>
+                                <td>{{ profile.email|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-3"><i class="bi bi-telephone me-2 text-primary"></i>Phone</th>
+                                <td>{{ profile.phone|default:"-" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="ps-3"><i class="bi bi-card-text me-2 text-primary"></i>Bio</th>
+                                <td>{{ profile.bio|default:"No bio available." }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-    <a href="{% url 'teacher_profile' %}" class="btn btn-primary">Edit Profile</a>
+                    <a href="{% url 'teacher_profile' %}" class="btn btn-primary w-100 fw-bold py-2">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,74 +1,104 @@
 {% extends 'accounts/base.html' %}
 
+{% block title %}Admin Dashboard | Examly{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2 class="text-center mb-4 fw-bold">✨ Admin Dashboard</h2>
+<div class="container py-2">
 
-    <div class="row g-4">
-        <!-- Manage Users -->
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-speedometer2 text-primary me-2"></i>Admin Dashboard</h2>
+            <p>Welcome back, {{ user.username }}. Here's what's happening on your platform.</p>
+        </div>
+        <span class="role-badge"><i class="bi bi-shield-lock-fill"></i> Administrator</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-4 mb-4">
         <div class="col-md-3">
-            <div class="card shadow-lg border-0 h-100 dashboard-card user-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-people-fill display-4 text-primary mb-3"></i>
-                    <h5 class="card-title fw-bold">Manage Users</h5>
-                    <p class="card-text text-muted">Add, Edit, and Remove Users</p>
-                    <a href="{% url 'user_list' %}" class="btn btn-primary w-100">👥 Go to Users</a>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-mortarboard-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_students }}</div>
+                    <div class="stat-label">Total Students</div>
                 </div>
             </div>
         </div>
-
-        <!-- Manage Exams -->
         <div class="col-md-3">
-            <div class="card shadow-lg border-0 h-100 dashboard-card exam-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-journal-text display-4 text-secondary mb-3"></i>
-                    <h5 class="card-title fw-bold">Manage Exams</h5>
-                    <p class="card-text text-muted">Create, Edit, and Delete Exams</p>
-                    <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary w-100">📘 Go to Exams</a>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-person-workspace"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_teachers }}</div>
+                    <div class="stat-label">Total Teachers</div>
                 </div>
             </div>
         </div>
-
-        <!-- Student Submissions -->
         <div class="col-md-3">
-            <div class="card shadow-lg border-0 h-100 dashboard-card submission-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-file-earmark-text-fill display-4 text-success mb-3"></i>
-                    <h5 class="card-title fw-bold">Student Submissions</h5>
-                    <p class="card-text text-muted">View Exam Attempts & Results</p>
-                    <a href="{% url 'student_exam_list' %}" class="btn btn-success w-100">📑 View Submissions</a>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_exams }}</div>
+                    <div class="stat-label">Total Exams</div>
                 </div>
             </div>
         </div>
-
-        <!-- Manage Teachers -->
         <div class="col-md-3">
-            <div class="card shadow-lg border-0 h-100 dashboard-card teacher-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-person-badge-fill display-4 text-warning mb-3"></i>
-                    <h5 class="card-title fw-bold">Manage Teachers</h5>
-                    <p class="card-text text-muted">Add, Edit, and Remove Teachers</p>
-                    <a href="{% url 'teacher_profile_detail' %}" class="btn btn-warning w-100">👨‍🏫 View Teachers</a>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-envelope-paper-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ unread_feedback_count }}</div>
+                    <div class="stat-label">Unread Messages</div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Custom Styles -->
-<style>
-    .dashboard-card {
-        border-radius: 15px;
-        transition: transform 0.3s, box-shadow 0.3s;
-        background: linear-gradient(135deg, #f8f9fa, #ffffff);
-    }
-    .dashboard-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-    }
-    .user-card { background: linear-gradient(135deg, #e3f2fd, #ffffff); }
-    .exam-card { background: linear-gradient(135deg, #f1f1f1, #e9ecef); }
-    .submission-card { background: linear-gradient(135deg, #e8f5e9, #ffffff); }
-    .teacher-card { background: linear-gradient(135deg, #fff8e1, #ffffff); }
-</style>
+    <!-- Quick Actions -->
+    <h5 class="fw-bold mb-3">Quick Actions</h5>
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon"><i class="bi bi-people-fill"></i></div>
+                <h5 class="fw-bold">Manage Users</h5>
+                <p class="text-muted small">Add, edit and remove students and teachers from your institute.</p>
+                <a href="{% url 'user_list' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Users
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon"><i class="bi bi-journal-text"></i></div>
+                <h5 class="fw-bold">Manage Exams</h5>
+                <p class="text-muted small">Create, edit and delete exams across the platform.</p>
+                <a href="{% url 'exam_list' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Exams
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon"><i class="bi bi-person-plus-fill"></i></div>
+                <h5 class="fw-bold">Add New User</h5>
+                <p class="text-muted small">Quickly onboard a new student or teacher account.</p>
+                <a href="{% url 'user_list' %}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-plus-circle me-1"></i> Add User
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon"><i class="bi bi-envelope-paper-fill"></i></div>
+                <h5 class="fw-bold">Feedback Inbox</h5>
+                <p class="text-muted small">Read and respond to messages submitted via the contact form.</p>
+                <a href="{% url 'feedback_list' %}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-envelope-open me-1"></i> View Feedback
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

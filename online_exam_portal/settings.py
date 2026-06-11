@@ -34,6 +34,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Change this from True to False
+# DEBUG = False
+
+# # You MUST add your local IP here when DEBUG is False!
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
 
 # Application definition
 
@@ -147,3 +153,7 @@ MESSAGE_TAGS = {
     messages.INFO: 'info',
     messages.WARNING: 'warning',
 }
+
+
+# For development: This prints the password reset email directly into your terminal!
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

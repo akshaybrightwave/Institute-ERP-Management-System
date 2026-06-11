@@ -1,14 +1,50 @@
 {% extends 'accounts/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Profile | Examly{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">✏️ Edit Teacher Profile</h2>
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
+                        <h3 class="fw-bold mb-1">Edit Teacher Profile</h3>
+                        <p class="text-muted">Keep your profile information up to date.</p>
+                    </div>
 
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label">{{ field.label }}</label>
+                                {% if field.field.widget.input_type == 'file' %}
+                                    {{ field }}
+                                {% else %}
+                                    {{ field|add_class:"form-control" }}
+                                {% endif %}
+                                {% if field.help_text %}
+                                    <small class="text-muted">{{ field.help_text|safe }}</small>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary fw-bold flex-grow-1 py-2">
+                                <i class="bi bi-save me-1"></i> Save Changes
+                            </button>
+                            <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline-primary py-2">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

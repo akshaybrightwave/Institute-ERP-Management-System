@@ -1,93 +1,84 @@
 {% extends 'accounts/base.html' %}
 {% load static %}
-{% load widget_tweaks %}
+
+{% block title %}Login | Examly{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+<div class="auth-wrapper">
+    <div class="auth-card">
 
-<style>
-    body {
-        margin: 0;
-        padding: 0;
-        background: black;
-    }
-
-    .stars-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1;
-    }
-
-    .star {
-        position: absolute;
-        background-color: white;
-        border-radius: 50%;
-        opacity: 0.8;
-        animation: blink 2s infinite ease-in-out;
-    }
-
-    @keyframes blink {
-        0%, 100% { opacity: 0.1; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.5); }
-    }
-</style>
-
-<!-- 🌌 Background Stars -->
-<div class="stars-container" id="stars-container"></div>
-
-<script>
-    const container = document.getElementById('stars-container');
-    const starCount = 100;
-    for (let i = 0; i < starCount; i++) {
-        const star = document.createElement('div');
-        star.classList.add('star');
-        star.style.width = `${Math.random() * 2 + 1}px`;
-        star.style.height = `${Math.random() * 2 + 1}px`;
-        star.style.top = `${Math.random() * 100}vh`;
-        star.style.left = `${Math.random() * 100}vw`;
-        star.style.animationDuration = `${Math.random() * 3 + 1}s`;
-        star.style.animationDelay = `${Math.random() * 2}s`;
-        container.appendChild(star);
-    }
-</script>
-
-<div class="container d-flex justify-content-center align-items-center" style="height: 80vh;">
-    <div class="card shadow-lg p-4 animate__animated animate__fadeIn"
-         style="width: 100%; max-width: 450px; background-color: rgba(0,0,0,0.85); color: white; border: 1px solid white; border-radius: 1rem;">
-
-        <h2 class="text-center mb-4 text-info">👨‍💻 Login 👨‍💻</h2>
-
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <form method="post" novalidate>
-            {% csrf_token %}
-            <div class="mb-3">
-                <input type="text" name="username" class="form-control bg-dark text-white border-info" placeholder="Username" required>
-            </div>
-            <div class="mb-3">
-                <input type="password" name="password" class="form-control bg-dark text-white border-info" placeholder="Password" required>
-            </div>
-
-            <button type="submit" class="btn btn-info w-100 fw-bold">Login</button>
-        </form>
-
-        <hr class="my-4 border-light">
-
-        <div class="d-grid gap-2">
-            <a href="{% url 'signup_student' %}" class="btn btn-outline-light">Student Signup</a>
-            <a href="{% url 'signup_admin' %}" class="btn btn-outline-light">Admin Signup</a>
-            <a href="{% url 'signup_teacher' %}" class="btn btn-outline-light">Teacher Signup</a>
+        <!-- Branding side -->
+        <div class="auth-side d-none d-md-flex">
+            <div class="auth-icon"><i class="bi bi-mortarboard-fill"></i></div>
+            <h2 class="fw-bold mb-3">Welcome back to Examly</h2>
+            <p style="opacity: 0.9;">
+                Sign in to manage your exams, track results and continue
+                your learning journey.
+            </p>
+            <ul class="list-unstyled mt-4" style="opacity: 0.9;">
+                <li class="mb-2"><i class="bi bi-check-circle-fill me-2"></i>Role-based dashboards</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill me-2"></i>Auto-graded MCQ exams</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill me-2"></i>Real-time result tracking</li>
+            </ul>
         </div>
+
+        <!-- Form side -->
+        <div class="auth-form-side w-100">
+            <h3 class="fw-bold mb-1">Login</h3>
+            <p class="text-muted mb-4">Enter your credentials to access your account.</p>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <div class="input-group auth-input-group">
+                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                        <input type="text" name="username" class="form-control" placeholder="Enter your username" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <div class="input-group auth-input-group">
+                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mb-3">
+                    <a href="{% url 'password_reset' %}" class="small">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                </button>
+            </form>
+
+            <div class="position-relative my-4 text-center">
+                <hr>
+                <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
+                    New to Examly?
+                </span>
+            </div>
+
+            <div class="row g-2">
+                <div class="col-4">
+                    <a href="{% url 'signup_student' %}" class="btn btn-outline-primary w-100 btn-sm">
+                        <i class="bi bi-mortarboard d-block fs-5 mb-1"></i> Student
+                    </a>
+                </div>
+                <div class="col-4">
+                    <a href="{% url 'signup_teacher' %}" class="btn btn-outline-primary w-100 btn-sm">
+                        <i class="bi bi-person-workspace d-block fs-5 mb-1"></i> Teacher
+                    </a>
+                </div>
+                <div class="col-4">
+                    <a href="{% url 'signup_admin' %}" class="btn btn-outline-primary w-100 btn-sm">
+                        <i class="bi bi-shield-lock d-block fs-5 mb-1"></i> Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

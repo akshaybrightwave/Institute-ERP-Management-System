@@ -1,98 +1,120 @@
 {% extends 'accounts/base.html' %}
+
+{% block title %}{{ exam.title }} | Examly{% endblock %}
+
 {% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
 
-<h2 class="mb-4">Attempt Exam: {{ exam.title }}</h2>
-
-<!-- Total Marks -->
-<!-- <p class="alert alert-success"><strong>Total Marks:</strong> {{ exam.total_marks }}</p> -->
-<p class="alert alert-success"><strong>Total Marks:</strong> {{ total_marks }}</p>
-
-
-
-
-
-<!-- Countdown Timer -->
-<div class="alert alert-info">
-    <strong>Time Remaining:</strong> <span id="timer">05:00</span>
-   
-
-</div>
-
-<form method="post" action="{% url 'submit_exam' exam.id %}" id="examForm">
-    {% csrf_token %}
-    
-    {% for question in questions %}
-    <div class="mb-4 border rounded p-3 shadow-sm bg-light">
-        <p class="fw-bold">Q{{ forloop.counter }}. {{ question.question_text }}</p>
-        <p><i class="text-muted">Marks: {{ question.marks }}</i></p>
-         
-
-        <div class="ms-3">
-            <div class="form-check my-1">
-                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}_1" value="1" required>
-                <label class="form-check-label" for="q{{ question.id }}_1">
-                    {{ question.option1 }}
-                </label>
+            <div class="page-header">
+                <div>
+                    <h2><i class="bi bi-pencil-square text-primary me-2"></i>{{ exam.title }}</h2>
+                    <p>Total Marks: <strong>{{ total_marks }}</strong></p>
+                </div>
             </div>
-            <div class="form-check my-1">
-                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}_2" value="2" required>
-                <label class="form-check-label" for="q{{ question.id }}_2">
-                    {{ question.option2 }}
-                </label>
+
+            <div class="card border-0 mb-4" style="border-left: 4px solid var(--color-primary) !important;">
+                <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <span class="text-muted small d-block">Time Remaining</span>
+                        <span id="timer" class="fs-4 fw-bold" style="font-family:'Poppins',sans-serif; color: var(--color-danger);">Calculating...</span>
+                    </div>
+                    <div id="tabWarning" class="badge-soft-danger" style="display: none;">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Tab switching detected!
+                    </div>
+                </div>
             </div>
-            <div class="form-check my-1">
-                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}_3" value="3" required>
-                <label class="form-check-label" for="q{{ question.id }}_3">
-                    {{ question.option3 }}
-                </label>
-            </div>
-            <div class="form-check my-1">
-                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}_4" value="4" required>
-                <label class="form-check-label" for="q{{ question.id }}_4">
-                    {{ question.option4 }}
-                </label>
-            </div>
+
+            <form method="post" action="{% url 'submit_exam' exam.id %}" id="examForm">
+                {% csrf_token %}
+
+                {% for question in questions %}
+                <div class="card border-0 mb-3">
+                    <div class="card-body">
+                        <p class="fw-bold mb-1">Q{{ forloop.counter }}. {{ question.question_text }}</p>
+                        <p class="mb-3"><span class="badge-soft-primary">{{ question.marks }} mark{{ question.marks|pluralize }}</span></p>
+
+                        <div class="ms-1">
+                            {% for option in question.options.all %}
+                            <div class="form-check my-2">
+                                <input class="form-check-input" type="radio" name="{{ question.id }}" id="q{{ question.id }}_opt{{ option.id }}" value="{{ option.id }}" required>
+                                <label class="form-check-label" for="q{{ question.id }}_opt{{ option.id }}">
+                                    {{ option.text }}
+                                </label>
+                            </div>
+                            {% empty %}
+                            <p class="text-danger small">No options provided for this question.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mt-2" id="submitBtn">
+                    <i class="bi bi-check-circle me-1"></i> Submit Exam
+                </button>
+            </form>
+
         </div>
     </div>
-    {% endfor %}
-
-    <button type="submit" class="btn btn-success mt-3" id="submitBtn">Submit Exam</button>
-</form>
-
-<!-- Timer Script -->
-
+</div>
 
 <script>
-    let totalTime = 5 * 60; 
+    // 1. DYNAMIC SERVER TIMER
+    // This grabs the exact remaining seconds calculated by Django in views.py
+    let totalTime = parseInt("{{ remaining_seconds|default:0 }}", 10);
+
     const timerDisplay = document.getElementById("timer");
     const form = document.getElementById("examForm");
     const submitBtn = document.getElementById("submitBtn");
+    let isSubmitting = false; // Prevent multiple submissions
 
     function updateTimer() {
-        let minutes = Math.floor(totalTime / 60);
-        let seconds = totalTime % 60;
-
-        timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
         if (totalTime <= 0) {
+            timerDisplay.textContent = "00:00";
             clearInterval(timerInterval);
-            alert("Time's up! Submitting your exam.");
-            submitBtn.disabled = true;
-            form.submit();
+
+            if (!isSubmitting) {
+                isSubmitting = true;
+                alert("Time's up! Your exam is being automatically submitted.");
+                submitBtn.disabled = true;
+                form.submit();
+            }
+            return;
         }
 
+        let minutes = Math.floor(totalTime / 60);
+        let seconds = totalTime % 60;
+        timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         totalTime--;
     }
 
+    // Start the timer immediately
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+
+    // 2. PREVENT ACCIDENTAL SUBMISSIONS
     form.addEventListener('submit', function(event) {
-        const confirmed = confirm('Are you sure you want to submit the exam?');
-        if (!confirmed) {
-            event.preventDefault();
+        if (!isSubmitting) {
+            const confirmed = confirm('Are you sure you want to submit the exam? You cannot change your answers later.');
+            if (!confirmed) {
+                event.preventDefault();
+            } else {
+                isSubmitting = true;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = "Submitting...";
+            }
         }
     });
 
-    updateTimer();
-    const timerInterval = setInterval(updateTimer, 1000);
+    // 3. TAB-SWITCHING DETECTION (Anti-Cheat)
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden) {
+            // They switched to another tab/window!
+            document.getElementById("tabWarning").style.display = "inline-block";
+            alert("WARNING: You switched tabs! Leaving the exam screen is recorded as a violation of exam rules.");
+        }
+    });
 </script>
-
 {% endblock %}

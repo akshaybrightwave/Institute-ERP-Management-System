@@ -1,37 +1,54 @@
 {% extends 'accounts/base.html' %}
+
+{% block title %}Available Exams | Examly{% endblock %}
+
 {% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-journal-text text-primary me-2"></i>Available Exams</h2>
+            <p>Choose an exam below to view instructions and get started.</p>
+        </div>
+    </div>
 
-<h2 class="mb-4">Available Exams</h2>
-
-{% if exams %}
-<table class="table table-bordered table-hover">
-    <thead class="table-light">
-        <tr>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Date</th>
-            <th>Total Marks</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for exam in exams %}
-        <tr>
-            <td>{{ exam.title }}</td>
-            <td>{{ exam.description }}</td>
-            <td>{{ exam.date|date:"M d, Y" }}</td>
-            <td>{{ exam.total_marks }}</td>
-            <td>
-                <a href="{% url 'attempt_exam' exam.id %}" class="btn btn-primary btn-sm">Attempt Exam</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<div class="alert alert-info" role="alert">
-    No exams available at the moment.
+    {% if exams %}
+    <div class="card border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Title</th>
+                            <th>Description</th>
+                            <th>Date</th>
+                            <th>Total Marks</th>
+                            <th class="pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in exams %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ exam.title }}</td>
+                            <td class="text-muted small">{{ exam.description|truncatewords:12 }}</td>
+                            <td>{{ exam.date|date:"M d, Y" }}</td>
+                            <td><span class="badge-soft-primary">{{ exam.total_marks }}</span></td>
+                            <td class="pe-4 text-end">
+                                <a href="{% url 'exam_instructions' exam.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-arrow-right-circle me-1"></i> View &amp; Attempt
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-journal-x"></i>
+        <p class="mb-0">No exams available at the moment. Please check back later.</p>
+    </div>
+    {% endif %}
 </div>
-{% endif %}
-
 {% endblock %}

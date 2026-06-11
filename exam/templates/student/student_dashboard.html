@@ -1,70 +1,105 @@
 {% extends 'accounts/base.html' %}
 {% load static %}
 
+{% block title %}Student Dashboard | Examly{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4 text-primary fw-bold">🎓 Welcome, {{ user.username }}!</h2>
+<div class="container py-2">
+
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-mortarboard-fill text-primary me-2"></i>Welcome, {{ user.username }}!</h2>
+            <p>Here's an overview of your learning progress.</p>
+        </div>
+        <a href="{% url 'student_exam_list' %}" class="btn btn-primary">
+            <i class="bi bi-journal-text me-1"></i> Browse Exams
+        </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_exams }}</div>
+                    <div class="stat-label">Available Exams</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_attempts }}</div>
+                    <div class="stat-label">Exams Attempted</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <div>
+                    <div class="stat-value">{{ average_score }}%</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row g-4">
         <!-- Profile Card -->
         <div class="col-md-4">
-            <div class="card shadow border-0 h-100">
-                <div class="card-body text-center">
-                    <div class="mb-3">
-                        {% if user.studentprofile.profile_picture %}
-                            <img src="{{ user.studentprofile.profile_picture.url }}" 
-                                 alt="Profile Picture" 
-                                 class="rounded-circle shadow" 
-                                 style="width: 100px; height: 100px; object-fit: cover;">
-                        {% else %}
-                            <img src="{% static 'images/default_profile.png' %}" 
-                                 alt="Default Profile Picture" 
-                                 class="rounded-circle shadow" 
-                                 style="width: 100px; height: 100px; object-fit: cover;">
-                        {% endif %}
+            <div class="card border-0 h-100 text-center p-3">
+                <div class="card-body">
+                    {% if user.studentprofile.profile_picture %}
+                        <img src="{{ user.studentprofile.profile_picture.url }}"
+                             alt="Profile Picture"
+                             class="rounded-circle mb-3"
+                             style="width: 96px; height: 96px; object-fit: cover; border: 3px solid var(--color-primary-light);">
+                    {% else %}
+                        <img src="{% static 'images/default_profile.png' %}"
+                             alt="Default Profile Picture"
+                             class="rounded-circle mb-3"
+                             style="width: 96px; height: 96px; object-fit: cover; border: 3px solid var(--color-primary-light);">
+                    {% endif %}
+                    <h5 class="fw-bold mb-1">My Profile</h5>
+                    <p class="text-muted small">Manage your personal information and photo.</p>
+                    <div class="d-grid gap-2 mt-2">
+                        <a href="{% url 'student_profile' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-person-lines-fill me-1"></i> View Profile
+                        </a>
+                        <a href="{% url 'edit_student_profile' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                        </a>
                     </div>
-                    <h5 class="card-title">🧑‍💼 My Profile</h5>
-                    <p class="card-text text-muted">Manage your personal information and photo.</p>
-                    <a href="{% url 'student_profile' %}" class="btn btn-outline-primary btn-sm w-100 mb-2">
-                        View Profile
-                    </a>
-                    <a href="{% url 'edit_student_profile' %}" class="btn btn-outline-warning btn-sm w-100">
-                        Edit Profile
-                    </a>
                 </div>
             </div>
         </div>
 
-       <!-- Available Exams -->
-<div class="col-md-4">
-    <div class="card shadow border-0 h-100 bg-light">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
-            <h5 class="card-title text-success">📘 Available Exams</h5>
-            <p class="card-text text-muted">
-                Start practicing or attempt live exams assigned to you.
-            </p>
-            <a href="{% url 'student_exam_list' %}" class="btn btn-success btn-sm w-100">
-                View Exams
-            </a>
+        <!-- Available Exams -->
+        <div class="col-md-4">
+            <div class="dashboard-action-card">
+                <div class="feature-icon"><i class="bi bi-journal-text"></i></div>
+                <h5 class="fw-bold">Available Exams</h5>
+                <p class="text-muted small">Start practicing or attempt live exams assigned to you.</p>
+                <a href="{% url 'student_exam_list' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> View Exams
+                </a>
+            </div>
         </div>
-    </div>
-</div>
 
-<!-- Exam History -->
-<div class="col-md-4">
-    <div class="card shadow border-0 h-100">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center">
-            <h5 class="card-title text-info">📊 My Exam History</h5>
-            <p class="card-text text-muted">
-                Review your scores and answer sheets from past exams.
-            </p>
-            <a href="{% url 'student_exam_history' %}" class="btn btn-info btn-sm w-100">
-                View History
-            </a>
+        <!-- Exam History -->
+        <div class="col-md-4">
+            <div class="dashboard-action-card">
+                <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
+                <h5 class="fw-bold">My Exam History</h5>
+                <p class="text-muted small">Review your scores and answer sheets from past exams.</p>
+                <a href="{% url 'student_exam_history' %}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> View History
+                </a>
+            </div>
         </div>
-    </div>
-</div>
-
     </div>
 </div>
 {% endblock %}

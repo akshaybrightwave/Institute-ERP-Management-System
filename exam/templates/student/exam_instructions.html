@@ -1,56 +1,77 @@
 {% extends 'accounts/base.html' %}
 
+{% block title %}{{ exam.title }} | Examly{% endblock %}
+
 {% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
 
-<div class="container mt-5">
-  <!-- Exam Title -->
-  <h2 class="mb-4 text-center" style="
-      font-weight: bold;
-      background: linear-gradient(45deg, #0ebde4, transparent, #0844d5);
-      padding: 10px 20px;
-      display: inline-block;
-      border-radius: 2rem;
-      border: 2px solid #0844d5;
-      box-shadow: 3px 4px 5px black;
-  ">
-    {{ exam.title }}
-  </h2>
+            <div class="hero-section p-4 p-md-5 mb-4 text-center">
+                <span class="hero-badge mb-2"><i class="bi bi-journal-text"></i> Exam</span>
+                <h2 class="fw-bold mb-0 text-white">{{ exam.title }}</h2>
+            </div>
 
-  <!-- Exam Card -->
-  <div class="card shadow-sm mt-4">
-    <div class="card-body">
-      <!-- Instructions -->
-      <h5 class="card-title mb-3"><strong>Instructions</strong></h5>
-      <p class="card-text" style="white-space: pre-line;">
-        {{ exam.description|linebreaksbr }}
-      </p>
+            <div class="card border-0">
+                <div class="card-body p-4 p-md-5">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-info-circle text-primary me-2"></i>Instructions</h5>
+                    <p class="text-muted" style="white-space: pre-line;">
+                        {{ exam.description|linebreaksbr }}
+                    </p>
 
-      <hr>
+                    <hr class="my-4">
 
-      <!-- Exam Details -->
-      <p><strong>Duration:</strong> {{ exam.duration }} minutes</p>
-      <p><strong>Date:</strong> {{ exam.date }}</p>
+                    <div class="row g-3 mb-2">
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="feature-icon" style="width:44px;height:44px;font-size:1.1rem;margin:0;"><i class="bi bi-clock-history"></i></span>
+                                <div>
+                                    <div class="text-muted small">Duration</div>
+                                    <div class="fw-bold">{{ exam.duration_minutes }} minutes</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="feature-icon" style="width:44px;height:44px;font-size:1.1rem;margin:0;"><i class="bi bi-calendar3"></i></span>
+                                <div>
+                                    <div class="text-muted small">Date</div>
+                                    <div class="fw-bold">{{ exam.date }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-      <!-- Action Buttons -->
-      <div class="mt-4 d-flex gap-2">
-        <!-- Start Exam Button -->
-        <a href="{% url 'attempt_exam' exam.id %}" class="btn btn-primary flex-grow-1">
-          Start Exam
-        </a>
+                    {% if is_closed %}
+                    <div class="alert alert-danger d-flex align-items-center gap-2 mb-0">
+                        <i class="bi bi-lock-fill"></i>
+                        <span>This exam closed on {{ exam.end_date }} and no longer accepts new attempts.</span>
+                    </div>
+                    {% endif %}
 
-        <!-- View My Results Button -->
-        {% if latest_attempt %}
-          <a href="{% url 'student_exam_result' latest_attempt.id %}" class="btn btn-success flex-grow-1">
-            View My Results
-          </a>
-        {% else %}
-          <button class="btn btn-success flex-grow-1" disabled>
-            View My Results
-          </button>
-        {% endif %}
-      </div>
+                    <div class="mt-4 d-flex gap-2">
+                        {% if can_start %}
+                        <a href="{% url 'attempt_exam' exam.id %}" class="btn btn-primary flex-grow-1 fw-bold py-2">
+                            <i class="bi bi-play-circle me-1"></i> {% if latest_attempt %}Retake Exam{% else %}Start Exam{% endif %}
+                        </a>
+                        {% else %}
+                        <button class="btn btn-primary flex-grow-1 fw-bold py-2" disabled>
+                            <i class="bi bi-play-circle me-1"></i> Start Exam
+                        </button>
+                        {% endif %}
+                        {% if latest_attempt %}
+                            <a href="{% url 'student_exam_result' latest_attempt.id %}" class="btn btn-outline-primary flex-grow-1 fw-bold py-2">
+                                <i class="bi bi-bar-chart-line me-1"></i> View My Results
+                            </a>
+                        {% else %}
+                            <button class="btn btn-outline-primary flex-grow-1 fw-bold py-2" disabled>
+                                <i class="bi bi-bar-chart-line me-1"></i> View My Results
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-
 {% endblock %}

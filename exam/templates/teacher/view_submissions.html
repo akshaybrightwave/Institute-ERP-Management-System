@@ -1,56 +1,129 @@
 {% extends 'accounts/base.html' %}
 
+{% block title %}Submissions | Examly{% endblock %}
+
 {% block content %}
-<h2>Submissions for {{ exam.title }}</h2>
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-file-earmark-check text-primary me-2"></i>Submissions</h2>
+            <p>Results for <strong>{{ exam.title }}</strong></p>
+        </div>
+        <a href="{% url 'teacher_dashboard' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+        </a>
+    </div>
 
-<!-- Filter Form -->
-<form method="get" class="mb-3 form-inline">
-    <input
-        type="number"
-        name="score_min"
-        placeholder="Min Score"
-        value="{{ score_min }}"
-        class="form-control mr-2"
-        min="0"
-        max="100"
-    >
-    <input
-        type="date"
-        name="date_from"
-        value="{{ date_from }}"
-        class="form-control mr-2"
-    >
-    <button type="submit" class="btn btn-primary">Filter</button>
-    <a href="{% url 'view_submissions' exam.id %}" class="btn btn-secondary ml-2">Clear</a>
-</form>
+    <!-- Stats -->
+    <div class="row row-cols-2 row-cols-md-5 g-3 mb-4">
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_attempts }}</div>
+                    <div class="stat-label">Total Attempts</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-bar-chart-line-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ average_score }}%</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-arrow-up-circle-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ highest_score }}%</div>
+                    <div class="stat-label">Highest Score</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-arrow-down-circle-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ lowest_score }}%</div>
+                    <div class="stat-label">Lowest Score</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ pass_rate }}%</div>
+                    <div class="stat-label">Pass Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Student</th>
-            <th>Score</th>
-            <th>Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for attempt in attempts %}
-        <tr>
-            <td>{{ attempt.student.username }}</td>
-            <td>{{ attempt.score }}%</td>
-            <td>{{ attempt.submitted_at|date:"Y-m-d H:i" }}</td>
+    <!-- Filter Form -->
+    <div class="card border-0 mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Minimum Score (%)</label>
+                    <input type="number" name="score_min" placeholder="e.g. 50" value="{{ score_min }}" class="form-control" min="0" max="100">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Submitted From</label>
+                    <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Filter</button>
+                    <a href="{% url 'view_submissions' exam.id %}" class="btn btn-outline-secondary">Clear</a>
+                    <a href="{% url 'export_submissions_csv' exam.id %}?score_min={{ score_min }}&date_from={{ date_from }}" class="btn btn-outline-primary">
+                        <i class="bi bi-download me-1"></i> Export CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            <td>
-                <a href="{% url 'view_student_answers' attempt.id %}" class="btn btn-sm btn-info">
-                    View Answers
-                </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="4">No submissions yet.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <div class="card border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Student</th>
+                            <th>Score</th>
+                            <th>Submitted On</th>
+                            <th class="pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attempt in attempts %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ attempt.student.username }}</td>
+                            <td><span class="badge-soft-primary">{{ attempt.score }}%</span></td>
+                            <td>{{ attempt.submitted_at|date:"Y-m-d H:i" }}</td>
+                            <td class="pe-4 text-end">
+                                <a href="{% url 'view_student_answers' attempt.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i> View Answers
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <p class="mb-0">No submissions yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

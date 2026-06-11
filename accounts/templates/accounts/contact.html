@@ -2,27 +2,21 @@
 {% load static %}
 {% load widget_tweaks %}
 
-
-<head>
-  <style>
-  .form-control:focus {
-    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
-    border-color: #0d6efd;
-  }
-</style>
-
-</head>
+{% block title %}Contact | Examly{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="py-3">
   <div class="text-center mb-5">
-    <h2 class="text-primary fw-bold">Get in Touch</h2>
-    <p class="text-muted">We'd love to hear from you! Fill out the form below and we'll get back to you shortly.</p>
+    <span class="hero-badge mb-3" style="background: var(--color-primary-light); color: var(--color-primary);">
+      <i class="bi bi-chat-dots"></i> We'd love to hear from you
+    </span>
+    <h2 class="section-title fw-bold mt-3">Get in Touch</h2>
+    <p class="section-subtitle">Have a question or need a demo for your institute? Send us a message and we'll get back to you shortly.</p>
   </div>
 
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div class="card shadow rounded-4 border-0">
+  <div class="row justify-content-center g-4">
+    <div class="col-md-7">
+      <div class="card shadow-sm border-0 h-100">
         <div class="card-body p-4">
           {% if messages %}
             {% for message in messages %}
@@ -51,8 +45,42 @@
               <label for="id_message" class="form-label">Message</label>
               {{ form.message|add_class:"form-control" }}
             </div>
-            <button type="submit" class="btn btn-primary w-100 mt-2">Send Message</button>
+            <button type="submit" class="btn btn-primary w-100 mt-2 py-2 fw-bold">
+              <i class="bi bi-send me-1"></i> Send Message
+            </button>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 h-100 bg-gradient-brand text-white">
+        <div class="card-body p-4 d-flex flex-column">
+          <h5 class="fw-bold mb-3 text-white">Contact Information</h5>
+          <ul class="list-unstyled" style="opacity: 0.95;">
+            <li class="mb-3 d-flex align-items-start">
+              <i class="bi bi-geo-alt-fill me-2 fs-5"></i>
+              <span>123 Education Street, Pune, India</span>
+            </li>
+            <li class="mb-3 d-flex align-items-start">
+              <i class="bi bi-envelope-fill me-2 fs-5"></i>
+              <span>support@examly.com</span>
+            </li>
+            <li class="mb-3 d-flex align-items-start">
+              <i class="bi bi-telephone-fill me-2 fs-5"></i>
+              <span>+91 98765 43210</span>
+            </li>
+            <li class="mb-3 d-flex align-items-start">
+              <i class="bi bi-clock-fill me-2 fs-5"></i>
+              <span>Mon - Sat, 9:00 AM - 6:00 PM</span>
+            </li>
+          </ul>
+          <div class="mt-auto pt-3">
+            <p class="small mb-0" style="opacity: 0.9;">
+              Looking for a custom plan for your coaching institute? Mention it in your message
+              and our team will reach out.
+            </p>
+          </div>
         </div>
       </div>
     </div>

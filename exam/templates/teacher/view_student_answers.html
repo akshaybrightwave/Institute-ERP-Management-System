@@ -1,24 +1,63 @@
 {% extends 'accounts/base.html' %}
 
+{% block title %}Student Answers | Examly{% endblock %}
+
 {% block content %}
-<h2>Answers by {{ attempt.student.username }}</h2>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Question</th>
-            <th>Selected Option</th>
-            <th>Correct Option</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for ans in answers %}
-        <tr>
-            <td>{{ ans.question.question_text }}</td>
-            <td>{{ ans.get_selected_option_display }}</td>
-            <td>{{ ans.question.get_correct_option_display }}</td>
-            
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-card-checklist text-primary me-2"></i>Answer Sheet</h2>
+            <p>Reviewing answers submitted by <strong>{{ attempt.student.username }}</strong></p>
+        </div>
+        <a href="{% url 'view_submissions' attempt.exam.id %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to Submissions
+        </a>
+    </div>
+
+    <div class="card border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Question</th>
+                            <th>Selected Option</th>
+                            <th>Correct Option</th>
+                            <th class="pe-4">Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ans in answers %}
+                        <tr>
+                            <td class="ps-4">{{ ans.question.question_text }}</td>
+                            <td>{{ ans.selected_option.text|default:"Not answered" }}</td>
+                            <td>
+                                {% for opt in ans.question.options.all %}
+                                    {% if opt.is_correct %}{{ opt.text }}{% endif %}
+                                {% endfor %}
+                            </td>
+                            <td class="pe-4">
+                                {% if ans.selected_option.is_correct %}
+                                    <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Correct</span>
+                                {% else %}
+                                    <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Incorrect</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <p class="mb-0">No answers found for this attempt.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

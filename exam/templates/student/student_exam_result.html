@@ -1,100 +1,71 @@
 {% extends 'accounts/base.html' %}
 
+{% block title %}Exam Result | Examly{% endblock %}
+
 {% block content %}
-<style>
-    .correct-answer {
-        color: green;
-        font-weight: bold;
-    }
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
 
-    .wrong-answer {
-        color: red;
-        font-weight: bold;
-    }
-</style>
-
-<div class="container my-4">
-
-    <h2 class="mb-4">
-        <i class="bi bi-file-earmark-text me-2"></i> Exam Result
-    </h2>
-
-    <ul class="list-group mb-4">
-        <li class="list-group-item">
-            <strong><i class="bi bi-person-fill me-1"></i> Student:</strong> {{ attempt.student.username }}
-        </li>
-        <li class="list-group-item">
-            <strong><i class="bi bi-journal-text me-1"></i> Exam:</strong> {{ attempt.exam.title }}
-        </li>
-        <li class="list-group-item">
-            <strong><i class="bi bi-check2-circle me-1"></i> Score:</strong> {{ marks_earned }} / {{ total_marks }}
-        </li>
-        <li class="list-group-item">
-            <strong><i class="bi bi-percent me-1"></i> Percentage:</strong> {{ rounded_score }}%
-        </li>
-        <li class="list-group-item">
-            <strong><i class="bi bi-calendar-check me-1"></i> Submitted At:</strong> {{ attempt.submitted_at }}
-        </li>
-        <li class="list-group-item">
-            <strong><i class="bi bi-info-circle me-1"></i> Status:</strong>
-            {% if rounded_score >= 50 %}
-                <span class="badge bg-success">
-                    <i class="bi bi-check-lg me-1"></i> Passed
-                </span>
-            {% else %}
-                <span class="badge bg-danger">
-                    <i class="bi bi-x-lg me-1"></i> Failed
-                </span>
-            {% endif %}
-        </li>
-    </ul>
-
-    <h3><i class="bi bi-question-circle me-2"></i> Answers:</h3>
-    <ul class="list-group mb-4">
-        {% for ans in answers %}
-            <li class="list-group-item">
-                <strong>Q{{ forloop.counter }}:</strong> {{ ans.question.question_text }}<br>
-                <small><i>Marks: {{ ans.question.marks }}</i></small><br>
-
-                <strong>Your answer:</strong>
-                {% if ans.selected_option == 1 %}
-                    <span class="{% if ans.selected_option == ans.question.correct_option %}correct-answer{% else %}wrong-answer{% endif %}">
-                        {{ ans.question.option1 }}
-                    </span>
-                {% elif ans.selected_option == 2 %}
-                    <span class="{% if ans.selected_option == ans.question.correct_option %}correct-answer{% else %}wrong-answer{% endif %}">
-                        {{ ans.question.option2 }}
-                    </span>
-                {% elif ans.selected_option == 3 %}
-                    <span class="{% if ans.selected_option == ans.question.correct_option %}correct-answer{% else %}wrong-answer{% endif %}">
-                        {{ ans.question.option3 }}
-                    </span>
-                {% elif ans.selected_option == 4 %}
-                    <span class="{% if ans.selected_option == ans.question.correct_option %}correct-answer{% else %}wrong-answer{% endif %}">
-                        {{ ans.question.option4 }}
-                    </span>
+            <div class="hero-section p-4 p-md-5 mb-4 text-center text-white">
+                <span class="hero-badge mb-2"><i class="bi bi-file-earmark-text"></i> Exam Result</span>
+                <h2 class="fw-bold mb-1 text-white">{{ attempt.exam.title }}</h2>
+                <p class="mb-3" style="opacity:0.9;">{{ attempt.student.username }}</p>
+                <div class="display-4 fw-bold text-white">{{ marks_earned }} / {{ total_marks }}</div>
+                <p class="mb-2" style="opacity:0.9;">{{ rounded_score }}%</p>
+                {% if passed %}
+                    <span class="badge bg-light text-success fw-bold px-3 py-2"><i class="bi bi-check-lg me-1"></i> Passed</span>
                 {% else %}
-                    <span class="wrong-answer">No answer</span>
+                    <span class="badge bg-light text-danger fw-bold px-3 py-2"><i class="bi bi-x-lg me-1"></i> Failed</span>
                 {% endif %}
-                <br>
+            </div>
 
-                <strong>Correct answer:</strong>
-                {% if ans.question.correct_option == 1 %}
-                    <span class="correct-answer">{{ ans.question.option1 }}</span>
-                {% elif ans.question.correct_option == 2 %}
-                    <span class="correct-answer">{{ ans.question.option2 }}</span>
-                {% elif ans.question.correct_option == 3 %}
-                    <span class="correct-answer">{{ ans.question.option3 }}</span>
-                {% elif ans.question.correct_option == 4 %}
-                    <span class="correct-answer">{{ ans.question.option4 }}</span>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
+            <div class="card border-0 mb-4">
+                <div class="card-body">
+                    <p class="text-muted mb-0"><i class="bi bi-calendar-check me-1"></i> Submitted at: {{ attempt.submitted_at }}</p>
+                </div>
+            </div>
 
-    <a href="{% url 'student_exam_list' %}" class="btn btn-primary">
-        <i class="bi bi-arrow-left-circle me-1"></i> Back to Exams
-    </a>
+            <h5 class="fw-bold mb-3"><i class="bi bi-question-circle text-primary me-2"></i>Answer Review</h5>
 
+            {% for ans in answers %}
+            <div class="card border-0 mb-3">
+                <div class="card-body">
+                    <p class="fw-bold mb-1">Q{{ forloop.counter }}. {{ ans.question.question_text }}</p>
+                    <p class="text-muted small mb-2">Marks: {{ ans.question.marks }}</p>
+
+                    <p class="mb-1">
+                        <strong>Your answer:</strong>
+                        {% if ans.selected_option %}
+                            {% if ans.selected_option.is_correct %}
+                                <span class="badge-soft-success">{{ ans.selected_option.text }}</span>
+                            {% else %}
+                                <span class="badge-soft-danger">{{ ans.selected_option.text }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge-soft-danger">No answer provided</span>
+                        {% endif %}
+                    </p>
+
+                    {% if not ans.selected_option.is_correct %}
+                    <p class="mb-0">
+                        <strong>Correct answer:</strong>
+                        {% for opt in ans.question.options.all %}
+                            {% if opt.is_correct %}
+                                <span class="badge-soft-success">{{ opt.text }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <a href="{% url 'student_exam_list' %}" class="btn btn-primary w-100 fw-bold py-2 mt-2">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Exams
+            </a>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

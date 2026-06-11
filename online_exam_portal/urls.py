@@ -4,7 +4,7 @@ from accounts import views as accounts_views
 from exam import views as exam_views
 from django.conf import settings
 from django.conf.urls.static import static
-
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -22,7 +22,12 @@ urlpatterns = [
     path('admin_users_add/', accounts_views.user_add, name='user_add'),
     path('admin_users/edit/<int:user_id>/', accounts_views.user_edit, name='user_edit'),
     path('admin_users/delete/<int:user_id>/', accounts_views.user_delete, name='user_delete'),
- 
+
+    # Admin Feedback Inbox
+    path('admin_feedback/', accounts_views.feedback_list, name='feedback_list'),
+    path('admin_feedback/<int:feedback_id>/', accounts_views.feedback_detail, name='feedback_detail'),
+    path('admin_feedback/<int:feedback_id>/delete/', accounts_views.feedback_delete, name='feedback_delete'),
+
     # Exam CRUD (shared for Admin + Teacher)
     path('exams/', exam_views.exam_list, name='exam_list'),
     path('exams_add/', exam_views.add_exam, name='add_exam'),
@@ -59,7 +64,29 @@ urlpatterns = [
     # Teacher Exam Dashboard (Submissions & Answers only)
     path('teacher/exam_dashboard/', exam_views.teacher_exam_dashboard, name='teacher_exam_dashboard'),
     path('teacher/exam/<int:exam_id>/submissions/', exam_views.view_submissions, name='view_submissions'),
+    path('teacher/exam/<int:exam_id>/submissions/export/', exam_views.export_submissions_csv, name='export_submissions_csv'),
     path('teacher/answers/<int:attempt_id>/', exam_views.view_student_answers, name='view_student_answers'),
+    
+    
+    
+    
+    
+    # URL 1: The page where they type their email address
+    path('password_reset/', auth_views.PasswordResetView.as_view(
+        template_name='accounts/password_reset.html'), name='password_reset'),
+        
+    # URL 2: The "Success, we sent you an email" page
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
+        template_name='accounts/password_reset_done.html'), name='password_reset_done'),
+        
+    # URL 3: The secure link they click in their email
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='accounts/password_reset_confirm.html'), name='password_reset_confirm'),
+        
+    # URL 4: The "Success, your password is changed" page
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(
+        template_name='accounts/password_reset_complete.html'), name='password_reset_complete'),
+
 ]
 
 if settings.DEBUG:

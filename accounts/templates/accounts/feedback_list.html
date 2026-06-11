@@ -1,0 +1,92 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Feedback Inbox | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-envelope-paper-fill text-primary me-2"></i>Feedback Inbox</h2>
+            <p>Messages submitted through the contact form. {{ unread_count }} unread.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'feedback_list' %}" class="btn {% if not status %}btn-primary{% else %}btn-outline-primary{% endif %}">All</a>
+            <a href="{% url 'feedback_list' %}?status=unread" class="btn {% if status == 'unread' %}btn-primary{% else %}btn-outline-primary{% endif %}">Unread</a>
+        </div>
+    </div>
+
+    <div class="card border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">From</th>
+                            <th>Subject</th>
+                            <th>Received</th>
+                            <th>Status</th>
+                            <th class="pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feedback in page_obj %}
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-semibold">{{ feedback.name }}</div>
+                                <div class="text-muted small">{{ feedback.email }}</div>
+                            </td>
+                            <td>{{ feedback.subject }}</td>
+                            <td>{{ feedback.submitted_at|date:"M d, Y H:i" }}</td>
+                            <td>
+                                {% if feedback.is_read %}
+                                    <span class="badge-soft-success">Read</span>
+                                {% else %}
+                                    <span class="badge-soft-warning">Unread</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <a href="{% url 'feedback_detail' feedback.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> View</a>
+                                <a href="{% url 'feedback_delete' feedback.id %}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-envelope-open"></i>
+                                    <p class="mb-0">No feedback messages{% if status == 'unread' %} to read{% endif %}.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Feedback pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status %}&status={{ status }}{% endif %}">Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if status %}&status={{ status }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status %}&status={{ status }}{% endif %}">Next</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

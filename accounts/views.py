@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages  
 
 from django.core.paginator import Paginator
+from django.db.models import Q
 from exam.models import Exam, TeacherProfile
 
 # Create your views here.
@@ -140,17 +141,38 @@ def admin_required(view_func):
 # Admin Dashboard and CRUD Views 
 
 from django.shortcuts import get_object_or_404
-from .models import User
+from .models import User, Feedback
 from .forms import AdminSignupForm, TeacherSignupForm, StudentSignupForm
 
 @admin_required
 def admin_dashboard(request):
-    return render(request, 'accounts/admin_dashboard.html')
+    context = {
+        'total_students': User.objects.filter(role='student').count(),
+        'total_teachers': User.objects.filter(role='teacher').count(),
+        'total_exams': Exam.objects.count(),
+        'unread_feedback_count': Feedback.objects.filter(is_read=False).count(),
+    }
+    return render(request, 'accounts/admin_dashboard.html', context)
 
 @admin_required
 def user_list(request):
     users = User.objects.exclude(role='admin')
-    return render(request, 'accounts/user_list.html', {'users': users})
+
+    query = request.GET.get('q', '').strip()
+    role = request.GET.get('role', '').strip()
+
+    if query:
+        users = users.filter(
+            Q(username__icontains=query) | Q(email__icontains=query)
+        )
+    if role in ('student', 'teacher'):
+        users = users.filter(role=role)
+
+    return render(request, 'accounts/user_list.html', {
+        'users': users,
+        'query': query,
+        'role': role,
+    })
 
 
 @admin_required
@@ -225,7 +247,46 @@ def contact_view(request):
             return redirect('contact')
     else:
         form= FeedbackForm()
-    return render(request,'accounts/contact.html',{'form':form})    
+    return render(request,'accounts/contact.html',{'form':form})
+
+
+# Admin Feedback Inbox
+
+@admin_required
+def feedback_list(request):
+    feedbacks = Feedback.objects.all().order_by('-submitted_at')
+
+    status = request.GET.get('status', '').strip()
+    if status == 'unread':
+        feedbacks = feedbacks.filter(is_read=False)
+
+    paginator = Paginator(feedbacks, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'accounts/feedback_list.html', {
+        'page_obj': page_obj,
+        'status': status,
+        'unread_count': Feedback.objects.filter(is_read=False).count(),
+    })
+
+
+@admin_required
+def feedback_detail(request, feedback_id):
+    feedback = get_object_or_404(Feedback, id=feedback_id)
+    if not feedback.is_read:
+        feedback.is_read = True
+        feedback.save()
+    return render(request, 'accounts/feedback_detail.html', {'feedback': feedback})
+
+
+@admin_required
+def feedback_delete(request, feedback_id):
+    feedback = get_object_or_404(Feedback, id=feedback_id)
+    if request.method == 'POST':
+        feedback.delete()
+        messages.success(request, 'Feedback message deleted.')
+        return redirect('feedback_list')
+    return render(request, 'accounts/feedback_delete.html', {'feedback': feedback})
 
 
 
