@@ -147,11 +147,18 @@ from .forms import AdminSignupForm, TeacherSignupForm, StudentSignupForm
 
 @admin_required
 def admin_dashboard(request):
+    from apps.centers.models import Center
+    from apps.courses.models import Course
+    from apps.batches.models import Batch
+
     context = {
         'total_students': User.objects.filter(role='student').count(),
         'total_teachers': User.objects.filter(role='teacher').count(),
         'total_exams': Exam.objects.count(),
         'unread_feedback_count': Feedback.objects.filter(is_read=False).count(),
+        'total_centers': Center.objects.count(),
+        'total_courses': Course.objects.count(),
+        'total_batches': Batch.objects.count(),
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 
@@ -161,6 +168,7 @@ def user_list(request):
 
     query = request.GET.get('q', '').strip()
     role = request.GET.get('role', '').strip()
+    selected_batch_id = request.GET.get('batch', '').strip()
 
     if query:
         users = users.filter(
@@ -168,11 +176,18 @@ def user_list(request):
         )
     if role in ('student', 'teacher'):
         users = users.filter(role=role)
+    if selected_batch_id:
+        users = users.filter(studentprofile__batch_id=selected_batch_id)
+
+    from apps.batches.models import Batch
+    batches = Batch.objects.all()
 
     return render(request, 'accounts/user_list.html', {
         'users': users,
         'query': query,
         'role': role,
+        'batches': batches,
+        'selected_batch_id': selected_batch_id,
     })
 
 
@@ -187,12 +202,18 @@ def user_add(request):
         return HttpResponseForbidden("Invalid role.")
 
     if request.method == 'POST':
-        form = form_class(request.POST)
+        if role == 'student':
+            form = form_class(request.POST, is_admin=True)
+        else:
+            form = form_class(request.POST)
         if form.is_valid():
             form.save()
             return redirect('user_list')
     else:
-        form = form_class()
+        if role == 'student':
+            form = form_class(is_admin=True)
+        else:
+            form = form_class()
 
     return render(request, 'accounts/user_add.html', {'form': form, 'role': role})
 
@@ -207,12 +228,18 @@ def user_edit(request, user_id):
         return HttpResponseForbidden("Invalid user type.")
 
     if request.method == 'POST':
-        form = form_class(request.POST, instance=user)
+        if user.role == 'student':
+            form = form_class(request.POST, instance=user, is_admin=True)
+        else:
+            form = form_class(request.POST, instance=user)
         if form.is_valid():
             form.save()
             return redirect('user_list')
     else:
-        form = form_class(instance=user)
+        if user.role == 'student':
+            form = form_class(instance=user, is_admin=True)
+        else:
+            form = form_class(instance=user)
 
     return render(request, 'accounts/user_edit.html', {'form': form, 'user': user})
 

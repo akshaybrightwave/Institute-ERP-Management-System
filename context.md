@@ -408,4 +408,47 @@ All views are secured using the `@admin_required` decorator to restrict access s
 * Added links for Centers, Courses, and Batches to the main navbar (`base.html`) for authenticated Admin users.
 * Added a new **ERP Management** cards section inside the Admin Dashboard page (`admin_dashboard.html`).
 
+---
+
+## ERP Phase 1 & 1.5 Progress Summary
+
+### ERP Phase 1 Completed
+* **New Applications:** `centers`, `courses`, `batches`
+* **New Models:**
+  * **Center:** `name`, `code` (unique), `address`, `phone`
+  * **Course:** `center` (FK → Center), `name`, `duration`, `fees`
+  * **Batch:** `course` (FK → Course), `teacher` (FK → TeacherProfile, nullable), `name`, `start_date`, `end_date`
+* **StudentProfile Update:** Added `batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True)`
+
+### ERP Phase 1.5 Completed
+* **Frontend CRUD Modules (Admin Only):**
+  * **Centers:** List, Create, Update, Delete
+  * **Courses:** List, Create, Update, Delete
+  * **Batches:** List, Create, Update, Delete
+* **Access Control:** Protected using existing `@admin_required` decorator. Students and Teachers are denied access.
+* **Navigation Updates:** Added "Centers", "Courses", and "Batches" links to Navbar and Admin Dashboard.
+
+### Verification Status
+* **Successfully Tested:** Center CRUD, Course CRUD, Batch CRUD, Admin Permissions, Navigation, and Database Persistence.
+* **Status:** ERP Phase 1 = COMPLETE | ERP Phase 1.5 = COMPLETE
+
+### Current Project Architecture
+
+```
+User
+├── StudentProfile
+│      └── Batch
+│             └── Course
+│                    └── Center
+│
+├── TeacherProfile
+│      └── Batch
+│
+└── Existing Exam System
+```
+
+### Next Planned Phase (ERP Phase 2)
+* **Goal:** Batch-wise Exam Assignment. Assign Exams to specific Batches so only students belonging to assigned batches can attempt those exams. (Not yet implemented, documentation only).
+
+
 

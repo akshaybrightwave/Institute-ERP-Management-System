@@ -37,7 +37,7 @@
                             <td class="fw-semibold">{{ course.name }}</td>
                             <td><span class="badge bg-light text-dark border">{{ course.center.name }}</span></td>
                             <td>{{ course.duration }}</td>
-                            <td class="fw-bold text-success">${{ course.fees }}</td>
+                            <td class="fw-bold text-success">₹{{ course.fees }}</td>
                             <td class="pe-4 text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="{% url 'course_edit' course.id %}">
                                     <i class="bi bi-pencil-square"></i> Edit

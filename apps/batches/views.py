@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db.models import Count
 from apps.accounts.views import admin_required
 from .models import Batch
 from .forms import BatchForm
@@ -7,8 +8,15 @@ from .forms import BatchForm
 
 @admin_required
 def batch_list(request):
-    batches = Batch.objects.all().select_related('course', 'teacher')
+    batches = Batch.objects.all().select_related('course', 'teacher').annotate(student_count=Count('studentprofile'))
     return render(request, 'batches/batch_list.html', {'batches': batches})
+
+
+@admin_required
+def batch_detail(request, pk):
+    batch = get_object_or_404(Batch.objects.select_related('course', 'teacher'), pk=pk)
+    students = batch.studentprofile_set.all()
+    return render(request, 'batches/batch_detail.html', {'batch': batch, 'students': students})
 
 
 @admin_required

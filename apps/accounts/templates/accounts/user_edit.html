@@ -1,39 +1,137 @@
 {% extends 'accounts/base.html' %}
 {% load widget_tweaks %}
 
-{% block title %}Edit User | Examly{% endblock %}
+{% block title %}Edit {{ user.get_role_display }} | Examly{% endblock %}
 
 {% block content %}
 <div class="container py-2">
     <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card border-0">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
                         <div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
-                        <h3 class="fw-bold mb-1">Edit User</h3>
+                        <h3 class="fw-bold mb-1">Edit {{ user.get_role_display }}</h3>
                         <p class="text-muted">{{ user.username }} &middot; <span class="badge-soft-primary">{{ user.get_role_display }}</span></p>
                     </div>
 
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                <p class="mb-0 small">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
                     <form method="post">
                         {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label">{{ field.label }}</label>
-                                {{ field|add_class:"form-control" }}
-                                {% if field.help_text %}
-                                    <small class="text-muted">{{ field.help_text|safe }}</small>
-                                {% endif %}
-                                {% for error in field.errors %}
-                                    <p class="text-danger small mt-1 mb-0">{{ error }}</p>
-                                {% endfor %}
+                        
+                        {% if user.role == 'student' %}
+                            <!-- Student Form Design -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Username <span class="text-danger">*</span></label>
+                                    {{ form.username|add_class:"form-control" }}
+                                    {% for error in form.username.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                                    {{ form.email|add_class:"form-control" }}
+                                    {% for error in form.email.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
                             </div>
-                        {% endfor %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                                    {{ form.password1|add_class:"form-control" }}
+                                    {% if form.password1.help_text %}
+                                        <small class="text-muted d-block mt-1">{{ form.password1.help_text|safe }}</small>
+                                    {% endif %}
+                                    {% for error in form.password1.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                    {{ form.password2|add_class:"form-control" }}
+                                    {% for error in form.password2.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Batch</label>
+                                    {{ form.batch|add_class:"form-select" }}
+                                    {% for error in form.batch.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-select" disabled>
+                                        <option selected>Active</option>
+                                    </select>
+                                    <small class="text-muted">Status is automatically set to active for new admissions.</small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Teacher Form Design -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Username <span class="text-danger">*</span></label>
+                                    {{ form.username|add_class:"form-control" }}
+                                    {% for error in form.username.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                                    {{ form.email|add_class:"form-control" }}
+                                    {% for error in form.email.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                                    {{ form.password1|add_class:"form-control" }}
+                                    {% if form.password1.help_text %}
+                                        <small class="text-muted d-block mt-1">{{ form.password1.help_text|safe }}</small>
+                                    {% endif %}
+                                    {% for error in form.password1.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                    {{ form.password2|add_class:"form-control" }}
+                                    {% for error in form.password2.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Assigned Batch</label>
+                                    <select class="form-select" disabled>
+                                        <option selected>Select Batch</option>
+                                    </select>
+                                    <small class="text-muted">Batch assignment for teachers is managed in Batch settings.</small>
+                                </div>
+                            </div>
+                        {% endif %}
+
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary fw-bold flex-grow-1 py-2">
-                                <i class="bi bi-save me-1"></i> Save Changes
+                                <i class="bi bi-check-circle me-1"></i> Save {{ user.get_role_display }}
                             </button>
-                            <a href="{% url 'user_list' %}" class="btn btn-outline-primary py-2">
+                            <a href="{% url 'user_list' %}" class="btn btn-outline-primary py-2 px-4">
                                 <i class="bi bi-x-circle me-1"></i> Cancel
                             </a>
                         </div>

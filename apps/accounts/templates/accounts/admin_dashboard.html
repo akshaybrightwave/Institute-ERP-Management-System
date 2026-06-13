@@ -14,8 +14,35 @@
     </div>
 
     <!-- Stats -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
+    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6">
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-building"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_centers }}</div>
+                    <div class="stat-label">Total Centers</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_courses }}</div>
+                    <div class="stat-label">Total Courses</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_batches }}</div>
+                    <div class="stat-label">Total Batches</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
             <div class="stat-card">
                 <div class="stat-icon"><i class="bi bi-mortarboard-fill"></i></div>
                 <div>
@@ -24,7 +51,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="stat-card">
                 <div class="stat-icon"><i class="bi bi-person-workspace"></i></div>
                 <div>
@@ -33,21 +60,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="stat-card">
                 <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
                 <div>
                     <div class="stat-value">{{ total_exams }}</div>
                     <div class="stat-label">Total Exams</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-envelope-paper-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ unread_feedback_count }}</div>
-                    <div class="stat-label">Unread Messages</div>
                 </div>
             </div>
         </div>

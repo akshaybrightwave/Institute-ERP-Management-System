@@ -26,6 +26,7 @@
                             <th>Name</th>
                             <th>Course</th>
                             <th>Teacher</th>
+                            <th>Students</th>
                             <th>Start Date</th>
                             <th>End Date</th>
                             <th class="pe-4 text-end">Actions</th>
@@ -44,9 +45,15 @@
                                     <span class="text-muted small">Not Assigned</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                <span class="badge-soft-primary">{{ batch.student_count }} Students</span>
+                            </td>
                             <td>{{ batch.start_date }}</td>
                             <td>{{ batch.end_date }}</td>
                             <td class="pe-4 text-end">
+                                <a class="btn btn-sm btn-outline-info" href="{% url 'batch_detail' batch.id %}">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
                                 <a class="btn btn-sm btn-outline-primary" href="{% url 'batch_edit' batch.id %}">
                                     <i class="bi bi-pencil-square"></i> Edit
                                 </a>

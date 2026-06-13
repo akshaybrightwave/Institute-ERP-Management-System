@@ -22,19 +22,27 @@
     <div class="card border-0 mb-3">
         <div class="card-body">
             <form method="get" class="row g-2 align-items-center">
-                <div class="col-sm-6 col-md-5">
+                <div class="col-md-4">
                     <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by username or email">
                 </div>
-                <div class="col-sm-4 col-md-3">
+                <div class="col-md-3">
                     <select name="role" class="form-select">
                         <option value="">All roles</option>
                         <option value="student" {% if role == 'student' %}selected{% endif %}>Student</option>
                         <option value="teacher" {% if role == 'teacher' %}selected{% endif %}>Teacher</option>
                     </select>
                 </div>
-                <div class="col-auto d-flex gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i> Search</button>
-                    {% if query or role %}
+                <div class="col-md-3">
+                    <select name="batch" class="form-select">
+                        <option value="">All Batches</option>
+                        {% for b in batches %}
+                            <option value="{{ b.id }}" {% if b.id|stringformat:"s" == selected_batch_id %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i> Search</button>
+                    {% if query or role or selected_batch_id %}
                         <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Clear</a>
                     {% endif %}
                 </div>
