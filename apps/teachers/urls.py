@@ -14,4 +14,7 @@ urlpatterns = [
     path('teacher/exam/<int:exam_id>/submissions/', views.view_submissions, name='view_submissions'),
     path('teacher/exam/<int:exam_id>/submissions/export/', views.export_submissions_csv, name='export_submissions_csv'),
     path('teacher/answers/<int:attempt_id>/', views.view_student_answers, name='view_student_answers'),
+    
+    # Teacher Batch details
+    path('batches/<int:pk>/', views.teacher_batch_detail, name='teacher_batch_detail'),
 ]

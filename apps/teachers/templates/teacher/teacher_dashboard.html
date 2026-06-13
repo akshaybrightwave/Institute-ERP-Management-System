@@ -69,6 +69,24 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
+                        <div>
+                            <div class="stat-value">{{ total_assigned_batches }}</div>
+                            <div class="stat-label">Assigned Batches</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-people"></i></div>
+                        <div>
+                            <div class="stat-value">{{ total_students_across_batches }}</div>
+                            <div class="stat-label">Total Students</div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="col-12">
                     <div class="dashboard-action-card text-center h-auto py-4">
@@ -79,6 +97,56 @@
                             <i class="bi bi-plus-circle me-1"></i> Create New Exam
                         </a>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assigned Batches Section -->
+    <div class="mt-5">
+        <h5 class="fw-bold mb-3"><i class="bi bi-calendar-event text-primary me-2"></i>My Assigned Batches</h5>
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-examly table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Batch Name</th>
+                                <th>Course</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Total Students</th>
+                                <th class="pe-4 text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for batch in assigned_batches %}
+                            <tr>
+                                <td class="ps-4 fw-semibold text-dark">{{ batch.name }}</td>
+                                <td>{{ batch.course.name }}</td>
+                                <td>{{ batch.start_date }}</td>
+                                <td>{{ batch.end_date }}</td>
+                                <td>
+                                    <span class="badge bg-primary rounded-pill px-3">{{ batch.student_count }} Students</span>
+                                </td>
+                                <td class="pe-4 text-end">
+                                    <a href="{% url 'teacher_batch_detail' batch.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i> View Students
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="p-0">
+                                    <div class="empty-state py-4">
+                                        <i class="bi bi-calendar-x"></i>
+                                        <p class="mb-0">No batches assigned to you yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

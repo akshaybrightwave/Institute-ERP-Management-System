@@ -50,14 +50,40 @@ def teacher_dashboard(request):
     for exam in exams:
         exam.pass_rate = round((exam.pass_count / exam.completed_count) * 100, 1) if exam.completed_count else None
 
+    # Teacher Batches and Students metrics
+    from apps.batches.models import Batch
+    assigned_batches = Batch.objects.filter(teacher=profile).select_related('course').annotate(student_count=Count('studentprofile'))
+    total_assigned_batches = assigned_batches.count()
+    total_students_across_batches = assigned_batches.aggregate(total=Count('studentprofile'))['total'] or 0
+
     context = {
         'profile': profile,
         'exams': exams,
         'total_exams': total_exams,
         'total_submissions': total_submissions,
         'total_questions': total_questions,
+        'assigned_batches': assigned_batches,
+        'total_assigned_batches': total_assigned_batches,
+        'total_students_across_batches': total_students_across_batches,
     }
     return render(request, 'teacher/teacher_dashboard.html', context)
+
+
+@login_required
+def teacher_batch_detail(request, pk):
+    if request.user.role != 'teacher':
+        return redirect('login')
+
+    profile = get_object_or_404(TeacherProfile, user=request.user)
+    from apps.batches.models import Batch
+    # SECURITY: Validate ownership
+    batch = get_object_or_404(Batch.objects.select_related('course', 'teacher'), pk=pk, teacher=profile)
+    students = batch.studentprofile_set.all()
+
+    return render(request, 'teacher/batch_detail.html', {
+        'batch': batch,
+        'students': students,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +115,15 @@ def teacher_profile_detail(request):
         return redirect('login')
 
     profile = get_object_or_404(TeacherProfile, user=request.user)
-    return render(request, 'teacher/teacher_profile_detail.html', {'profile': profile})
+    from apps.batches.models import Batch
+    assigned_batches = Batch.objects.filter(teacher=profile).select_related('course')
+    assigned_count = assigned_batches.count()
+
+    return render(request, 'teacher/teacher_profile_detail.html', {
+        'profile': profile,
+        'assigned_batches': assigned_batches,
+        'assigned_count': assigned_count,
+    })
 
 
 @login_required
