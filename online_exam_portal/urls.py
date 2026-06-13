@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
@@ -44,6 +44,11 @@ urlpatterns = [
     path('questions/<int:question_id>/edit/', exam_views.edit_question, name='edit_question'),
     path('questions/<int:question_id>/delete/', exam_views.delete_question, name='delete_question'),
 
+    # Option CRUD (shared for Admin + Teacher)
+    path('questions/<int:question_id>/options/add/', exam_views.add_option, name='add_option'),
+    path('options/<int:option_id>/edit/', exam_views.edit_option, name='edit_option'),
+    path('options/<int:option_id>/delete/', exam_views.delete_option, name='delete_option'),
+
     # Student exam URLs
     path('student_dashboard/', student_views.student_dashboard, name='student_dashboard'),
     path('student_profile/', student_views.student_profile, name='student_profile'),
@@ -69,11 +74,12 @@ urlpatterns = [
     path('teacher/exam/<int:exam_id>/submissions/', teacher_views.view_submissions, name='view_submissions'),
     path('teacher/exam/<int:exam_id>/submissions/export/', teacher_views.export_submissions_csv, name='export_submissions_csv'),
     path('teacher/answers/<int:attempt_id>/', teacher_views.view_student_answers, name='view_student_answers'),
-    
-    
-    
-    
-    
+
+    # ERP Foundation CRUD
+    path('centers/', include('apps.centers.urls')),
+    path('courses/', include('apps.courses.urls')),
+    path('batches/', include('apps.batches.urls')),
+
     # URL 1: The page where they type their email address
     path('password_reset/', auth_views.PasswordResetView.as_view(
         template_name='accounts/password_reset.html'), name='password_reset'),

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt
-from .forms import ExamForm, QuestionForm
+from .forms import ExamForm, QuestionForm, OptionForm
 from apps.accounts.views import admin_required
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test, login_required
@@ -162,8 +162,16 @@ def edit_question(request, question_id):
     form = QuestionForm(request.POST or None, instance=question)
     if form.is_valid():
         form.save()
+        messages.success(request, "Question updated successfully!")
         return redirect('question_list', exam_id=question.exam.id)
-    return render(request, 'exam/edit_question.html', {'form': form, 'exam': question.exam})
+        
+    options = question.options.all()
+    return render(request, 'exam/edit_question.html', {
+        'form': form, 
+        'exam': question.exam, 
+        'question': question, 
+        'options': options
+    })
 
 
 @user_passes_test(is_admin_or_teacher)
@@ -176,6 +184,69 @@ def delete_question(request, question_id):
     exam_id = question.exam.id
     question.delete()
     return redirect('question_list', exam_id=exam_id)
+
+
+# ---------------------------------------------------------------------------
+# Option CRUD  (Admin + Teacher)
+# ---------------------------------------------------------------------------
+
+@user_passes_test(is_admin_or_teacher)
+def add_option(request, question_id):
+    question = get_object_or_404(Question, id=question_id)
+
+    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+        return redirect('exam_list')
+
+    if request.method == 'POST':
+        form = OptionForm(request.POST)
+        if form.is_valid():
+            option = form.save(commit=False)
+            option.question = question
+            option.save()
+            messages.success(request, "Option added successfully!")
+            return redirect('edit_question', question_id=question.id)
+    else:
+        form = OptionForm()
+
+    return render(request, 'exam/option_form.html', {
+        'form': form,
+        'question': question,
+        'action': 'Add Option'
+    })
+
+
+@user_passes_test(is_admin_or_teacher)
+def edit_option(request, option_id):
+    option = get_object_or_404(Option, id=option_id)
+    question = option.question
+
+    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+        return redirect('exam_list')
+
+    form = OptionForm(request.POST or None, instance=option)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Option updated successfully!")
+        return redirect('edit_question', question_id=question.id)
+
+    return render(request, 'exam/option_form.html', {
+        'form': form,
+        'question': question,
+        'action': 'Edit Option'
+    })
+
+
+@user_passes_test(is_admin_or_teacher)
+def delete_option(request, option_id):
+    option = get_object_or_404(Option, id=option_id)
+    question = option.question
+
+    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+        return redirect('exam_list')
+
+    option.delete()
+    messages.success(request, "Option deleted successfully!")
+    return redirect('edit_question', question_id=question.id)
 
     # NOTE: All student views  → apps/students/views.py
     #       All teacher views  → apps/teachers/views.py

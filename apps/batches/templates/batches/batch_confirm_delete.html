@@ -1,0 +1,31 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Delete Batch | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0">
+                <div class="card-body p-4 p-md-5 text-center">
+                    <div class="feature-icon bg-danger text-white"><i class="bi bi-exclamation-triangle"></i></div>
+                    <h3 class="fw-bold mb-3">Delete Batch</h3>
+                    <p class="text-muted mb-4">Are you sure you want to delete the batch <strong>{{ batch.name }}</strong>? This action cannot be undone.</p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button type="submit" class="btn btn-danger px-4 py-2">
+                                <i class="bi bi-trash me-1"></i> Delete Confirm
+                            </button>
+                            <a href="{% url 'batch_list' %}" class="btn btn-outline-secondary px-4 py-2">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

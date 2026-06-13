@@ -9,6 +9,12 @@ class StudentProfile(models.Model):
     email = models.EmailField()
     profile_picture = models.ImageField(upload_to='student_profiles/', blank=True, null=True)
     bio = models.TextField(blank=True)
+    batch = models.ForeignKey(
+        'batches.Batch',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
 
     class Meta:
         # Pin to the existing DB table so no ALTER TABLE is needed.

@@ -74,6 +74,15 @@
               <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
             </li>
             <li class="nav-item">
+              <a class="nav-link {% if 'center' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'center_list' %}">Centers</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if 'course' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'course_list' %}">Courses</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if 'batch' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'batch_list' %}">Batches</a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'feedback_list' or request.resolver_match.url_name == 'feedback_detail' %}active{% endif %}" href="{% url 'feedback_list' %}">Feedback</a>
             </li>
           {% elif user.role == 'teacher' %}

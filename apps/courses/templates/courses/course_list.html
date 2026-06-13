@@ -1,0 +1,66 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Course Management | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Course Management</h2>
+            <p>Manage courses offered by your institute across different centers.</p>
+        </div>
+        <div>
+            <a href="{% url 'course_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle-fill me-1"></i> Add New Course
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Name</th>
+                            <th>Center</th>
+                            <th>Duration</th>
+                            <th>Fees</th>
+                            <th class="pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in courses %}
+                        <tr>
+                            <td class="ps-4">{{ course.id }}</td>
+                            <td class="fw-semibold">{{ course.name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ course.center.name }}</span></td>
+                            <td>{{ course.duration }}</td>
+                            <td class="fw-bold text-success">${{ course.fees }}</td>
+                            <td class="pe-4 text-end">
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'course_edit' course.id %}">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                <a class="btn btn-sm btn-outline-danger" href="{% url 'course_delete' course.id %}">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="p-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-journal-bookmark"></i>
+                                    <p class="mb-0">No courses found yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
