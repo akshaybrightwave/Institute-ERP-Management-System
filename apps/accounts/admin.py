@@ -1,5 +1,5 @@
 from django.contrib import admin
-from accounts.models import User, Feedback
+from apps.accounts.models import User, Feedback
 
 # Register your models here.
 

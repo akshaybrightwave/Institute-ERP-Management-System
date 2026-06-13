@@ -1,5 +1,6 @@
 from django import forms
-from .models import Exam, Option,Question
+from .models import Exam, Option, Question
+
 
 class ExamForm(forms.ModelForm):
     date = forms.DateTimeField(
@@ -29,16 +30,17 @@ class ExamForm(forms.ModelForm):
             'is_published': forms.CheckboxInput(attrs={'class': 'form-check-input ms-2'}),
         }
 
+
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
-        fields = ['question_text', 'marks'] # Only these fields exist now!
+        fields = ['question_text', 'marks']
         widgets = {
             'question_text': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'marks': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
-# 🌟 NEW: Option Form (For the dynamic options)
+
 class OptionForm(forms.ModelForm):
     class Meta:
         model = Option
@@ -48,39 +50,5 @@ class OptionForm(forms.ModelForm):
             'is_correct': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
-
-from .models import StudentProfile
-
-class StudentProfileForm(forms.ModelForm):
-    class Meta:
-        model = StudentProfile
-        fields = ['full_name', 'phone', 'email', 'profile_picture', 'bio']
-        widgets = {
-            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'bio': forms.Textarea(attrs={'class': 'form-control'}),
-        }
-
-from .models import TeacherProfile
-class TeacherProfileForm(forms.ModelForm):
-    class Meta:
-        model = TeacherProfile
-        fields = ['full_name', 'phone', 'profile_picture','bio','email']  # add more fields if you have
-        widgets = {
-            'full_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control'}),
-            'profile_picture': forms.FileInput(attrs={'class': 'form-control'}),
-            'bio': forms.Textarea(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-
-        }
-
-
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.role = 'teacher'  # Force role to be teacher
-        if commit:
-            user.save()
-        return user
-
+    # NOTE: StudentProfileForm → apps/students/forms.py
+    #       TeacherProfileForm → apps/teachers/forms.py

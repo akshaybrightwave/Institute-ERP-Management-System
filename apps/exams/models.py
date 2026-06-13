@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-# Create your models here.
 
 class Exam(models.Model):
     title = models.CharField(max_length=255)
@@ -18,10 +17,10 @@ class Exam(models.Model):
     allow_retake = models.BooleanField(default=False, help_text="Allow students to reattempt this exam")
 
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.CASCADE, 
-        null=True, 
-        blank=True, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name='exams'
     )
 
@@ -31,27 +30,24 @@ class Exam(models.Model):
 
 class Question(models.Model):
     exam = models.ForeignKey(
-        Exam, 
-        on_delete=models.CASCADE, 
+        Exam,
+        on_delete=models.CASCADE,
         related_name='questions'
     )
     question_text = models.TextField()
     marks = models.PositiveIntegerField(default=1)
 
-
     def __str__(self):
         return self.question_text
 
 
-# 🌟 NEW MODEL: Dynamic Options
 class Option(models.Model):
     question = models.ForeignKey(
-        Question, 
-        on_delete=models.CASCADE, 
+        Question,
+        on_delete=models.CASCADE,
         related_name='options'
     )
     text = models.CharField(max_length=255)
-    
     # The teacher simply checks a box if this option is the right answer
     is_correct = models.BooleanField(default=False)
 
@@ -59,16 +55,10 @@ class Option(models.Model):
         return self.text
 
 
-#for Student
-
-from django.contrib.auth.models import User
-from django.conf import settings
-
-
 class StudentExamAttempt(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_attempts')
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='attempts')
-    
+
     start_time = models.DateTimeField(auto_now_add=True)
     submitted_at = models.DateTimeField(auto_now=True)
     score = models.FloatField(default=0.0)
@@ -76,6 +66,7 @@ class StudentExamAttempt(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.exam.title}"
+
 
 class StudentAnswer(models.Model):
     attempt = models.ForeignKey(StudentExamAttempt, on_delete=models.CASCADE, related_name='answers')
@@ -85,26 +76,6 @@ class StudentAnswer(models.Model):
     def __str__(self):
         return f"Answer to {self.question.id} by {self.attempt.student.username}"
 
-
-class StudentProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    full_name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15, blank=True)
-    email=models.EmailField()
-    profile_picture = models.ImageField(upload_to='student_profiles/', blank=True, null=True)
-    bio = models.TextField(blank=True)
-
-    def __str__(self):
-        return self.full_name
-
-    
-class TeacherProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    full_name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15, blank=True,  null=True)
-    email = models.EmailField()
-    profile_picture = models.ImageField(upload_to='teacher_profiles/', blank=True, null=True)
-    bio = models.TextField(blank=True,  null=True)
-
-    def __str__(self):
-        return self.full_name
+    # NOTE: StudentProfile and TeacherProfile have been moved to:
+    #   apps/students/models.py  →  StudentProfile
+    #   apps/teachers/models.py  →  TeacherProfile

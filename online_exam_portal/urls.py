@@ -1,10 +1,13 @@
 from django.contrib import admin
 from django.urls import path
-from accounts import views as accounts_views
-from exam import views as exam_views
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+
+from apps.accounts import views as accounts_views
+from apps.exams import views as exam_views
+from apps.students import views as student_views
+from apps.teachers import views as teacher_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -42,30 +45,30 @@ urlpatterns = [
     path('questions/<int:question_id>/delete/', exam_views.delete_question, name='delete_question'),
 
     # Student exam URLs
-    path('student_dashboard/', exam_views.student_dashboard, name='student_dashboard'),
-    path('student_profile/', exam_views.student_profile, name='student_profile'),
-    path('student_profile_edit/', exam_views.edit_student_profile, name='edit_student_profile'),
-    path('student_exams/', exam_views.student_exam_list, name='student_exam_list'),
-    path('student_exam/<int:exam_id>/attempt/', exam_views.attempt_exam, name='attempt_exam'),
-    path('student_exam/<int:exam_id>/submit/', exam_views.submit_exam, name='submit_exam'),
-    path('student_exam_result/<int:attempt_id>/', exam_views.student_exam_result, name='student_exam_result'),
-    path('student_exam_history/', exam_views.student_exam_history, name='student_exam_history'),
-    path('student_exam_attempt/delete/<int:attempt_id>/', exam_views.delete_student_exam_attempt, 
+    path('student_dashboard/', student_views.student_dashboard, name='student_dashboard'),
+    path('student_profile/', student_views.student_profile, name='student_profile'),
+    path('student_profile_edit/', student_views.edit_student_profile, name='edit_student_profile'),
+    path('student_exams/', student_views.student_exam_list, name='student_exam_list'),
+    path('student_exam/<int:exam_id>/attempt/', student_views.attempt_exam, name='attempt_exam'),
+    path('student_exam/<int:exam_id>/submit/', student_views.submit_exam, name='submit_exam'),
+    path('student_exam_result/<int:attempt_id>/', student_views.student_exam_result, name='student_exam_result'),
+    path('student_exam_history/', student_views.student_exam_history, name='student_exam_history'),
+    path('student_exam_attempt/delete/<int:attempt_id>/', student_views.delete_student_exam_attempt, 
          name='delete_student_exam_attempt'),
-    path('exam/<int:exam_id>/instructions/', exam_views.exam_instructions_view, name='exam_instructions'),
+    path('exam/<int:exam_id>/instructions/', student_views.exam_instructions_view, name='exam_instructions'),
 
     # Teacher Profile + Dashboard
-    path('teacher_dashboard/', exam_views.teacher_dashboard, name='teacher_dashboard'),
-    path('edit_profile/', exam_views.edit_teacher_profile, name='edit_teacher_profile'),
-    path('teacher_profile/', exam_views.teacher_profile, name='teacher_profile'),
-    path('profile/delete/', exam_views.delete_teacher_profile, name='delete_teacher_profile'),
-    path('profile/view/', exam_views.teacher_profile_detail, name='teacher_profile_detail'),
+    path('teacher_dashboard/', teacher_views.teacher_dashboard, name='teacher_dashboard'),
+    path('edit_profile/', teacher_views.edit_teacher_profile, name='edit_teacher_profile'),
+    path('teacher_profile/', teacher_views.teacher_profile, name='teacher_profile'),
+    path('profile/delete/', teacher_views.delete_teacher_profile, name='delete_teacher_profile'),
+    path('profile/view/', teacher_views.teacher_profile_detail, name='teacher_profile_detail'),
 
     # Teacher Exam Dashboard (Submissions & Answers only)
-    path('teacher/exam_dashboard/', exam_views.teacher_exam_dashboard, name='teacher_exam_dashboard'),
-    path('teacher/exam/<int:exam_id>/submissions/', exam_views.view_submissions, name='view_submissions'),
-    path('teacher/exam/<int:exam_id>/submissions/export/', exam_views.export_submissions_csv, name='export_submissions_csv'),
-    path('teacher/answers/<int:attempt_id>/', exam_views.view_student_answers, name='view_student_answers'),
+    path('teacher/exam_dashboard/', teacher_views.teacher_exam_dashboard, name='teacher_exam_dashboard'),
+    path('teacher/exam/<int:exam_id>/submissions/', teacher_views.view_submissions, name='view_submissions'),
+    path('teacher/exam/<int:exam_id>/submissions/export/', teacher_views.export_submissions_csv, name='export_submissions_csv'),
+    path('teacher/answers/<int:attempt_id>/', teacher_views.view_student_answers, name='view_student_answers'),
     
     
     

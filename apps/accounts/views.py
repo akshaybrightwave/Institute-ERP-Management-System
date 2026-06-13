@@ -6,7 +6,8 @@ from django.contrib import messages
 
 from django.core.paginator import Paginator
 from django.db.models import Q
-from exam.models import Exam, TeacherProfile
+from apps.exams.models import Exam
+from apps.teachers.models import TeacherProfile
 
 # Create your views here.
 

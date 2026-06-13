@@ -51,8 +51,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'widget_tweaks',
-    'accounts',
-    'exam'
+    
+    # Custom apps
+    'apps.accounts',
+    'apps.exams',
+    'apps.students',
+    'apps.teachers',
 ]
 
 MIDDLEWARE = [
