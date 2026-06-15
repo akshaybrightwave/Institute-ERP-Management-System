@@ -88,13 +88,23 @@
                     </div>
                 </div>
 
-                <div class="col-12">
-                    <div class="dashboard-action-card text-center h-auto py-4">
+                <div class="col-md-6">
+                    <div class="dashboard-action-card text-center h-100 py-4">
                         <div class="feature-icon"><i class="bi bi-journal-plus"></i></div>
                         <h5 class="fw-bold">Exam Management</h5>
                         <p class="text-muted small mb-3">Create new exams or jump back into the ones you've already built.</p>
                         <a href="{% url 'add_exam' %}" class="btn btn-primary">
                             <i class="bi bi-plus-circle me-1"></i> Create New Exam
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="dashboard-action-card text-center h-100 py-4">
+                        <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
+                        <h5 class="fw-bold">Attendance Management</h5>
+                        <p class="text-muted small mb-3">Filter, search, and view attendance logs across all batches.</p>
+                        <a href="{% url 'attendance_list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-right-circle me-1"></i> Go to Attendance
                         </a>
                     </div>
                 </div>
@@ -130,6 +140,9 @@
                                     <span class="badge bg-primary rounded-pill px-3">{{ batch.student_count }} Students</span>
                                 </td>
                                 <td class="pe-4 text-end">
+                                    <a href="{% url 'mark_attendance' batch.id %}" class="btn btn-sm btn-outline-success me-1">
+                                        <i class="bi bi-check2-square me-1"></i> Mark Attendance
+                                    </a>
                                     <a href="{% url 'teacher_batch_detail' batch.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-eye me-1"></i> View Students
                                     </a>

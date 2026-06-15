@@ -61,6 +61,84 @@
                 </div>
             </div>
 
+            <!-- Attendance Summary -->
+            <div class="row g-4 mb-4">
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-percent text-success"></i></div>
+                        <div>
+                            <div class="stat-value">{{ attendance_percentage }}%</div>
+                            <div class="stat-label">Attendance Rate</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-calendar-check text-success"></i></div>
+                        <div>
+                            <div class="stat-value">{{ present_days }}</div>
+                            <div class="stat-label">Days Present</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-calendar-x text-danger"></i></div>
+                        <div>
+                            <div class="stat-value">{{ absent_days }}</div>
+                            <div class="stat-label">Days Absent</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-primary me-2"></i>Recent Attendance</h5>
+            <div class="card border-0 mb-4">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-examly align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-4">Date</th>
+                                    <th>Status</th>
+                                    <th class="pe-4">Marked By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for att in recent_attendances %}
+                                <tr>
+                                    <td class="ps-4">{{ att.date }}</td>
+                                    <td>
+                                        {% if att.status == 'present' %}
+                                        <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Present</span>
+                                        {% else %}
+                                        <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Absent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-4">
+                                        {% if att.marked_by %}
+                                        {{ att.marked_by.full_name }}
+                                        {% else %}
+                                        <span class="text-muted small">Admin</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="p-0">
+                                        <div class="empty-state py-4">
+                                            <i class="bi bi-calendar-x"></i>
+                                            <p class="mb-0">No attendance marked yet.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Recent Exam Attempts</h5>
             <div class="card border-0">
                 <div class="card-body p-0">

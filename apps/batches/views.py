@@ -17,7 +17,19 @@ def batch_detail(request, pk):
     batch = get_object_or_404(Batch.objects.select_related('course', 'teacher'), pk=pk)
     students = batch.studentprofile_set.all()
     exams = batch.exams.all()
-    return render(request, 'batches/batch_detail.html', {'batch': batch, 'students': students, 'exams': exams})
+    
+    from django.db.models import Q, Count
+    attendance_history = batch.attendances.values('date').annotate(
+        present_count=Count('id', filter=Q(status='present')),
+        absent_count=Count('id', filter=Q(status='absent'))
+    ).order_by('-date')
+    
+    return render(request, 'batches/batch_detail.html', {
+        'batch': batch,
+        'students': students,
+        'exams': exams,
+        'attendance_history': attendance_history
+    })
 
 
 @admin_required

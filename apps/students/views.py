@@ -292,11 +292,35 @@ def student_profile(request):
     else:
         average_score = 0
 
+    try:
+        profile = student.studentprofile
+    except StudentProfile.DoesNotExist:
+        profile = None
+
+    present_days = 0
+    absent_days = 0
+    attendance_percentage = 0.0
+    recent_attendances = []
+
+    if profile:
+        from apps.attendance.models import Attendance
+        student_attendances = Attendance.objects.filter(student=profile)
+        present_days = student_attendances.filter(status='present').count()
+        absent_days = student_attendances.filter(status='absent').count()
+        total_days = present_days + absent_days
+        if total_days > 0:
+            attendance_percentage = round((present_days / total_days) * 100, 1)
+        recent_attendances = student_attendances.order_by('-date')[:5]
+
     return render(request, 'student/student_profile.html', {
         'student': student,
         'attempts': attempts,
         'total_attempts': total_attempts,
         'average_score': round(average_score, 2),
+        'present_days': present_days,
+        'absent_days': absent_days,
+        'attendance_percentage': attendance_percentage,
+        'recent_attendances': recent_attendances,
     })
 
 

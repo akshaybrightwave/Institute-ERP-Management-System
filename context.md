@@ -137,8 +137,9 @@ Center
 └── Course
     └── Batch
         ├── Teacher (Assigned to Batch)
-        └── Students (Enrolled in Batch)
-            └── Exams (Completed / Attempted)
+        └── Student (Enrolled in Batch)
+            ├── Attendance (History / Records)
+            └── Exam (Completed / Attempted)
 ```
 
 ---
@@ -214,3 +215,43 @@ Center
   * `Students Covered` (Total student count across the teacher's batches)
 * **Student Dashboard:**
   * `Enrolled Exams` (Count of published exams assigned specifically to the student's batch)
+
+---
+
+## 10. ERP Phase 5 — Attendance Management
+
+### 10.1 Attendance App Structure
+The `attendance` app is structured as follows:
+* **Models:** `apps/attendance/models.py` defines the `Attendance` model.
+* **Views:** `apps/attendance/views.py` contains Function Based Views for marking batch attendance and displaying the filtered attendance list.
+* **URLs:** `apps/attendance/urls.py` configures routes for list and marking views.
+* **Templates:**
+  * `apps/attendance/templates/attendance/mark_attendance.html`
+  * `apps/attendance/templates/attendance/attendance_list.html`
+
+### 10.2 Attendance Model
+The `Attendance` model tracks student attendance status per batch and date:
+* `batch` (ForeignKey → `Batch`, on_delete=CASCADE)
+* `student` (ForeignKey → `StudentProfile`, on_delete=CASCADE)
+* `date` (DateField)
+* `status` (CharField with choices `present`, `absent`)
+* `marked_by` (ForeignKey → `TeacherProfile`, null=True, blank=True, on_delete=models.SET_NULL)
+* `created_at` (DateTimeField, auto_now_add=True)
+* Unique Constraint: `unique_together = ('student', 'date')` to prevent duplicate attendance logs.
+
+### 10.3 URLs Added
+* `/attendance/` - `attendance_list` (Attendance Management list page)
+* `/attendance/mark/<int:batch_id>/` - `mark_attendance` (Mark attendance screen)
+
+### 10.4 Views & Logic
+* `attendance_list(request)`: Filters and displays attendance logs. Admins can view all batches/students. Teachers can only view attendance for students and batches assigned to them.
+* `mark_attendance(request, batch_id)`: Renders table of students in the batch for a selected date. Performs `update_or_create` on submit. Validates that teachers can only mark attendance for their assigned batches.
+
+### 10.5 Templates & UI Components
+* **Mark Attendance:** Responsive table featuring Bootstrap `.btn-check` styled toggle buttons (green for Present, red for Absent), "Mark All Present", "Mark All Absent" helper controls, and a date picker.
+* **Attendance List:** Filter bar with search controls by Batch, Student, and Date, plus a table displaying student names, batches, date, soft success/danger badges for status, and the marking teacher.
+
+### 10.6 Permissions & Access Control
+* **Admins:** Full access to view all attendance, search/filter, and mark attendance for any batch.
+* **Teachers:** Access restricted to marking and viewing attendance only for their assigned batches.
+* **Students:** Restriced from viewing the main attendance management list. Can view their own percentage, present/absent counts, and 5 most recent records on their profile page.

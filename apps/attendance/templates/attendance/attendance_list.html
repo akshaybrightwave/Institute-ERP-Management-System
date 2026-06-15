@@ -1,0 +1,144 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Attendance Management | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-clock-history text-primary me-2"></i>Attendance Management</h2>
+            <p>Filter, search, and view attendance logs across batches.</p>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{% url 'attendance_list' %}" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="batchFilter" class="form-label fw-semibold small">Filter by Batch</label>
+                    <select name="batch" id="batchFilter" class="form-select">
+                        <option value="">All Batches</option>
+                        {% for b in batches %}
+                        <option value="{{ b.id }}" {% if selected_batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="studentFilter" class="form-label fw-semibold small">Filter by Student</label>
+                    <select name="student" id="studentFilter" class="form-select">
+                        <option value="">All Students</option>
+                        {% for s in students %}
+                        <option value="{{ s.id }}" {% if selected_student == s.id|stringformat:"s" %}selected{% endif %}>{{ s.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFilter" class="form-label fw-semibold small">Filter by Date</label>
+                    <input type="date" name="date" id="dateFilter" class="form-control" value="{{ selected_date }}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'attendance_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance Table Card -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Student</th>
+                            <th>Batch</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Marked By</th>
+                            {% if request.user.role == 'admin' or request.user.role == 'teacher' %}
+                            <th class="pe-4 text-end">Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in page_obj %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ attendance.student.full_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ attendance.batch.name }}</span></td>
+                            <td>{{ attendance.date }}</td>
+                            <td>
+                                {% if attendance.status == 'present' %}
+                                <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Present</span>
+                                {% else %}
+                                <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Absent</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if attendance.marked_by %}
+                                <span class="text-primary fw-semibold">{{ attendance.marked_by.full_name }}</span>
+                                {% else %}
+                                <span class="text-muted small"><i class="bi bi-shield-lock me-1"></i>Admin</span>
+                                {% endif %}
+                            </td>
+                            {% if request.user.role == 'admin' or request.user.role == 'teacher' %}
+                            <td class="pe-4 text-end">
+                                <a href="{% url 'mark_attendance' attendance.batch.id %}?date={{ attendance.date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil-square me-1"></i>Edit Day
+                                </a>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="p-0">
+                                <div class="empty-state py-5">
+                                    <i class="bi bi-calendar-x"></i>
+                                    <p class="mb-0">No attendance records found matching filters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="p-4 border-top">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_date %}&date={{ selected_date }}{% endif %}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                            <a class="page-link" href="?page={{ num }}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_date %}&date={{ selected_date }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}{% if selected_date %}&date={{ selected_date }}{% endif %}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

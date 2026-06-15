@@ -87,6 +87,15 @@
                 </div>
             </div>
         </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-clock-history text-primary"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_attendance_records }}</div>
+                    <div class="stat-label">Total Attendance Records</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Actions -->
@@ -140,7 +149,7 @@
     <!-- ERP Management -->
     <h5 class="fw-bold mt-4 mb-3">ERP Management</h5>
     <div class="row g-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="dashboard-action-card">
                 <div class="feature-icon bg-soft-primary"><i class="bi bi-building text-primary"></i></div>
                 <h5 class="fw-bold mt-2">Manage Centers</h5>
@@ -151,7 +160,7 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="dashboard-action-card">
                 <div class="feature-icon bg-soft-primary"><i class="bi bi-journal-bookmark text-primary"></i></div>
                 <h5 class="fw-bold mt-2">Manage Courses</h5>
@@ -162,13 +171,24 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="dashboard-action-card">
                 <div class="feature-icon bg-soft-primary"><i class="bi bi-calendar-event text-primary"></i></div>
                 <h5 class="fw-bold mt-2">Manage Batches</h5>
                 <p class="text-muted small">Organize schedules, assign teachers, and manage active student groups.</p>
                 <a href="{% url 'batch_list' %}" class="btn btn-primary w-100">
                     <i class="bi bi-arrow-right-circle me-1"></i> Go to Batches
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-clock-history text-primary"></i></div>
+                <h5 class="fw-bold mt-2">Manage Attendance</h5>
+                <p class="text-muted small">Filter, search, and view attendance logs across all batches.</p>
+                <a href="{% url 'attendance_list' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Attendance
                 </a>
             </div>
         </div>

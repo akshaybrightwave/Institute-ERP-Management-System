@@ -150,6 +150,7 @@ def admin_dashboard(request):
     from apps.centers.models import Center
     from apps.courses.models import Course
     from apps.batches.models import Batch
+    from apps.attendance.models import Attendance
 
     context = {
         'total_students': User.objects.filter(role='student').count(),
@@ -161,6 +162,7 @@ def admin_dashboard(request):
         'total_centers': Center.objects.count(),
         'total_courses': Course.objects.count(),
         'total_batches': Batch.objects.count(),
+        'total_attendance_records': Attendance.objects.count(),
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 

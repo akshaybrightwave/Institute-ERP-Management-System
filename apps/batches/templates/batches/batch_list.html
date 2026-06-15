@@ -51,6 +51,9 @@
                             <td>{{ batch.start_date }}</td>
                             <td>{{ batch.end_date }}</td>
                             <td class="pe-4 text-end">
+                                <a class="btn btn-sm btn-outline-success" href="{% url 'mark_attendance' batch.id %}">
+                                    <i class="bi bi-check2-square"></i> Attendance
+                                </a>
                                 <a class="btn btn-sm btn-outline-info" href="{% url 'batch_detail' batch.id %}">
                                     <i class="bi bi-eye"></i> View
                                 </a>
