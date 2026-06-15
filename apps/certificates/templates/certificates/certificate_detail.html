@@ -1,0 +1,144 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Certificate Detail | {{ certificate.certificate_number }}{% endblock %}
+
+{% block style %}
+<style>
+/* CSS styles for displaying a premium certificate layout */
+.cert-document {
+    background-color: #fff;
+    border: 12px double var(--color-primary);
+    border-radius: var(--radius-md);
+    padding: 3rem;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+    background-image: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.02) 0%, transparent 80%);
+}
+.cert-document::after {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border: 2px solid var(--color-primary-light);
+    pointer-events: none;
+}
+.cert-badge {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    margin: 0 auto 1.5rem;
+}
+
+@media print {
+    /* Hide everything on the page except the certificate container */
+    nav, footer, .btn, .page-header, .alert, #backToTop, header, main > *:not(.print-container) {
+        display: none !important;
+    }
+    body {
+        background-color: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .print-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    .cert-document {
+        border: 15px double #4F46E5 !important;
+        box-shadow: none !important;
+        padding: 4rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-2 print-container">
+    <div class="page-header d-print-none">
+        <div>
+            <h2><i class="bi bi-award-fill text-primary me-2"></i>Certificate Details</h2>
+            <p>Verification overview for issued certificate ID <strong>{{ certificate.certificate_number }}</strong></p>
+        </div>
+        <div>
+            <a href="{% url 'certificate_list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Certificates
+            </a>
+        </div>
+    </div>
+
+    <!-- Certificate Document Container -->
+    <div class="cert-document text-center mb-4">
+        <div class="cert-badge">
+            <i class="bi bi-patch-check-fill"></i>
+        </div>
+        
+        <h1 class="display-5 fw-bold text-gradient mb-2" style="font-family: 'Poppins', sans-serif;">Certificate of Completion</h1>
+        <p class="text-muted text-uppercase tracking-wider fw-semibold small mb-5">This is proudly presented to</p>
+        
+        <h2 class="display-6 fw-bold text-dark mb-3" style="font-family: 'Poppins', sans-serif; text-decoration: underline; text-underline-offset: 8px;">
+            {{ certificate.student.full_name }}
+        </h2>
+        
+        <p class="text-muted fs-5 mb-4 px-lg-5">
+            for successfully satisfying all course requirements and completing the specialized training batch:
+            <strong>{{ certificate.batch.name }}</strong> for the designated curriculum of
+            <strong>{{ certificate.course.name }}</strong>.
+        </p>
+
+        <div class="row g-4 mt-5 pt-3 justify-content-center">
+            <div class="col-sm-4">
+                <span class="text-muted small d-block">Certificate Number</span>
+                <span class="fw-bold text-dark fs-5"><code>{{ certificate.certificate_number }}</code></span>
+            </div>
+            <div class="col-sm-4">
+                <span class="text-muted small d-block">Date of Issue</span>
+                <span class="fw-bold text-dark fs-5">{{ certificate.issue_date }}</span>
+            </div>
+            <div class="col-sm-4">
+                <span class="text-muted small d-block">Status</span>
+                <span class="fs-5 fw-bold {% if certificate.status == 'issued' %}text-success{% else %}text-danger{% endif %}">
+                    {% if certificate.status == 'issued' %}ISSUED{% else %}REVOKED{% endif %}
+                </span>
+            </div>
+        </div>
+
+        {% if certificate.remarks %}
+        <div class="mt-4 pt-3 border-top text-start">
+            <span class="text-muted small d-block mb-1 fw-bold">Official Remarks:</span>
+            <p class="text-muted mb-0 small italic">{{ certificate.remarks }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Admin Actions Row -->
+    <div class="d-print-none text-center gap-2 d-flex justify-content-center mb-4">
+        <button onclick="window.print();" class="btn btn-primary px-4 py-2">
+            <i class="bi bi-printer-fill me-1"></i> Print Certificate
+        </button>
+
+        {% if is_admin %}
+            {% if certificate.status == 'issued' %}
+                <form method="POST" action="{% url 'certificate_revoke' certificate.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to revoke this certificate?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning px-4 py-2 text-dark">
+                        <i class="bi bi-x-octagon me-1"></i> Revoke Certificate
+                    </button>
+                </form>
+            {% endif %}
+            <a href="{% url 'certificate_delete' certificate.id %}" class="btn btn-danger px-4 py-2">
+                <i class="bi bi-trash-fill me-1"></i> Delete Record
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

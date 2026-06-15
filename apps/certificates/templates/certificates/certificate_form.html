@@ -1,0 +1,147 @@
+{% extends 'accounts/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Issue Certificate | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="feature-icon bg-soft-primary me-3 mb-0">
+                            <i class="bi bi-award text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0">Issue Certificate</h4>
+                            <p class="text-muted small mb-0">Verify eligibility requirements and issue course completion certificates.</p>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Select Student -->
+                    <div class="mb-4">
+                        <label for="id_student" class="form-label fw-bold">Select Student to Verify Eligibility</label>
+                        {% render_field form.student class="form-select" id="id_student" %}
+                        <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Selecting a student will automatically load their attendance and financial summaries.</span>
+                    </div>
+
+                    <!-- Step 2: Eligibility Check Display -->
+                    {% if student_obj %}
+                        <div class="card border border-light shadow-none bg-light mb-4">
+                            <div class="card-body p-4">
+                                <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-primary me-2"></i>Eligibility Verification Card</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block">Student Name</span>
+                                        <span class="fw-semibold text-dark">{{ student_obj.full_name }}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block">Enrollment Batch</span>
+                                        <span class="fw-semibold text-dark">{{ student_obj.batch.name|default:"Not Enrolled" }}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block">Assigned Course</span>
+                                        <span class="fw-semibold text-dark">{{ student_obj.batch.course.name|default:"-" }}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block">Attendance Score</span>
+                                        <span class="fw-semibold {% if eligibility_info.attendance_pct >= 75.0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ eligibility_info.attendance_pct }}% (Required >= 75%)
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block">Fee Financial Status</span>
+                                        <span class="fw-semibold {% if eligibility_info.fee_status == 'PAID' %}text-success{% else %}text-danger{% endif %}">
+                                            {{ eligibility_info.fee_status }} (Pending: ₹{{ eligibility_info.pending_amount }})
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block">Eligibility Status</span>
+                                        {% if eligibility_info.eligible %}
+                                            <span class="badge bg-success px-3 py-1 fs-6">Eligible</span>
+                                        {% else %}
+                                            <span class="badge bg-danger px-3 py-1 fs-6">Not Eligible</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {% if not eligibility_info.eligible %}
+                                    <div class="alert alert-danger d-flex align-items-center mt-4 mb-0" role="alert">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <div>
+                                            <strong>Creation Blocked:</strong> Student does not meet requirements. {{ eligibility_info.reason }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Certificate Form Fields (Only allowed if eligible) -->
+                        {% if eligibility_info.eligible %}
+                            <form method="POST">
+                                {% csrf_token %}
+                                <!-- Hidden input for student to ensure POST works -->
+                                <input type="hidden" name="student" value="{{ student_obj.id }}">
+
+                                <div class="mb-3">
+                                    <label for="{{ form.certificate_number.id_for_label }}" class="form-label fw-bold">Certificate Number</label>
+                                    {% render_field form.certificate_number class="form-control" %}
+                                    {% if form.certificate_number.errors %}
+                                        <div class="text-danger small mt-1">{{ form.certificate_number.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.issue_date.id_for_label }}" class="form-label fw-bold">Issue Date</label>
+                                    {% render_field form.issue_date class="form-control" %}
+                                    {% if form.issue_date.errors %}
+                                        <div class="text-danger small mt-1">{{ form.issue_date.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="{{ form.remarks.id_for_label }}" class="form-label fw-bold">Remarks</label>
+                                    {% render_field form.remarks class="form-control" %}
+                                    {% if form.remarks.errors %}
+                                        <div class="text-danger small mt-1">{{ form.remarks.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary px-4 py-2 flex-grow-1">
+                                        <i class="bi bi-patch-check-fill me-1"></i> Issue Certificate
+                                    </button>
+                                    <a href="{% url 'certificate_list' %}" class="btn btn-outline-secondary px-4 py-2">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info text-center py-4 mb-0" role="alert">
+                            <i class="bi bi-info-circle display-6 mb-2 d-block"></i>
+                            Please select a student above to verify requirements and issue a certificate.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const studentSelect = document.getElementById('id_student');
+    if (studentSelect) {
+        studentSelect.addEventListener('change', function() {
+            if (this.value) {
+                window.location.href = "?student=" + this.value;
+            } else {
+                window.location.href = "{% url 'certificate_create' %}";
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

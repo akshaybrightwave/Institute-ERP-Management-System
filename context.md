@@ -140,7 +140,8 @@ Center
         └── Student (Enrolled in Batch)
             ├── Attendance (History / Records)
             ├── Fees (Summary / Payments)
-            └── Exam (Completed / Attempted)
+            ├── Exam (Completed / Attempted)
+            └── Certificate (Eligibility / Issued / Revoked)
 ```
 
 ---
@@ -313,3 +314,56 @@ Added the following to the Admin Dashboard metrics:
 * **Admins:** Full access to view student fee lists, record payments, and edit/delete payments.
 * **Teachers:** Read-only access to view fee summaries for students enrolled in batches taught by them.
 * **Students:** Read-only access to their own fee summaries via their dashboard and profile page.
+
+---
+
+## 12. ERP Phase 7 — Certificates Management
+
+### 12.1 App Structure
+The `certificates` app is structured as follows:
+* **Models:** `apps/certificates/models.py` defines the `Certificate` model.
+* **Views:** `apps/certificates/views.py` contains views for listing, creating, detailing, revoking, and deleting certificates.
+* **Forms:** `apps/certificates/forms.py` declares the `CertificateForm` for certificate generation.
+* **URLs:** `apps/certificates/urls.py` configures routes for listing, creating, viewing detail, revoking, and deleting certificates.
+* **Templates:**
+  * `apps/certificates/templates/certificates/certificate_list.html`
+  * `apps/certificates/templates/certificates/certificate_form.html`
+  * `apps/certificates/templates/certificates/certificate_detail.html`
+  * `apps/certificates/templates/certificates/certificate_confirm_delete.html`
+
+### 12.2 Models
+* **Certificate Model:**
+  * `student` (ForeignKey → `StudentProfile`, on_delete=CASCADE)
+  * `batch` (ForeignKey → `Batch`, on_delete=CASCADE)
+  * `course` (ForeignKey → `Course`, on_delete=CASCADE)
+  * `certificate_number` (CharField, unique=True)
+  * `issue_date` (DateField)
+  * `status` (CharField with choices `issued`, `revoked`, default `issued`)
+  * `remarks` (TextField, blank=True)
+  * `created_at` (DateTimeField, auto_now_add=True)
+
+### 12.3 Eligibility Rules
+A student is only eligible for a course completion certificate if:
+1. Enrolled in a batch (`student.batch` must not be null).
+2. All fees are paid: Course Fee - Total Paid Fee == 0 (`pending_amount == 0`).
+3. Attendance rate >= 75%. Attendance % is calculated as: `(Present Days / Total Attendance Records) * 100` using existing Attendance records.
+
+### 12.4 URLs
+* `/certificates/` - `certificate_list` (View and search all certificates)
+* `/certificates/create/` - `certificate_create` (Issue a new certificate, showing student details and validating eligibility)
+* `/certificates/<int:pk>/` - `certificate_detail` (Display certificate details and print-friendly version)
+* `/certificates/<int:pk>/revoke/` - `certificate_revoke` (Revoke an issued certificate)
+* `/certificates/<int:pk>/delete/` - `certificate_delete` (Confirm and delete a certificate log)
+
+### 12.5 Dashboard Metrics
+Added the following to the Admin Dashboard metrics:
+* **Total Certificates:** Count of all certificate logs in the system.
+* **Issued Certificates:** Count of certificates with status `issued`.
+* **Revoked Certificates:** Count of certificates with status `revoked`.
+* **Eligible Students:** Count of unique students currently enrolled in a batch who meet both the attendance >= 75% and pending fee == 0 criteria.
+
+### 12.6 Permissions & Access Control
+* **Admins:** Full access to view, issue, revoke, and delete certificates.
+* **Teachers:** Read-only access to view certificates for students assigned to batches taught by them.
+* **Students:** Read-only access to view only their own certificates.
+

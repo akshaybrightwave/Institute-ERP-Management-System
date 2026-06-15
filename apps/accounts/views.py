@@ -169,6 +169,31 @@ def admin_dashboard(request):
         paid_amount__lt=F('batch__course__fees')
     ).count()
 
+    # Certificate metrics
+    from apps.certificates.models import Certificate
+    from django.db.models import Count, Q
+    
+    total_certificates = Certificate.objects.count()
+    issued_certificates_count = Certificate.objects.filter(status='issued').count()
+    revoked_certificates_count = Certificate.objects.filter(status='revoked').count()
+
+    # Calculate count of eligible students
+    paid_map = {p['student_id']: p['total'] or Decimal('0.00') for p in FeePayment.objects.values('student_id').annotate(total=Sum('amount'))}
+    att_map = {a['student_id']: (a['total'], a['present']) for a in Attendance.objects.values('student_id').annotate(total=Count('id'), present=Count('id', filter=Q(status='present')))}
+
+    eligible_students_count = 0
+    for student in StudentProfile.objects.filter(batch__isnull=False).select_related('batch', 'batch__course'):
+        paid = paid_map.get(student.id, Decimal('0.00'))
+        course_fee = Decimal(str(student.batch.course.fees)) if (student.batch and student.batch.course) else Decimal('0.00')
+        fee_eligible = paid >= course_fee
+        
+        total_att, present_att = att_map.get(student.id, (0, 0))
+        attendance_pct = (present_att / total_att) * 100 if total_att > 0 else 0.0
+        attendance_eligible = attendance_pct >= 75.0
+        
+        if fee_eligible and attendance_eligible:
+            eligible_students_count += 1
+
     context = {
         'total_students': User.objects.filter(role='student').count(),
         'total_teachers': User.objects.filter(role='teacher').count(),
@@ -183,6 +208,10 @@ def admin_dashboard(request):
         'total_fee_collection': total_fee_collection,
         'total_pending_fees': total_pending_fees,
         'students_with_pending_fees': students_with_pending_fees,
+        'total_certificates': total_certificates,
+        'issued_certificates_count': issued_certificates_count,
+        'revoked_certificates_count': revoked_certificates_count,
+        'eligible_students_count': eligible_students_count,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 

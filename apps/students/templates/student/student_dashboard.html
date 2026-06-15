@@ -140,5 +140,83 @@
             </div>
         </div>
     </div>
+
+    <!-- Certificates Summary -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-award text-primary me-2"></i>My Certificates</h5>
+            
+            {% if certificates %}
+                <div class="table-responsive">
+                    <table class="table table-examly table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">Certificate Number</th>
+                                <th>Course</th>
+                                <th>Issue Date</th>
+                                <th>Status</th>
+                                <th class="pe-3 text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cert in certificates %}
+                            <tr>
+                                <td class="ps-3 fw-semibold"><code>{{ cert.certificate_number }}</code></td>
+                                <td>{{ cert.course.name }}</td>
+                                <td>{{ cert.issue_date }}</td>
+                                <td>
+                                    {% if cert.status == 'issued' %}
+                                        <span class="badge-soft-success"><i class="bi bi-patch-check-fill me-1"></i>Active</span>
+                                    {% else %}
+                                        <span class="badge-soft-danger"><i class="bi bi-x-octagon-fill me-1"></i>Revoked</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-3 text-end">
+                                    <a href="{% url 'certificate_detail' cert.id %}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="row g-4 align-items-center">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded text-center">
+                            <span class="text-muted small d-block">Certificates Earned</span>
+                            <span class="fw-bold fs-5 text-dark">0</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded text-center">
+                            <span class="text-muted small d-block">Eligibility Status</span>
+                            {% if eligibility.eligible %}
+                                <span class="badge bg-success mt-1 px-3 py-2 fs-6">ELIGIBLE</span>
+                            {% else %}
+                                <span class="badge bg-secondary mt-1 px-3 py-2 fs-6">INELIGIBLE</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if not eligibility.eligible %}
+                    <div class="alert alert-light border d-flex align-items-start mt-3 mb-0 py-2" role="alert">
+                        <i class="bi bi-info-circle-fill me-2 text-muted mt-1 small"></i>
+                        <div class="small text-muted">
+                            Requirements not met: {{ eligibility.reason }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success d-flex align-items-center mt-3 mb-0 py-2" role="alert">
+                        <i class="bi bi-check-circle-fill me-2 small"></i>
+                        <div class="small">
+                            You have satisfied all course completion requirements! Your certificate will be issued by an administrator shortly.
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}

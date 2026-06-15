@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'apps.batches',
     'apps.attendance',
     'apps.fees',
+    'apps.certificates',
 ]
 
 MIDDLEWARE = [

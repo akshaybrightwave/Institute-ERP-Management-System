@@ -60,6 +60,19 @@ def student_dashboard(request):
         else:
             fee_status = 'PARTIAL'
 
+    # Certificate Calculations
+    from apps.certificates.models import Certificate
+    from apps.certificates.views import get_student_eligibility
+
+    certificates = []
+    issued_certificates_count = 0
+    eligibility = {'eligible': False, 'reason': 'No student profile.'}
+
+    if profile:
+        certificates = Certificate.objects.filter(student=profile)
+        issued_certificates_count = certificates.filter(status='issued').count()
+        eligibility = get_student_eligibility(profile)
+
     context = {
         'total_exams': total_exams,
         'total_attempts': total_attempts,
@@ -68,6 +81,9 @@ def student_dashboard(request):
         'paid_amount': paid_amount,
         'pending_amount': pending_amount,
         'fee_status': fee_status,
+        'certificates': certificates,
+        'issued_certificates_count': issued_certificates_count,
+        'eligibility': eligibility,
     }
     return render(request, 'student/student_dashboard.html', context)
 
@@ -368,6 +384,18 @@ def student_profile(request):
         else:
             fee_status = 'PARTIAL'
 
+        # Certificate calculations
+        from apps.certificates.models import Certificate
+        from apps.certificates.views import get_student_eligibility
+        
+        student_certificates = Certificate.objects.filter(student=profile)
+        issued_count = student_certificates.filter(status='issued').count()
+        eligibility = get_student_eligibility(profile)
+    else:
+        student_certificates = []
+        issued_count = 0
+        eligibility = {'eligible': False, 'reason': 'No student profile.'}
+
     return render(request, 'student/student_profile.html', {
         'student': student,
         'attempts': attempts,
@@ -381,7 +409,11 @@ def student_profile(request):
         'paid_amount': paid_amount,
         'pending_amount': pending_amount,
         'fee_status': fee_status,
+        'certificates': student_certificates,
+        'issued_certificates_count': issued_count,
+        'eligibility': eligibility,
     })
+
 
 
 @login_required
