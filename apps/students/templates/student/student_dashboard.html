@@ -101,5 +101,44 @@
             </div>
         </div>
     </div>
+
+    <!-- Fees Summary -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-wallet2 text-primary me-2"></i>My Fees Summary</h5>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <span class="text-muted small d-block">Course Fee</span>
+                        <span class="fw-bold fs-5 text-dark">₹{{ course_fee }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <span class="text-muted small d-block">Paid Amount</span>
+                        <span class="fw-bold fs-5 text-success">₹{{ paid_amount }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <span class="text-muted small d-block">Pending Amount</span>
+                        <span class="fw-bold fs-5 text-danger">₹{{ pending_amount }}</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded text-center">
+                        <span class="text-muted small d-block">Fee Status</span>
+                        {% if fee_status == 'PAID' %}
+                            <span class="badge bg-success mt-1 px-3 py-2 fs-6">PAID</span>
+                        {% elif fee_status == 'PARTIAL' %}
+                            <span class="badge bg-warning text-dark mt-1 px-3 py-2 fs-6">PARTIAL</span>
+                        {% else %}
+                            <span class="badge bg-danger mt-1 px-3 py-2 fs-6">PENDING</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

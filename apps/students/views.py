@@ -26,6 +26,7 @@ def student_dashboard(request):
         profile = request.user.studentprofile
         batch = profile.batch
     except StudentProfile.DoesNotExist:
+        profile = None
         batch = None
 
     if batch:
@@ -33,10 +34,40 @@ def student_dashboard(request):
     else:
         total_exams = 0
 
+    # Fee Calculations
+    from django.db.models import Sum
+    from apps.fees.models import FeePayment
+    from decimal import Decimal
+
+    course_fee = 0.00
+    paid_amount = 0.00
+    pending_amount = 0.00
+    fee_status = 'PENDING'
+
+    if profile:
+        if batch and batch.course:
+            course_fee = batch.course.fees
+        paid_amount = FeePayment.objects.filter(student=profile).aggregate(total=Sum('amount'))['total'] or 0.00
+        
+        course_fee = Decimal(str(course_fee))
+        paid_amount = Decimal(str(paid_amount))
+        pending_amount = course_fee - paid_amount
+        
+        if paid_amount == 0:
+            fee_status = 'PENDING'
+        elif pending_amount <= 0:
+            fee_status = 'PAID'
+        else:
+            fee_status = 'PARTIAL'
+
     context = {
         'total_exams': total_exams,
         'total_attempts': total_attempts,
         'average_score': round(average_score, 1),
+        'course_fee': course_fee,
+        'paid_amount': paid_amount,
+        'pending_amount': pending_amount,
+        'fee_status': fee_status,
     }
     return render(request, 'student/student_dashboard.html', context)
 
@@ -302,6 +333,11 @@ def student_profile(request):
     attendance_percentage = 0.0
     recent_attendances = []
 
+    course_fee = 0.00
+    paid_amount = 0.00
+    pending_amount = 0.00
+    fee_status = 'PENDING'
+
     if profile:
         from apps.attendance.models import Attendance
         student_attendances = Attendance.objects.filter(student=profile)
@@ -312,6 +348,26 @@ def student_profile(request):
             attendance_percentage = round((present_days / total_days) * 100, 1)
         recent_attendances = student_attendances.order_by('-date')[:5]
 
+        # Fee calculations
+        from django.db.models import Sum
+        from apps.fees.models import FeePayment
+        from decimal import Decimal
+
+        if profile.batch and profile.batch.course:
+            course_fee = profile.batch.course.fees
+        paid_amount = FeePayment.objects.filter(student=profile).aggregate(total=Sum('amount'))['total'] or 0.00
+
+        course_fee = Decimal(str(course_fee))
+        paid_amount = Decimal(str(paid_amount))
+        pending_amount = course_fee - paid_amount
+
+        if paid_amount == 0:
+            fee_status = 'PENDING'
+        elif pending_amount <= 0:
+            fee_status = 'PAID'
+        else:
+            fee_status = 'PARTIAL'
+
     return render(request, 'student/student_profile.html', {
         'student': student,
         'attempts': attempts,
@@ -321,6 +377,10 @@ def student_profile(request):
         'absent_days': absent_days,
         'attendance_percentage': attendance_percentage,
         'recent_attendances': recent_attendances,
+        'course_fee': course_fee,
+        'paid_amount': paid_amount,
+        'pending_amount': pending_amount,
+        'fee_status': fee_status,
     })
 
 

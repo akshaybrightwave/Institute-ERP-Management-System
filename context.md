@@ -139,6 +139,7 @@ Center
         ├── Teacher (Assigned to Batch)
         └── Student (Enrolled in Batch)
             ├── Attendance (History / Records)
+            ├── Fees (Summary / Payments)
             └── Exam (Completed / Attempted)
 ```
 
@@ -252,6 +253,63 @@ The `Attendance` model tracks student attendance status per batch and date:
 * **Attendance List:** Filter bar with search controls by Batch, Student, and Date, plus a table displaying student names, batches, date, soft success/danger badges for status, and the marking teacher.
 
 ### 10.6 Permissions & Access Control
-* **Admins:** Full access to view all attendance, search/filter, and mark attendance for any batch.
-* **Teachers:** Access restricted to marking and viewing attendance only for their assigned batches.
-* **Students:** Restriced from viewing the main attendance management list. Can view their own percentage, present/absent counts, and 5 most recent records on their profile page.
+* **Students:**
+  * Enforces that students only see published exams assigned to their batch.
+  * Restricts access to instruction, attempt, and submission pages; students attempting to access exams outside their batch receive a `404 Not Found` or `403 Forbidden` response.
+* **Teachers:**
+  * Restricts the teacher's exam list, dashboard, submissions, and detailed student answer sheets to exams assigned to batches taught by that teacher.
+  * Validates access to editing, deleting, managing questions/options, or viewing details of exams; teachers accessing exams not assigned to their batches are redirected to the exam list.
+* **Admins:** Retain full, unrestricted platform access.
+
+---
+
+## 11. ERP Phase 6 — Fees Management
+
+### 11.1 App Structure
+The `fees` app is structured as follows:
+* **Models:** `apps/fees/models.py` defines the `FeePayment` model.
+* **Views:** `apps/fees/views.py` contains views for listing student summaries, payment ledgers, and CRUD operations.
+* **Forms:** `apps/fees/forms.py` declares the `FeePaymentForm` with bootstrap styling.
+* **URLs:** `apps/fees/urls.py` configures subroutes for list, add, edit, and delete actions.
+* **Templates:**
+  * `apps/fees/templates/fees/fees_list.html`
+  * `apps/fees/templates/fees/fee_form.html`
+  * `apps/fees/templates/fees/fee_confirm_delete.html`
+
+### 11.2 Models
+* **FeePayment Model:**
+  * `student` (ForeignKey → `StudentProfile`, on_delete=CASCADE)
+  * `amount` (DecimalField, max_digits=10, decimal_places=2)
+  * `payment_date` (DateField)
+  * `payment_method` (CharField with choices `cash`, `upi`, `bank`)
+  * `reference_number` (CharField, blank=True)
+  * `remarks` (TextField, blank=True)
+  * `created_at` (DateTimeField, auto_now_add=True)
+
+### 11.3 URLs
+* `/fees/` - `fees_list` (Fees management student summaries & payment ledger page)
+* `/fees/payments/add/` - `payment_create` (Record fee payment screen)
+* `/fees/payments/<int:pk>/edit/` - `payment_edit` (Edit fee payment screen)
+* `/fees/payments/<int:pk>/delete/` - `payment_delete` (Confirm fee payment deletion screen)
+
+### 11.4 Business Rules & Student Fee Calculations
+* Course fees are officially tracked in the `Course` model as `fees`.
+* Student fee info is calculated dynamically:
+  * **Total Fee:** `student.batch.course.fees` (defaults to 0.00 if student has no batch/course assigned)
+  * **Paid Amount:** Sum of all `FeePayment` records for the student
+  * **Pending Amount:** `Total Fee - Paid Amount`
+  * **Fee Status:**
+    * `PAID`: If Pending <= 0
+    * `PARTIAL`: If Paid > 0 and Pending > 0
+    * `PENDING`: If Paid = 0
+
+### 11.5 Dashboard Metrics
+Added the following to the Admin Dashboard metrics:
+* **Total Fee Collection:** Sum of all `amount` values across `FeePayment` records.
+* **Total Pending Fees:** Sum of all students' course fees minus total fee collections.
+* **Students With Pending Fees:** Count of unique students whose paid amount is less than their assigned course fees.
+
+### 11.6 Permissions & Access Control
+* **Admins:** Full access to view student fee lists, record payments, and edit/delete payments.
+* **Teachers:** Read-only access to view fee summaries for students enrolled in batches taught by them.
+* **Students:** Read-only access to their own fee summaries via their dashboard and profile page.

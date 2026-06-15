@@ -1,0 +1,249 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Fees Management | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-wallet2 text-primary me-2"></i>Fees Management</h2>
+            <p>Track student course fees, payments, and outstanding balances.</p>
+        </div>
+        {% if is_admin %}
+        <div>
+            <a href="{% url 'payment_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle-fill me-1"></i> Record Fee Payment
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs border-bottom mb-4" id="feesTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if tab == 'students' %}active fw-semibold text-primary{% else %}text-muted{% endif %}" 
+               href="?tab=students{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}">
+                <i class="bi bi-people me-1"></i> Student Fee Summaries
+            </a>
+        </li>
+        {% if is_admin %}
+        <li class="nav-item" role="presentation">
+            <a class="nav-link {% if tab == 'payments' %}active fw-semibold text-primary{% else %}text-muted{% endif %}" 
+               href="?tab=payments{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}">
+                <i class="bi bi-receipt me-1"></i> Payment Ledger
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Filters Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{% url 'fees_list' %}" class="row g-3 align-items-end">
+                <input type="hidden" name="tab" value="{{ tab }}">
+                <div class="col-md-4">
+                    <label for="searchInput" class="form-label fw-semibold small">Search</label>
+                    <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search by name, email..." value="{{ query }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="batchFilter" class="form-label fw-semibold small">Filter by Batch</label>
+                    <select name="batch" id="batchFilter" class="form-select">
+                        <option value="">All Batches</option>
+                        {% for b in batches %}
+                        <option value="{{ b.id }}" {% if selected_batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter me-1"></i> Filter / Search
+                    </button>
+                    <a href="{% url 'fees_list' %}?tab={{ tab }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="tab-content">
+        <!-- Student Summaries Tab -->
+        {% if tab == 'students' %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-examly table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Student</th>
+                                <th>Batch</th>
+                                <th>Course</th>
+                                <th>Course Fee</th>
+                                <th>Paid Amount</th>
+                                <th>Pending Amount</th>
+                                <th>Status</th>
+                                {% if is_admin %}
+                                <th class="pe-4 text-end">Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in students_page_obj %}
+                            <tr>
+                                <td class="ps-4 fw-semibold">{{ item.student.full_name }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ item.student.batch.name|default:"No Batch" }}</span></td>
+                                <td>{{ item.student.batch.course.name|default:"-" }}</td>
+                                <td class="fw-semibold">₹{{ item.course_fee }}</td>
+                                <td class="text-success fw-semibold">₹{{ item.paid_amount }}</td>
+                                <td class="text-danger fw-semibold">₹{{ item.pending_amount }}</td>
+                                <td>
+                                    {% if item.status == 'PAID' %}
+                                    <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>PAID</span>
+                                    {% elif item.status == 'PARTIAL' %}
+                                    <span class="badge-soft-warning"><i class="bi bi-exclamation-circle me-1"></i>PARTIAL</span>
+                                    {% else %}
+                                    <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>PENDING</span>
+                                    {% endif %}
+                                </td>
+                                {% if is_admin %}
+                                <td class="pe-4 text-end">
+                                    <a href="{% url 'payment_create' %}?student={{ item.student.id }}" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-plus-circle me-1"></i>Collect Fee
+                                    </a>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="p-0">
+                                    <div class="empty-state py-5">
+                                        <i class="bi bi-people"></i>
+                                        <p class="mb-0">No students found matching filters.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if students_page_obj.has_other_pages %}
+                <div class="p-4 border-top">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if students_page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?tab=students&page_students={{ students_page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in students_page_obj.paginator.page_range %}
+                            <li class="page-item {% if students_page_obj.number == num %}active{% endif %}">
+                                <a class="page-link" href="?tab=students&page_students={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endfor %}
+
+                            {% if students_page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?tab=students&page_students={{ students_page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Payment Ledger Tab (Admin Only) -->
+        {% if tab == 'payments' and is_admin %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-examly table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Student</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Method</th>
+                                <th>Reference No.</th>
+                                <th>Remarks</th>
+                                <th class="pe-4 text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments_page_obj %}
+                            <tr>
+                                <td class="ps-4 fw-semibold">{{ payment.student.full_name }}</td>
+                                <td class="fw-bold text-success">₹{{ payment.amount }}</td>
+                                <td>{{ payment.payment_date }}</td>
+                                <td><span class="badge bg-light text-dark border">{{ payment.get_payment_method_display }}</span></td>
+                                <td><code>{{ payment.reference_number|default:"-" }}</code></td>
+                                <td class="text-muted small">{{ payment.remarks|default:"-" }}</td>
+                                <td class="pe-4 text-end">
+                                    <a href="{% url 'payment_edit' payment.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+                                    <a href="{% url 'payment_delete' payment.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="p-0">
+                                    <div class="empty-state py-5">
+                                        <i class="bi bi-receipt"></i>
+                                        <p class="mb-0">No fee payment logs found matching filters.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if payments_page_obj.has_other_pages %}
+                <div class="p-4 border-top">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if payments_page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?tab=payments&page_payments={{ payments_page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in payments_page_obj.paginator.page_range %}
+                            <li class="page-item {% if payments_page_obj.number == num %}active{% endif %}">
+                                <a class="page-link" href="?tab=payments&page_payments={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endfor %}
+
+                            {% if payments_page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?tab=payments&page_payments={{ payments_page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

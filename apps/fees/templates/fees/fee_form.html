@@ -1,0 +1,96 @@
+{% extends 'accounts/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ action }} Fee Payment | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="feature-icon bg-soft-primary me-3 mb-0">
+                            <i class="bi bi-receipt text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0">{{ action }} Fee Payment</h4>
+                            <p class="text-muted small mb-0">Record or edit a student course fee payment.</p>
+                        </div>
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <!-- Student field -->
+                        <div class="mb-3">
+                            <label for="{{ form.student.id_for_label }}" class="form-label mb-1">Select Student</label>
+                            {% render_field form.student class="form-select" %}
+                            {% if form.student.errors %}
+                                <div class="text-danger small mt-1">{{ form.student.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Amount field -->
+                        <div class="mb-3">
+                            <label for="{{ form.amount.id_for_label }}" class="form-label mb-1">Payment Amount (₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                {% render_field form.amount class="form-control" placeholder="0.00" %}
+                            </div>
+                            {% if form.amount.errors %}
+                                <div class="text-danger small mt-1">{{ form.amount.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Date field -->
+                        <div class="mb-3">
+                            <label for="{{ form.payment_date.id_for_label }}" class="form-label mb-1">Payment Date</label>
+                            {% render_field form.payment_date class="form-control" %}
+                            {% if form.payment_date.errors %}
+                                <div class="text-danger small mt-1">{{ form.payment_date.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Payment Method field -->
+                        <div class="mb-3">
+                            <label for="{{ form.payment_method.id_for_label }}" class="form-label mb-1">Payment Method</label>
+                            {% render_field form.payment_method class="form-select" %}
+                            {% if form.payment_method.errors %}
+                                <div class="text-danger small mt-1">{{ form.payment_method.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Reference Number field -->
+                        <div class="mb-3">
+                            <label for="{{ form.reference_number.id_for_label }}" class="form-label mb-1">Reference / Transaction Number</label>
+                            {% render_field form.reference_number class="form-control" placeholder="UPI ID, bank ref, cheque no." %}
+                            {% if form.reference_number.errors %}
+                                <div class="text-danger small mt-1">{{ form.reference_number.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Remarks field -->
+                        <div class="mb-4">
+                            <label for="{{ form.remarks.id_for_label }}" class="form-label mb-1">Remarks</label>
+                            {% render_field form.remarks class="form-control" placeholder="Optional notes..." %}
+                            {% if form.remarks.errors %}
+                                <div class="text-danger small mt-1">{{ form.remarks.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 py-2 flex-grow-1">
+                                <i class="bi bi-check-circle me-1"></i> Save Payment
+                            </button>
+                            <a href="{% url 'fees_list' %}" class="btn btn-outline-secondary px-4 py-2">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

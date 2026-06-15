@@ -1,125 +1,199 @@
 {% extends 'accounts/base.html' %}
 {% load static %}
 
-{% block title %}My Profile | Examly{% endblock %}
+{% block title %}Student Profile Dashboard | Examly{% endblock %}
 
 {% block content %}
 <div class="container py-2">
-    <div class="row justify-content-center g-4">
-        <div class="col-lg-4">
-            <div class="card border-0 h-100 text-center">
-                <div class="card-body p-4">
+    
+    <!-- SECTION 1: Student Header Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center g-4">
+                <!-- Profile Picture -->
+                <div class="col-12 col-md-auto text-center">
                     {% if student.studentprofile.profile_picture %}
-                        <img src="{{ student.studentprofile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle mb-3" style="width:96px; height:96px; object-fit:cover; border: 3px solid var(--color-primary-light);">
+                        <img src="{{ student.studentprofile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle img-thumbnail" style="width:120px; height:120px; object-fit:cover; border: 3px solid var(--color-primary-light);">
                     {% else %}
-                        <img src="{% static 'images/default_profile.png' %}" alt="Default Profile Picture" class="rounded-circle mb-3" style="width:96px; height:96px; object-fit:cover; border: 3px solid var(--color-primary-light);">
+                        <img src="{% static 'images/default_profile.png' %}" alt="Default Profile" class="rounded-circle img-thumbnail" style="width:120px; height:120px; object-fit:cover; border: 3px solid var(--color-primary-light);">
                     {% endif %}
-                    <h5 class="fw-bold mb-1">{{ student.username }}</h5>
-                    <span class="role-badge"><i class="bi bi-mortarboard-fill"></i> Student</span>
+                </div>
+                
+                <!-- Student Identity & Contact Info -->
+                <div class="col-12 col-md">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2 justify-content-center justify-content-md-start">
+                        <h3 class="fw-bold mb-0 text-dark">{{ student.studentprofile.full_name|default:student.username }}</h3>
+                        <span class="badge bg-primary rounded-pill px-3 py-1"><i class="bi bi-mortarboard-fill me-1"></i> Student</span>
+                        <span class="badge bg-light text-muted border px-3 py-1">@{{ student.username }}</span>
+                    </div>
+                    
+                    <p class="text-muted text-center text-md-start mb-3 small italic">{{ student.studentprofile.bio|default:"No student bio added yet." }}</p>
+                    
+                    <div class="row g-3 text-start">
+                        <div class="col-sm-6 col-lg-3">
+                            <span class="text-muted small d-block">Batch Enrollment</span>
+                            <span class="fw-semibold text-dark"><i class="bi bi-calendar-event me-1 text-primary"></i>{{ student.studentprofile.batch.name|default:"Not Enrolled" }}</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <span class="text-muted small d-block">Course Name</span>
+                            <span class="fw-semibold text-dark"><i class="bi bi-journal-bookmark me-1 text-primary"></i>{{ student.studentprofile.batch.course.name|default:"-" }}</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <span class="text-muted small d-block">Email Address</span>
+                            <span class="fw-semibold text-dark"><i class="bi bi-envelope me-1 text-primary"></i>{{ student.studentprofile.email|default:student.email }}</span>
+                        </div>
+                        <div class="col-sm-6 col-lg-3">
+                            <span class="text-muted small d-block">Phone Number</span>
+                            <span class="fw-semibold text-dark"><i class="bi bi-telephone me-1 text-primary"></i>{{ student.studentprofile.phone|default:"-" }}</span>
+                        </div>
+                    </div>
+                </div>
 
-                    <table class="table table-borderless text-start mt-4 mb-0">
-                        <tr>
-                            <th class="text-muted small fw-normal">First Name</th>
-                            <td>{{ student.first_name|default:"-" }}</td>
-                        </tr>
-                        <tr>
-                            <th class="text-muted small fw-normal">Last Name</th>
-                            <td>{{ student.last_name|default:"-" }}</td>
-                        </tr>
-                        <tr>
-                            <th class="text-muted small fw-normal">Email</th>
-                            <td>{{ student.email|default:"-" }}</td>
-                        </tr>
-                    </table>
-
-                    <a href="{% url 'edit_student_profile' %}" class="btn btn-outline-primary w-100 mt-2">
+                <!-- Action Button -->
+                <div class="col-12 col-md-auto text-center text-md-end">
+                    <a href="{% url 'edit_student_profile' %}" class="btn btn-outline-primary px-4">
                         <i class="bi bi-pencil-square me-1"></i> Edit Profile
                     </a>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-lg-7">
-            <div class="row g-4 mb-4">
-                <div class="col-sm-6">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
-                        <div>
-                            <div class="stat-value">{{ total_attempts }}</div>
-                            <div class="stat-label">Total Exam Attempts</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                        <div>
-                            <div class="stat-value">{{ average_score }}%</div>
-                            <div class="stat-label">Average Score</div>
-                        </div>
-                    </div>
+    <!-- SECTION 2: Academic Overview KPIs -->
+    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+        <div class="col">
+            <div class="stat-card h-100">
+                <div class="stat-icon bg-light text-primary"><i class="bi bi-clipboard-check"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_attempts }}</div>
+                    <div class="stat-label">Exam Attempts</div>
                 </div>
             </div>
-
-            <!-- Attendance Summary -->
-            <div class="row g-4 mb-4">
-                <div class="col-sm-4">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-percent text-success"></i></div>
-                        <div>
-                            <div class="stat-value">{{ attendance_percentage }}%</div>
-                            <div class="stat-label">Attendance Rate</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-calendar-check text-success"></i></div>
-                        <div>
-                            <div class="stat-value">{{ present_days }}</div>
-                            <div class="stat-label">Days Present</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-4">
-                    <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-calendar-x text-danger"></i></div>
-                        <div>
-                            <div class="stat-value">{{ absent_days }}</div>
-                            <div class="stat-label">Days Absent</div>
-                        </div>
-                    </div>
+        </div>
+        <div class="col">
+            <div class="stat-card h-100">
+                <div class="stat-icon bg-light text-success"><i class="bi bi-graph-up-arrow"></i></div>
+                <div>
+                    <div class="stat-value">{{ average_score }}%</div>
+                    <div class="stat-label">Average Score</div>
                 </div>
             </div>
+        </div>
+        <div class="col">
+            <div class="stat-card h-100">
+                <div class="stat-icon bg-light text-info"><i class="bi bi-percent"></i></div>
+                <div>
+                    <div class="stat-value">{{ attendance_percentage }}%</div>
+                    <div class="stat-label">Attendance Rate</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card h-100">
+                <div class="stat-icon bg-light text-success"><i class="bi bi-calendar-check"></i></div>
+                <div>
+                    <div class="stat-value">{{ present_days }}</div>
+                    <div class="stat-label">Days Present</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card h-100">
+                <div class="stat-icon bg-light text-danger"><i class="bi bi-calendar-x"></i></div>
+                <div>
+                    <div class="stat-value">{{ absent_days }}</div>
+                    <div class="stat-label">Days Absent</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <h5 class="fw-bold mb-3"><i class="bi bi-calendar-check text-primary me-2"></i>Recent Attendance</h5>
-            <div class="card border-0 mb-4">
-                <div class="card-body p-0">
+    <!-- MAIN DASHBOARD CONTENT GRID -->
+    <div class="row g-4">
+        
+        <!-- Left Side: Exams & Attendance History -->
+        <div class="col-lg-8">
+            
+            <!-- SECTION 5: Recent Exam Attempts -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-award text-primary me-2"></i>Recent Exam Attempts</h5>
                     <div class="table-responsive">
-                        <table class="table table-examly align-middle mb-0">
+                        <table class="table table-examly table-hover align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th class="ps-4">Date</th>
+                                    <th class="ps-3">Exam Name</th>
+                                    <th>Percentage</th>
+                                    <th>Result</th>
+                                    <th class="pe-3">Attempt Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in attempts|slice:":5" %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold">{{ attempt.exam.title }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="fw-bold">{{ attempt.score|floatformat:1 }}%</span>
+                                            <div class="progress flex-grow-1" style="height: 6px; width: 60px; max-width: 60px;">
+                                                <div class="progress-bar {% if attempt.score >= attempt.exam.pass_percentage %}bg-success{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ attempt.score }}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if attempt.score >= attempt.exam.pass_percentage %}
+                                            <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Pass</span>
+                                        {% else %}
+                                            <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Fail</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-3 text-muted small">{{ attempt.submitted_at|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="p-0">
+                                        <div class="empty-state py-4">
+                                            <i class="bi bi-inbox text-muted"></i>
+                                            <p class="mb-0">No exam attempts recorded yet.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: Attendance History -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Recent Attendance Log</h5>
+                    <div class="table-responsive">
+                        <table class="table table-examly table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Date</th>
                                     <th>Status</th>
-                                    <th class="pe-4">Marked By</th>
+                                    <th class="pe-3">Marked By</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for att in recent_attendances %}
                                 <tr>
-                                    <td class="ps-4">{{ att.date }}</td>
+                                    <td class="ps-3 fw-semibold">{{ att.date }}</td>
                                     <td>
                                         {% if att.status == 'present' %}
-                                        <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Present</span>
+                                            <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Present</span>
                                         {% else %}
-                                        <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Absent</span>
+                                            <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Absent</span>
                                         {% endif %}
                                     </td>
-                                    <td class="pe-4">
+                                    <td class="pe-3">
                                         {% if att.marked_by %}
-                                        {{ att.marked_by.full_name }}
+                                            <span class="text-primary fw-semibold">{{ att.marked_by.full_name }}</span>
                                         {% else %}
-                                        <span class="text-muted small">Admin</span>
+                                            <span class="text-muted small"><i class="bi bi-shield-lock me-1"></i>Admin</span>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -127,8 +201,8 @@
                                 <tr>
                                     <td colspan="3" class="p-0">
                                         <div class="empty-state py-4">
-                                            <i class="bi bi-calendar-x"></i>
-                                            <p class="mb-0">No attendance marked yet.</p>
+                                            <i class="bi bi-calendar-x text-muted"></i>
+                                            <p class="mb-0">No attendance history logged yet.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -139,39 +213,67 @@
                 </div>
             </div>
 
-            <h5 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Recent Exam Attempts</h5>
-            <div class="card border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-examly align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-4">Exam</th>
-                                    <th class="pe-4">Score</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for attempt in attempts|slice:":5" %}
-                                <tr>
-                                    <td class="ps-4">{{ attempt.exam.title }}</td>
-                                    <td class="pe-4"><span class="badge-soft-primary">{{ attempt.score }}%</span></td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="2" class="p-0">
-                                        <div class="empty-state">
-                                            <i class="bi bi-inbox"></i>
-                                            <p class="mb-0">No exams attempted yet.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+        </div>
+
+        <!-- Right Side: Fee Summary Section -->
+        <div class="col-lg-4">
+            
+            <!-- SECTION 3: Fee Summary Card -->
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-wallet2 text-primary me-2"></i>Fee Summary</h5>
+                    
+                    <div class="mb-4 text-center">
+                        <span class="text-muted small d-block">Fee Payment Progress</span>
+                        <h3 class="fw-bold text-dark mb-2 mt-1">
+                            {% if course_fee > 0 %}
+                                {% widthratio paid_amount course_fee 100 %}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </h3>
+                        <div class="progress rounded-pill mb-2" style="height: 12px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" 
+                                 style="width: {% if course_fee > 0 %}{% widthratio paid_amount course_fee 100 %}{% else %}0{% endif %}%"></div>
+                        </div>
                     </div>
+
+                    <hr class="text-muted">
+
+                    <div class="d-flex justify-content-between align-items-center py-2 mb-2">
+                        <span class="text-muted"><i class="bi bi-card-list me-2"></i>Course Fee</span>
+                        <span class="fw-bold fs-5 text-dark">₹{{ course_fee }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center py-2 mb-2">
+                        <span class="text-muted"><i class="bi bi-cash-stack me-2 text-success"></i>Paid Amount</span>
+                        <span class="fw-bold fs-5 text-success">₹{{ paid_amount }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center py-2 mb-3">
+                        <span class="text-muted"><i class="bi bi-hourglass-split me-2 text-danger"></i>Pending Balance</span>
+                        <span class="fw-bold fs-5 text-danger">₹{{ pending_amount }}</span>
+                    </div>
+
+                    <div class="d-grid gap-2 pt-3 border-top">
+                        <div class="text-center py-2 rounded" style="{% if fee_status == 'PAID' %}background-color: rgba(22, 163, 74, 0.12);{% elif fee_status == 'PARTIAL' %}background-color: rgba(245, 158, 11, 0.12);{% else %}background-color: rgba(220, 38, 38, 0.12);{% endif %}">
+                            <span class="text-muted small d-block mb-1">Financial Status</span>
+                            {% if fee_status == 'PAID' %}
+                                <span class="badge bg-success fs-6 px-3 py-1">PAID</span>
+                            {% elif fee_status == 'PARTIAL' %}
+                                <span class="badge bg-warning text-dark fs-6 px-3 py-1">PARTIAL</span>
+                            {% else %}
+                                <span class="badge bg-danger fs-6 px-3 py-1">PENDING</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
+
         </div>
+
     </div>
+
 </div>
 {% endblock %}

@@ -96,6 +96,33 @@
                 </div>
             </div>
         </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-cash-stack text-success"></i></div>
+                <div>
+                    <div class="stat-value">₹{{ total_fee_collection }}</div>
+                    <div class="stat-label">Total Fee Collection</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-hourglass-split text-danger"></i></div>
+                <div>
+                    <div class="stat-value">₹{{ total_pending_fees }}</div>
+                    <div class="stat-label">Total Pending Fees</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-people-fill text-warning"></i></div>
+                <div>
+                    <div class="stat-value">{{ students_with_pending_fees }}</div>
+                    <div class="stat-label">Students With Pending Fees</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Quick Actions -->
@@ -189,6 +216,17 @@
                 <p class="text-muted small">Filter, search, and view attendance logs across all batches.</p>
                 <a href="{% url 'attendance_list' %}" class="btn btn-primary w-100">
                     <i class="bi bi-arrow-right-circle me-1"></i> Go to Attendance
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-wallet2 text-primary"></i></div>
+                <h5 class="fw-bold mt-2">Manage Fees</h5>
+                <p class="text-muted small">Track course payments, collection logs, and student balances.</p>
+                <a href="{% url 'fees_list' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Fees
                 </a>
             </div>
         </div>

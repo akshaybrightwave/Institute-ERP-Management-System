@@ -1,0 +1,30 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Delete Fee Payment | Examly{% endblock %}
+
+{% block content %}
+<div class="simple-card-wrapper">
+    <div class="simple-card">
+        <div class="auth-icon bg-soft-danger text-danger">
+            <i class="bi bi-trash"></i>
+        </div>
+        <h4 class="fw-bold text-center mb-3">Delete Fee Payment</h4>
+        <p class="text-muted text-center mb-4">
+            Are you sure you want to delete the fee payment of <strong>₹{{ payment.amount }}</strong> recorded for <strong>{{ payment.student.full_name }}</strong> on {{ payment.payment_date }}?
+            This action cannot be undone.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-danger py-2">
+                    <i class="bi bi-trash-fill me-1"></i> Yes, Delete Payment
+                </button>
+                <a href="{% url 'fees_list' %}" class="btn btn-outline-secondary py-2">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -151,6 +151,23 @@ def admin_dashboard(request):
     from apps.courses.models import Course
     from apps.batches.models import Batch
     from apps.attendance.models import Attendance
+    from apps.students.models import StudentProfile
+    from apps.fees.models import FeePayment
+    from django.db.models import Sum, F
+    from django.db.models.functions import Coalesce
+    from decimal import Decimal
+
+    # Fee metrics
+    total_fee_collection = FeePayment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_course_fees = StudentProfile.objects.aggregate(total=Sum('batch__course__fees'))['total'] or Decimal('0.00')
+    total_pending_fees = Decimal(str(total_course_fees)) - Decimal(str(total_fee_collection))
+    
+    students_with_pending_fees = StudentProfile.objects.annotate(
+        paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'))
+    ).filter(
+        batch__course__isnull=False,
+        paid_amount__lt=F('batch__course__fees')
+    ).count()
 
     context = {
         'total_students': User.objects.filter(role='student').count(),
@@ -163,6 +180,9 @@ def admin_dashboard(request):
         'total_courses': Course.objects.count(),
         'total_batches': Batch.objects.count(),
         'total_attendance_records': Attendance.objects.count(),
+        'total_fee_collection': total_fee_collection,
+        'total_pending_fees': total_pending_fees,
+        'students_with_pending_fees': students_with_pending_fees,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 

@@ -88,23 +88,33 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="dashboard-action-card text-center h-100 py-4">
                         <div class="feature-icon"><i class="bi bi-journal-plus"></i></div>
                         <h5 class="fw-bold">Exam Management</h5>
                         <p class="text-muted small mb-3">Create new exams or jump back into the ones you've already built.</p>
-                        <a href="{% url 'add_exam' %}" class="btn btn-primary">
+                        <a href="{% url 'add_exam' %}" class="btn btn-primary w-100">
                             <i class="bi bi-plus-circle me-1"></i> Create New Exam
                         </a>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="dashboard-action-card text-center h-100 py-4">
                         <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
                         <h5 class="fw-bold">Attendance Management</h5>
                         <p class="text-muted small mb-3">Filter, search, and view attendance logs across all batches.</p>
-                        <a href="{% url 'attendance_list' %}" class="btn btn-outline-primary">
+                        <a href="{% url 'attendance_list' %}" class="btn btn-outline-primary w-100">
                             <i class="bi bi-arrow-right-circle me-1"></i> Go to Attendance
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="dashboard-action-card text-center h-100 py-4">
+                        <div class="feature-icon"><i class="bi bi-wallet2"></i></div>
+                        <h5 class="fw-bold">Fees Management</h5>
+                        <p class="text-muted small mb-3">View read-only summaries of student fee records for your batches.</p>
+                        <a href="{% url 'fees_list' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-arrow-right-circle me-1"></i> Go to Fees
                         </a>
                     </div>
                 </div>
