@@ -1,7 +1,7 @@
 {% extends 'accounts/base.html' %}
 {% load widget_tweaks %}
 
-{% block title %}Edit {{ user.get_role_display }} | Examly{% endblock %}
+{% block title %}Edit {{ edited_user.get_role_display }} | Examly{% endblock %}
 
 {% block content %}
 <div class="container py-2">
@@ -11,8 +11,8 @@
                 <div class="card-body p-4 p-md-5">
                     <div class="text-center mb-4">
                         <div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
-                        <h3 class="fw-bold mb-1">Edit {{ user.get_role_display }}</h3>
-                        <p class="text-muted">{{ user.username }} &middot; <span class="badge-soft-primary">{{ user.get_role_display }}</span></p>
+                        <h3 class="fw-bold mb-1">Edit {{ edited_user.get_role_display }}</h3>
+                        <p class="text-muted">{{ edited_user.username }} &middot; <span class="badge-soft-primary">{{ edited_user.get_role_display }}</span></p>
                     </div>
 
                     {% if form.non_field_errors %}
@@ -26,7 +26,7 @@
                     <form method="post">
                         {% csrf_token %}
                         
-                        {% if user.role == 'student' %}
+                        {% if edited_user.role == 'student' %}
                             <!-- Student Form Design -->
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -129,7 +129,7 @@
 
                         <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary fw-bold flex-grow-1 py-2">
-                                <i class="bi bi-check-circle me-1"></i> Save {{ user.get_role_display }}
+                                <i class="bi bi-check-circle me-1"></i> Save {{ edited_user.get_role_display }}
                             </button>
                             <a href="{% url 'user_list' %}" class="btn btn-outline-primary py-2 px-4">
                                 <i class="bi bi-x-circle me-1"></i> Cancel

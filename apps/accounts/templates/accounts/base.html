@@ -45,7 +45,7 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto align-items-lg-center">
 
-          {% if user.is_authenticated %}
+          {% if request.user.is_authenticated %}
 
           <!-- Common Home -->
           <li class="nav-item">
@@ -53,11 +53,11 @@
           </li>
 
           <!-- Exams: Admin/Teacher/Student -->
-          {% if user.role == 'admin' or user.role == 'teacher' %}
+          {% if request.user.role == 'admin' or request.user.role == 'teacher' %}
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'exam_dashboard' %}active{% endif %}" href="{% url 'exam_dashboard' %}">Exams</a>
             </li>
-          {% elif user.role == 'student' %}
+          {% elif request.user.role == 'student' %}
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_dashboard' %}">Student Dashboard</a>
             </li>
@@ -69,7 +69,7 @@
           </li>
 
           <!-- Dashboard Links -->
-          {% if user.role == 'admin' %}
+          {% if request.user.role == 'admin' %}
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
             </li>
@@ -85,7 +85,7 @@
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'feedback_list' or request.resolver_match.url_name == 'feedback_detail' %}active{% endif %}" href="{% url 'feedback_list' %}">Feedback</a>
             </li>
-          {% elif user.role == 'teacher' %}
+          {% elif request.user.role == 'teacher' %}
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}" href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
             </li>
@@ -95,8 +95,8 @@
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <span class="role-badge">
               <i class="bi bi-person-circle"></i>
-              {% if user.role == 'admin' %}Admin{% elif user.role == 'teacher' %}Teacher{% else %}Student{% endif %}
-              &middot; {{ user.username }}
+              {% if request.user.role == 'admin' %}Admin{% elif request.user.role == 'teacher' %}Teacher{% else %}Student{% endif %}
+              &middot; {{ request.user.username }}
             </span>
           </li>
 

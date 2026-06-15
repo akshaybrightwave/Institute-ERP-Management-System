@@ -143,7 +143,7 @@ def admin_required(view_func):
 
 from django.shortcuts import get_object_or_404
 from .models import User, Feedback
-from .forms import AdminSignupForm, TeacherSignupForm, StudentSignupForm
+from .forms import AdminSignupForm, TeacherSignupForm, StudentSignupForm, StudentEditForm, TeacherEditForm
 
 @admin_required
 def admin_dashboard(request):
@@ -223,9 +223,9 @@ def user_add(request):
 def user_edit(request, user_id):
     user = get_object_or_404(User, id=user_id)
     if user.role == 'student':
-        form_class = StudentSignupForm
+        form_class = StudentEditForm
     elif user.role == 'teacher':
-        form_class = TeacherSignupForm
+        form_class = TeacherEditForm
     else:
         return HttpResponseForbidden("Invalid user type.")
 
@@ -236,6 +236,10 @@ def user_edit(request, user_id):
             form = form_class(request.POST, instance=user)
         if form.is_valid():
             form.save()
+            if user.role == 'student':
+                messages.success(request, "Student updated successfully.")
+            elif user.role == 'teacher':
+                messages.success(request, "Teacher updated successfully.")
             return redirect('user_list')
     else:
         if user.role == 'student':
@@ -243,7 +247,7 @@ def user_edit(request, user_id):
         else:
             form = form_class(instance=user)
 
-    return render(request, 'accounts/user_edit.html', {'form': form, 'user': user})
+    return render(request, 'accounts/user_edit.html', {'form': form, 'edited_user': user})
 
 
 @admin_required
