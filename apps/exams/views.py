@@ -45,14 +45,15 @@ def exam_list(request):
 @user_passes_test(is_admin_or_teacher)
 def add_exam(request):
     if request.method == 'POST':
-        form = ExamForm(request.POST)
+        form = ExamForm(request.POST, user=request.user)
         if form.is_valid():
             exam = form.save(commit=False)
             exam.created_by = request.user
             exam.save()
+            form.save_m2m()
             return redirect('exam_list')
     else:
-        form = ExamForm()
+        form = ExamForm(user=request.user)
     return render(request, 'exam/add_exam.html', {'form': form})
 
 
@@ -60,11 +61,11 @@ def add_exam(request):
 def edit_exam(request, exam_id):
     exam = get_object_or_404(Exam, id=exam_id)
 
-    # Teacher can edit only own exams
-    if request.user.role == 'teacher' and exam.created_by != request.user:
+    # Teacher can edit only exams connected to their assigned batches
+    if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
-    form = ExamForm(request.POST or None, instance=exam)
+    form = ExamForm(request.POST or None, instance=exam, user=request.user)
     if form.is_valid():
         form.save()
         return redirect('exam_list')
@@ -75,8 +76,8 @@ def edit_exam(request, exam_id):
 def delete_exam(request, exam_id):
     exam = get_object_or_404(Exam, id=exam_id)
 
-    # Teacher can delete only own exams
-    if request.user.role == 'teacher' and exam.created_by != request.user:
+    # Teacher can delete only exams connected to their assigned batches
+    if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     exam.delete()
@@ -103,8 +104,8 @@ def teacher_exam_dashboard(request):
 def question_list(request, exam_id):
     exam = get_object_or_404(Exam, id=exam_id)
 
-    # Teacher can only view own exam's questions
-    if request.user.role == 'teacher' and exam.created_by != request.user:
+    # Teacher can only view questions for exams connected to their assigned batches
+    if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     questions = exam.questions.all()
@@ -115,8 +116,8 @@ def question_list(request, exam_id):
 def add_question(request, exam_id):
     exam = get_object_or_404(Exam, id=exam_id)
 
-    # Security check
-    if request.user.role == 'teacher' and exam.created_by != request.user:
+    # Security check: Teacher can only add questions to exams connected to their assigned batches
+    if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     if request.method == 'POST':
@@ -156,7 +157,7 @@ def add_question(request, exam_id):
 def edit_question(request, question_id):
     question = get_object_or_404(Question, id=question_id)
 
-    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+    if request.user.role == 'teacher' and not question.exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     form = QuestionForm(request.POST or None, instance=question)
@@ -178,7 +179,7 @@ def edit_question(request, question_id):
 def delete_question(request, question_id):
     question = get_object_or_404(Question, id=question_id)
 
-    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+    if request.user.role == 'teacher' and not question.exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     exam_id = question.exam.id
@@ -194,7 +195,7 @@ def delete_question(request, question_id):
 def add_option(request, question_id):
     question = get_object_or_404(Question, id=question_id)
 
-    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+    if request.user.role == 'teacher' and not question.exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     if request.method == 'POST':
@@ -220,7 +221,7 @@ def edit_option(request, option_id):
     option = get_object_or_404(Option, id=option_id)
     question = option.question
 
-    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+    if request.user.role == 'teacher' and not question.exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     form = OptionForm(request.POST or None, instance=option)
@@ -241,12 +242,41 @@ def delete_option(request, option_id):
     option = get_object_or_404(Option, id=option_id)
     question = option.question
 
-    if request.user.role == 'teacher' and question.exam.created_by != request.user:
+    if request.user.role == 'teacher' and not question.exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
     option.delete()
     messages.success(request, "Option deleted successfully!")
     return redirect('edit_question', question_id=question.id)
+
+
+@user_passes_test(is_admin_or_teacher)
+def exam_detail(request, exam_id):
+    exam = get_object_or_404(Exam, id=exam_id)
+
+    # Validate ownership for teachers
+    if request.user.role == 'teacher':
+        from apps.teachers.models import TeacherProfile
+        profile = TeacherProfile.objects.filter(user=request.user).first()
+        if not profile or not exam.batches.filter(teacher=profile).exists():
+            return redirect('exam_list')
+
+    # Assigned Batches
+    batches = exam.batches.all()
+
+    # Student Count: count of unique students in all batches assigned to this exam
+    from apps.students.models import StudentProfile
+    student_count = StudentProfile.objects.filter(batch__in=batches).count()
+
+    # Attempt Count: count of all attempts on this exam
+    attempt_count = exam.attempts.count()
+
+    return render(request, 'exam/exam_detail.html', {
+        'exam': exam,
+        'batches': batches,
+        'student_count': student_count,
+        'attempt_count': attempt_count,
+    })
 
     # NOTE: All student views  → apps/students/views.py
     #       All teacher views  → apps/teachers/views.py

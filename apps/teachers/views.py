@@ -28,7 +28,13 @@ def teacher_dashboard(request):
         messages.info(request, 'Please complete your profile before accessing the dashboard.')
         return redirect('edit_teacher_profile')
 
-    exams_qs = Exam.objects.filter(created_by=request.user).annotate(
+    # Teacher Batches and Students metrics
+    from apps.batches.models import Batch
+    assigned_batches = Batch.objects.filter(teacher=profile).select_related('course').annotate(student_count=Count('studentprofile'))
+    total_assigned_batches = assigned_batches.count()
+    total_students_across_batches = sum(b.student_count for b in assigned_batches)
+
+    exams_qs = Exam.objects.filter(batches__in=assigned_batches).distinct().annotate(
         submission_count=Count('attempts', distinct=True),
         question_count=Count('questions', distinct=True),
         completed_count=Count('attempts', filter=Q(attempts__is_completed=True), distinct=True),
@@ -49,12 +55,6 @@ def teacher_dashboard(request):
 
     for exam in exams:
         exam.pass_rate = round((exam.pass_count / exam.completed_count) * 100, 1) if exam.completed_count else None
-
-    # Teacher Batches and Students metrics
-    from apps.batches.models import Batch
-    assigned_batches = Batch.objects.filter(teacher=profile).select_related('course').annotate(student_count=Count('studentprofile'))
-    total_assigned_batches = assigned_batches.count()
-    total_students_across_batches = assigned_batches.aggregate(total=Count('studentprofile'))['total'] or 0
 
     context = {
         'profile': profile,
@@ -79,10 +79,12 @@ def teacher_batch_detail(request, pk):
     # SECURITY: Validate ownership
     batch = get_object_or_404(Batch.objects.select_related('course', 'teacher'), pk=pk, teacher=profile)
     students = batch.studentprofile_set.all()
+    exams = batch.exams.all()
 
     return render(request, 'teacher/batch_detail.html', {
         'batch': batch,
         'students': students,
+        'exams': exams,
     })
 
 
@@ -168,7 +170,15 @@ def delete_teacher_profile(request):
 
 @login_required
 def teacher_exam_dashboard(request):
-    exams = Exam.objects.filter(created_by=request.user)
+    if request.user.role != 'teacher':
+        return redirect('login')
+    
+    from apps.teachers.models import TeacherProfile
+    profile = get_object_or_404(TeacherProfile, user=request.user)
+    
+    from apps.batches.models import Batch
+    assigned_batches = Batch.objects.filter(teacher=profile)
+    exams = Exam.objects.filter(batches__in=assigned_batches).distinct()
     return render(request, 'exam/teacher_exam_dashboard.html', {'exams': exams})
 
 
@@ -177,7 +187,9 @@ def view_submissions(request, exam_id):
     if request.user.role != 'teacher':
         return redirect('login')
 
-    exam = get_object_or_404(Exam, id=exam_id, created_by=request.user)
+    from apps.teachers.models import TeacherProfile
+    profile = get_object_or_404(TeacherProfile, user=request.user)
+    exam = get_object_or_404(Exam.objects.filter(batches__teacher=profile).distinct(), id=exam_id)
     attempts = StudentExamAttempt.objects.filter(exam=exam)
 
     # Filtering
@@ -215,7 +227,9 @@ def export_submissions_csv(request, exam_id):
     if request.user.role != 'teacher':
         return redirect('login')
 
-    exam = get_object_or_404(Exam, id=exam_id, created_by=request.user)
+    from apps.teachers.models import TeacherProfile
+    profile = get_object_or_404(TeacherProfile, user=request.user)
+    exam = get_object_or_404(Exam.objects.filter(batches__teacher=profile).distinct(), id=exam_id)
     attempts = StudentExamAttempt.objects.filter(exam=exam)
 
     score_min = request.GET.get('score_min')
@@ -246,8 +260,13 @@ def export_submissions_csv(request, exam_id):
 @login_required
 def view_student_answers(request, attempt_id):
     attempt = get_object_or_404(StudentExamAttempt, id=attempt_id)
-    if request.user.role != 'teacher' or attempt.exam.created_by != request.user:
+    if request.user.role != 'teacher':
         return redirect('login')
+
+    from apps.teachers.models import TeacherProfile
+    profile = get_object_or_404(TeacherProfile, user=request.user)
+    if not attempt.exam.batches.filter(teacher=profile).exists():
+        return redirect('teacher_dashboard')
 
     answers = attempt.answers.select_related('question')
     return render(request, 'teacher/view_student_answers.html', {

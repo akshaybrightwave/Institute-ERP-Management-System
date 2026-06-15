@@ -16,7 +16,8 @@ def batch_list(request):
 def batch_detail(request, pk):
     batch = get_object_or_404(Batch.objects.select_related('course', 'teacher'), pk=pk)
     students = batch.studentprofile_set.all()
-    return render(request, 'batches/batch_detail.html', {'batch': batch, 'students': students})
+    exams = batch.exams.all()
+    return render(request, 'batches/batch_detail.html', {'batch': batch, 'students': students, 'exams': exams})
 
 
 @admin_required

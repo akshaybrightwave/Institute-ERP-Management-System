@@ -178,5 +178,39 @@ Center
 
 ---
 
-## 9. Next Planned Phase (ERP Phase 4)
-* **Goal:** Batch-wise Exam Assignment. Assign Exams to specific Batches so only students belonging to assigned batches can attempt those exams. (Not yet implemented, documentation only).
+## 9. Completed Phase: ERP Phase 4 — Exam ↔ Batch Integration
+
+### 9.1 Data Models & Relationships
+* **Exam ↔ Batch Relationship:** Integrated `batches = models.ManyToManyField('batches.Batch', blank=True, related_name='exams')` inside the `Exam` model. This allows an exam to be assigned to one or more batches.
+
+### 9.2 Workflows & Forms
+* **Create/Edit Exam:** Added the `batches` select-multiple field to the `ExamForm` form.
+  * Administrators can assign any batch to the exam.
+  * Teachers can only assign batches explicitly assigned to them.
+* **Batch Details:** Both Admin Batch Detail and Teacher Batch Detail pages display a list of all exams assigned to that batch.
+* **Exam Details:** Added an Exam Detail view and page (`/exams/<int:exam_id>/`) visible to Admins and Teachers, showing:
+  * Exam core settings and information.
+  * Assigned batches.
+  * Student count (unique students enrolled in the assigned batches).
+  * Attempt count (total student attempts).
+
+### 9.3 Security & Role-Based Access Control
+* **Students:**
+  * Enforces that students only see published exams assigned to their batch.
+  * Restricts access to instruction, attempt, and submission pages; students attempting to access exams outside their batch receive a `404 Not Found` or `403 Forbidden` response.
+* **Teachers:**
+  * Restricts the teacher's exam list, dashboard, submissions, and detailed student answer sheets to exams assigned to batches taught by that teacher.
+  * Validates access to editing, deleting, managing questions/options, or viewing details of exams; teachers accessing exams not assigned to their batches are redirected to the exam list.
+* **Admins:** Retain full, unrestricted platform access.
+
+### 9.4 Dashboard Metrics Updates
+* **Admin Dashboard:**
+  * `Total Exams` (All exams on the platform)
+  * `Active Exams` (Exams currently published)
+  * `Batch Assigned Exams` (Exams assigned to at least one batch)
+* **Teacher Dashboard:**
+  * `My Exams` (Exams assigned to the teacher's batches)
+  * `My Batches` (Batches assigned to the teacher)
+  * `Students Covered` (Total student count across the teacher's batches)
+* **Student Dashboard:**
+  * `Enrolled Exams` (Count of published exams assigned specifically to the student's batch)

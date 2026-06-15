@@ -5,6 +5,7 @@ urlpatterns = [
     # Exam CRUD (shared for Admin + Teacher)
     path('exams/', views.exam_list, name='exam_list'),
     path('exams_add/', views.add_exam, name='add_exam'),
+    path('exams/<int:exam_id>/', views.exam_detail, name='exam_detail'),
     path('exams/<int:exam_id>/edit/', views.edit_exam, name='edit_exam'),
     path('exams/<int:exam_id>/delete/', views.delete_exam, name='delete_exam'),
 

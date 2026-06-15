@@ -14,7 +14,7 @@
     </div>
 
     <!-- Stats -->
-    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6">
+    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-4 row-cols-lg-4 row-cols-xl-8">
         <div class="col">
             <div class="stat-card">
                 <div class="stat-icon"><i class="bi bi-building"></i></div>
@@ -66,6 +66,24 @@
                 <div>
                     <div class="stat-value">{{ total_exams }}</div>
                     <div class="stat-label">Total Exams</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-journal-check"></i></div>
+                <div>
+                    <div class="stat-value">{{ active_exams }}</div>
+                    <div class="stat-label">Active Exams</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-journal-album"></i></div>
+                <div>
+                    <div class="stat-value">{{ batch_assigned_exams }}</div>
+                    <div class="stat-label">Batch Assigned Exams</div>
                 </div>
             </div>
         </div>

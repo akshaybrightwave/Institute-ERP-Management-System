@@ -155,6 +155,8 @@ def admin_dashboard(request):
         'total_students': User.objects.filter(role='student').count(),
         'total_teachers': User.objects.filter(role='teacher').count(),
         'total_exams': Exam.objects.count(),
+        'active_exams': Exam.objects.filter(is_published=True).count(),
+        'batch_assigned_exams': Exam.objects.filter(batches__isnull=False).distinct().count(),
         'unread_feedback_count': Feedback.objects.filter(is_read=False).count(),
         'total_centers': Center.objects.count(),
         'total_courses': Course.objects.count(),

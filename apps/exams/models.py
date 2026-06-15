@@ -23,6 +23,11 @@ class Exam(models.Model):
         blank=True,
         related_name='exams'
     )
+    batches = models.ManyToManyField(
+        'batches.Batch',
+        blank=True,
+        related_name='exams'
+    )
 
     def __str__(self):
         return self.title

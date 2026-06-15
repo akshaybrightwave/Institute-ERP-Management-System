@@ -93,6 +93,48 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Assigned Exams -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0"><i class="bi bi-clipboard-check text-primary me-2"></i>Assigned Exams</h5>
+                        <span class="badge bg-success rounded-pill">{{ exams.count }} Exams</span>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-examly table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Exam Title</th>
+                                    <th>Date</th>
+                                    <th>Duration</th>
+                                    <th>Total Marks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for exam in exams %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold">{{ exam.title }}</td>
+                                    <td>{{ exam.date }}</td>
+                                    <td>{{ exam.duration_minutes }} mins</td>
+                                    <td>{{ exam.total_marks }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="p-0">
+                                        <div class="empty-state py-4">
+                                            <i class="bi bi-clipboard-x"></i>
+                                            <p class="mb-0">No exams assigned to this batch yet.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

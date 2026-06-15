@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseForbidden
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
@@ -21,8 +22,19 @@ def student_dashboard(request):
     total_attempts = attempts.count()
     average_score = sum(a.score for a in attempts) / total_attempts if total_attempts > 0 else 0
 
+    try:
+        profile = request.user.studentprofile
+        batch = profile.batch
+    except StudentProfile.DoesNotExist:
+        batch = None
+
+    if batch:
+        total_exams = Exam.objects.filter(is_published=True, batches=batch).count()
+    else:
+        total_exams = 0
+
     context = {
-        'total_exams': Exam.objects.filter(is_published=True).count(),
+        'total_exams': total_exams,
         'total_attempts': total_attempts,
         'average_score': round(average_score, 1),
     }
@@ -35,13 +47,38 @@ def student_dashboard(request):
 
 @login_required
 def student_exam_list(request):
-    exams = Exam.objects.filter(is_published=True)
+    if request.user.role != 'student':
+        return redirect('login')
+
+    try:
+        profile = request.user.studentprofile
+        batch = profile.batch
+    except StudentProfile.DoesNotExist:
+        batch = None
+
+    if batch:
+        exams = Exam.objects.filter(is_published=True, batches=batch)
+    else:
+        exams = Exam.objects.none()
+
     return render(request, 'student/student_exam_list.html', {'exams': exams})
 
 
 @login_required
 def exam_instructions_view(request, exam_id):
-    exam = get_object_or_404(Exam, id=exam_id)
+    if request.user.role != 'student':
+        return redirect('login')
+
+    try:
+        profile = request.user.studentprofile
+        batch = profile.batch
+    except StudentProfile.DoesNotExist:
+        batch = None
+
+    if not batch:
+        return HttpResponseForbidden("You do not belong to any batch.")
+
+    exam = get_object_or_404(Exam, id=exam_id, batches=batch, is_published=True)
 
     attempts = StudentExamAttempt.objects.filter(student=request.user, exam=exam)
     latest_attempt = attempts.order_by('-submitted_at').first()
@@ -65,7 +102,19 @@ def exam_instructions_view(request, exam_id):
 
 @login_required
 def attempt_exam(request, exam_id):
-    exam = get_object_or_404(Exam, id=exam_id)
+    if request.user.role != 'student':
+        return redirect('login')
+
+    try:
+        profile = request.user.studentprofile
+        batch = profile.batch
+    except StudentProfile.DoesNotExist:
+        batch = None
+
+    if not batch:
+        return HttpResponseForbidden("You do not belong to any batch.")
+
+    exam = get_object_or_404(Exam, id=exam_id, batches=batch, is_published=True)
 
     attempts = StudentExamAttempt.objects.filter(student=request.user, exam=exam)
     in_progress_attempt = attempts.filter(is_completed=False).order_by('-start_time').first()
@@ -109,7 +158,19 @@ def attempt_exam(request, exam_id):
 @login_required
 def submit_exam(request, exam_id):
     if request.method == 'POST':
-        exam = get_object_or_404(Exam, id=exam_id)
+        if request.user.role != 'student':
+            return redirect('login')
+
+        try:
+            profile = request.user.studentprofile
+            batch = profile.batch
+        except StudentProfile.DoesNotExist:
+            batch = None
+
+        if not batch:
+            return HttpResponseForbidden("You do not belong to any batch.")
+
+        exam = get_object_or_404(Exam, id=exam_id, batches=batch, is_published=True)
         student = request.user
         attempt = StudentExamAttempt.objects.filter(
             student=student, exam=exam, is_completed=False

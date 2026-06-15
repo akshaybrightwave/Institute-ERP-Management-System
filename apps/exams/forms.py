@@ -17,7 +17,7 @@ class ExamForm(forms.ModelForm):
         model = Exam
         fields = [
             'title', 'description', 'date', 'end_date', 'total_marks', 'duration_minutes',
-            'pass_percentage', 'negative_marks', 'allow_retake', 'is_published',
+            'pass_percentage', 'negative_marks', 'allow_retake', 'is_published', 'batches',
         ]
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -28,7 +28,20 @@ class ExamForm(forms.ModelForm):
             'negative_marks': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.25', 'min': 0}),
             'allow_retake': forms.CheckboxInput(attrs={'class': 'form-check-input ms-2'}),
             'is_published': forms.CheckboxInput(attrs={'class': 'form-check-input ms-2'}),
+            'batches': forms.SelectMultiple(attrs={'class': 'form-select'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user and user.role == 'teacher':
+            from apps.batches.models import Batch
+            from apps.teachers.models import TeacherProfile
+            profile = TeacherProfile.objects.filter(user=user).first()
+            if profile:
+                self.fields['batches'].queryset = Batch.objects.filter(teacher=profile)
+            else:
+                self.fields['batches'].queryset = Batch.objects.none()
 
 
 class QuestionForm(forms.ModelForm):

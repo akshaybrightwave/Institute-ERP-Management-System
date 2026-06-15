@@ -1,0 +1,140 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Exam Details | {{ exam.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-journal-text text-primary me-2"></i>Exam Details</h2>
+            <p>Detailed overview of exam settings, assigned batches, and performance metrics.</p>
+        </div>
+        <div>
+            <a href="{% url 'exam_list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Exams
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Exam Information -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-info-circle text-primary me-2"></i>Exam Info</h5>
+                    <div class="mb-3">
+                        <label class="text-muted small d-block">Exam Title</label>
+                        <span class="fw-semibold fs-5">{{ exam.title }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small d-block">Description</label>
+                        <span class="text-muted small">{{ exam.description }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small d-block">Exam Date</label>
+                        <span class="fw-semibold">{{ exam.date }}</span>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Duration</label>
+                            <span class="fw-semibold">{{ exam.duration_minutes }} mins</span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Total Marks</label>
+                            <span class="fw-semibold">{{ exam.total_marks }}</span>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Pass %</label>
+                            <span class="fw-semibold">{{ exam.pass_percentage }}%</span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block">Negative Marks</label>
+                            <span class="fw-semibold">{{ exam.negative_marks }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small d-block">Status</label>
+                        {% if exam.is_published %}
+                            <span class="badge bg-success rounded-pill px-3">Published</span>
+                        {% else %}
+                            <span class="badge bg-warning rounded-pill px-3">Draft</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics & Batches -->
+        <div class="col-lg-8">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-people"></i></div>
+                        <div>
+                            <div class="stat-value">{{ student_count }}</div>
+                            <div class="stat-label">Student Count</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="bi bi-file-earmark-check"></i></div>
+                        <div>
+                            <div class="stat-value">{{ attempt_count }}</div>
+                            <div class="stat-label">Attempt Count</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assigned Batches -->
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-4"><i class="bi bi-calendar-event text-primary me-2"></i>Assigned Batches</h5>
+                            <div class="table-responsive">
+                                <table class="table table-examly table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th class="ps-3">Batch Name</th>
+                                            <th>Course</th>
+                                            <th>Teacher</th>
+                                            <th>Schedule</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for batch in batches %}
+                                        <tr>
+                                            <td class="ps-3 fw-semibold text-dark">{{ batch.name }}</td>
+                                            <td>{{ batch.course.name }}</td>
+                                            <td>
+                                                {% if batch.teacher %}
+                                                    {{ batch.teacher.full_name }}
+                                                {% else %}
+                                                    <span class="text-muted small italic">Not Assigned</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="small">{{ batch.start_date }} to {{ batch.end_date }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="p-0">
+                                                <div class="empty-state py-4">
+                                                    <i class="bi bi-calendar-x"></i>
+                                                    <p class="mb-0">No batches assigned to this exam yet.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
