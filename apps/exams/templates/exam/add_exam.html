@@ -19,10 +19,23 @@
                         {% csrf_token %}
                         {% for field in form %}
                             <div class="mb-3">
-                                <label class="form-label">{{ field.label }}</label>
-                                {{ field|add_class:"form-control" }}
+                                <label class="form-label fw-semibold">{{ field.label }}</label>
+                                {% if field.name == 'batches' %}
+                                    <div class="batches-checkbox-list border rounded p-3 bg-light" style="max-height: 220px; overflow-y: auto;">
+                                        {% for checkbox in field %}
+                                            <div class="form-check mb-2">
+                                                {{ checkbox.tag }}
+                                                <label class="form-check-label ms-1" for="{{ checkbox.id_for_label }}">
+                                                    {{ checkbox.choice_label }}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ field|add_class:"form-control" }}
+                                {% endif %}
                                 {% if field.help_text %}
-                                    <small class="text-muted">{{ field.help_text|safe }}</small>
+                                    <small class="text-muted d-block mt-1">{{ field.help_text|safe }}</small>
                                 {% endif %}
                                 {% for error in field.errors %}
                                     <p class="text-danger small mt-1 mb-0">{{ error }}</p>

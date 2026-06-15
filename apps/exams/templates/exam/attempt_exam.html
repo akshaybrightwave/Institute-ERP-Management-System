@@ -14,15 +14,15 @@
                 </div>
             </div>
 
-            <div class="card border-0 mb-4" style="border-left: 4px solid var(--color-primary) !important;">
-                <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="card border-0 mb-4 shadow-sm bg-light" style="border-left: 5px solid var(--color-danger) !important;">
+                <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3 py-3 px-4">
                     <div>
-                        <span class="text-muted small d-block">Time Remaining</span>
-                        <span id="timer" class="fs-4 fw-bold"
-                            style="font-family:'Poppins',sans-serif; color: var(--color-danger);">Calculating...</span>
+                        <span class="text-muted small d-block fw-bold text-uppercase" style="letter-spacing: 0.5px;">Time Remaining</span>
+                        <span id="timer" class="fs-2 fw-bold"
+                            style="font-family:'Poppins',sans-serif; color: var(--color-danger); letter-spacing: 1px;">Calculating...</span>
                     </div>
-                    <div id="tabWarning" class="badge-soft-danger" style="display: none;">
-                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Tab switching detected!
+                    <div id="tabWarning" class="badge bg-danger fs-6 py-2 px-3" style="display: none;">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Tab switching detected!
                     </div>
                 </div>
             </div>
@@ -31,18 +31,20 @@
                 {% csrf_token %}
 
                 {% for question in questions %}
-                <div class="card border-0 mb-3">
-                    <div class="card-body">
-                        <p class="fw-bold mb-1">Q{{ forloop.counter }}. {{ question.question_text }}</p>
-                        <p class="mb-3"><span class="badge-soft-primary">{{ question.marks }} mark{{
-                                question.marks|pluralize }}</span></p>
+                <div class="card border-0 mb-4 shadow-sm">
+                    <div class="card-body p-4">
+                        <p class="fs-5 fw-bold text-dark mb-2">Q{{ forloop.counter }}. {{ question.question_text }}</p>
+                        <div class="mb-3">
+                            <span class="badge bg-primary rounded-pill px-3">{{ question.marks }} Mark{{ question.marks|pluralize }}</span>
+                        </div>
 
-                        <div class="ms-1">
+                        <div class="ms-1 mt-3">
                             {% for option in question.options.all %}
-                            <div class="form-check my-2">
+                            <div class="form-check p-3 border rounded-3 mb-2 transition-all" style="cursor: pointer; padding-left: 2.75rem;">
                                 <input class="form-check-input" type="radio" name="{{ question.id }}"
-                                    id="q{{ question.id }}_opt{{ option.id }}" value="{{ option.id }}" required>
-                                <label class="form-check-label" for="q{{ question.id }}_opt{{ option.id }}">
+                                    id="q{{ question.id }}_opt{{ option.id }}" value="{{ option.id }}" required
+                                    style="margin-left: -1.75rem; cursor: pointer;">
+                                <label class="form-check-label d-block fw-medium text-dark w-100" style="cursor: pointer;" for="q{{ question.id }}_opt{{ option.id }}">
                                     {{ option.text }}
                                 </label>
                             </div>
@@ -89,7 +91,7 @@
 
         let minutes = Math.floor(totalTime / 60);
         let seconds = totalTime % 60;
-        timerDisplay.textContent = `₹{minutes.toString().padStart(2, '0')}:₹{seconds.toString().padStart(2, '0')}`;
+        timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         totalTime--;
     }
 

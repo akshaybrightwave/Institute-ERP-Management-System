@@ -16,5 +16,5 @@ urlpatterns = [
     path('teacher/answers/<int:attempt_id>/', views.view_student_answers, name='view_student_answers'),
     
     # Teacher Batch details
-    path('batches/<int:pk>/', views.teacher_batch_detail, name='teacher_batch_detail'),
+    path('teacher/batches/<int:pk>/', views.teacher_batch_detail, name='teacher_batch_detail'),
 ]

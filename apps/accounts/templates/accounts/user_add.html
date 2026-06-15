@@ -52,11 +52,17 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                                    <label class="form-label d-flex align-items-center gap-1">
+                                        Password <span class="text-danger">*</span>
+                                        <span class="text-primary" 
+                                              style="cursor: pointer;"
+                                              data-bs-toggle="tooltip" 
+                                              data-bs-html="true" 
+                                              title="Password requirements:<br>&bull; Minimum 8 characters<br>&bull; Cannot be a common password<br>&bull; Cannot be entirely numeric<br>&bull; Cannot be too similar to username or email">
+                                            <i class="bi bi-info-circle"></i>
+                                        </span>
+                                    </label>
                                     {{ form.password1|add_class:"form-control" }}
-                                    {% if form.password1.help_text %}
-                                        <small class="text-muted d-block mt-1">{{ form.password1.help_text|safe }}</small>
-                                    {% endif %}
                                     {% for error in form.password1.errors %}
                                         <p class="text-danger small mt-1 mb-0">{{ error }}</p>
                                     {% endfor %}
@@ -105,11 +111,17 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Password <span class="text-danger">*</span></label>
+                                    <label class="form-label d-flex align-items-center gap-1">
+                                        Password <span class="text-danger">*</span>
+                                        <span class="text-primary" 
+                                              style="cursor: pointer;"
+                                              data-bs-toggle="tooltip" 
+                                              data-bs-html="true" 
+                                              title="Password requirements:<br>&bull; Minimum 8 characters<br>&bull; Cannot be a common password<br>&bull; Cannot be entirely numeric<br>&bull; Cannot be too similar to username or email">
+                                            <i class="bi bi-info-circle"></i>
+                                        </span>
+                                    </label>
                                     {{ form.password1|add_class:"form-control" }}
-                                    {% if form.password1.help_text %}
-                                        <small class="text-muted d-block mt-1">{{ form.password1.help_text|safe }}</small>
-                                    {% endif %}
                                     {% for error in form.password1.errors %}
                                         <p class="text-danger small mt-1 mb-0">{{ error }}</p>
                                     {% endfor %}
@@ -147,4 +159,15 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 {% endblock %}

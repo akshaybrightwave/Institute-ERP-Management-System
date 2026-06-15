@@ -28,7 +28,7 @@ class ExamForm(forms.ModelForm):
             'negative_marks': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.25', 'min': 0}),
             'allow_retake': forms.CheckboxInput(attrs={'class': 'form-check-input ms-2'}),
             'is_published': forms.CheckboxInput(attrs={'class': 'form-check-input ms-2'}),
-            'batches': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            'batches': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):
