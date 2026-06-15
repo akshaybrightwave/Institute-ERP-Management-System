@@ -1,0 +1,171 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Reports & Analytics | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Reports & Analytics Dashboard</h2>
+            <p>Institutional insights, batch metrics, and financial reporting overview.</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-5 row-cols-1 row-cols-sm-2 row-cols-md-4">
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-primary"><i class="bi bi-mortarboard-fill text-primary"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_students }}</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-success"><i class="bi bi-person-workspace text-success"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_teachers }}</div>
+                    <div class="stat-label">Total Teachers</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-info"><i class="bi bi-calendar-event text-info"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_batches }}</div>
+                    <div class="stat-label">Total Batches</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-warning"><i class="bi bi-journal-bookmark-fill text-warning"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_courses }}</div>
+                    <div class="stat-label">Total Courses</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="bi bi-building text-dark"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_centers }}</div>
+                    <div class="stat-label">Total Centers</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon text-danger"><i class="bi bi-journal-text"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_exams }}</div>
+                    <div class="stat-label">Total Exams</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon text-success"><i class="bi bi-award-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_certificates }}</div>
+                    <div class="stat-label">Total Certificates</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon text-info"><i class="bi bi-clock-history"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_attendance_records }}</div>
+                    <div class="stat-label">Attendance Logs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Sections -->
+    <h5 class="fw-bold mb-3">Available Reports</h5>
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-mortarboard-fill text-primary"></i></div>
+                <h5 class="fw-bold">Student Reports</h5>
+                <p class="text-muted small">View student profiles, attendance rates, fee balances, and exam status.</p>
+                <a href="{% url 'student_report' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Open Report
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-calendar-event text-primary"></i></div>
+                <h5 class="fw-bold">Batch Reports</h5>
+                <p class="text-muted small">Monitor student count, batch attendance averages, and issued certificate logs.</p>
+                <a href="{% url 'batch_report' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Open Report
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-person-workspace text-primary"></i></div>
+                <h5 class="fw-bold">Teacher Reports</h5>
+                <p class="text-muted small">Track teacher batch assignments, attendance stats, and exam progress.</p>
+                <a href="{% url 'teacher_report' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Open Report
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-clock-history text-primary"></i></div>
+                <h5 class="fw-bold">Attendance Reports</h5>
+                <p class="text-muted small">Analyze overall present/absent ratios with batch, student, and date filters.</p>
+                <a href="{% url 'attendance_report' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Open Report
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-wallet2 text-primary"></i></div>
+                <h5 class="fw-bold">Fees Reports</h5>
+                <p class="text-muted small">Track total collection, outstanding balances, and check status details.</p>
+                <a href="{% url 'fee_report' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Open Report
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-journal-text text-primary"></i></div>
+                <h5 class="fw-bold">Exam Reports</h5>
+                <p class="text-muted small">Analyze exam submission metrics, average scores, and student pass percentages.</p>
+                <a href="{% url 'exam_report' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Open Report
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-award-fill text-primary"></i></div>
+                <h5 class="fw-bold">Certificate Reports</h5>
+                <p class="text-muted small">Search and filter active, eligible, and revoked certificates tracking logs.</p>
+                <a href="{% url 'certificate_report' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Open Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

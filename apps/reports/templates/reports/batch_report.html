@@ -1,0 +1,93 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Batch Reports | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-calendar-event text-primary me-2"></i>Batch Reports</h2>
+            <p>Monitor cohort sizes, average attendance percentages, and certificate completion stats.</p>
+        </div>
+        <div>
+            <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{% url 'batch_report' %}" class="row g-3 align-items-end">
+                <div class="col-md-9">
+                    <label for="searchInput" class="form-label fw-semibold small">Search Batches</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search by batch name..." value="{{ query }}">
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'batch_report' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Batch Name</th>
+                            <th>Course</th>
+                            <th>Teacher Assigned</th>
+                            <th>Total Students</th>
+                            <th>Attendance %</th>
+                            <th>Certificates Issued</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in batches_data %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ item.batch.name }}</td>
+                            <td>{{ item.batch.course.name }}</td>
+                            <td>
+                                {% if item.batch.teacher %}
+                                    <span class="fw-semibold text-primary">{{ item.batch.teacher.full_name }}</span>
+                                {% else %}
+                                    <span class="text-muted small">Not Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-light text-dark border px-3">{{ item.total_students }}</span></td>
+                            <td>
+                                <span class="fw-bold {% if item.attendance_pct >= 75.0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ item.attendance_pct }}%
+                                </span>
+                            </td>
+                            <td><span class="badge bg-light text-success border px-3"><i class="bi bi-patch-check-fill me-1"></i>{{ item.certificates_issued }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="p-0">
+                                <div class="empty-state py-5">
+                                    <i class="bi bi-calendar-x"></i>
+                                    <p class="mb-0">No batches found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

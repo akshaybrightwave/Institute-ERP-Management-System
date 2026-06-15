@@ -169,8 +169,9 @@ def admin_dashboard(request):
         paid_amount__lt=F('batch__course__fees')
     ).count()
 
-    # Certificate metrics
+    # Certificate & Exam metrics
     from apps.certificates.models import Certificate
+    from apps.exams.models import StudentExamAttempt
     from django.db.models import Count, Q
     
     total_certificates = Certificate.objects.count()
@@ -194,6 +195,23 @@ def admin_dashboard(request):
         if fee_eligible and attendance_eligible:
             eligible_students_count += 1
 
+    # Dashboard Analytics (ERP Phase 8)
+    import datetime
+    today = datetime.date.today()
+    active_students = User.objects.filter(role='student', is_active=True).count()
+    active_teachers = User.objects.filter(role='teacher', is_active=True).count()
+    active_batches = Batch.objects.filter(start_date__lte=today, end_date__gte=today).count()
+    
+    total_att_count = Attendance.objects.count()
+    present_att_count = Attendance.objects.filter(status='present').count()
+    attendance_rate = round((present_att_count / total_att_count * 100), 1) if total_att_count > 0 else 0.0
+    
+    fee_collection_rate = round((total_fee_collection / total_course_fees * 100), 1) if total_course_fees > 0 else 0.0
+    
+    total_attempts = StudentExamAttempt.objects.filter(is_completed=True).count()
+    passed_attempts = StudentExamAttempt.objects.filter(is_completed=True, score__gte=F('exam__pass_percentage')).count()
+    exam_pass_rate = round((passed_attempts / total_attempts * 100), 1) if total_attempts > 0 else 0.0
+
     context = {
         'total_students': User.objects.filter(role='student').count(),
         'total_teachers': User.objects.filter(role='teacher').count(),
@@ -212,6 +230,13 @@ def admin_dashboard(request):
         'issued_certificates_count': issued_certificates_count,
         'revoked_certificates_count': revoked_certificates_count,
         'eligible_students_count': eligible_students_count,
+        'active_students': active_students,
+        'active_teachers': active_teachers,
+        'active_batches': active_batches,
+        'attendance_rate': attendance_rate,
+        'fee_collection_rate': fee_collection_rate,
+        'exam_pass_rate': exam_pass_rate,
+        'certificate_issuance_count': issued_certificates_count,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 

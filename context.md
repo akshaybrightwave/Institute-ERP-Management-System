@@ -107,6 +107,23 @@ Online-Examination-Portal/
 * **Timer Validation:** Server-side validation of elapsed time to auto-submit when remaining time runs out.
 * **Analytics & Reports:** Detailed submission tracking, including exam averages, high/low scores, pass rates, and CSV exporting of submissions.
 
+### 4.9 Attendance Management (`apps/attendance`)
+* **Mark Attendance:** Custom matrix layout enabling teachers and admins to select dates and mark status.
+* **Logs List:** Searchable logs by Student, Batch, and Date.
+
+### 4.10 Fees Management (`apps/fees`)
+* **Fee Structure:** Course-level fees definition.
+* **Collections Ledger:** Logging system for student payment dates, methods, reference numbers, and balances.
+
+### 4.11 Certificates Management (`apps/certificates`)
+* **Eligibility Engine:** Checks batch enrollment, pending fees (0), and attendance rate (>=75%) to allow issuance.
+* **CRUD Audit:** Admin operations to view, revoke, issue, or delete certificate listings.
+
+### 4.12 Reports & Analytics (`apps/reports`)
+* **Reports Dashboard:** Summary counters for institutions.
+* **Segment Reports:** Searchable student, batch, teacher, attendance, fee, exam, and certificate logs reports.
+* **Dashboard Analytics:** Aggregation charts for active resources, collection rates, passing rates, and issuance totals.
+
 ---
 
 ## 5. Integration Modules
@@ -366,4 +383,48 @@ Added the following to the Admin Dashboard metrics:
 * **Admins:** Full access to view, issue, revoke, and delete certificates.
 * **Teachers:** Read-only access to view certificates for students assigned to batches taught by them.
 * **Students:** Read-only access to view only their own certificates.
+
+---
+
+## 13. ERP Phase 8 — Reports & Analytics
+
+### 13.1 App Structure
+The `reports` app is structured as follows:
+* **Views:** `apps/reports/views.py` contains function-based views for the reports dashboard, student reports, batch reports, teacher reports, attendance reports, fee reports, exam reports, and certificate reports.
+* **URLs:** `apps/reports/urls.py` configures routes for all summary and detailed report pages.
+* **Templates:**
+  * `apps/reports/templates/reports/reports_dashboard.html`
+  * `apps/reports/templates/reports/student_report.html`
+  * `apps/reports/templates/reports/batch_report.html`
+  * `apps/reports/templates/reports/teacher_report.html`
+  * `apps/reports/templates/reports/attendance_report.html`
+  * `apps/reports/templates/reports/fee_report.html`
+  * `apps/reports/templates/reports/exam_report.html`
+  * `apps/reports/templates/reports/certificate_report.html`
+
+### 13.2 Views & URLs
+* `/reports/` - `reports_dashboard` (Summary counters of total items, dashboard of links)
+* `/reports/students/` - `student_report` (Detailed report of student name, batch, course, attendance %, fee status, exams attempted, certificates count)
+* `/reports/batches/` - `batch_report` (Detailed report of batch name, course, teacher, total students, attendance %, certificates issued)
+* `/reports/teachers/` - `teacher_report` (Detailed report of teacher name, assigned batches, total students taught, total attendance records, total exams assigned)
+* `/reports/attendance/` - `attendance_report` (Overall present/absent stats and logs with batch, student, and date filters)
+* `/reports/fees/` - `fee_report` (Financial metrics for total collections, outstanding balances, paid and pending student counts with batch/student filters)
+* `/reports/exams/` - `exam_report` (Summary of exam title, assigned batches, total attempts, average score %, pass percentage)
+* `/reports/certificates/` - `certificate_report` (Verification tracking audit of student, batch, course, certificate number, status, issue date with batch/course/status filters)
+
+### 13.3 Dashboard Metrics
+Added the following to the Admin Dashboard metrics:
+* **Active Students:** Count of students with `is_active=True`.
+* **Active Teachers:** Count of teachers with `is_active=True`.
+* **Active Batches:** Batches whose date range covers the current day (`start_date <= today <= end_date`).
+* **Attendance Rate:** Total present logs divided by total logs.
+* **Fee Collection Rate:** Total fees collected divided by total course fees of all enrolled students.
+* **Exam Pass Rate:** Completed attempts achieving score >= passing threshold divided by total attempts.
+* **Certificate Issuance Count:** Total number of active (non-revoked) certificates issued.
+
+### 13.4 Permissions & Access Control
+* **Admins:** Full access to view all reports, metrics, search outputs, and filters.
+* **Teachers:** Read-only visibility restricted strictly to reports and details corresponding to batches explicitly assigned to them.
+* **Students:** Restrict access completely (unauthorized roles are returned a `403 Forbidden` response).
+
 

@@ -1,0 +1,136 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Attendance Report | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-clock-history text-primary me-2"></i>Attendance Report</h2>
+            <p>Institutional metrics for attendance tracking, ratios, and individual student compliance.</p>
+        </div>
+        <div>
+            <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{% url 'attendance_report' %}" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="batchFilter" class="form-label fw-semibold small">Filter by Batch</label>
+                    <select name="batch" id="batchFilter" class="form-select">
+                        <option value="">-- All Batches --</option>
+                        {% for batch in batches %}
+                            <option value="{{ batch.id }}" {% if selected_batch == batch.id|stringformat:"s" %}selected{% endif %}>{{ batch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="studentFilter" class="form-label fw-semibold small">Filter by Student</label>
+                    <select name="student" id="studentFilter" class="form-select">
+                        <option value="">-- All Students --</option>
+                        {% for student in students %}
+                            <option value="{{ student.id }}" {% if selected_student == student.id|stringformat:"s" %}selected{% endif %}>{{ student.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="dateFilter" class="form-label fw-semibold small">Filter by Date</label>
+                    <input type="date" name="date" id="dateFilter" class="form-control" value="{{ selected_date|default:"" }}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'attendance_report' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Summary Section -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Total Logs Count</span>
+                <span class="fw-bold fs-4 text-dark">{{ total_records }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Total Present Days</span>
+                <span class="fw-bold fs-4 text-success">{{ present_count }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Total Absent Days</span>
+                <span class="fw-bold fs-4 text-danger">{{ absent_count }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Overall Attendance Rate</span>
+                <span class="fw-bold fs-4 {% if overall_pct >= 75.0 %}text-success{% else %}text-danger{% endif %}">{{ overall_pct }}%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Student</th>
+                            <th>Batch</th>
+                            <th>Status</th>
+                            <th class="pe-4">Marked By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ record.date }}</td>
+                            <td class="fw-semibold">{{ record.student.full_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ record.batch.name }}</span></td>
+                            <td>
+                                {% if record.status == 'present' %}
+                                    <span class="badge-soft-success"><i class="bi bi-check-circle-fill me-1"></i>Present</span>
+                                {% else %}
+                                    <span class="badge-soft-danger"><i class="bi bi-x-circle-fill me-1"></i>Absent</span>
+                                {% endif %}
+                            </td>
+                            <td class="pe-4">
+                                {% if record.marked_by %}
+                                    <span class="text-primary fw-semibold">{{ record.marked_by.full_name }}</span>
+                                {% else %}
+                                    <span class="text-muted small"><i class="bi bi-shield-lock me-1"></i>Admin</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-0">
+                                <div class="empty-state py-5">
+                                    <i class="bi bi-calendar-x"></i>
+                                    <p class="mb-0">No attendance logs found matching filters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

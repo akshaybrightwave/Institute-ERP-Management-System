@@ -88,7 +88,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="dashboard-action-card text-center h-100 py-4">
                         <div class="feature-icon"><i class="bi bi-journal-plus"></i></div>
                         <h5 class="fw-bold">Exam Management</h5>
@@ -98,7 +98,7 @@
                         </a>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="dashboard-action-card text-center h-100 py-4">
                         <div class="feature-icon"><i class="bi bi-clock-history"></i></div>
                         <h5 class="fw-bold">Attendance Management</h5>
@@ -108,13 +108,23 @@
                         </a>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="dashboard-action-card text-center h-100 py-4">
                         <div class="feature-icon"><i class="bi bi-wallet2"></i></div>
                         <h5 class="fw-bold">Fees Management</h5>
                         <p class="text-muted small mb-3">View read-only summaries of student fee records for your batches.</p>
                         <a href="{% url 'fees_list' %}" class="btn btn-outline-primary w-100">
                             <i class="bi bi-arrow-right-circle me-1"></i> Go to Fees
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="dashboard-action-card text-center h-100 py-4">
+                        <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
+                        <h5 class="fw-bold">Reports & Analytics</h5>
+                        <p class="text-muted small mb-3">Access batch audits, logs, academic and fee analytics reports.</p>
+                        <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-arrow-right-circle me-1"></i> Go to Reports
                         </a>
                     </div>
                 </div>

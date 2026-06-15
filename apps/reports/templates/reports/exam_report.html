@@ -1,0 +1,68 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Exam Reports | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-journal-text text-primary me-2"></i>Exam Reports</h2>
+            <p>Track metrics, average percentage scores, and overall success rates across live examinations.</p>
+        </div>
+        <div>
+            <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Exam Title</th>
+                            <th>Assigned Batches</th>
+                            <th>Total Attempts</th>
+                            <th>Average Score</th>
+                            <th class="pe-4">Pass Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in exams_data %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ item.exam.title }}</td>
+                            <td>
+                                {% if item.assigned_batches %}
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for batch in item.assigned_batches %}
+                                            <span class="badge bg-light text-dark border">{{ batch.name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">No Batches Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-light text-dark border px-3">{{ item.total_attempts }}</span></td>
+                            <td class="fw-semibold">{{ item.avg_score }}%</td>
+                            <td class="pe-4 fw-semibold text-success">{{ item.pass_pct }}%</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-0">
+                                <div class="empty-state py-5">
+                                    <i class="bi bi-journal-x"></i>
+                                    <p class="mb-0">No exam attempts found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

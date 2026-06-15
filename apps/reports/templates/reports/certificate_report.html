@@ -1,0 +1,108 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Certificate Reports | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-award-fill text-primary me-2"></i>Certificate Reports</h2>
+            <p>Institutional log for course completion credentials, issued statuses, and revocation rates.</p>
+        </div>
+        <div>
+            <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{% url 'certificate_report' %}" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="batchFilter" class="form-label fw-semibold small">Filter by Batch</label>
+                    <select name="batch" id="batchFilter" class="form-select">
+                        <option value="">-- All Batches --</option>
+                        {% for batch in batches %}
+                            <option value="{{ batch.id }}" {% if selected_batch == batch.id|stringformat:"s" %}selected{% endif %}>{{ batch.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="courseFilter" class="form-label fw-semibold small">Filter by Course</label>
+                    <select name="course" id="courseFilter" class="form-select">
+                        <option value="">-- All Courses --</option>
+                        {% for course in courses %}
+                            <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="statusFilter" class="form-label fw-semibold small">Filter by Status</label>
+                    <select name="status" id="statusFilter" class="form-select">
+                        <option value="">-- All Statuses --</option>
+                        <option value="issued" {% if selected_status == 'issued' %}selected{% endif %}>Issued / Active</option>
+                        <option value="revoked" {% if selected_status == 'revoked' %}selected{% endif %}>Revoked</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'certificate_report' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Certificate Number</th>
+                            <th>Student</th>
+                            <th>Batch</th>
+                            <th>Course</th>
+                            <th>Issue Date</th>
+                            <th class="pe-4 text-end">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cert in certs %}
+                        <tr>
+                            <td class="ps-4 fw-semibold"><code>{{ cert.certificate_number }}</code></td>
+                            <td class="fw-semibold">{{ cert.student.full_name }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ cert.batch.name }}</span></td>
+                            <td>{{ cert.course.name }}</td>
+                            <td>{{ cert.issue_date }}</td>
+                            <td class="pe-4 text-end">
+                                {% if cert.status == 'issued' %}
+                                    <span class="badge-soft-success"><i class="bi bi-patch-check-fill me-1"></i>Active</span>
+                                {% else %}
+                                    <span class="badge-soft-danger"><i class="bi bi-x-octagon-fill me-1"></i>Revoked</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="p-0">
+                                <div class="empty-state py-5">
+                                    <i class="bi bi-award"></i>
+                                    <p class="mb-0">No certificates found matching filters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

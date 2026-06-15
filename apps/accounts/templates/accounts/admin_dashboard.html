@@ -161,6 +161,74 @@
         </div>
     </div>
 
+    <!-- Analytics Cards -->
+    <h5 class="fw-bold mb-3">Institutional Analytics</h5>
+    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-4 row-cols-lg-7">
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-primary"><i class="bi bi-mortarboard-fill text-primary"></i></div>
+                <div>
+                    <div class="stat-value">{{ active_students }}</div>
+                    <div class="stat-label">Active Students</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-success"><i class="bi bi-person-workspace text-success"></i></div>
+                <div>
+                    <div class="stat-value">{{ active_teachers }}</div>
+                    <div class="stat-label">Active Teachers</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-info"><i class="bi bi-calendar-event text-info"></i></div>
+                <div>
+                    <div class="stat-value">{{ active_batches }}</div>
+                    <div class="stat-label">Active Batches</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-warning"><i class="bi bi-percent text-warning"></i></div>
+                <div>
+                    <div class="stat-value">{{ attendance_rate }}%</div>
+                    <div class="stat-label">Attendance Rate</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-success"><i class="bi bi-cash-stack text-success"></i></div>
+                <div>
+                    <div class="stat-value">{{ fee_collection_rate }}%</div>
+                    <div class="stat-label">Fee Collection Rate</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-danger"><i class="bi bi-graph-up-arrow text-danger"></i></div>
+                <div>
+                    <div class="stat-value">{{ exam_pass_rate }}%</div>
+                    <div class="stat-label">Exam Pass Rate</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-primary"><i class="bi bi-award-fill text-primary"></i></div>
+                <div>
+                    <div class="stat-value">{{ certificate_issuance_count }}</div>
+                    <div class="stat-label">Certificates Issued</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Actions -->
     <h5 class="fw-bold mb-3">Quick Actions</h5>
     <div class="row g-4">
@@ -274,6 +342,17 @@
                 <p class="text-muted small">Verify eligibility, issue course certificates, and view/revoke logs.</p>
                 <a href="{% url 'certificate_list' %}" class="btn btn-primary w-100">
                     <i class="bi bi-arrow-right-circle me-1"></i> Go to Certificates
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-action-card">
+                <div class="feature-icon bg-soft-primary"><i class="bi bi-bar-chart-line text-primary"></i></div>
+                <h5 class="fw-bold mt-2">Reports & Analytics</h5>
+                <p class="text-muted small">Access summary charts, audits, logs, academic and fee analytics reports.</p>
+                <a href="{% url 'reports_dashboard' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Reports
                 </a>
             </div>
         </div>

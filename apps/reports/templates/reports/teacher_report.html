@@ -1,0 +1,91 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Teacher Reports | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-person-workspace text-primary me-2"></i>Teacher Reports</h2>
+            <p>View instructor assignments, student capacity, attendance markings, and assigned exams.</p>
+        </div>
+        <div>
+            <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="GET" action="{% url 'teacher_report' %}" class="row g-3 align-items-end">
+                <div class="col-md-9">
+                    <label for="searchInput" class="form-label fw-semibold small">Search Teachers</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search by teacher name..." value="{{ query }}">
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-filter me-1"></i> Filter
+                    </button>
+                    <a href="{% url 'teacher_report' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Teacher Name</th>
+                            <th>Assigned Batches</th>
+                            <th>Total Students Taught</th>
+                            <th>Total Attendance Marked</th>
+                            <th>Total Exams Assigned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in teachers_data %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ item.teacher.full_name }}</td>
+                            <td>
+                                {% if item.assigned_batches %}
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for batch in item.assigned_batches %}
+                                            <span class="badge bg-light text-dark border">{{ batch.name }} ({{ batch.course.name }})</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">None Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-light text-dark border px-3">{{ item.total_students }}</span></td>
+                            <td><span class="badge bg-light text-dark border px-3">{{ item.total_attendance_records }}</span></td>
+                            <td><span class="badge bg-light text-dark border px-3">{{ item.total_exams }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-0">
+                                <div class="empty-state py-5">
+                                    <i class="bi bi-people-fill"></i>
+                                    <p class="mb-0">No teachers found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
