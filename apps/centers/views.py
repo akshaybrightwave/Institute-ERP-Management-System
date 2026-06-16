@@ -58,10 +58,17 @@ def center_dashboard(request):
     from apps.batches.models import Batch
     from apps.accounts.models import User
     
-    total_courses = Course.objects.count()
-    total_batches = Batch.objects.count()
-    total_teachers = User.objects.filter(role='teacher').count()
-    total_students = User.objects.filter(role='student').count()
+    center = request.user.center
+    if not center:
+        total_courses = 0
+        total_batches = 0
+        total_teachers = 0
+        total_students = 0
+    else:
+        total_courses = Course.objects.filter(center=center).count()
+        total_batches = Batch.objects.filter(course__center=center).count()
+        total_teachers = User.objects.filter(role='teacher', teacherprofile__batch__course__center=center).distinct().count()
+        total_students = User.objects.filter(role='student', studentprofile__batch__course__center=center).distinct().count()
     
     context = {
         'total_courses': total_courses,

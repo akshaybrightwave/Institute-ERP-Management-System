@@ -236,15 +236,27 @@ class FeedbackForm(forms.ModelForm):
 
 
 class CenterSignupForm(UserCreationForm):
+    center = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        label="Assigned Center",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = User
-        fields = ['username', 'email', 'password1', 'password2']
+        fields = ['username', 'email', 'center', 'password1', 'password2']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
             'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.centers.models import Center
+        self.fields['center'].queryset = Center.objects.all()
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -255,6 +267,12 @@ class CenterSignupForm(UserCreationForm):
 
 
 class CenterEditForm(forms.ModelForm):
+    center = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        label="Assigned Center",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
     password1 = forms.CharField(
         label="Password",
         widget=forms.PasswordInput(attrs={'class': 'form-control'}),
@@ -278,11 +296,16 @@ class CenterEditForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'is_active', 'role']
+        fields = ['username', 'email', 'is_active', 'role', 'center']
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.centers.models import Center
+        self.fields['center'].queryset = Center.objects.all()
 
     def clean(self):
         cleaned_data = super().clean()

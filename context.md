@@ -487,3 +487,70 @@ Added the following to the Admin Dashboard metrics:
   ```
 
 
+## 16. ERP Phase 10.3 — Center ↔ Center Mapping
+
+### 16.1 Relationship Implemented
+* **User ↔ Center Relationship**: Added a 1:1 `OneToOneField` named `center` to the `User` model, pointing to `'centers.Center'` with `on_delete=models.SET_NULL, null=True, blank=True`. This allows a Center User to manage exactly one Center, and a Center to be optionally managed by one Center User.
+
+### 16.2 Files Modified
+* **`apps/accounts/models.py`**: Added `center` field to custom `User` model and implemented model validation in `clean()` to ensure only Center users can be assigned a Center.
+* **`apps/accounts/forms.py`**: Updated `CenterSignupForm` and `CenterEditForm` to show the `center` selection dropdown (populating it with all active `Center` records).
+* **`apps/accounts/templates/accounts/user_list.html`**: Modified user table rows to display the assigned center name under the username for Center users.
+* **`apps/accounts/templates/accounts/user_add.html`**: Added "Assigned Center" selection row to Center creation form design.
+* **`apps/accounts/templates/accounts/user_edit.html`**: Added "Assigned Center" selection row next to Role field for Center user edit form design.
+* **`apps/centers/templates/centers/center_dashboard.html`**: Rendered the name of the assigned Center next to the user's dashboard role badge (or "No Center Assigned" if not mapped).
+
+### 16.3 Database Migrations Added
+* **Migration**: `apps/accounts/migrations/0004_user_center.py` adds the `center` foreign key field to the custom `User` table. Applied successfully.
+
+### 16.4 Assignment Workflow & Validation
+* Administrators can optionally assign a Center location when creating or editing a Center user.
+* Model-level validation ensures non-Center users (Admins, Teachers, Students) cannot be assigned a Center location, raising a form validation error on save.
+
+### 16.5 Validation Results
+* Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+
+
+
+## 17. ERP Phase 10.4 — Center Data Isolation
+
+### 17.1 Scope & Enforcements
+* **Course Isolation**: Replaced `@admin_required` decorators with `@login_required` checks, and updated querysets to filter Course list based on `request.user.center` for Center users. Restricts editing/deleting of courses belonging to other centers.
+* **Batch Isolation**: Replaced `@admin_required` with `@login_required`. Filters the Batch list to only show batches of courses belonging to the assigned center. Filters `Course` and `Teacher` choice fields dynamically in the forms to only allow selecting resources valid for that Center.
+* **User Management Isolation**: Replaced `@admin_required` with role-based checks. Restricts list view so Center users only see students/teachers assigned to batches in their center (along with globally unassigned ones). Denies creating/editing/deleting Admin and other Center users. Restricts assignment batch choice to the Center's batches.
+* **Detail Page Security**: Enforces that direct URL detail page access to batches, courses, and student/teacher profile updates belonging to other centers returns a `403 Forbidden` response.
+* **Dashboard Metrics**: Restructures the `center_dashboard` counts to show totals only for Courses, Batches, Teachers, and Students within the user's assigned Center.
+
+### 17.2 Files Modified
+* **`apps/courses/views.py`**: Added access control rules, detail page verification, and queryset filter mapping.
+* **`apps/batches/views.py`**: Switched view decorators, isolated batch list and detail views, and restricted forms dropdown querysets.
+* **`apps/accounts/views.py`**: Switched CRUD view decorators, applied Q-lookup filtering, added sign-up/edit form validations and choice filtering, and restricted admin/center target edits.
+* **`apps/centers/views.py`**: Updated `center_dashboard` to filter metrics querysets by center.
+
+### 17.3 Validation Results
+* Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+
+
+
+## 18. Teacher Dashboard UI Redesign
+
+### 18.1 UI/UX Optimizations
+* **Horizontal Profile Header**: Converted the teacher profile card into a compact horizontal header row spanning full width, displaying the photo, teacher details, and profile action buttons in a single compact bar.
+* **Statistics Row**: Reorganized the 5 statistics elements into a horizontal row of equal-width compact cards directly below the profile header.
+* **Assigned Batches Table**: Elevated as the primary page element, using full width with no course name truncation, larger action buttons, and better cell padding.
+* **Quick Actions**: Placed in a compact horizontal row below the Batches section.
+* **Exams Table Visibility Hierarchy**: Highlighted view, submissions, and question list actions as buttons, and de-emphasized the delete action by styling it as a muted text link.
+* **Vertical Density**: Enabled seeing the profile header, stats row, and the entire primary Batches table above the fold on laptop screens.
+
+### 18.2 Files Modified
+* **`apps/teachers/templates/teacher/teacher_dashboard.html`**: Redesigned to support the horizontal flow and prioritization of core teaching workflows.
+
+
+
+

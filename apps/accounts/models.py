@@ -4,6 +4,8 @@ from django.db import models
 
 # Create your models here.
 
+from django.core.exceptions import ValidationError
+
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
@@ -12,6 +14,18 @@ class User(AbstractUser):
         ('student', 'Student'),
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    center = models.OneToOneField(
+        'centers.Center',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='center_user'
+    )
+
+    def clean(self):
+        super().clean()
+        if self.center and self.role != 'center':
+            raise ValidationError({'center': "Only Center users can be assigned a Center."})
 
 
 

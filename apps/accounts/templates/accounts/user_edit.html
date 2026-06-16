@@ -124,6 +124,15 @@
                                         <p class="text-danger small mt-1 mb-0">{{ error }}</p>
                                     {% endfor %}
                                 </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Assigned Center</label>
+                                    {{ form.center|add_class:"form-select" }}
+                                    {% for error in form.center.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
                                 <div class="col-md-6 mb-3 d-flex align-items-center mt-4 pt-2">
                                     <div class="form-check">
                                         {{ form.is_active }}
