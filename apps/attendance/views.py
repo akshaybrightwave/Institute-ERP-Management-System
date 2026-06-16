@@ -78,9 +78,10 @@ def mark_attendance(request, batch_id):
 def attendance_list(request):
     is_admin = request.user.role == 'admin'
     is_teacher = request.user.role == 'teacher'
+    is_center = request.user.role == 'center'
     
-    if not (is_admin or is_teacher):
-        return HttpResponseForbidden("Access Denied: Admins or Teachers only.")
+    if not (is_admin or is_teacher or is_center):
+        return HttpResponseForbidden("Access Denied: Admins, Center users, or Teachers only.")
         
     attendances = Attendance.objects.all().select_related('student', 'batch', 'marked_by')
     
@@ -89,6 +90,16 @@ def attendance_list(request):
         attendances = attendances.filter(batch__teacher=teacher_profile)
         batches = Batch.objects.filter(teacher=teacher_profile)
         students = StudentProfile.objects.filter(batch__in=batches)
+    elif is_center:
+        center = request.user.center
+        if not center:
+            attendances = Attendance.objects.none()
+            batches = Batch.objects.none()
+            students = StudentProfile.objects.none()
+        else:
+            attendances = attendances.filter(batch__course__center=center)
+            batches = Batch.objects.filter(course__center=center)
+            students = StudentProfile.objects.filter(batch__course__center=center)
     else:
         batches = Batch.objects.all()
         students = StudentProfile.objects.all()

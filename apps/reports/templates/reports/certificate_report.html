@@ -4,15 +4,46 @@
 
 {% block content %}
 <div class="container py-2">
-    <div class="page-header">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h2><i class="bi bi-award-fill text-primary me-2"></i>Certificate Reports</h2>
             <p>Institutional log for course completion credentials, issued statuses, and revocation rates.</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <a href="?export=csv{% if selected_course %}&course={{ selected_course }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Export CSV
+            </a>
             <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
             </a>
+        </div>
+    </div>
+
+    <!-- Analytics Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Total Certificates</span>
+                <span class="fw-bold fs-4 text-dark">{{ total_certs }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Issued Certificates</span>
+                <span class="fw-bold fs-4 text-success">{{ certs_issued_count }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Revoked Certificates</span>
+                <span class="fw-bold fs-4 text-danger">{{ certs_revoked_count }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="p-3 bg-light border rounded text-center">
+                <span class="text-muted small d-block mb-1">Eligible Students</span>
+                <span class="fw-bold fs-4 text-primary">{{ eligible_students_count }}</span>
+            </div>
         </div>
     </div>
 

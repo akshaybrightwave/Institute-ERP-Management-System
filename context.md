@@ -553,4 +553,96 @@ Added the following to the Admin Dashboard metrics:
 
 
 
+## 19. ERP Phase 10.5 — Center Operational Permissions
+
+### 19.1 Permissions & Features Implemented
+* **Center Course Management**: Center users can view, create, edit, and delete courses. Newly created courses automatically belong to their assigned Center. Cross-center course operations are strictly forbidden (returns `403 Forbidden`).
+* **Center Batch Management**: Center users can view, create, edit, and delete batches. Form choice querysets dynamically restrict courses and teachers to the logged-in center's courses and active/unassigned teachers.
+* **Center Student Management**: Center users can view, create, and edit student accounts. Batch choices are restricted to the center's own batches. Cross-center student edits/deletes are blocked.
+* **Center Teacher Management**: Center users can view, create, and edit teacher accounts. Teacher assignments are restricted to center batches.
+* **Attendance Access**: Center users can search, filter, and view attendance logs belonging only to their assigned Center. Center users cannot mark or edit attendance.
+* **UI Action Adjustments**: Excluded the "Add Center" button from the User Management page for Center users. Conditionally hid attendance marking and day-editing links/buttons from Center users in batch list and batch detail pages.
+* **Security Validation**: Validated that direct URL queries, updates, and deletes across centers return `403 Forbidden` responses.
+
+### 19.2 Files Modified
+* **`apps/accounts/templates/accounts/user_list.html`**: Restrained "Add Center" user action visibility to administrators only.
+* **`apps/batches/templates/batches/batch_list.html`**: Hidden "Attendance" marking link for Center users.
+* **`apps/batches/templates/batches/batch_detail.html`**: Restricted batch attendance marking actions and day-level editing columns to administrative/teacher accounts.
+* **`apps/centers/templates/centers/center_dashboard.html`**: Converted informational placeholder block into a sleek "Center Management Portal" dashboard panel containing direct quick links to Courses, Batches, Users, and Attendance logs.
+
+### 19.3 Validation Results
+* Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+* Programmatic integration verification tests executed successfully.
+
+
+
+## 20. ERP Phase 10.6 — Center Dashboard Enhancement
+
+### 20.1 Features & Summaries Implemented
+* **Overview Metrics (Feature 1)**: Displays center-specific counts of Students, Teachers, Courses, Batches, Exams, and Certificates for the logged-in center.
+* **Attendance Summary (Feature 2)**: Added an Attendance Overview card showing Total Present, Total Absent, and Attendance Percentage logs.
+* **Fees Summary (Feature 3)**: Added a Fees Summary card displaying Total Fees Collected, Outstanding Balances, and Paid vs. Pending Student counts.
+* **Certificate Summary (Feature 4)**: Shows total issued and revoked certificate counts, alongside a dynamic list of students currently eligible for certificates.
+* **Exam Summary (Feature 5)**: Renders total, active, and completed exam counts plus total student exam attempts for the center's batches.
+* **Activity Feeds (Features 6, 7, 8)**: Features three modern Bootstrap tables showcasing the latest 5 Students, latest 5 Batches, and latest 5 Upcoming Exams.
+* **Quick Actions Grid (Feature 9)**: Includes prominent shortcuts to Add Student, Add Teacher, Add Batch, View Attendance, Manage Fees, and Manage Courses.
+* **Performance Snapshot (Feature 10)**: Displays progress indicators tracking the center's overall Attendance Rate, Fee Collection Rate, Exam Participation Rate, and Certificate Eligibility Rate.
+
+### 20.2 Performance Optimizations Applied
+* Combined student payment aggregation and batch/course relationships into a single annotated queryset with `Coalesce` and `select_related` to eliminate N+1 query loops.
+* Utilized Django's `prefetch_related('batches')` to efficiently load upcoming exam batch relationships in a single optimized hit.
+* Leveraged database aggregation for attendance stats and exam potential calculation.
+
+### 20.3 Files Modified
+* **`apps/centers/views.py`**: Enhanced `center_dashboard` view to load, optimize, and calculate all operational parameters.
+* **`apps/centers/templates/centers/center_dashboard.html`**: Redesigned dashboard content block with stats widgets, summaries, activity tables, quick action links, progress bars, and custom style helper blocks.
+
+### 20.4 Validation Results
+* Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+* Programmatic dashboard context and layout rendering integration checks passed successfully.
+
+
+## 21. ERP Phase 10.7 — Center Reports & Analytics
+
+### 21.1 Features Implemented
+* **Reports Dashboard (Feature 1)**: Enhanced the reports dashboard to showcase Student, Attendance, Exam, Fee, and Certificate reports. Conditionally hid Teacher Reports, Batch Reports, and "Total Centers" statistics card from the dashboard view for Center role users.
+* **Student Reports (Feature 2)**: Added Course and Batch selection filters, analytics summary cards (Total, Active, and Inactive students), and Course-wise/Batch-wise student breakdowns.
+* **Attendance Reports (Feature 3)**: Integrated attendance percentage summaries, present/absent stats cards, and filters for Date, Batch, and Student.
+* **Exam Reports (Feature 4)**: Added filters for Exam and Batch, and integrated 8 analytics summary cards showing metrics like Pass Rate, highest/lowest scores, and averages.
+* **Fees Reports (Feature 5)**: Added Course/Batch/Student selectors and fee collection summaries (Total Collections, Total Outstanding, Collection Rate, Paid/Pending Student counts).
+* **Certificate Reports (Feature 6)**: Added Course/Batch/Status filters and summary cards showing total, issued, revoked, and eligible student counts.
+* **Export Functionality (Feature 7)**: Integrated standard, built-in Django CSV generation for all five reports using `?export=csv`. Formats and applies filters and strict center-specific security isolation.
+* **Performance Optimization (Feature 8)**: Leveraged optimized aggregations (`Sum`, `Count`, `Avg`, `Max`, `Min`), select_related, and prefetch_related to load reports efficiently without N+1 query loops.
+* **Analytics Summary Cards (Feature 9)**: Implemented stats cards for all report types in their respective templates.
+
+### 21.2 Security Validations
+* Enforced that Center users only see students, attendance, fee collections, exam attempts, and certificates belonging to their assigned Center.
+* Restricts CSV exports to only download records for the center managed by the logged-in user.
+* Direct cross-center queries and data filtering attempts are strictly isolated by database queries.
+
+### 21.3 Files Modified
+* **`apps/reports/templates/reports/reports_dashboard.html`**: Hides teacher/batch reports and total centers card from Center users.
+* **`apps/reports/templates/reports/student_report.html`**: Displays course/batch select filters, breakdowns, summary cards, and Export CSV action.
+* **`apps/reports/templates/reports/attendance_report.html`**: Adds Export CSV action.
+* **`apps/reports/templates/reports/exam_report.html`**: Adds filters, summary cards, and Export CSV action.
+* **`apps/reports/templates/reports/fee_report.html`**: Integrates Course/Batch/Student filters, 5 analytics summary cards, and Export CSV action.
+* **`apps/reports/templates/reports/certificate_report.html`**: Displays summary cards and Export CSV action.
+
+### 21.4 Validation Results
+* Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+* Programmatic data isolation and CSV export verification script `verify_reports_security.py` completed successfully, ensuring complete cross-center security isolation.
+
+
+
+
+
 

@@ -16,9 +16,11 @@
             <a href="{% url 'user_add' %}?role=teacher" class="btn btn-outline-primary">
                 <i class="bi bi-person-badge-fill me-1"></i> Add Teacher
             </a>
+            {% if request.user.role == 'admin' %}
             <a href="{% url 'user_add' %}?role=center" class="btn btn-outline-primary">
                 <i class="bi bi-building-fill me-1"></i> Add Center
             </a>
+            {% endif %}
         </div>
     </div>
 

@@ -4,12 +4,15 @@
 
 {% block content %}
 <div class="container py-2">
-    <div class="page-header">
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h2><i class="bi bi-wallet2 text-primary me-2"></i>Fees Report</h2>
             <p>Institutional summaries for collections, pending amounts, and fee clearance progress.</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <a href="?export=csv{% if selected_course %}&course={{ selected_course }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_student %}&student={{ selected_student }}{% endif %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Export CSV
+            </a>
             <a href="{% url 'reports_dashboard' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
             </a>
@@ -20,7 +23,16 @@
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
             <form method="GET" action="{% url 'fee_report' %}" class="row g-3 align-items-end">
-                <div class="col-md-45 col-md-5">
+                <div class="col-md-3">
+                    <label for="courseFilter" class="form-label fw-semibold small">Filter by Course</label>
+                    <select name="course" id="courseFilter" class="form-select">
+                        <option value="">-- All Courses --</option>
+                        {% for course in courses %}
+                            <option value="{{ course.id }}" {% if selected_course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <label for="batchFilter" class="form-label fw-semibold small">Filter by Batch</label>
                     <select name="batch" id="batchFilter" class="form-select">
                         <option value="">-- All Batches --</option>
@@ -29,7 +41,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-45 col-md-4">
+                <div class="col-md-3">
                     <label for="studentFilter" class="form-label fw-semibold small">Filter by Student</label>
                     <select name="student" id="studentFilter" class="form-select">
                         <option value="">-- All Students --</option>
@@ -51,27 +63,33 @@
     </div>
 
     <!-- Stats Summary Section -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="p-3 bg-light border rounded text-center">
+    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-5">
+        <div class="col">
+            <div class="p-3 bg-light border rounded text-center h-100">
                 <span class="text-muted small d-block mb-1">Total Collections</span>
                 <span class="fw-bold fs-4 text-success">₹{{ total_fees_collected }}</span>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="p-3 bg-light border rounded text-center">
+        <div class="col">
+            <div class="p-3 bg-light border rounded text-center h-100">
                 <span class="text-muted small d-block mb-1">Total Outstanding</span>
                 <span class="fw-bold fs-4 text-danger">₹{{ total_pending_fees }}</span>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="p-3 bg-light border rounded text-center">
+        <div class="col">
+            <div class="p-3 bg-light border rounded text-center h-100">
+                <span class="text-muted small d-block mb-1">Collection Rate</span>
+                <span class="fw-bold fs-4 text-primary">{{ collection_pct }}%</span>
+            </div>
+        </div>
+        <div class="col">
+            <div class="p-3 bg-light border rounded text-center h-100">
                 <span class="text-muted small d-block mb-1">Paid Students</span>
                 <span class="fw-bold fs-4 text-success">{{ paid_count }}</span>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="p-3 bg-light border rounded text-center">
+        <div class="col">
+            <div class="p-3 bg-light border rounded text-center h-100">
                 <span class="text-muted small d-block mb-1">Pending Students</span>
                 <span class="fw-bold fs-4 text-warning">{{ pending_count }}</span>
             </div>

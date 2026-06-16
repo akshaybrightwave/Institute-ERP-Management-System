@@ -33,9 +33,14 @@ def course_create(request):
             from apps.centers.models import Center
             form.fields['center'].queryset = Center.objects.filter(id=request.user.center.id) if request.user.center else Center.objects.none()
         if form.is_valid():
-            if request.user.role == 'center' and form.cleaned_data.get('center') != request.user.center:
-                return HttpResponseForbidden("Access Denied: You cannot create courses for other centers.")
-            form.save()
+            if request.user.role == 'center':
+                if not request.user.center:
+                    return HttpResponseForbidden("Access Denied: You do not manage any center.")
+                course = form.save(commit=False)
+                course.center = request.user.center
+                course.save()
+            else:
+                form.save()
             messages.success(request, 'Course created successfully.')
             return redirect('course_list')
     else:

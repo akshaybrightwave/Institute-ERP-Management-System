@@ -85,9 +85,11 @@
                             <!-- Responsive Action Buttons -->
                             <td class="pe-4 text-end">
                                 <div class="d-flex flex-column flex-md-row gap-2 justify-content-end">
+                                    {% if request.user.role == 'admin' or request.user.role == 'teacher' %}
                                     <a class="btn btn-sm btn-outline-success" href="{% url 'mark_attendance' batch.id %}" title="Attendance">
                                         <i class="bi bi-check2-square me-1"></i> Attendance
                                     </a>
+                                    {% endif %}
                                     <a class="btn btn-sm btn-outline-info" href="{% url 'batch_detail' batch.id %}" title="View Details">
                                         <i class="bi bi-eye me-1"></i> View
                                     </a>

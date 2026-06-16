@@ -49,6 +49,7 @@
                 </div>
             </div>
         </div>
+        {% if request.user.role != 'center' %}
         <div class="col">
             <div class="stat-card">
                 <div class="stat-icon"><i class="bi bi-building text-dark"></i></div>
@@ -58,6 +59,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
         <div class="col">
             <div class="stat-card">
                 <div class="stat-icon text-danger"><i class="bi bi-journal-text"></i></div>
@@ -101,6 +103,7 @@
             </div>
         </div>
 
+        {% if request.user.role != 'center' %}
         <div class="col-md-3">
             <div class="dashboard-action-card">
                 <div class="feature-icon bg-soft-primary"><i class="bi bi-calendar-event text-primary"></i></div>
@@ -122,6 +125,7 @@
                 </a>
             </div>
         </div>
+        {% endif %}
 
         <div class="col-md-3">
             <div class="dashboard-action-card">
