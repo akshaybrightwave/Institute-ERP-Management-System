@@ -9,7 +9,7 @@
             <h2><i class="bi bi-wallet2 text-primary me-2"></i>Fees Management</h2>
             <p>Track student course fees, payments, and outstanding balances.</p>
         </div>
-        {% if is_admin %}
+        {% if is_admin or is_center %}
         <div>
             <a href="{% url 'payment_create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle-fill me-1"></i> Record Fee Payment
@@ -17,6 +17,66 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Dashboard Metrics Row -->
+    {% if not is_teacher %}
+    <div class="row g-3 mb-4">
+        <!-- Total Students -->
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-3">
+                    <span class="text-muted small d-block mb-1">Total Students</span>
+                    <h4 class="fw-bold text-dark mb-0">{{ total_students_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <!-- Total Fee Collected -->
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-3">
+                    <span class="text-muted small d-block mb-1">Collected Fees</span>
+                    <h4 class="fw-bold text-success mb-0">₹{{ total_fee_collected }}</h4>
+                </div>
+            </div>
+        </div>
+        <!-- Total Pending Fees -->
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-3">
+                    <span class="text-muted small d-block mb-1">Pending Fees</span>
+                    <h4 class="fw-bold text-danger mb-0">₹{{ total_pending_fees }}</h4>
+                </div>
+            </div>
+        </div>
+        <!-- Collection Percentage -->
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-3">
+                    <span class="text-muted small d-block mb-1">Collection Rate</span>
+                    <h4 class="fw-bold text-primary mb-0">{{ collection_percentage }}%</h4>
+                </div>
+            </div>
+        </div>
+        <!-- Paid Students Count -->
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-3">
+                    <span class="text-muted small d-block mb-1">Paid Students</span>
+                    <h4 class="fw-bold text-success mb-0">{{ paid_students_count }}</h4>
+                </div>
+            </div>
+        </div>
+        <!-- Pending Students Count -->
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-3">
+                    <span class="text-muted small d-block mb-1">Pending Students</span>
+                    <h4 class="fw-bold text-warning mb-0">{{ pending_students_count }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Navigation Tabs -->
     <ul class="nav nav-tabs border-bottom mb-4" id="feesTabs" role="tablist">
@@ -26,7 +86,7 @@
                 <i class="bi bi-people me-1"></i> Student Fee Summaries
             </a>
         </li>
-        {% if is_admin %}
+        {% if is_admin or is_center %}
         <li class="nav-item" role="presentation">
             <a class="nav-link {% if tab == 'payments' %}active fw-semibold text-primary{% else %}text-muted{% endif %}" 
                href="?tab=payments{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}">
@@ -83,7 +143,7 @@
                                 <th>Paid Amount</th>
                                 <th>Pending Amount</th>
                                 <th>Status</th>
-                                {% if is_admin %}
+                                {% if is_admin or is_center %}
                                 <th class="pe-4 text-end">Actions</th>
                                 {% endif %}
                             </tr>
@@ -106,7 +166,7 @@
                                     <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>PENDING</span>
                                     {% endif %}
                                 </td>
-                                {% if is_admin %}
+                                {% if is_admin or is_center %}
                                 <td class="pe-4 text-end">
                                     <a href="{% url 'payment_create' %}?student={{ item.student.id }}" class="btn btn-sm btn-outline-success">
                                         <i class="bi bi-plus-circle me-1"></i>Collect Fee
@@ -162,8 +222,8 @@
         </div>
         {% endif %}
 
-        <!-- Payment Ledger Tab (Admin Only) -->
-        {% if tab == 'payments' and is_admin %}
+        <!-- Payment Ledger Tab -->
+        {% if tab == 'payments' and is_admin or tab == 'payments' and is_center %}
         <div class="card border-0 shadow-sm">
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -189,6 +249,9 @@
                                 <td><code>{{ payment.reference_number|default:"-" }}</code></td>
                                 <td class="text-muted small">{{ payment.remarks|default:"-" }}</td>
                                 <td class="pe-4 text-end">
+                                    <a href="{% url 'payment_receipt' payment.id %}" class="btn btn-sm btn-outline-success me-1">
+                                        <i class="bi bi-receipt"></i> Receipt
+                                    </a>
                                     <a href="{% url 'payment_edit' payment.id %}" class="btn btn-sm btn-outline-primary me-1">
                                         <i class="bi bi-pencil-square"></i> Edit
                                     </a>

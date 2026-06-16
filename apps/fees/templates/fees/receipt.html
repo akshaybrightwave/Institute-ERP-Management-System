@@ -1,0 +1,178 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Fee Receipt | {{ receipt_number }}{% endblock %}
+
+{% block style %}
+<style>
+.receipt-document {
+    background-color: #fff;
+    border: 6px double var(--color-primary);
+    border-radius: var(--radius-md);
+    padding: 2.5rem;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+}
+.receipt-header {
+    border-bottom: 2px dashed #e5e7eb;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.receipt-details-table th {
+    font-weight: 600;
+    color: #4b5563;
+    width: 35%;
+    padding: 0.75rem 0;
+}
+.receipt-details-table td {
+    color: #1f2937;
+    padding: 0.75rem 0;
+}
+.receipt-amount-box {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    margin-top: 1.5rem;
+    text-align: center;
+}
+@media print {
+    nav, footer, .btn, .page-header, .alert, #backToTop, header, main > *:not(.print-container) {
+        display: none !important;
+    }
+    body {
+        background-color: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .print-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    .receipt-document {
+        border: 8px double #4F46E5 !important;
+        box-shadow: none !important;
+        padding: 3rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3 print-container">
+    <div class="page-header d-print-none mb-4">
+        <div>
+            <h2><i class="bi bi-receipt text-primary me-2"></i>Fee Receipt</h2>
+            <p>Payment confirmation receipt <strong>{{ receipt_number }}</strong></p>
+        </div>
+        <div>
+            {% if request.user.role == 'student' %}
+            <a href="{% url 'student_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+            </a>
+            {% else %}
+            <a href="{% url 'fees_list' %}?tab=payments" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Fees
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="receipt-document mb-4">
+                <!-- Receipt Header -->
+                <div class="receipt-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="fw-bold text-primary mb-1">BRIGHTWAVE INSTITUTE</h3>
+                        <p class="text-muted small mb-0">Online Examination & ERP Portal</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-soft-primary text-primary fs-6 mb-1">PAYMENT RECEIPT</span>
+                        <div class="text-muted small">No: <span class="fw-bold text-dark"><code>{{ receipt_number }}</code></span></div>
+                    </div>
+                </div>
+
+                <!-- Receipt Body Info -->
+                <div class="row mb-4">
+                    <div class="col-sm-6">
+                        <span class="text-muted small d-block">Student Name:</span>
+                        <strong class="text-dark fs-5">{{ payment.student.full_name }}</strong>
+                        <span class="text-muted small d-block mt-1">Email: {{ payment.student.email }}</span>
+                    </div>
+                    <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+                        <span class="text-muted small d-block">Payment Date:</span>
+                        <strong class="text-dark">{{ payment.payment_date }}</strong>
+                        <span class="text-muted small d-block mt-1">Status: <span class="badge bg-success">SUCCESS</span></span>
+                    </div>
+                </div>
+
+                <!-- Receipt Details Table -->
+                <div class="border-top border-bottom py-2">
+                    <table class="w-100 receipt-details-table">
+                        <tbody>
+                            <tr>
+                                <th>Course Name</th>
+                                <td>{{ payment.student.batch.course.name|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Batch Name</th>
+                                <td>{{ payment.student.batch.name|default:"N/A" }}</td>
+                            </tr>
+                            <tr>
+                                <th>Payment Method</th>
+                                <td class="text-capitalize">{{ payment.get_payment_method_display }}</td>
+                            </tr>
+                            {% if payment.reference_number %}
+                            <tr>
+                                <th>Reference / Txn No.</th>
+                                <td><code>{{ payment.reference_number }}</code></td>
+                            </tr>
+                            {% endif %}
+                            {% if payment.remarks %}
+                            <tr>
+                                <th>Remarks</th>
+                                <td>{{ payment.remarks }}</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Amount Box -->
+                <div class="receipt-amount-box mb-3">
+                    <span class="text-success small fw-semibold uppercase tracking-wider d-block mb-1">Amount Paid</span>
+                    <h2 class="text-success fw-bold mb-0">₹{{ payment.amount }}</h2>
+                </div>
+
+                <!-- Balance Summary Row -->
+                <div class="row g-2 text-center py-2 border-top">
+                    <div class="col-4 border-end">
+                        <span class="text-muted small d-block">Course Fee</span>
+                        <span class="fw-semibold text-dark">₹{{ course_fee }}</span>
+                    </div>
+                    <div class="col-4 border-end">
+                        <span class="text-muted small d-block">Amount Paid</span>
+                        <span class="fw-semibold text-success">₹{{ payment.amount }}</span>
+                    </div>
+                    <div class="col-4">
+                        <span class="text-muted small d-block">Remaining Balance</span>
+                        <span class="fw-semibold text-danger">₹{{ remaining_balance }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Print Trigger button -->
+            <div class="d-print-none text-center">
+                <button onclick="window.print();" class="btn btn-primary px-4 py-2">
+                    <i class="bi bi-printer-fill me-1"></i> Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

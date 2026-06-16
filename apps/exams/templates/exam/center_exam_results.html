@@ -1,0 +1,147 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Results | {{ exam.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div>
+            <h2><i class="bi bi-bar-chart-line text-primary me-2"></i>Exam Results</h2>
+            <p class="text-muted">Viewing results and student attempts for: <strong>{{ exam.title }}</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'export_exam_results_csv' exam.id %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Export Results CSV
+            </a>
+            <a href="{% url 'exam_list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Exams
+            </a>
+        </div>
+    </div>
+
+    <!-- Analytics Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-primary"><i class="bi bi-file-earmark-check-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ attempts.count }}</div>
+                    <div class="stat-label">Total Attempts</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-success"><i class="bi bi-graph-up"></i></div>
+                <div>
+                    <div class="stat-value">{{ avg_score }}%</div>
+                    <div class="stat-label">Average Score</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-warning"><i class="bi bi-trophy-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ highest_score }} / {{ lowest_score }}</div>
+                    <div class="stat-label">Highest / Lowest</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-info"><i class="bi bi-check-circle-fill"></i></div>
+                <div>
+                    <div class="stat-value">{{ pass_count }} / {{ fail_count }}</div>
+                    <div class="stat-label">Pass / Fail Count</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 mb-3 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-sm-6 col-md-4">
+                    <select name="batch" class="form-select">
+                        <option value="">-- All Batches --</option>
+                        {% for b in batches %}
+                            <option value="{{ b.id }}" {% if selected_batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i> Filter</button>
+                    {% if selected_batch %}
+                        <a href="{% url 'center_exam_results' exam.id %}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Student Name</th>
+                            <th>Batch</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Status</th>
+                            <th>Submitted At</th>
+                            <th class="pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in attempts %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ att.student.studentprofile.full_name }}</td>
+                            <td>
+                                {% if att.student.studentprofile.batch %}
+                                    <span class="badge bg-light text-dark border">{{ att.student.studentprofile.batch.name }}</span>
+                                {% else %}
+                                    <span class="text-muted italic small">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ att.score }} / {{ exam.total_marks }}</td>
+                            <td>
+                                {% widthratio att.score exam.total_marks 100 as pct %}
+                                <span class="badge-soft-primary">{{ pct }}%</span>
+                            </td>
+                            <td>
+                                {% if att.is_completed %}
+                                    <span class="badge-soft-success">Completed</span>
+                                {% else %}
+                                    <span class="badge-soft-warning">In Progress</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ att.submitted_at|date:"Y-m-d H:i" }}</td>
+                            <td class="pe-4 text-end">
+                                <a href="{% url 'center_attempt_detail' att.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View Detail
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="p-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-file-earmark-x"></i>
+                                    <p class="mb-0">No attempts found for this exam.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

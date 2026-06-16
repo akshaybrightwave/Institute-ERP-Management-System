@@ -580,8 +580,12 @@ def exam_report(request):
     selected_batch_id = request.GET.get('batch', '').strip()
 
     if selected_exam_id:
+        if is_center and not exams.filter(id=selected_exam_id).exists():
+            return HttpResponseForbidden("Access Denied.")
         exams = exams.filter(id=selected_exam_id)
     if selected_batch_id:
+        if is_center and not batches.filter(id=selected_batch_id).exists():
+            return HttpResponseForbidden("Access Denied.")
         exams = exams.filter(batches__id=selected_batch_id)
 
     # Calculate metrics

@@ -65,6 +65,7 @@ def center_dashboard(request):
     from django.db.models import Sum, Count, Q, F
     from django.db.models.functions import Coalesce
     from decimal import Decimal
+    from django.utils import timezone
     import datetime
     
     center = request.user.center
@@ -98,6 +99,18 @@ def center_dashboard(request):
             'performance_fee_collection_rate': 0.0,
             'performance_exam_participation_rate': 0.0,
             'performance_cert_eligibility_rate': 0.0,
+            # Phase 10.9 defaults
+            'mon_total_exams': 0,
+            'mon_published_exams': 0,
+            'mon_active_exams': 0,
+            'mon_total_attempts': 0,
+            'mon_students_appeared': 0,
+            'mon_avg_score': 0.0,
+            'mon_pass_pct': 0.0,
+            'mon_fail_pct': 0.0,
+            'mon_top_performers': [],
+            'mon_low_performers': [],
+            'mon_batch_perf': [],
         }
         return render(request, 'centers/center_dashboard.html', context)
 
@@ -166,6 +179,105 @@ def center_dashboard(request):
         attempts__is_completed=True
     ).distinct().count()
     total_attempts = StudentExamAttempt.objects.filter(student__studentprofile__batch__course__center=center).count()
+
+    # Phase 10.9: Center Exam Operations & Monitoring calculations
+    center_exams = Exam.objects.filter(batches__course__center=center).distinct()
+    mon_total_exams = center_exams.count()
+    mon_published_exams = center_exams.filter(is_published=True).count()
+    mon_active_exams = center_exams.filter(is_published=True).filter(Q(end_date__isnull=True) | Q(end_date__gte=timezone.now())).count()
+    
+    center_attempts = StudentExamAttempt.objects.filter(student__studentprofile__batch__course__center=center)
+    mon_total_attempts = center_attempts.count()
+    mon_students_appeared = center_attempts.values('student').distinct().count()
+    
+    completed_center_attempts = center_attempts.filter(is_completed=True).select_related('exam', 'student__studentprofile__batch')
+    total_completed = completed_center_attempts.count()
+    
+    total_pct = 0.0
+    pass_count = 0
+    fail_count = 0
+    student_performance = {}
+    
+    for att in completed_center_attempts:
+        max_marks = att.exam.total_marks
+        pct = (att.score / max_marks * 100) if max_marks > 0 else 0.0
+        total_pct += pct
+        
+        pass_threshold = (att.exam.pass_percentage / 100.0) * max_marks
+        if att.score >= pass_threshold:
+            pass_count += 1
+        else:
+            fail_count += 1
+            
+        student_id = att.student_id
+        student_name = att.student.studentprofile.full_name
+        batch_name = att.student.studentprofile.batch.name if att.student.studentprofile.batch else 'N/A'
+        
+        if student_id not in student_performance:
+            student_performance[student_id] = {
+                'name': student_name,
+                'batch': batch_name,
+                'total_pct': 0.0,
+                'count': 0
+            }
+        student_performance[student_id]['total_pct'] += pct
+        student_performance[student_id]['count'] += 1
+        
+    mon_avg_score = (total_pct / total_completed) if total_completed > 0 else 0.0
+    mon_pass_pct = (pass_count / total_completed * 100) if total_completed > 0 else 0.0
+    mon_fail_pct = (fail_count / total_completed * 100) if total_completed > 0 else 0.0
+    
+    student_averages = []
+    for s_id, s_data in student_performance.items():
+        avg_pct = s_data['total_pct'] / s_data['count']
+        student_averages.append({
+            'name': s_data['name'],
+            'batch': s_data['batch'],
+            'avg_pct': round(avg_pct, 1)
+        })
+        
+    mon_top_performers = sorted(student_averages, key=lambda x: x['avg_pct'], reverse=True)[:5]
+    mon_low_performers = sorted(student_averages, key=lambda x: x['avg_pct'])[:5]
+    
+    center_batches = Batch.objects.filter(course__center=center).prefetch_related('exams')
+    mon_batch_perf = []
+    for batch in center_batches:
+        students_count = StudentProfile.objects.filter(batch=batch).count()
+        exam_count = batch.exams.count()
+        
+        b_attempts = StudentExamAttempt.objects.filter(
+            student__studentprofile__batch=batch,
+            is_completed=True
+        ).select_related('exam')
+        b_attempt_count = b_attempts.count()
+        
+        b_total_pct = 0.0
+        b_pass_count = 0
+        b_fail_count = 0
+        for att in b_attempts:
+            max_marks = att.exam.total_marks
+            pct = (att.score / max_marks * 100) if max_marks > 0 else 0.0
+            b_total_pct += pct
+            
+            pass_threshold = (att.exam.pass_percentage / 100.0) * max_marks
+            if att.score >= pass_threshold:
+                b_pass_count += 1
+            else:
+                b_fail_count += 1
+                
+        b_avg_score = (b_total_pct / b_attempt_count) if b_attempt_count > 0 else 0.0
+        b_pass_pct = (b_pass_count / b_attempt_count * 100) if b_attempt_count > 0 else 0.0
+        b_fail_pct = (b_fail_count / b_attempt_count * 100) if b_attempt_count > 0 else 0.0
+        
+        mon_batch_perf.append({
+            'name': batch.name,
+            'students_count': students_count,
+            'exam_count': exam_count,
+            'attempt_count': b_attempt_count,
+            'avg_score': round(b_avg_score, 1),
+            'pass_pct': round(b_pass_pct, 1),
+            'fail_pct': round(b_fail_pct, 1),
+        })
 
     # 6. Recent Students (Feature 6)
     recent_students = StudentProfile.objects.filter(
@@ -236,6 +348,18 @@ def center_dashboard(request):
         'performance_fee_collection_rate': round(fee_collection_rate, 1),
         'performance_exam_participation_rate': round(exam_participation_rate, 1),
         'performance_cert_eligibility_rate': round(cert_eligibility_rate, 1),
+        # Phase 10.9 variables
+        'mon_total_exams': mon_total_exams,
+        'mon_published_exams': mon_published_exams,
+        'mon_active_exams': mon_active_exams,
+        'mon_total_attempts': mon_total_attempts,
+        'mon_students_appeared': mon_students_appeared,
+        'mon_avg_score': round(mon_avg_score, 1),
+        'mon_pass_pct': round(mon_pass_pct, 1),
+        'mon_fail_pct': round(mon_fail_pct, 1),
+        'mon_top_performers': mon_top_performers,
+        'mon_low_performers': mon_low_performers,
+        'mon_batch_perf': mon_batch_perf,
     }
     return render(request, 'centers/center_dashboard.html', context)
 

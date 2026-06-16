@@ -20,4 +20,12 @@ urlpatterns = [
     path('questions/<int:question_id>/options/add/', views.add_option, name='add_option'),
     path('options/<int:option_id>/edit/', views.edit_option, name='edit_option'),
     path('options/<int:option_id>/delete/', views.delete_option, name='delete_option'),
+
+    # Center Exam Monitoring and Submissions (Phase 10.9)
+    path('exams/<int:exam_id>/results/', views.center_exam_results, name='center_exam_results'),
+    path('exams/<int:exam_id>/results/export/', views.export_exam_results_csv, name='export_exam_results_csv'),
+    path('attempts/', views.center_attempts_list, name='center_attempts_list'),
+    path('attempts/<int:attempt_id>/', views.center_attempt_detail, name='center_attempt_detail'),
+    path('reports/exams/student-performance/export/', views.export_student_performance_csv, name='export_student_performance_csv'),
+    path('reports/exams/batch-performance/export/', views.export_batch_performance_csv, name='export_batch_performance_csv'),
 ]

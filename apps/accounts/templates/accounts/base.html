@@ -57,6 +57,10 @@
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'exam_dashboard' %}active{% endif %}" href="{% url 'exam_dashboard' %}">Exams</a>
             </li>
+          {% elif request.user.role == 'center' %}
+            <li class="nav-item">
+              <a class="nav-link {% if request.resolver_match.url_name == 'exam_list' or request.resolver_match.url_name == 'center_exam_results' or request.resolver_match.url_name == 'center_attempts_list' %}active{% endif %}" href="{% url 'exam_list' %}">Exams</a>
+            </li>
           {% elif request.user.role == 'student' %}
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_dashboard' %}">Student Dashboard</a>

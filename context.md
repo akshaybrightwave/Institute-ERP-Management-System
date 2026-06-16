@@ -642,6 +642,73 @@ Added the following to the Admin Dashboard metrics:
 * Programmatic data isolation and CSV export verification script `verify_reports_security.py` completed successfully, ensuring complete cross-center security isolation.
 
 
+## 22. ERP Phase 10.8 — Center Fee Operations
+
+### 22.1 Objective & Design
+Implemented Center Fee Operations allowing Center role users to perform fee collection, view center-specific summaries, manage payment ledger history, and generate printable receipts.
+
+### 22.2 Changes & Extensions
+- **Forms (`apps/fees/forms.py`)**: 
+  - Overrode `FeePaymentForm.__init__` to filter student querysets by `request.user.center` for Center users.
+  - Implemented `clean_amount` to prevent negative and zero payment inputs.
+  - Implemented `clean` method validation to block cross-center assignments and prevent overpayments against the student's outstanding course fees.
+- **Views (`apps/fees/views.py`)**: 
+  - Restructured `fees_list` to handle center role authorization, center-restricted ledger querysets, and calculate six fee metrics (Total Students, Collected Fees, Pending Fees, Collection % Rate, Paid Students count, Pending Students count).
+  - Modified `payment_create`, `payment_update`, and `payment_delete` to enforce center-specific student limits and prevent direct URL editing or deletion of other centers' records.
+  - Added new view `payment_receipt` to dynamically render fee receipt parameters.
+- **URLs (`apps/fees/urls.py`)**: Registered `payments/<int:pk>/receipt/` route.
+- **Templates (`apps/fees/templates/fees/`)**:
+  - `fees_list.html`: Rendered metrics summary cards at the top of the Fees management interface. Restructured the list tables and action buttons to conditionally show ledger history, receipt button, edit, delete, and collection controls for Center users.
+  - `fee_form.html`: Integrated a dynamic "Student Fee Summary" card. Appended a JavaScript dropdown change listener that triggers page reloads to update the fee summary dynamically.
+  - `receipt.html` [NEW]: Created printable fee receipt using double-bordered styling and printable CSS media queries.
+
+### 22.3 Security Validations
+- Direct URL access validation returns `403 Forbidden` for cross-center actions on `/payments/<id>/edit/`, `/payments/<id>/delete/`, and `/payments/<id>/receipt/`.
+- Programmatic validation script `verify_fees_security.py` successfully completed all negative values validation, overpayment blocks, cross-center assignments, and URL manipulation tests.
+
+### 22.4 Validation Results
+- Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+
+---
+
+## 23. ERP Phase 10.9 — Center Exam Operations & Monitoring
+
+### 23.1 Objective & Design
+Implemented Center Exam Operations & Monitoring enabling Center users to view and monitor examinations, student attempts, analytics, and CSV exports restricted exclusively to their center's scope. 
+
+### 23.2 Changes & Extensions
+- **Views (`apps/exams/views.py`, `apps/centers/views.py`, `apps/reports/views.py`)**:
+  - `center_dashboard`: Enhanced to calculate and return eight exam-monitoring metrics, Top 5 Performers, Low 5 Performers, and Batch Performance analytics for the center.
+  - `exam_list`: Updated to filter exams by center courses and batches, compiling metrics (`exams_data`) for the UI.
+  - `exam_detail`: Configured to load detailed analytics (Average score, Highest/Lowest scores, Pass/Fail rate, and counts) and restrict access to the logged-in center.
+  - `center_exam_results` [NEW]: Fetches student attempts for a specific exam under the center.
+  - `center_attempts_list` [NEW]: Displays paginated and filterable student attempts list.
+  - `center_attempt_detail` [NEW]: Shows student question responses, correct choices, and marks in a read-only screen.
+  - `export_exam_results_csv`, `export_student_performance_csv`, `export_batch_performance_csv` [NEW]: Generates CSV exports filtered by center.
+  - `exam_report` in reports: Secured parameters to prevent cross-center batch queries.
+- **Templates**:
+  - `center_dashboard.html`: Integrated the **Center Exam Monitoring** panel, top/low performers, batch analytics, and new quick actions shortcuts.
+  - `exam_list.html`: Conditional styling for Center role to display assigned batch, attempts, avg score, and status columns while hiding editing buttons.
+  - `exam_detail.html`: Displays the metrics card deck and performance analytics progress indicators.
+  - `center_exam_results.html`, `center_attempts_list.html`, `attempt_detail.html` [NEW]: Created read-only dashboards and filters.
+- **Navigation (`base.html`)**: Included Exams link for Center users.
+
+### 23.3 Security Validations
+- Access attempts outside the user's center return a `403 Forbidden` response for exam detail, results, attempt details, and CSV downloads.
+- Programmatic validation script `verify_exams_security.py` successfully completed all isolation, read-only redirect, and URL boundary checks.
+
+### 23.4 Validation Results
+- Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+
+
+
+
 
 
 

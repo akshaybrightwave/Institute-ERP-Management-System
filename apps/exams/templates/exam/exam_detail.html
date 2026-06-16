@@ -9,7 +9,15 @@
             <h2><i class="bi bi-journal-text text-primary me-2"></i>Exam Details</h2>
             <p>Detailed overview of exam settings, assigned batches, and performance metrics.</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            {% if not is_center %}
+                <a href="{% url 'edit_exam' exam.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil me-1"></i> Edit Exam
+                </a>
+                <a href="{% url 'question_list' exam.id %}" class="btn btn-outline-primary">
+                    <i class="bi bi-question-circle me-1"></i> Questions
+                </a>
+            {% endif %}
             <a href="{% url 'exam_list' %}" class="btn btn-outline-primary">
                 <i class="bi bi-arrow-left me-1"></i> Back to Exams
             </a>
@@ -68,72 +76,125 @@
 
         <!-- Metrics & Batches -->
         <div class="col-lg-8">
-            <div class="row g-4">
-                <div class="col-md-6">
+            <!-- Analytics Cards Row -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-people"></i></div>
+                        <div class="stat-icon bg-soft-primary"><i class="bi bi-people-fill"></i></div>
                         <div>
                             <div class="stat-value">{{ student_count }}</div>
-                            <div class="stat-label">Student Count</div>
+                            <div class="stat-label">Total Students</div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6 col-lg-3">
                     <div class="stat-card">
-                        <div class="stat-icon"><i class="bi bi-file-earmark-check"></i></div>
+                        <div class="stat-icon bg-soft-info"><i class="bi bi-file-earmark-check-fill"></i></div>
                         <div>
                             <div class="stat-value">{{ attempt_count }}</div>
-                            <div class="stat-label">Attempt Count</div>
+                            <div class="stat-label">Total Attempts</div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Assigned Batches -->
-                <div class="col-12">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <h5 class="fw-bold mb-4"><i class="bi bi-calendar-event text-primary me-2"></i>Assigned Batches</h5>
-                            <div class="table-responsive">
-                                <table class="table table-examly table-hover align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th class="ps-3">Batch Name</th>
-                                            <th>Course</th>
-                                            <th>Teacher</th>
-                                            <th>Schedule</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for batch in batches %}
-                                        <tr>
-                                            <td class="ps-3 fw-semibold text-dark">{{ batch.name }}</td>
-                                            <td>{{ batch.course.name }}</td>
-                                            <td>
-                                                {% if batch.teacher %}
-                                                    {{ batch.teacher.full_name }}
-                                                {% else %}
-                                                    <span class="text-muted small italic">Not Assigned</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="small">{{ batch.start_date }} to {{ batch.end_date }}</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="4" class="p-0">
-                                                <div class="empty-state py-4">
-                                                    <i class="bi bi-calendar-x"></i>
-                                                    <p class="mb-0">No batches assigned to this exam yet.</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-soft-success"><i class="bi bi-graph-up"></i></div>
+                        <div>
+                            <div class="stat-value">{{ avg_score }}%</div>
+                            <div class="stat-label">Average Score</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-soft-warning"><i class="bi bi-trophy-fill"></i></div>
+                        <div>
+                            <div class="stat-value">{{ highest_score }} / {{ lowest_score }}</div>
+                            <div class="stat-label">Highest / Lowest</div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Pass / Fail Analytics -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart text-primary me-2"></i>Performance Analytics</h5>
+                    <div class="row g-4 align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Passed Students (Attempts)</span>
+                                <span class="fw-bold text-success">{{ pass_count }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Failed Students (Attempts)</span>
+                                <span class="fw-bold text-danger">{{ fail_count }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {% if attempt_count > 0 %}
+                                {% widthratio pass_count attempt_count 100 as pass_pct %}
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="text-muted">Pass Rate</span>
+                                        <span class="fw-bold text-success">{{ pass_pct }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ pass_pct }}%"></div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center text-muted py-2">No completed attempts.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assigned Batches -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4"><i class="bi bi-calendar-event text-primary me-2"></i>Assigned Batches</h5>
+                    <div class="table-responsive">
+                        <table class="table table-examly table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">Batch Name</th>
+                                    <th>Course</th>
+                                    <th>Teacher</th>
+                                    <th>Schedule</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for batch in batches %}
+                                <tr>
+                                    <td class="ps-3 fw-semibold text-dark">{{ batch.name }}</td>
+                                    <td>{{ batch.course.name }}</td>
+                                    <td>
+                                        {% if batch.teacher %}
+                                            {{ batch.teacher.full_name }}
+                                        {% else %}
+                                            <span class="text-muted small italic">Not Assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ batch.start_date }} to {{ batch.end_date }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="p-0">
+                                        <div class="empty-state py-4">
+                                            <i class="bi bi-calendar-x"></i>
+                                            <p class="mb-0">No batches assigned to this exam yet.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

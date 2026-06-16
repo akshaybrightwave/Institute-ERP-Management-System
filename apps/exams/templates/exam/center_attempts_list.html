@@ -1,0 +1,165 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Monitor Attempts | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+        <div>
+            <h2><i class="bi bi-file-earmark-check-fill text-primary me-2"></i>Monitor Student Attempts</h2>
+            <p class="text-muted">Review, search, and monitor student exam attempts across your center.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'export_student_performance_csv' %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Export Student Performance
+            </a>
+            <a href="{% url 'export_batch_performance_csv' %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Export Batch Performance
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card border-0 mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="text-muted small fw-semibold mb-1">Search Student</label>
+                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Student name...">
+                </div>
+                <div class="col-md-3">
+                    <label class="text-muted small fw-semibold mb-1">Filter Batch</label>
+                    <select name="batch" class="form-select">
+                        <option value="">-- All Batches --</option>
+                        {% for b in batches %}
+                            <option value="{{ b.id }}" {% if selected_batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="text-muted small fw-semibold mb-1">Filter Exam</label>
+                    <select name="exam" class="form-select">
+                        <option value="">-- All Exams --</option>
+                        {% for e in exams %}
+                            <option value="{{ e.id }}" {% if selected_exam == e.id|stringformat:"s" %}selected{% endif %}>{{ e.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i> Search & Filter</button>
+                    {% if query or selected_batch or selected_exam %}
+                        <a href="{% url 'center_attempts_list' %}" class="btn btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attempts Table -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4">Student Name</th>
+                            <th>Batch</th>
+                            <th>Exam Name</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Status</th>
+                            <th>Started At</th>
+                            <th>Submitted At</th>
+                            <th class="pe-4 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in page_obj %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ att.student.studentprofile.full_name }}</td>
+                            <td>
+                                {% if att.student.studentprofile.batch %}
+                                    <span class="badge bg-light text-dark border">{{ att.student.studentprofile.batch.name }}</span>
+                                {% else %}
+                                    <span class="text-muted italic small">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-semibold text-dark">{{ att.exam.title }}</td>
+                            <td>{{ att.score }} / {{ att.exam.total_marks }}</td>
+                            <td>
+                                {% if att.exam.total_marks > 0 %}
+                                    {% widthratio att.score att.exam.total_marks 100 as pct %}
+                                    <span class="badge-soft-primary">{{ pct }}%</span>
+                                {% else %}
+                                    <span class="badge-soft-secondary">0%</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if att.is_completed %}
+                                    <span class="badge-soft-success">Completed</span>
+                                {% else %}
+                                    <span class="badge-soft-warning">In Progress</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">{{ att.start_time|date:"Y-m-d H:i" }}</td>
+                            <td class="small">
+                                {% if att.is_completed %}
+                                    {{ att.submitted_at|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="pe-4 text-end">
+                                <a href="{% url 'center_attempt_detail' att.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View Detail
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="p-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-file-earmark-x"></i>
+                                    <p class="mb-0">No attempts match your selection.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="d-flex justify-content-center">
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_exam %}&exam={{ selected_exam }}{% endif %}">&laquo;</a>
+                </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_exam %}&exam={{ selected_exam }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_batch %}&batch={{ selected_batch }}{% endif %}{% if selected_exam %}&exam={{ selected_exam }}{% endif %}">&raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+</div>
+{% endblock %}

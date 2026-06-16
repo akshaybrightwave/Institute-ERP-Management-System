@@ -10,15 +10,17 @@ from apps.batches.models import Batch
 from apps.teachers.models import TeacherProfile
 from .models import FeePayment
 from .forms import FeePaymentForm
+from decimal import Decimal
 
 
 @login_required
 def fees_list(request):
     is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
     is_teacher = request.user.role == 'teacher'
     
-    if not (is_admin or is_teacher):
-        return HttpResponseForbidden("Access Denied: Admins or Teachers only.")
+    if not (is_admin or is_center or is_teacher):
+        return HttpResponseForbidden("Access Denied: Unauthorized role.")
         
     tab = request.GET.get('tab', 'students')
     query = request.GET.get('q', '').strip()
@@ -26,14 +28,18 @@ def fees_list(request):
     
     # Prepare data for Student summaries tab
     students_qs = StudentProfile.objects.select_related('batch__course', 'batch__teacher').annotate(
-        paid_amount=Coalesce(Sum('feepayment__amount'), 0.00, output_field=DecimalField())
+        paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'), output_field=DecimalField())
     )
     
-    if is_teacher:
+    if is_center:
+        center = request.user.center
+        students_qs = students_qs.filter(batch__course__center=center)
+        batches = Batch.objects.filter(course__center=center)
+    elif is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         students_qs = students_qs.filter(batch__teacher=teacher_profile)
         batches = Batch.objects.filter(teacher=teacher_profile)
-    else:
+    else: # admin
         batches = Batch.objects.all()
         
     # Apply search/filter to student summaries
@@ -47,7 +53,7 @@ def fees_list(request):
     # Calculate pending and status for each student
     student_list = []
     for student in students_qs.order_by('full_name'):
-        total_fee = student.batch.course.fees if (student.batch and student.batch.course) else 0.00
+        total_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
         paid = student.paid_amount
         pending = total_fee - paid
         
@@ -71,11 +77,13 @@ def fees_list(request):
     page_students = request.GET.get('page_students', 1)
     students_page_obj = paginator_students.get_page(page_students)
     
-    # Prepare data for Payment Ledger tab (Admin only)
+    # Prepare data for Payment Ledger tab (Admin & Center only)
     payments_page_obj = None
-    if is_admin:
+    if is_admin or is_center:
         payments_qs = FeePayment.objects.select_related('student__batch__course').all().order_by('-payment_date', '-id')
-        
+        if is_center:
+            payments_qs = payments_qs.filter(student__batch__course__center=request.user.center)
+            
         # Search/Filter in payments
         if query:
             payments_qs = payments_qs.filter(
@@ -87,6 +95,45 @@ def fees_list(request):
         paginator_payments = Paginator(payments_qs, 15)
         page_payments = request.GET.get('page_payments', 1)
         payments_page_obj = paginator_payments.get_page(page_payments)
+
+    # Calculate dashboard metrics (restricted to logged-in center for center, global for admin)
+    metrics_students = StudentProfile.objects.select_related('batch__course')
+    metrics_payments = FeePayment.objects.all()
+    
+    if is_center:
+        center = request.user.center
+        metrics_students = metrics_students.filter(batch__course__center=center)
+        metrics_payments = metrics_payments.filter(student__batch__course__center=center)
+    elif is_teacher:
+        teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
+        metrics_students = metrics_students.filter(batch__teacher=teacher_profile)
+        metrics_payments = metrics_payments.filter(student__batch__teacher=teacher_profile)
+
+    # Aggregations for dashboard
+    total_students_count = metrics_students.count()
+    total_fee_collected = metrics_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    
+    students_annotated = metrics_students.annotate(
+        paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'), output_field=DecimalField())
+    )
+    
+    total_course_fees = Decimal('0.00')
+    paid_students_count = 0
+    pending_students_count = 0
+    
+    for s in students_annotated:
+        s_fee = s.batch.course.fees if (s.batch and s.batch.course) else Decimal('0.00')
+        total_course_fees += s_fee
+        if s.paid_amount >= s_fee:
+            paid_students_count += 1
+        else:
+            pending_students_count += 1
+            
+    total_pending_fees = total_course_fees - total_fee_collected
+    if total_pending_fees < Decimal('0.00'):
+        total_pending_fees = Decimal('0.00')
+        
+    collection_percentage = (float(total_fee_collected) / float(total_course_fees) * 100) if total_course_fees > Decimal('0.00') else 0.0
         
     return render(request, 'fees/fees_list.html', {
         'students_page_obj': students_page_obj,
@@ -95,59 +142,151 @@ def fees_list(request):
         'selected_batch': batch_id,
         'query': query,
         'tab': tab,
-        'is_admin': is_admin
+        'is_admin': is_admin,
+        'is_center': is_center,
+        'is_teacher': is_teacher,
+        
+        # Metrics
+        'total_students_count': total_students_count,
+        'total_fee_collected': total_fee_collected,
+        'total_pending_fees': total_pending_fees,
+        'collection_percentage': round(collection_percentage, 1),
+        'paid_students_count': paid_students_count,
+        'pending_students_count': pending_students_count,
     })
 
 
 @login_required
 def payment_create(request):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admins only.")
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied: Admins or Centers only.")
         
-    initial_student = request.GET.get('student')
+    selected_student_id = None
     if request.method == 'POST':
-        form = FeePaymentForm(request.POST)
+        selected_student_id = request.POST.get('student')
+    else:
+        selected_student_id = request.GET.get('student')
+        
+    student_profile = None
+    fee_summary = None
+    if selected_student_id:
+        try:
+            if is_center:
+                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__course__center=request.user.center)
+            else:
+                student_profile = StudentProfile.objects.get(pk=selected_student_id)
+                
+            total_fee = student_profile.batch.course.fees if (student_profile.batch and student_profile.batch.course) else Decimal('0.00')
+            paid_amount = FeePayment.objects.filter(student=student_profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            pending_balance = total_fee - paid_amount
+            fee_summary = {
+                'student_name': student_profile.full_name,
+                'course_name': student_profile.batch.course.name if (student_profile.batch and student_profile.batch.course) else 'N/A',
+                'batch_name': student_profile.batch.name if student_profile.batch else 'N/A',
+                'total_fees': total_fee,
+                'amount_paid': paid_amount,
+                'pending_balance': pending_balance
+            }
+        except StudentProfile.DoesNotExist:
+            pass
+
+    if request.method == 'POST':
+        form = FeePaymentForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Fee payment recorded successfully.")
             return redirect('fees_list')
     else:
-        form = FeePaymentForm(initial={'student': initial_student})
+        form = FeePaymentForm(initial={'student': selected_student_id}, user=request.user)
         
     return render(request, 'fees/fee_form.html', {
         'form': form,
-        'action': 'Add'
+        'action': 'Add',
+        'fee_summary': fee_summary,
+        'student_profile': student_profile
     })
 
 
 @login_required
 def payment_update(request, pk):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admins only.")
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied: Admins or Centers only.")
         
     payment = get_object_or_404(FeePayment, pk=pk)
+    
+    # Check center isolation
+    if is_center:
+        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.course.center != request.user.center:
+            return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
+            
+    selected_student_id = None
     if request.method == 'POST':
-        form = FeePaymentForm(request.POST, instance=payment)
+        selected_student_id = request.POST.get('student')
+    else:
+        selected_student_id = request.GET.get('student') or payment.student_id
+        
+    student_profile = None
+    fee_summary = None
+    if selected_student_id:
+        try:
+            if is_center:
+                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__course__center=request.user.center)
+            else:
+                student_profile = StudentProfile.objects.get(pk=selected_student_id)
+                
+            total_fee = student_profile.batch.course.fees if (student_profile.batch and student_profile.batch.course) else Decimal('0.00')
+            paid_amount = FeePayment.objects.filter(student=student_profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            pending_balance = total_fee - paid_amount
+            fee_summary = {
+                'student_name': student_profile.full_name,
+                'course_name': student_profile.batch.course.name if (student_profile.batch and student_profile.batch.course) else 'N/A',
+                'batch_name': student_profile.batch.name if student_profile.batch else 'N/A',
+                'total_fees': total_fee,
+                'amount_paid': paid_amount,
+                'pending_balance': pending_balance
+            }
+        except StudentProfile.DoesNotExist:
+            pass
+
+    if request.method == 'POST':
+        form = FeePaymentForm(request.POST, instance=payment, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Fee payment updated successfully.")
             return redirect('fees_list')
     else:
-        form = FeePaymentForm(instance=payment)
+        form = FeePaymentForm(instance=payment, user=request.user)
         
     return render(request, 'fees/fee_form.html', {
         'form': form,
         'action': 'Edit',
-        'payment': payment
+        'payment': payment,
+        'fee_summary': fee_summary,
+        'student_profile': student_profile
     })
 
 
 @login_required
 def payment_delete(request, pk):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admins only.")
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied: Admins or Centers only.")
         
     payment = get_object_or_404(FeePayment, pk=pk)
+    
+    # Check center isolation
+    if is_center:
+        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.course.center != request.user.center:
+            return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
+            
     if request.method == 'POST':
         payment.delete()
         messages.success(request, "Fee payment deleted successfully.")
@@ -155,4 +294,43 @@ def payment_delete(request, pk):
         
     return render(request, 'fees/fee_confirm_delete.html', {
         'payment': payment
+    })
+
+
+@login_required
+def payment_receipt(request, pk):
+    payment = get_object_or_404(FeePayment, pk=pk)
+    user = request.user
+    
+    is_authorized = False
+    if user.role == 'admin':
+        is_authorized = True
+    elif user.role == 'center':
+        if user.center and payment.student.batch and payment.student.batch.course and payment.student.batch.course.center == user.center:
+            is_authorized = True
+    elif user.role == 'student':
+        if payment.student.user == user:
+            is_authorized = True
+            
+    if not is_authorized:
+        return HttpResponseForbidden("Access Denied: You are not authorized to view this receipt.")
+        
+    student = payment.student
+    course_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+    
+    # Sum of all payments for this student
+    total_paid = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    remaining_balance = course_fee - total_paid
+    if remaining_balance < Decimal('0.00'):
+        remaining_balance = Decimal('0.00')
+        
+    receipt_number = f"RCPT-{payment.payment_date.year}-{payment.id:04d}"
+    
+    return render(request, 'fees/receipt.html', {
+        'payment': payment,
+        'receipt_number': receipt_number,
+        'course_fee': course_fee,
+        'remaining_balance': remaining_balance,
+        'is_admin': user.role == 'admin',
+        'is_center': user.role == 'center',
     })
