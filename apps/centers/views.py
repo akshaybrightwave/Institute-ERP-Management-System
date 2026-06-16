@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from apps.accounts.views import admin_required
 from .models import Center
 from .forms import CenterForm
@@ -46,3 +47,27 @@ def center_delete(request, pk):
         messages.success(request, 'Center deleted successfully.')
         return redirect('center_list')
     return render(request, 'centers/center_confirm_delete.html', {'center': center})
+
+
+@login_required
+def center_dashboard(request):
+    if request.user.role != 'center':
+        return redirect('login')
+    
+    from apps.courses.models import Course
+    from apps.batches.models import Batch
+    from apps.accounts.models import User
+    
+    total_courses = Course.objects.count()
+    total_batches = Batch.objects.count()
+    total_teachers = User.objects.filter(role='teacher').count()
+    total_students = User.objects.filter(role='student').count()
+    
+    context = {
+        'total_courses': total_courses,
+        'total_batches': total_batches,
+        'total_teachers': total_teachers,
+        'total_students': total_students,
+    }
+    return render(request, 'centers/center_dashboard.html', context)
+

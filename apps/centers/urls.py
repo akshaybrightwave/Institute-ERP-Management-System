@@ -7,4 +7,5 @@ urlpatterns = [
     path('add/', views.center_create, name='center_create'),
     path('<int:pk>/edit/', views.center_update, name='center_edit'),
     path('<int:pk>/delete/', views.center_delete, name='center_delete'),
+    path('dashboard/', views.center_dashboard, name='center_dashboard'),
 ]

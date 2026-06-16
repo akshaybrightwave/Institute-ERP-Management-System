@@ -105,6 +105,8 @@ def user_login(request):
             login(request, user)
             if user.role == 'admin':
                 return redirect('admin_dashboard')
+            elif user.role == 'center':
+                return redirect('center_dashboard')
             elif user.role == 'teacher':
                 return redirect('teacher_dashboard')
             else:
@@ -143,7 +145,7 @@ def admin_required(view_func):
 
 from django.shortcuts import get_object_or_404
 from .models import User, Feedback
-from .forms import AdminSignupForm, TeacherSignupForm, StudentSignupForm, StudentEditForm, TeacherEditForm
+from .forms import AdminSignupForm, TeacherSignupForm, StudentSignupForm, StudentEditForm, TeacherEditForm, CenterSignupForm, CenterEditForm
 
 @admin_required
 def admin_dashboard(request):
@@ -252,7 +254,7 @@ def user_list(request):
         users = users.filter(
             Q(username__icontains=query) | Q(email__icontains=query)
         )
-    if role in ('student', 'teacher'):
+    if role in ('student', 'teacher', 'center'):
         users = users.filter(role=role)
     if selected_batch_id:
         users = users.filter(studentprofile__batch_id=selected_batch_id)
@@ -276,6 +278,8 @@ def user_add(request):
         form_class = StudentSignupForm
     elif role == 'teacher':
         form_class = TeacherSignupForm
+    elif role == 'center':
+        form_class = CenterSignupForm
     else:
         return HttpResponseForbidden("Invalid role.")
 
@@ -302,6 +306,8 @@ def user_edit(request, user_id):
         form_class = StudentEditForm
     elif user.role == 'teacher':
         form_class = TeacherEditForm
+    elif user.role == 'center':
+        form_class = CenterEditForm
     else:
         return HttpResponseForbidden("Invalid user type.")
 
@@ -316,6 +322,8 @@ def user_edit(request, user_id):
                 messages.success(request, "Student updated successfully.")
             elif user.role == 'teacher':
                 messages.success(request, "Teacher updated successfully.")
+            elif user.role == 'center':
+                messages.success(request, "Center updated successfully.")
             return redirect('user_list')
     else:
         if user.role == 'student':

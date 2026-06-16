@@ -1,0 +1,69 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}Center Dashboard | Examly{% endblock %}
+
+{% block content %}
+<div class="container py-2">
+
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-building text-primary me-2"></i>Center Dashboard</h2>
+            <p>Welcome back, {{ user.username }}. Here's what's happening at your center.</p>
+        </div>
+        <span class="role-badge"><i class="bi bi-award-fill"></i> Center Admin</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-4">
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-primary"><i class="bi bi-journal-bookmark-fill text-primary"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_courses }}</div>
+                    <div class="stat-label">Total Courses</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-success"><i class="bi bi-calendar-event text-success"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_batches }}</div>
+                    <div class="stat-label">Total Batches</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-info"><i class="bi bi-person-workspace text-info"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_teachers }}</div>
+                    <div class="stat-label">Total Teachers</div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="stat-card">
+                <div class="stat-icon bg-soft-warning"><i class="bi bi-mortarboard-fill text-warning"></i></div>
+                <div>
+                    <div class="stat-value">{{ total_students }}</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 p-4 mt-4">
+        <div class="card-body">
+            <h4 class="fw-bold mb-3">Center Portal Foundation</h4>
+            <p class="text-muted">Welcome to the Center Dashboard. This workspace will serve as the hub for managing your center's courses, batches, and student records.</p>
+            <hr>
+            <div class="d-flex align-items-center mt-3">
+                <i class="bi bi-info-circle text-primary fs-4 me-3"></i>
+                <span class="small text-muted">Role-based controls and center-level filters will be integrated in subsequent phases.</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

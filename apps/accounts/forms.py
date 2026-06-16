@@ -233,3 +233,73 @@ class FeedbackForm(forms.ModelForm):
             'subject': forms.TextInput(attrs={'class': 'form-control'}),
             'message': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
         }
+
+
+class CenterSignupForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
+            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
+        }
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'center'
+        if commit:
+            user.save()
+        return user
+
+
+class CenterEditForm(forms.ModelForm):
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=False,
+        help_text="Leave blank to keep current password."
+    )
+    password2 = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        required=False
+    )
+    role = forms.ChoiceField(
+        choices=User.ROLE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    is_active = forms.BooleanField(
+        required=False,
+        label="Active Status",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'is_active', 'role']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+
+        if password1 or password2:
+            if password1 != password2:
+                self.add_error('password2', "Passwords do not match.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        password1 = self.cleaned_data.get('password1')
+        if password1:
+            user.set_password(password1)
+        if commit:
+            user.save()
+        return user
+

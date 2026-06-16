@@ -427,4 +427,63 @@ Added the following to the Admin Dashboard metrics:
 * **Teachers:** Read-only visibility restricted strictly to reports and details corresponding to batches explicitly assigned to them.
 * **Students:** Restrict access completely (unauthorized roles are returned a `403 Forbidden` response).
 
+---
+
+## 14. Phase 10.1 — Center Role Foundation
+
+### 14.1 New Role
+* **Role Name:** `center`
+* **Choices Configuration:** Configured in `apps.accounts.models.User.ROLE_CHOICES` alongside `admin`, `teacher`, and `student`.
+
+### 14.2 Login Flow & Redirects
+* **Authentication View:** `user_login` in `apps/accounts/views.py`.
+* **Login Redirect Logic:**
+  * Admin → Admin Dashboard (`admin_dashboard`)
+  * Center → Center Dashboard (`center_dashboard`)
+  * Teacher → Teacher Dashboard (`teacher_dashboard`)
+  * Student → Student Dashboard (`student_dashboard`)
+
+### 14.3 Dashboard Route
+* **Dashboard View:** `center_dashboard` in `apps/centers/views.py` (uses `@login_required` verification).
+* **Dashboard URL Route:** `/centers/dashboard/` (named `center_dashboard` in `apps/centers/urls.py`).
+* **Dashboard Metrics:** Shows platform-wide metrics for:
+  * Total Courses
+  * Total Batches
+  * Total Teachers
+  * Total Students
+
+### 14.4 Access Protection & Responsibilities
+* **Access Control:** Restricted via `@login_required` and explicitly checks `if request.user.role != 'center': return redirect('login')`.
+* **Responsibilities:** Serves as the basic landing area and verification hub for Center administrators.
+
+### 14.5 Current Limitations
+* **Permissions:** Center-level permissions have not been introduced yet.
+* **Filtering:** Center-specific resource filtering is not yet implemented. All metrics display global platform counts for Courses, Batches, Teachers, and Students.
+
+
+## 15. ERP Phase 10.2 — Center User Management
+
+### 15.1 Files Modified
+* **`apps/accounts/admin.py`**: Switched custom `User` registration to a subclass of `UserAdmin` (`CustomUserAdmin`) to fix password hashing issues in Django Admin.
+* **`apps/accounts/forms.py`**: Added `CenterSignupForm` and `CenterEditForm` with password validation, role settings, and status editing.
+* **`apps/accounts/views.py`**: Integrated the new forms into `user_add` and `user_edit` views; added support for filtering by `'center'` in `user_list`.
+* **`apps/accounts/templates/accounts/user_list.html`**: Added `Add Center` action button and updated the role filtering dropdown options to include `Center`.
+* **`apps/accounts/templates/accounts/user_add.html`**: Added Center form block design layout.
+* **`apps/accounts/templates/accounts/user_edit.html`**: Added Center editing form block design (includes Role and Active Status inputs).
+
+### 15.2 User Management Changes
+* Admins can perform CRUD operations on Center users from the main User Management interface.
+* Center users are listed along with Students and Teachers, and display a standard role badge.
+* Role-based filtering on the user list includes "Center".
+
+### 15.3 Center Role Support & Hashing Safety
+* All newly created/edited Center users have their passwords hashed securely using Django's default hasher.
+* The pre-existing Center user (`center01`)'s password was updated in the database to be properly hashed, resolving their login issue.
+
+### 15.4 Validation Results
+* Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+
 

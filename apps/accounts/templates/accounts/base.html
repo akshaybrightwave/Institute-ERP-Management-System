@@ -85,6 +85,10 @@
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'feedback_list' or request.resolver_match.url_name == 'feedback_detail' %}active{% endif %}" href="{% url 'feedback_list' %}">Feedback</a>
             </li>
+          {% elif request.user.role == 'center' %}
+            <li class="nav-item">
+              <a class="nav-link {% if request.resolver_match.url_name == 'center_dashboard' %}active{% endif %}" href="{% url 'center_dashboard' %}">Center Dashboard</a>
+            </li>
           {% elif request.user.role == 'teacher' %}
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}" href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
@@ -95,7 +99,7 @@
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <span class="role-badge">
               <i class="bi bi-person-circle"></i>
-              {% if request.user.role == 'admin' %}Admin{% elif request.user.role == 'teacher' %}Teacher{% else %}Student{% endif %}
+              {% if request.user.role == 'admin' %}Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% else %}Student{% endif %}
               &middot; {{ request.user.username }}
             </span>
           </li>
@@ -173,6 +177,8 @@
             {% if user.is_authenticated %}
               {% if user.role == 'admin' or user.role == 'teacher' %}
                 <li class="mb-2"><a href="{% url 'exam_dashboard' %}"><i class="bi bi-chevron-right small"></i> Exams</a></li>
+              {% elif user.role == 'center' %}
+                <li class="mb-2"><a href="{% url 'center_dashboard' %}"><i class="bi bi-chevron-right small"></i> Dashboard</a></li>
               {% elif user.role == 'student' %}
                 <li class="mb-2"><a href="{% url 'student_dashboard' %}"><i class="bi bi-chevron-right small"></i> Dashboard</a></li>
               {% endif %}

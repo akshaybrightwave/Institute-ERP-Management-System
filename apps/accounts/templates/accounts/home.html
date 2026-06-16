@@ -28,6 +28,10 @@
                         <a href="{% url 'teacher_dashboard' %}" class="btn btn-cta">
                             <i class="bi bi-speedometer2 me-1"></i> Go to Dashboard
                         </a>
+                    {% elif user.role == 'center' %}
+                        <a href="{% url 'center_dashboard' %}" class="btn btn-cta">
+                            <i class="bi bi-speedometer2 me-1"></i> Go to Dashboard
+                        </a>
                     {% else %}
                         <a href="{% url 'admin_dashboard' %}" class="btn btn-cta">
                             <i class="bi bi-speedometer2 me-1"></i> Go to Dashboard
