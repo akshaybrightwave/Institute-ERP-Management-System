@@ -2,360 +2,932 @@
 
 {% block title %}Admin Dashboard | Examly{% endblock %}
 
+{% block style %}
+<style>
+  /* ── Global dark override ── */
+  body {
+    background-color: #0d0d1a !important;
+    color: #fff;
+  }
+  /* Remove Bootstrap container constraints so sidebar can be fixed-full-height */
+  main.container {
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  main.container > div:first-child {
+    padding: 0 !important;
+  }
+
+  /* ══════════════════════════════════════
+     SIDEBAR
+  ══════════════════════════════════════ */
+  .erp-sidebar {
+    position: fixed;
+    top: 56px;          /* match Bootstrap navbar height */
+    left: 0;
+    bottom: 0;
+    width: 230px;
+    background: #111120;
+    border-right: 1px solid #1e1e35;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 600;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: #2a2a4a transparent;
+  }
+  .erp-sidebar::-webkit-scrollbar { width: 4px; }
+  .erp-sidebar::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 4px; }
+
+  /* Dashboard top item */
+  .sidebar-dash-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.85rem 1.2rem;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: #1a1a32;
+    border-left: 3px solid #4a6cf7;
+  }
+  .sidebar-dash-item i { font-size: 1.1rem; color: #4a6cf7; }
+  .sidebar-dash-item:hover { color: #fff; background: #1e1e3a; }
+
+  /* Section label */
+  .sidebar-section {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #4a4a6a;
+    padding: 1rem 1.2rem 0.35rem;
+    text-transform: uppercase;
+  }
+
+  /* Nav item (link or toggle) */
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.65rem 1.2rem;
+    color: #9090b8;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+  }
+  .sidebar-item:hover {
+    color: #fff;
+    background: #1a1a30;
+    text-decoration: none;
+  }
+  .sidebar-item i.si-icon { font-size: 1rem; flex-shrink: 0; }
+  .sidebar-item .si-label { flex: 1; }
+  .sidebar-item .si-arrow {
+    font-size: 0.72rem;
+    transition: transform 0.22s ease;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-item[aria-expanded="true"] .si-arrow { transform: rotate(180deg); }
+  .sidebar-item[aria-expanded="true"] { color: #fff; }
+
+  /* Sub-item */
+  .sidebar-sub {
+    padding-left: 0;
+    margin: 0;
+  }
+  .sidebar-sub a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.5rem 1.2rem 0.5rem 2.8rem;
+    color: #7070a0;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+  }
+  .sidebar-sub a:hover { color: #d0d0ff; background: #15152a; }
+  .sidebar-sub a::before {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #3a3a5a;
+    flex-shrink: 0;
+  }
+  .sidebar-sub a:hover::before { background: #4a6cf7; }
+
+  /* Sidebar footer */
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 1rem 1.2rem;
+    border-top: 1px solid #1e1e35;
+  }
+  .btn-login-centre {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid #3a3aaa;
+    border-radius: 8px;
+    color: #8080d0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+  }
+  .btn-login-centre:hover { background: #1a1a3a; color: #a0a0ff; }
+
+  /* ══════════════════════════════════════
+     MAIN CONTENT WRAPPER
+  ══════════════════════════════════════ */
+  .erp-content {
+    margin-left: 230px;
+    padding: 1.4rem 1.8rem;
+    min-height: calc(100vh - 56px);
+    background: #0d0d1a;
+  }
+
+  /* ── Breadcrumb & Header ── */
+  .dash-breadcrumb {
+    font-size: 0.82rem;
+    color: #5a5a8a;
+  }
+  .dash-breadcrumb a { color: #5a5a8a; text-decoration: none; }
+  .dash-breadcrumb a:hover { color: #fff; }
+  .dash-breadcrumb .current { color: #c0c0e0; font-weight: 600; }
+  .dash-title {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0.2rem 0 0;
+    line-height: 1.15;
+  }
+
+  /* ══════════════════════════════════════
+     ERP STAT CARDS
+  ══════════════════════════════════════ */
+  .erp-card {
+    border-radius: 12px;
+    overflow: hidden;
+    color: #fff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: none;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+  }
+  .erp-card-body {
+    padding: 1.1rem 1.2rem 0.9rem;
+    position: relative;
+    flex: 1;
+  }
+  .erp-card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.92;
+    margin-bottom: 0.5rem;
+  }
+  .erp-card-number {
+    font-size: 2.3rem;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .erp-card-number.sm { font-size: 1.65rem; }
+  .erp-card-bg-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 4rem;
+    opacity: 0.18;
+    pointer-events: none;
+    line-height: 1;
+  }
+  .erp-card-footer {
+    display: flex;
+    align-items: center;
+    padding: 0.52rem 1.2rem;
+    background: rgba(0,0,0,0.28);
+    text-decoration: none;
+    color: rgba(255,255,255,0.88);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    transition: background 0.2s;
+    gap: 6px;
+  }
+  .erp-card-footer:hover { background: rgba(0,0,0,0.45); color: #fff; }
+
+  /* ── Gradients ── */
+  .bg-g-purple  { background: linear-gradient(145deg, #2e1a6e 0%, #4c28a0 100%); }
+  .bg-g-teal    { background: linear-gradient(145deg, #0b6b7a 0%, #10a8b8 100%); }
+  .bg-g-green   { background: linear-gradient(145deg, #155e38 0%, #1fa860 100%); }
+  .bg-g-pink    { background: linear-gradient(145deg, #a80e6a 0%, #d81a8e 100%); }
+  .bg-g-blue    { background: linear-gradient(145deg, #14408a 0%, #1e65d8 100%); }
+  .bg-g-orange  { background: linear-gradient(145deg, #995000 0%, #cc7000 100%); }
+  .bg-g-red     { background: linear-gradient(145deg, #8c0a1e 0%, #c01530 100%); }
+  .bg-g-violet  { background: linear-gradient(145deg, #5e0e72 0%, #8e1eaa 100%); }
+  .bg-g-crimson { background: linear-gradient(145deg, #920a24 0%, #c01838 100%); }
+  .bg-g-amber   { background: linear-gradient(145deg, #6a3000 0%, #984500 100%); }
+  .bg-g-olive   { background: linear-gradient(145deg, #3e5200 0%, #5a7800 100%); }
+  .bg-g-slate   { background: linear-gradient(145deg, #1a1a2e 0%, #2c2c46 100%); }
+  .bg-g-dteal   { background: linear-gradient(145deg, #003a3a 0%, #005c5c 100%); }
+  .bg-g-dgreen  { background: linear-gradient(145deg, #183818 0%, #235223 100%); }
+  .bg-g-dred    { background: linear-gradient(145deg, #720000 0%, #9e0000 100%); }
+  .bg-g-navy    { background: linear-gradient(145deg, #080e38 0%, #0e1e6a 100%); }
+
+  /* ── Section divider ── */
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #5a5a8a;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid #1e1e35;
+    margin: 1.4rem 0 1rem;
+  }
+
+  /* ── Analytics rate cards ── */
+  .rate-card {
+    background: linear-gradient(145deg, #141424 0%, #1c1c30 100%);
+    border: 1px solid #22224a;
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    height: 100%;
+  }
+  .rate-card .rate-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6868a0;
+    margin-bottom: 0.35rem;
+  }
+  .rate-card .rate-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+  .rate-card .rate-icon { font-size: 1.8rem; opacity: 0.38; }
+
+  /* ── Quick action / ERP cards ── */
+  .qa-card {
+    background: linear-gradient(145deg, #131320 0%, #1a1a2e 100%);
+    border: 1px solid #22224a;
+    border-radius: 12px;
+    padding: 1.3rem;
+    height: 100%;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .qa-card:hover { border-color: #3a3a8a; transform: translateY(-3px); }
+  .qa-card .qa-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+    background: rgba(255,255,255,0.06);
+    color: #8080c0;
+  }
+  .qa-card h6 { font-weight: 700; color: #e0e0ff; margin-bottom: 0.35rem; font-size: 0.92rem; }
+  .qa-card p  { color: #5858a0; font-size: 0.78rem; margin-bottom: 0.9rem; line-height: 1.4; }
+  .btn-qa {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; font-weight: 600;
+    padding: 0.4rem 0.9rem; border-radius: 8px;
+    text-decoration: none; transition: filter 0.2s;
+  }
+  .btn-qa:hover { filter: brightness(1.15); }
+  .btn-qa-primary { background: #2a50c8; color: #fff; border: none; }
+  .btn-qa-outline { background: transparent; color: #8080d0; border: 1px solid #2a2a5a; }
+  .btn-qa-outline:hover { background: rgba(255,255,255,0.05); color: #a0a0ff; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-2">
 
-    <div class="page-header">
+<!-- ════════════════════════════════════════════
+     FIXED LEFT SIDEBAR
+════════════════════════════════════════════ -->
+<aside class="erp-sidebar">
+
+  <!-- Dashboard -->
+  <a href="{% url 'admin_dashboard' %}" class="sidebar-dash-item">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span>Dashboard</span>
+  </a>
+
+  <!-- ── ACADEMICS ── -->
+  <div class="sidebar-section">Academics</div>
+
+  <!-- Course Area -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbCourseArea"
+          aria-expanded="false">
+    <i class="bi bi-journal-bookmark si-icon"></i>
+    <span class="si-label">Course Area</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbCourseArea">
+    <a href="{% url 'course_list' %}">Course List</a>
+    <a href="{% url 'batch_list' %}">Batch List</a>
+  </div>
+
+  <!-- Academics -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbAcademics"
+          aria-expanded="false">
+    <i class="bi bi-mortarboard si-icon"></i>
+    <span class="si-label">Academics</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbAcademics">
+    <a href="{% url 'exam_dashboard' %}">Exam Dashboard</a>
+    <a href="{% url 'exam_list' %}">Exam List</a>
+    <a href="{% url 'add_exam' %}">Add Exam</a>
+  </div>
+
+  <!-- ── EXAM SLOT ── -->
+  <div class="sidebar-section">Exam Slot</div>
+
+  <a href="{% url 'center_list' %}" class="sidebar-item">
+    <i class="bi bi-people si-icon"></i>
+    <span class="si-label">Exam Centre</span>
+  </a>
+
+  <a href="{% url 'batch_list' %}" class="sidebar-item">
+    <i class="bi bi-clock si-icon"></i>
+    <span class="si-label">Exam Schedule</span>
+  </a>
+
+  <!-- ── STUDENT AREA ── -->
+  <div class="sidebar-section">Student Area</div>
+
+  <!-- Student Information -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbStudentInfo"
+          aria-expanded="false">
+    <i class="bi bi-person-vcard si-icon"></i>
+    <span class="si-label">Student Information</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbStudentInfo">
+    <a href="{% url 'user_list' %}">All Students</a>
+    <a href="{% url 'user_add' %}">Add Student</a>
+  </div>
+
+  <!-- Fees Collection -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbFees"
+          aria-expanded="false">
+    <i class="bi bi-cash-coin si-icon"></i>
+    <span class="si-label">Fees Collection</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbFees">
+    <a href="{% url 'fees_list' %}">Fee List</a>
+  </div>
+
+  <!-- Attendance -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbAttendance"
+          aria-expanded="false">
+    <i class="bi bi-check2-all si-icon"></i>
+    <span class="si-label">Attendance</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbAttendance">
+    <a href="{% url 'attendance_list' %}">Attendance List</a>
+  </div>
+
+  <!-- Admit Card -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbAdmitCard"
+          aria-expanded="false">
+    <i class="bi bi-card-text si-icon"></i>
+    <span class="si-label">Admit Card</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbAdmitCard">
+    <a href="{% url 'exam_list' %}">View Exams</a>
+  </div>
+
+  <!-- Result -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbResult"
+          aria-expanded="false">
+    <i class="bi bi-file-earmark-bar-graph si-icon"></i>
+    <span class="si-label">Result</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbResult">
+    <a href="{% url 'exam_list' %}">Exam Results</a>
+    <a href="{% url 'reports_dashboard' %}">Reports</a>
+  </div>
+
+  <!-- Student Certificate -->
+  <button class="sidebar-item" type="button"
+          data-bs-toggle="collapse" data-bs-target="#sbCertificate"
+          aria-expanded="false">
+    <i class="bi bi-patch-check si-icon"></i>
+    <span class="si-label">Student Certificate</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div class="collapse sidebar-sub" id="sbCertificate">
+    <a href="{% url 'certificate_list' %}">Certificate List</a>
+  </div>
+
+  <!-- Study Material -->
+  <a href="{% url 'exam_list' %}" class="sidebar-item">
+    <i class="bi bi-book si-icon"></i>
+    <span class="si-label">Study Material</span>
+  </a>
+
+  <!-- Footer: Login as centre -->
+  <div class="sidebar-footer">
+    <a href="{% url 'center_list' %}" class="btn-login-centre">
+      <i class="bi bi-box-arrow-in-right"></i> Login as centre
+    </a>
+  </div>
+
+</aside>
+
+<!-- ════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════ -->
+<div class="erp-content">
+
+  <!-- Header -->
+  <div class="mb-4">
+    <div class="dash-breadcrumb mb-1">
+      <a href="{% url 'home' %}">Home</a>
+      <span style="margin:0 6px;">&mdash;</span>
+      <a href="#">Admin</a>
+      <span style="margin:0 6px;">&mdash;</span>
+      <span class="current">Dashboard</span>
+    </div>
+    <h1 class="dash-title">Dashboard</h1>
+  </div>
+
+  <!-- ══ ROW 1: Students · Courses · Centers ══ -->
+  <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <div class="col">
+      <div class="erp-card bg-g-purple">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Active Student(s)</div>
+          <div class="erp-card-number">{{ active_students }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-mortarboard-fill"></i></div>
+        </div>
+        <a href="{% url 'user_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-teal">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Total Student(s)</div>
+          <div class="erp-card-number">{{ total_students }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-people-fill"></i></div>
+        </div>
+        <a href="{% url 'user_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-green">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Course(s)</div>
+          <div class="erp-card-number">{{ total_courses }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+        </div>
+        <a href="{% url 'course_list' %}" class="erp-card-footer">
+          <i class="bi bi-gear-fill"></i> Manage Course
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-pink">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Total Centre(s)</div>
+          <div class="erp-card-number">{{ total_centers }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-building"></i></div>
+        </div>
+        <a href="{% url 'center_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ROW 2: Teachers · Batches ══ -->
+  <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <div class="col">
+      <div class="erp-card bg-g-blue">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Total Teacher(s)</div>
+          <div class="erp-card-number">{{ total_teachers }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-workspace"></i></div>
+        </div>
+        <a href="{% url 'user_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-orange">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Active Teacher(s)</div>
+          <div class="erp-card-number">{{ active_teachers }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
+        </div>
+        <a href="{% url 'user_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-red">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Total Batch(es)</div>
+          <div class="erp-card-number">{{ total_batches }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
+        </div>
+        <a href="{% url 'batch_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-violet">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Active Batch(es)</div>
+          <div class="erp-card-number">{{ active_batches }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-calendar-check"></i></div>
+        </div>
+        <a href="{% url 'batch_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ROW 3: Exams · Attendance ══ -->
+  <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <div class="col">
+      <div class="erp-card bg-g-crimson">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Total Exam(s)</div>
+          <div class="erp-card-number">{{ total_exams }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-journal-text"></i></div>
+        </div>
+        <a href="{% url 'exam_list' %}" class="erp-card-footer">
+          <i class="bi bi-plus-circle"></i> Create Exam
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-amber">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Active Exam(s)</div>
+          <div class="erp-card-number">{{ active_exams }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-journal-check"></i></div>
+        </div>
+        <a href="{% url 'exam_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-olive">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Batch Assigned Exams</div>
+          <div class="erp-card-number">{{ batch_assigned_exams }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-journal-album"></i></div>
+        </div>
+        <a href="{% url 'exam_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-slate">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Attendance Records</div>
+          <div class="erp-card-number">{{ total_attendance_records }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-clock-history"></i></div>
+        </div>
+        <a href="{% url 'attendance_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View Records
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ROW 4: Fees · Certificates ══ -->
+  <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <div class="col">
+      <div class="erp-card bg-g-navy">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Fee Collection(s)</div>
+          <div class="erp-card-number sm">&#8377;{{ total_fee_collection }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-bank"></i></div>
+        </div>
+        <a href="{% url 'fees_list' %}" class="erp-card-footer">
+          <i class="bi bi-cash-stack"></i> Collect Fee
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-dred">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Pending Fees</div>
+          <div class="erp-card-number sm">&#8377;{{ total_pending_fees }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-hourglass-split"></i></div>
+        </div>
+        <a href="{% url 'fees_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-dteal">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Total Certificates</div>
+          <div class="erp-card-number">{{ total_certificates }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-award"></i></div>
+        </div>
+        <a href="{% url 'certificate_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="erp-card bg-g-dgreen">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Issued Certificates</div>
+          <div class="erp-card-number">{{ issued_certificates_count }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-patch-check-fill"></i></div>
+        </div>
+        <a href="{% url 'certificate_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View List
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ANALYTICS ══ -->
+  <div class="section-label">Institutional Analytics</div>
+  <div class="row g-3 mb-4 row-cols-2 row-cols-sm-3 row-cols-xl-7">
+
+    <div class="col">
+      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
         <div>
-            <h2><i class="bi bi-speedometer2 text-primary me-2"></i>Admin Dashboard</h2>
-            <p>Welcome back, {{ user.username }}. Here's what's happening on your platform.</p>
+          <div class="rate-label">Attendance Rate</div>
+          <div class="rate-value">{{ attendance_rate }}%</div>
         </div>
-        <span class="role-badge"><i class="bi bi-shield-lock-fill"></i> Administrator</span>
+        <div class="rate-icon text-warning"><i class="bi bi-percent"></i></div>
+      </div>
     </div>
 
-    <!-- Stats -->
-    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-4 row-cols-lg-4 row-cols-xl-8">
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-building"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_centers }}</div>
-                    <div class="stat-label">Total Centers</div>
-                </div>
-            </div>
+    <div class="col">
+      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
+        <div>
+          <div class="rate-label">Fee Collection Rate</div>
+          <div class="rate-value">{{ fee_collection_rate }}%</div>
         </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_courses }}</div>
-                    <div class="stat-label">Total Courses</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_batches }}</div>
-                    <div class="stat-label">Total Batches</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-mortarboard-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_students }}</div>
-                    <div class="stat-label">Total Students</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-person-workspace"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_teachers }}</div>
-                    <div class="stat-label">Total Teachers</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-journal-text"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_exams }}</div>
-                    <div class="stat-label">Total Exams</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-journal-check"></i></div>
-                <div>
-                    <div class="stat-value">{{ active_exams }}</div>
-                    <div class="stat-label">Active Exams</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-journal-album"></i></div>
-                <div>
-                    <div class="stat-value">{{ batch_assigned_exams }}</div>
-                    <div class="stat-label">Batch Assigned Exams</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-clock-history text-primary"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_attendance_records }}</div>
-                    <div class="stat-label">Total Attendance Records</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-cash-stack text-success"></i></div>
-                <div>
-                    <div class="stat-value">₹{{ total_fee_collection }}</div>
-                    <div class="stat-label">Total Fee Collection</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-hourglass-split text-danger"></i></div>
-                <div>
-                    <div class="stat-value">₹{{ total_pending_fees }}</div>
-                    <div class="stat-label">Total Pending Fees</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-people-fill text-warning"></i></div>
-                <div>
-                    <div class="stat-value">{{ students_with_pending_fees }}</div>
-                    <div class="stat-label">Students With Pending Fees</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-award text-primary"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_certificates }}</div>
-                    <div class="stat-label">Total Certificates</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-patch-check-fill text-success"></i></div>
-                <div>
-                    <div class="stat-value">{{ issued_certificates_count }}</div>
-                    <div class="stat-label">Issued Certificates</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-x-octagon-fill text-danger"></i></div>
-                <div>
-                    <div class="stat-value">{{ revoked_certificates_count }}</div>
-                    <div class="stat-label">Revoked Certificates</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="bi bi-people-fill text-info"></i></div>
-                <div>
-                    <div class="stat-value">{{ eligible_students_count }}</div>
-                    <div class="stat-label">Eligible Students</div>
-                </div>
-            </div>
-        </div>
+        <div class="rate-icon text-success"><i class="bi bi-cash-stack"></i></div>
+      </div>
     </div>
 
-    <!-- Analytics Cards -->
-    <h5 class="fw-bold mb-3">Institutional Analytics</h5>
-    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-4 row-cols-lg-7">
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-primary"><i class="bi bi-mortarboard-fill text-primary"></i></div>
-                <div>
-                    <div class="stat-value">{{ active_students }}</div>
-                    <div class="stat-label">Active Students</div>
-                </div>
-            </div>
+    <div class="col">
+      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
+        <div>
+          <div class="rate-label">Exam Pass Rate</div>
+          <div class="rate-value">{{ exam_pass_rate }}%</div>
         </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-success"><i class="bi bi-person-workspace text-success"></i></div>
-                <div>
-                    <div class="stat-value">{{ active_teachers }}</div>
-                    <div class="stat-label">Active Teachers</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-info"><i class="bi bi-calendar-event text-info"></i></div>
-                <div>
-                    <div class="stat-value">{{ active_batches }}</div>
-                    <div class="stat-label">Active Batches</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-warning"><i class="bi bi-percent text-warning"></i></div>
-                <div>
-                    <div class="stat-value">{{ attendance_rate }}%</div>
-                    <div class="stat-label">Attendance Rate</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-success"><i class="bi bi-cash-stack text-success"></i></div>
-                <div>
-                    <div class="stat-value">{{ fee_collection_rate }}%</div>
-                    <div class="stat-label">Fee Collection Rate</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-danger"><i class="bi bi-graph-up-arrow text-danger"></i></div>
-                <div>
-                    <div class="stat-value">{{ exam_pass_rate }}%</div>
-                    <div class="stat-label">Exam Pass Rate</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-primary"><i class="bi bi-award-fill text-primary"></i></div>
-                <div>
-                    <div class="stat-value">{{ certificate_issuance_count }}</div>
-                    <div class="stat-label">Certificates Issued</div>
-                </div>
-            </div>
-        </div>
+        <div class="rate-icon text-danger"><i class="bi bi-graph-up-arrow"></i></div>
+      </div>
     </div>
 
-    <!-- Quick Actions -->
-    <h5 class="fw-bold mb-3">Quick Actions</h5>
-    <div class="row g-4">
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon"><i class="bi bi-people-fill"></i></div>
-                <h5 class="fw-bold">Manage Users</h5>
-                <p class="text-muted small">Add, edit and remove students and teachers from your institute.</p>
-                <a href="{% url 'user_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Users
-                </a>
-            </div>
+    <div class="col">
+      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
+        <div>
+          <div class="rate-label">Pending Fee Students</div>
+          <div class="rate-value">{{ students_with_pending_fees }}</div>
         </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon"><i class="bi bi-journal-text"></i></div>
-                <h5 class="fw-bold">Manage Exams</h5>
-                <p class="text-muted small">Create, edit and delete exams across the platform.</p>
-                <a href="{% url 'exam_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Exams
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon"><i class="bi bi-person-plus-fill"></i></div>
-                <h5 class="fw-bold">Add New User</h5>
-                <p class="text-muted small">Quickly onboard a new student or teacher account.</p>
-                <a href="{% url 'user_list' %}" class="btn btn-outline-primary w-100">
-                    <i class="bi bi-plus-circle me-1"></i> Add User
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon"><i class="bi bi-envelope-paper-fill"></i></div>
-                <h5 class="fw-bold">Feedback Inbox</h5>
-                <p class="text-muted small">Read and respond to messages submitted via the contact form.</p>
-                <a href="{% url 'feedback_list' %}" class="btn btn-outline-primary w-100">
-                    <i class="bi bi-envelope-open me-1"></i> View Feedback
-                </a>
-            </div>
-        </div>
+        <div class="rate-icon text-warning"><i class="bi bi-people-fill"></i></div>
+      </div>
     </div>
 
-    <!-- ERP Management -->
-    <h5 class="fw-bold mt-4 mb-3">ERP Management</h5>
-    <div class="row g-4">
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon bg-soft-primary"><i class="bi bi-building text-primary"></i></div>
-                <h5 class="fw-bold mt-2">Manage Centers</h5>
-                <p class="text-muted small">Add, edit, and delete centers across the institute.</p>
-                <a href="{% url 'center_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Centers
-                </a>
-            </div>
+    <div class="col">
+      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
+        <div>
+          <div class="rate-label">Revoked Certificates</div>
+          <div class="rate-value">{{ revoked_certificates_count }}</div>
         </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon bg-soft-primary"><i class="bi bi-journal-bookmark text-primary"></i></div>
-                <h5 class="fw-bold mt-2">Manage Courses</h5>
-                <p class="text-muted small">Configure training courses, durations, and pricing.</p>
-                <a href="{% url 'course_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Courses
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon bg-soft-primary"><i class="bi bi-calendar-event text-primary"></i></div>
-                <h5 class="fw-bold mt-2">Manage Batches</h5>
-                <p class="text-muted small">Organize schedules, assign teachers, and manage active student groups.</p>
-                <a href="{% url 'batch_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Batches
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon bg-soft-primary"><i class="bi bi-clock-history text-primary"></i></div>
-                <h5 class="fw-bold mt-2">Manage Attendance</h5>
-                <p class="text-muted small">Filter, search, and view attendance logs across all batches.</p>
-                <a href="{% url 'attendance_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Attendance
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon bg-soft-primary"><i class="bi bi-wallet2 text-primary"></i></div>
-                <h5 class="fw-bold mt-2">Manage Fees</h5>
-                <p class="text-muted small">Track course payments, collection logs, and student balances.</p>
-                <a href="{% url 'fees_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Fees
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon bg-soft-primary"><i class="bi bi-award text-primary"></i></div>
-                <h5 class="fw-bold mt-2">Manage Certificates</h5>
-                <p class="text-muted small">Verify eligibility, issue course certificates, and view/revoke logs.</p>
-                <a href="{% url 'certificate_list' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Certificates
-                </a>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="dashboard-action-card">
-                <div class="feature-icon bg-soft-primary"><i class="bi bi-bar-chart-line text-primary"></i></div>
-                <h5 class="fw-bold mt-2">Reports & Analytics</h5>
-                <p class="text-muted small">Access summary charts, audits, logs, academic and fee analytics reports.</p>
-                <a href="{% url 'reports_dashboard' %}" class="btn btn-primary w-100">
-                    <i class="bi bi-arrow-right-circle me-1"></i> Go to Reports
-                </a>
-            </div>
-        </div>
+        <div class="rate-icon text-danger"><i class="bi bi-x-octagon-fill"></i></div>
+      </div>
     </div>
-</div>
+
+    <div class="col">
+      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
+        <div>
+          <div class="rate-label">Eligible Students</div>
+          <div class="rate-value">{{ eligible_students_count }}</div>
+        </div>
+        <div class="rate-icon text-info"><i class="bi bi-person-check"></i></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
+        <div>
+          <div class="rate-label">Certs Issued</div>
+          <div class="rate-value">{{ certificate_issuance_count }}</div>
+        </div>
+        <div class="rate-icon text-primary"><i class="bi bi-award-fill"></i></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ QUICK ACTIONS ══ -->
+  <div class="section-label">Quick Actions</div>
+  <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-people-fill"></i></div>
+        <h6>Manage Users</h6>
+        <p>Add, edit and remove students and teachers from your institute.</p>
+        <a href="{% url 'user_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Users
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-journal-text"></i></div>
+        <h6>Manage Exams</h6>
+        <p>Create, edit and delete exams across the platform.</p>
+        <a href="{% url 'exam_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Exams
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-person-plus-fill"></i></div>
+        <h6>Add New User</h6>
+        <p>Quickly onboard a new student or teacher account.</p>
+        <a href="{% url 'user_list' %}" class="btn-qa btn-qa-outline">
+          <i class="bi bi-plus-circle"></i> Add User
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-envelope-paper-fill"></i></div>
+        <h6>Feedback Inbox</h6>
+        <p>Read and respond to messages submitted via the contact form.</p>
+        <a href="{% url 'feedback_list' %}" class="btn-qa btn-qa-outline">
+          <i class="bi bi-envelope-open"></i> View Feedback
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ERP MANAGEMENT ══ -->
+  <div class="section-label">ERP Management</div>
+  <div class="row g-3 mb-5 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-building text-primary"></i></div>
+        <h6>Manage Centers</h6>
+        <p>Add, edit, and delete centers across the institute.</p>
+        <a href="{% url 'center_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Centers
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-journal-bookmark text-primary"></i></div>
+        <h6>Manage Courses</h6>
+        <p>Configure training courses, durations, and pricing.</p>
+        <a href="{% url 'course_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Courses
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-calendar-event text-primary"></i></div>
+        <h6>Manage Batches</h6>
+        <p>Organize schedules, assign teachers, and manage active student groups.</p>
+        <a href="{% url 'batch_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Batches
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-clock-history text-primary"></i></div>
+        <h6>Manage Attendance</h6>
+        <p>Filter, search, and view attendance logs across all batches.</p>
+        <a href="{% url 'attendance_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Attendance
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-wallet2 text-primary"></i></div>
+        <h6>Manage Fees</h6>
+        <p>Track course payments, collection logs, and student balances.</p>
+        <a href="{% url 'fees_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Fees
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-award text-primary"></i></div>
+        <h6>Manage Certificates</h6>
+        <p>Verify eligibility, issue course certificates, and view/revoke logs.</p>
+        <a href="{% url 'certificate_list' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Certificates
+        </a>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="qa-card">
+        <div class="qa-icon"><i class="bi bi-bar-chart-line text-primary"></i></div>
+        <h6>Reports &amp; Analytics</h6>
+        <p>Access summary charts, audits, logs, academic and fee analytics reports.</p>
+        <a href="{% url 'reports_dashboard' %}" class="btn-qa btn-qa-primary">
+          <i class="bi bi-arrow-right-circle"></i> Go to Reports
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /erp-content -->
 {% endblock %}
