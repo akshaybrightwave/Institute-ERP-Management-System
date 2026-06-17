@@ -111,6 +111,11 @@ def center_dashboard(request):
             'mon_top_performers': [],
             'mon_low_performers': [],
             'mon_batch_perf': [],
+            # Phase 10.10 defaults
+            'att_present_today': 0,
+            'att_absent_today': 0,
+            'att_monthly_pct': 0.0,
+            'att_students_below_75': 0,
         }
         return render(request, 'centers/center_dashboard.html', context)
 
@@ -132,6 +137,43 @@ def center_dashboard(request):
     attendance_present = att_stats['present']
     attendance_absent = att_stats['absent']
     attendance_pct = (attendance_present / attendance_total * 100) if attendance_total > 0 else 0.0
+
+    # 2.5 Attendance Monitoring Metrics (Phase 10.10)
+    today = datetime.date.today()
+    att_present_today = Attendance.objects.filter(
+        batch__course__center=center, 
+        date=today, 
+        status='present'
+    ).count()
+    att_absent_today = Attendance.objects.filter(
+        batch__course__center=center, 
+        date=today, 
+        status='absent'
+    ).count()
+    
+    start_of_month = today.replace(day=1)
+    monthly_stats = Attendance.objects.filter(
+        batch__course__center=center, 
+        date__gte=start_of_month, 
+        date__lte=today
+    ).aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='present'))
+    )
+    monthly_total = monthly_stats['total']
+    monthly_present = monthly_stats['present']
+    att_monthly_pct = round((monthly_present / monthly_total * 100), 1) if monthly_total > 0 else 0.0
+    
+    # Students Below 75% Overall Attendance (having at least 1 attendance log)
+    center_students = StudentProfile.objects.filter(batch__course__center=center)
+    low_attendance_students = center_students.annotate(
+        total_att=Count('attendances'),
+        present_att=Count('attendances', filter=Q(attendances__status='present'))
+    )
+    att_students_below_75 = low_attendance_students.filter(
+        total_att__gt=0,
+        present_att__lt=F('total_att') * 0.75
+    ).count()
 
     # 3. Fees Summary (Feature 3)
     total_fees_collected = FeePayment.objects.filter(student__batch__course__center=center).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
@@ -360,6 +402,11 @@ def center_dashboard(request):
         'mon_top_performers': mon_top_performers,
         'mon_low_performers': mon_low_performers,
         'mon_batch_perf': mon_batch_perf,
+        # Phase 10.10 variables
+        'att_present_today': att_present_today,
+        'att_absent_today': att_absent_today,
+        'att_monthly_pct': att_monthly_pct,
+        'att_students_below_75': att_students_below_75,
     }
     return render(request, 'centers/center_dashboard.html', context)
 

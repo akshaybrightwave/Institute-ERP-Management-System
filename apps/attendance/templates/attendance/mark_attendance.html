@@ -10,7 +10,7 @@
             <p>Select date and mark student attendance for <strong>{{ batch.name }}</strong> (Course: {{ batch.course.name }})</p>
         </div>
         <div>
-            {% if is_admin %}
+            {% if is_admin or request.user.role == 'center' %}
                 <a href="{% url 'batch_detail' batch.id %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left me-1"></i> Back to Batch Details
                 </a>
@@ -100,6 +100,7 @@
 
                 {% if student_list %}
                 <div class="text-end mt-4">
+                    <a href="{% url 'attendance_list' %}" class="btn btn-outline-secondary px-5 py-2 me-2">Cancel</a>
                     <button type="submit" class="btn btn-primary px-5 py-2">
                         <i class="bi bi-save me-1"></i> Save Attendance
                     </button>

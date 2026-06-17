@@ -360,16 +360,34 @@ def attendance_report(request):
     is_teacher = request.user.role == 'teacher'
     is_center = request.user.role == 'center'
 
+    # Filter inputs
+    selected_course = request.GET.get('course')
+    selected_batch = request.GET.get('batch')
+    selected_student = request.GET.get('student')
+    selected_date = request.GET.get('date')
+    selected_start_date = request.GET.get('start_date')
+    selected_end_date = request.GET.get('end_date')
+
     if is_center:
         center = request.user.center
         if not center:
             records = Attendance.objects.none()
             batches = Batch.objects.none()
             students = StudentProfile.objects.none()
+            courses = Course.objects.none()
         else:
             records = Attendance.objects.filter(batch__course__center=center)
             batches = Batch.objects.filter(course__center=center)
             students = StudentProfile.objects.filter(batch__course__center=center)
+            courses = Course.objects.filter(center=center)
+            
+            # Security validations to prevent cross-center access
+            if selected_course and not courses.filter(id=selected_course).exists():
+                return HttpResponseForbidden("Access Denied: Course does not belong to your center.")
+            if selected_batch and not batches.filter(id=selected_batch).exists():
+                return HttpResponseForbidden("Access Denied: Batch does not belong to your center.")
+            if selected_student and not students.filter(id=selected_student).exists():
+                return HttpResponseForbidden("Access Denied: Student does not belong to your center.")
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
@@ -377,24 +395,28 @@ def attendance_report(request):
         records = Attendance.objects.filter(batch__teacher=teacher_profile)
         batches = Batch.objects.filter(teacher=teacher_profile)
         students = StudentProfile.objects.filter(batch__teacher=teacher_profile)
+        courses = Course.objects.filter(batch__teacher=teacher_profile).distinct()
     else:
         records = Attendance.objects.all()
         batches = Batch.objects.all()
         students = StudentProfile.objects.all()
+        courses = Course.objects.all()
 
-    # Filters
-    selected_batch = request.GET.get('batch')
-    selected_student = request.GET.get('student')
-    selected_date = request.GET.get('date')
-
+    # Apply filters
+    if selected_course:
+        records = records.filter(batch__course_id=selected_course)
     if selected_batch:
         records = records.filter(batch_id=selected_batch)
     if selected_student:
         records = records.filter(student_id=selected_student)
     if selected_date:
         records = records.filter(date=selected_date)
+    if selected_start_date:
+        records = records.filter(date__gte=selected_start_date)
+    if selected_end_date:
+        records = records.filter(date__lte=selected_end_date)
 
-    records = records.select_related('student', 'batch', 'marked_by').order_by('-date', 'student__full_name')
+    records = records.select_related('student', 'batch', 'batch__course', 'marked_by').order_by('-date', 'student__full_name')
 
     total_records = records.count()
     present_count = records.filter(status='present').count()
@@ -406,12 +428,13 @@ def attendance_report(request):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="attendance_report.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Student Name', 'Batch', 'Date', 'Status', 'Marked By'])
+        writer.writerow(['Student Name', 'Batch', 'Course', 'Date', 'Status', 'Marked By'])
         for record in records:
             marked_by_name = record.marked_by.full_name if record.marked_by else 'Admin'
             writer.writerow([
                 record.student.full_name,
                 record.batch.name,
+                record.batch.course.name,
                 record.date.strftime('%Y-%m-%d'),
                 record.status.capitalize(),
                 marked_by_name
@@ -422,13 +445,17 @@ def attendance_report(request):
         'records': records,
         'batches': batches,
         'students': students,
+        'courses': courses,
         'total_records': total_records,
         'present_count': present_count,
         'absent_count': absent_count,
         'overall_pct': overall_pct,
+        'selected_course': selected_course,
         'selected_batch': selected_batch,
         'selected_student': selected_student,
-        'selected_date': selected_date
+        'selected_date': selected_date,
+        'selected_start_date': selected_start_date,
+        'selected_end_date': selected_end_date
     })
 
 

@@ -707,6 +707,55 @@ Implemented Center Exam Operations & Monitoring enabling Center users to view an
   ```
 
 
+## 24. ERP Phase 10.10 — Center Attendance Operations
+
+### 24.1 Objective & Architecture
+Implemented Center Attendance Operations allowing Center role users to perform individual and batch attendance creation, edit attendance logs, view center-specific metrics, and download filtered report CSV files. All operations are strictly isolated to the user's assigned Center.
+
+### 24.2 Key Implementations
+- **Form Configuration (`apps/attendance/forms.py`) [NEW]**:
+  - Implements `AttendanceForm` with dynamic queryset filtering on `student` and `batch` fields based on `request.user.center`.
+  - Performs validation checks on `student.batch == batch`, center isolation, and uniqueness constraint checks on `(student, date)` pairs to prevent integrity errors.
+- **Views (`apps/attendance/views.py`, `apps/reports/views.py`, `apps/centers/views.py`)**:
+  - `attendance_list`: Update queryset and filters to restrict Center users to their own center. Integrates bulk attendance percentage calculations per page and CSV export support (`?export=csv`). Enforces URL parameter validation (returns `403 Forbidden` for other centers' batches/students).
+  - `mark_attendance`: Expanded access to `center` role, validating that the batch course belongs to the user's center (otherwise returns `403 Forbidden`).
+  - `attendance_create` [NEW]: Renders individual creation form with live reloading using GET parameter `?student=<id>` to dynamically query student summary metrics and auto-select batch.
+  - `attendance_edit` [NEW]: Validates that the attendance record belongs to the center, rendering individual edit view.
+  - `attendance_report` in reports: Supports filtering by Course, Batch, Student, Start Date, and End Date, with strict center boundary verification on query parameters.
+  - `center_dashboard` in centers: Calculates and returns five metrics: Total Students, Present Today, Absent Today, Monthly Attendance %, and Students Below 75% Overall Attendance.
+- **Templates**:
+  - `attendance_list.html`: Adds Course and Attendance % columns, Mark Attendance and Export CSV header actions, and conditional Actions column (Edit Day, Edit Record) for the `center` role.
+  - `attendance_form.html` [NEW]: Renders a premium interface with Left column: Student Summary Card and Right column: Form fields. Includes JavaScript logic to reload page on student selection.
+  - `batch_list.html` and `batch_detail.html`: Restores Attendance buttons and actions for Center users.
+  - `attendance_report.html` in reports: Integrates Course filter dropdown, Start/End Date datepickers, and Course column in log table.
+  - `center_dashboard.html` in centers: Renders **Center Attendance Monitoring** card deck and quick actions shortcuts (Attendance Management and Attendance Reports).
+
+### 24.3 Security & Isolation Controls
+- Restricts queryset bounds using `request.user.center` filtering.
+- Direct URL manipulation on `/attendance/<pk>/edit/`, `/attendance/mark/<batch_id>/`, and report filters throw a `403 Forbidden` response for unauthorized cross-center targets.
+- Programmatic testing script `verify_attendance_security.py` successfully validated all form validation errors, duplicate entries blocks, cross-center parameter constraints, and URL boundary checks.
+
+
+## 25. ERP Phase 10.10.1 — Attendance Navigation & Redirect Fixes
+
+### 25.1 Objective
+Resolve navigation and redirect bugs identified in the Center Attendance operations flow for Center role users.
+
+### 25.2 Root Causes & Applied Fixes
+- **Attendance Reports Back Button**: In `apps/reports/templates/reports/attendance_report.html`, the back button was hardcoded to `/reports/` (`reports_dashboard`), redirecting Center users to the main Reports & Analytics dashboard. Fixed by introducing role-aware template checking (`request.user.role == 'center'`) to redirect them back to the Center Dashboard (`center_dashboard`).
+- **Mark Attendance Back Button**: In `apps/attendance/templates/attendance/mark_attendance.html`, the back button defaulted to `teacher_batch_detail` for non-Admin users, which redirected Center users to the Login page due to teacher-role validations. Fixed by allowing Center users to route to the correct `batch_detail` page.
+- **Mark Attendance Cancel Button**: The form lacked a cancel pathway. Added a Cancel button beside "Save Attendance" linking directly back to `attendance_list`.
+- **Authentication Protection**: Verified all individual create/edit/list views are decorated with `@login_required` (specifically `attendance_create`).
+
+### 25.3 Validation Results
+- Django system check:
+  ```text
+  System check identified no issues (0 silenced).
+  ```
+- Validation script `verify_navigation_fixes.py` successfully executed and verified all redirect routes and auth checks.
+
+
+
 
 
 

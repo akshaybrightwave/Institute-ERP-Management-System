@@ -220,6 +220,57 @@
         </div>
     </div>
 
+    <!-- Center Attendance Monitoring Section (Phase 10.10) -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Center Attendance Monitoring</h4>
+            
+            <!-- Attendance metrics row -->
+            <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+                <div class="col">
+                    <div class="card border bg-light h-100">
+                        <div class="card-body p-3 text-center">
+                            <div class="text-muted small fw-semibold">Total Students</div>
+                            <div class="fs-3 fw-bold text-dark mt-1">{{ total_students }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border bg-light h-100">
+                        <div class="card-body p-3 text-center">
+                            <div class="text-muted small fw-semibold">Present Today</div>
+                            <div class="fs-3 fw-bold text-success mt-1">{{ att_present_today }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border bg-light h-100">
+                        <div class="card-body p-3 text-center">
+                            <div class="text-muted small fw-semibold">Absent Today</div>
+                            <div class="fs-3 fw-bold text-danger mt-1">{{ att_absent_today }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border bg-light h-100">
+                        <div class="card-body p-3 text-center">
+                            <div class="text-muted small fw-semibold">Monthly Attendance %</div>
+                            <div class="fs-3 fw-bold text-info mt-1">{{ att_monthly_pct }}%</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card border bg-light h-100">
+                        <div class="card-body p-3 text-center">
+                            <div class="text-muted small fw-semibold">Students Below 75%</div>
+                            <div class="fs-3 fw-bold text-warning mt-1">{{ att_students_below_75 }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Center Exam Monitoring Section (Phase 10.9) -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
@@ -608,7 +659,12 @@
                         </div>
                         <div class="col-6">
                             <a href="{% url 'attendance_list' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-clock-history me-1 text-info"></i> View Attendance
+                                <i class="bi bi-clock-history me-1 text-info"></i> Attendance Management
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{% url 'attendance_report' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
+                                <i class="bi bi-file-earmark-bar-graph me-1 text-warning"></i> Attendance Reports
                             </a>
                         </div>
                         <div class="col-6">
