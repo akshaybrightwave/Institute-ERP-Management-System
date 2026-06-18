@@ -1,0 +1,85 @@
+{% extends 'management/base.html' %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">{{ title }}</h2>
+  <p class="text-muted small">Schedule or update call follow-ups for lead nurturing</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="m-card">
+      <form method="POST">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="row g-3">
+          <!-- Lead -->
+          <div class="col-md-12">
+            <label class="form-label text-muted small fw-bold">Select Lead <span class="text-danger">*</span></label>
+            {% if selected_lead %}
+              <input type="hidden" name="lead" value="{{ selected_lead.pk }}">
+              <input type="text" class="form-control bg-dark border-secondary text-white" value="{{ selected_lead.inquiry.full_name }} ({{ selected_lead.inquiry.mobile_number }})" readonly>
+            {% else %}
+              <select name="lead" class="form-select bg-dark border-secondary text-white" required>
+                <option value="">-- Choose Lead --</option>
+                {% for lead in leads %}
+                  <option value="{{ lead.pk }}">{{ lead.inquiry.full_name }} ({{ lead.inquiry.mobile_number }})</option>
+                {% endfor %}
+              </select>
+            {% endif %}
+          </div>
+
+          <!-- Follow Up Date -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Follow-up Date <span class="text-danger">*</span></label>
+            {{ form.followup_date }}
+            {% if form.followup_date.errors %}
+              <div class="text-danger small mt-1">{% for error in form.followup_date.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Next Planned Follow Up Date -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Next Planned Follow-Up Date (Optional)</label>
+            {{ form.next_followup_date }}
+            {% if form.next_followup_date.errors %}
+              <div class="text-danger small mt-1">{% for error in form.next_followup_date.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Status -->
+          <div class="col-md-12">
+            <label class="form-label text-muted small fw-bold">Follow-up Status <span class="text-danger">*</span></label>
+            {{ form.status }}
+            {% if form.status.errors %}
+              <div class="text-danger small mt-1">{% for error in form.status.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Response Summary -->
+          <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Nurture Response / Notes</label>
+            {{ form.response }}
+            {% if form.response.errors %}
+              <div class="text-danger small mt-1">{% for error in form.response.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top border-secondary">
+          <a href="{% if selected_lead %}{% url 'lead_detail' selected_lead.pk %}{% else %}{% url 'followup_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Follow-Up</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

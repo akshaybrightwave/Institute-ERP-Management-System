@@ -49,61 +49,88 @@
 
           <!-- Common Home -->
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+              href="{% url 'home' %}">Home</a>
           </li>
 
           <!-- Exams: Admin/Teacher/Student -->
           {% if request.user.role == 'admin' or request.user.role == 'teacher' %}
-            <li class="nav-item">
-              <a class="nav-link {% if request.resolver_match.url_name == 'exam_dashboard' %}active{% endif %}" href="{% url 'exam_dashboard' %}">Exams</a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'exam_dashboard' %}active{% endif %}"
+              href="{% url 'exam_dashboard' %}">Exams</a>
+          </li>
           {% elif request.user.role == 'center' %}
-            <li class="nav-item">
-              <a class="nav-link {% if request.resolver_match.url_name == 'exam_list' or request.resolver_match.url_name == 'center_exam_results' or request.resolver_match.url_name == 'center_attempts_list' %}active{% endif %}" href="{% url 'exam_list' %}">Exams</a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'exam_list' or request.resolver_match.url_name == 'center_exam_results' or request.resolver_match.url_name == 'center_attempts_list' %}active{% endif %}"
+              href="{% url 'exam_list' %}">Exams</a>
+          </li>
           {% elif request.user.role == 'student' %}
-            <li class="nav-item">
-              <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}" href="{% url 'student_dashboard' %}">Student Dashboard</a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}"
+              href="{% url 'student_dashboard' %}">Student Dashboard</a>
+          </li>
           {% endif %}
 
           <!-- Contact -->
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'contact' %}">Contact</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
+              href="{% url 'contact' %}">Contact</a>
           </li>
 
           <!-- Dashboard Links -->
           {% if request.user.role == 'admin' %}
-            <li class="nav-item">
-              <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}" href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link {% if 'center' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'center_list' %}">Centers</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link {% if 'course' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'course_list' %}">Courses</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link {% if 'batch' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'batch_list' %}">Batches</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link {% if request.resolver_match.url_name == 'feedback_list' or request.resolver_match.url_name == 'feedback_detail' %}active{% endif %}" href="{% url 'feedback_list' %}">Feedback</a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+              href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'center' in request.resolver_match.url_name %}active{% endif %}"
+              href="{% url 'center_list' %}">Centers</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'course' in request.resolver_match.url_name %}active{% endif %}"
+              href="{% url 'course_list' %}">Courses</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if 'batch' in request.resolver_match.url_name %}active{% endif %}"
+              href="{% url 'batch_list' %}">Batches</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'feedback_list' or request.resolver_match.url_name == 'feedback_detail' %}active{% endif %}"
+              href="{% url 'feedback_list' %}">Feedback</a>
+          </li>
+          {% if 'management' in request.path %}
+          <li class="nav-item ms-lg-2">
+            <a class="btn btn-sm btn-outline-primary text-info py-2" href="{% url 'admin_dashboard' %}">
+              <i class="bi bi-arrow-left-right me-1"></i> Switch to ERP
+            </a>
+          </li>
+          {% else %}
+          <li class="nav-item ms-lg-2">
+            <a class="btn btn-sm btn-outline-info text-info py-2" href="{% url 'management_dashboard' %}">
+              <i class="bi bi-arrow-left-right me-1"></i> Management Portal
+            </a>
+          </li>
+          {% endif %}
           {% elif request.user.role == 'center' %}
-            <li class="nav-item">
-              <a class="nav-link {% if request.resolver_match.url_name == 'center_dashboard' %}active{% endif %}" href="{% url 'center_dashboard' %}">Center Dashboard</a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'center_dashboard' %}active{% endif %}"
+              href="{% url 'center_dashboard' %}">Center Dashboard</a>
+          </li>
           {% elif request.user.role == 'teacher' %}
-            <li class="nav-item">
-              <a class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}" href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
-            </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}"
+              href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
+          </li>
           {% endif %}
 
           <!-- Role badge -->
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <span class="role-badge">
               <i class="bi bi-person-circle"></i>
-              {% if request.user.role == 'admin' %}Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% else %}Student{% endif %}
+              {% if request.user.role == 'admin' %}Super Admin{% elif request.user.role == 'center' %}Center{% elif
+              request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'telecaller' %}Telecaller{% else
+              %}Student{% endif %}
               &middot; {{ request.user.username }}
             </span>
           </li>
@@ -115,10 +142,12 @@
 
           {% else %}
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+              href="{% url 'home' %}">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}" href="{% url 'contact' %}">Contact</a>
+            <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
+              href="{% url 'contact' %}">Contact</a>
           </li>
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <a class="btn-login d-inline-block" href="{% url 'login' %}">Login</a>
@@ -133,13 +162,13 @@
   <!-- Flash Messages -->
   <div class="container mt-3">
     {% if messages %}
-      {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center" role="alert">
-        <i class="bi bi-info-circle-fill me-2"></i>
-        <div><strong>Notice:</strong> {{ message }}</div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-      {% endfor %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center" role="alert">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      <div><strong>Notice:</strong> {{ message }}</div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
     {% endif %}
   </div>
 
@@ -179,19 +208,24 @@
           <ul class="list-unstyled">
             <li class="mb-2"><a href="{% url 'home' %}"><i class="bi bi-chevron-right small"></i> Home</a></li>
             {% if user.is_authenticated %}
-              {% if user.role == 'admin' or user.role == 'teacher' %}
-                <li class="mb-2"><a href="{% url 'exam_dashboard' %}"><i class="bi bi-chevron-right small"></i> Exams</a></li>
-              {% elif user.role == 'center' %}
-                <li class="mb-2"><a href="{% url 'center_dashboard' %}"><i class="bi bi-chevron-right small"></i> Dashboard</a></li>
-              {% elif user.role == 'student' %}
-                <li class="mb-2"><a href="{% url 'student_dashboard' %}"><i class="bi bi-chevron-right small"></i> Dashboard</a></li>
-              {% endif %}
-              <li class="mb-2"><a href="{% url 'contact' %}"><i class="bi bi-chevron-right small"></i> Contact</a></li>
+            {% if user.role == 'admin' or user.role == 'teacher' %}
+            <li class="mb-2"><a href="{% url 'exam_dashboard' %}"><i class="bi bi-chevron-right small"></i> Exams</a>
+            </li>
+            {% elif user.role == 'center' %}
+            <li class="mb-2"><a href="{% url 'center_dashboard' %}"><i class="bi bi-chevron-right small"></i>
+                Dashboard</a></li>
+            {% elif user.role == 'student' %}
+            <li class="mb-2"><a href="{% url 'student_dashboard' %}"><i class="bi bi-chevron-right small"></i>
+                Dashboard</a></li>
+            {% endif %}
+            <li class="mb-2"><a href="{% url 'contact' %}"><i class="bi bi-chevron-right small"></i> Contact</a></li>
             {% else %}
-              <li class="mb-2"><a href="{% url 'contact' %}"><i class="bi bi-chevron-right small"></i> Contact</a></li>
-              <li class="mb-2"><a href="{% url 'login' %}"><i class="bi bi-chevron-right small"></i> Login</a></li>
-              <li class="mb-2"><a href="{% url 'signup_student' %}"><i class="bi bi-chevron-right small"></i> Student Signup</a></li>
-              <li class="mb-2"><a href="{% url 'signup_teacher' %}"><i class="bi bi-chevron-right small"></i> Teacher Signup</a></li>
+            <li class="mb-2"><a href="{% url 'contact' %}"><i class="bi bi-chevron-right small"></i> Contact</a></li>
+            <li class="mb-2"><a href="{% url 'login' %}"><i class="bi bi-chevron-right small"></i> Login</a></li>
+            <li class="mb-2"><a href="{% url 'signup_student' %}"><i class="bi bi-chevron-right small"></i> Student
+                Signup</a></li>
+            <li class="mb-2"><a href="{% url 'signup_teacher' %}"><i class="bi bi-chevron-right small"></i> Teacher
+                Signup</a></li>
             {% endif %}
           </ul>
         </div>
@@ -207,7 +241,8 @@
         </div>
       </div>
       <hr>
-      <p class="text-center small mb-0">&copy; 2026 <strong class="text-white">Examly</strong> &middot; All rights reserved</p>
+      <p class="text-center small mb-0">&copy; 2026 <strong class="text-white">Examly</strong> &middot; All rights
+        reserved</p>
     </div>
   </footer>
 
@@ -233,4 +268,5 @@
   {% block scripts %}
   {% endblock %}
 </body>
+
 </html>

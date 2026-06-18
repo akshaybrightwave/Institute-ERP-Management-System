@@ -1,0 +1,219 @@
+{% extends 'management/base.html' %}
+
+{% block extra_style %}
+<style>
+  .timeline-badge {
+    background-color: #242448;
+    border: 1px solid #3d3d6a;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Lead Profile</h2>
+    <p class="text-muted small mb-0">Overview of client conversion stages and history</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'lead_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+    <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-warning"><i class="bi bi-pencil"></i> Edit Lead</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Side: Profile and Tabs -->
+  <div class="col-lg-8">
+    <!-- Profile Card -->
+    <div class="m-card mb-4">
+      <div class="row g-3">
+        <div class="col-md-7">
+          <h4 class="fw-bold text-white mb-1">{{ lead.inquiry.full_name }}</h4>
+          <p class="text-info small mb-3"><i class="bi bi-person-circle me-1"></i>Assigned Telecaller: {{ lead.assigned_telecaller.username|default:"Unassigned" }}</p>
+          
+          <div class="row g-2 text-muted small">
+            <div class="col-6"><i class="bi bi-telephone me-1"></i>{{ lead.inquiry.mobile_number }}</div>
+            <div class="col-6"><i class="bi bi-envelope me-1"></i>{{ lead.inquiry.email|default:"No email provided" }}</div>
+            <div class="col-6"><i class="bi bi-geo-alt me-1"></i>{{ lead.inquiry.city }}</div>
+            <div class="col-6"><i class="bi bi-journal-bookmark me-1"></i>{{ lead.inquiry.course_interest }}</div>
+          </div>
+        </div>
+
+        <div class="col-md-5 d-flex flex-column justify-content-between align-items-md-end border-start border-secondary ps-md-4">
+          <div class="text-md-end w-100 mb-2">
+            <div class="text-muted small">Lead Status</div>
+            <span class="fs-6 fw-bold badge {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info text-white{% elif lead.status == 'Interested' %}bg-warning text-dark{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% else %}bg-dark{% endif %}" style="{% if lead.status == 'Follow Up' %}background-color: #6f42c1;{% endif %}">
+              {{ lead.status }}
+            </span>
+          </div>
+
+          <div class="text-md-end w-100 mb-2">
+            <div class="text-muted small">Priority</div>
+            <span class="badge {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ lead.priority }}
+            </span>
+          </div>
+
+          <div class="text-md-end w-100">
+            <div class="text-muted small">Next Follow-Up</div>
+            <span class="fw-bold {% if lead.next_followup_date %}text-white{% else %}text-muted{% endif %}">
+              {{ lead.next_followup_date|date:"d M Y"|default:"Not Scheduled" }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Area -->
+      <div class="mt-4 pt-3 border-top border-secondary">
+        <label class="text-muted small fw-bold">Internal Notes</label>
+        <div class="text-white bg-dark border border-secondary p-3 rounded mt-1 small" style="min-height: 60px;">
+          {{ lead.notes|linebreaksbr|default:"No active notes." }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Call Log History -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-telephone-outbound text-info me-2"></i>Call History Logs</h5>
+        <a href="{% url 'call_log_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-info text-white fw-bold"><i class="bi bi-plus"></i> Record Call</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if call_logs %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Call Date & Time</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Created By</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in call_logs %}
+                <tr>
+                  <td class="text-white small">{{ log.call_date|date:"d M Y, H:i" }}</td>
+                  <td>
+                    <span class="badge {% if log.call_status == 'Connected' %}bg-success{% elif log.call_status == 'Not Answered' %}bg-secondary{% else %}bg-danger{% endif %}">
+                      {{ log.call_status }}
+                    </span>
+                  </td>
+                  <td>{{ log.call_duration }}s</td>
+                  <td>{{ log.created_by.username|default:"System" }}</td>
+                  <td class="small">{{ log.remarks|default:"-" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-4">
+            <i class="bi bi-telephone"></i>
+            <p class="small">No call log recorded for this lead.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Follow Ups History -->
+    <div class="m-card">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Scheduled Follow-ups</h5>
+        <a href="{% url 'followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-warning fw-bold"><i class="bi bi-plus"></i> Schedule Follow-up</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if followups %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Follow-up Date</th>
+                <th>Status</th>
+                <th>Next Planned Date</th>
+                <th>Response / Notes</th>
+                <th>Created By</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in followups %}
+                <tr class="{% if fp.is_overdue %}border border-danger border-start-0 border-end-0{% endif %}">
+                  <td class="fw-bold text-white">
+                    {{ fp.followup_date|date:"d M Y" }}
+                    {% if fp.is_overdue %}
+                      <span class="badge-overdue ms-1">Overdue</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge {% if fp.status == 'Completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                      {{ fp.status }}
+                    </span>
+                  </td>
+                  <td>{{ fp.next_followup_date|date:"d M Y"|default:"-" }}</td>
+                  <td class="small">{{ fp.response|default:"-" }}</td>
+                  <td>{{ fp.created_by.username|default:"System" }}</td>
+                  <td class="text-end">
+                    {% if fp.status == 'Pending' %}
+                      <div class="d-inline-flex gap-1">
+                        <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success text-white" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
+                        <a href="{% url 'followup_edit' fp.pk %}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                      </div>
+                    {% else %}
+                      <span class="text-muted small"><i class="bi bi-check-circle-fill text-success"></i> Finished</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-4">
+            <i class="bi bi-calendar-x"></i>
+            <p class="small">No scheduled follow-up logs found.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Workflow Overview -->
+  <div class="col-lg-4">
+    <!-- Quick Actions Panel -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge text-warning me-2"></i>Actions</h5>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'call_log_add' %}?lead_id={{ lead.pk }}" class="btn btn-info text-white w-100 fw-bold py-2"><i class="bi bi-telephone-outbound me-1"></i> Record Call Record</a>
+        <a href="{% url 'followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-warning w-100 fw-bold py-2"><i class="bi bi-calendar-plus me-1"></i> Schedule Follow-up</a>
+        <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-outline-light w-100 fw-bold py-2"><i class="bi bi-pencil me-1"></i> Update Lead Details</a>
+      </div>
+    </div>
+
+    <!-- Details Timeline -->
+    <div class="m-card">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-info-circle text-info me-2"></i>Inquiry Background</h5>
+      <div class="d-flex flex-column gap-3">
+        <div>
+          <div class="text-muted small">Converted From Inquiry</div>
+          <a href="{% url 'inquiry_detail' lead.inquiry.pk %}" class="text-info text-decoration-none fw-bold"><i class="bi bi-link-45deg"></i> {{ lead.inquiry.full_name }}</a>
+        </div>
+        <div>
+          <div class="text-muted small">Inquiry Origin</div>
+          <span class="badge bg-secondary">{{ lead.inquiry.source }}</span>
+        </div>
+        <div>
+          <div class="text-muted small">Creation Date</div>
+          <span class="text-white small">{{ lead.created_at|date:"d M Y, H:i" }}</span>
+        </div>
+        <div>
+          <div class="text-muted small">Last Activity Date</div>
+          <span class="text-white small">{{ lead.updated_at|date:"d M Y, H:i" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'apps.fees',
     'apps.certificates',
     'apps.reports',
+    'apps.management',
 ]
 
 MIDDLEWARE = [
@@ -75,6 +76,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.management.middleware.PortalAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'online_exam_portal.urls'

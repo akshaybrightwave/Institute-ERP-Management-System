@@ -1,0 +1,148 @@
+{% extends 'management/base.html' %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">Active Leads</h2>
+  <p class="text-muted small">Monitor, track, and qualify converted inquiries</p>
+</div>
+
+<!-- Filters -->
+<div class="m-card mb-4">
+  <form method="GET" class="row g-3">
+    <!-- Search -->
+    <div class="col-md-5">
+      <label class="form-label text-muted small fw-bold">Search</label>
+      <div class="input-group">
+        <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white" placeholder="Search by name or mobile number...">
+      </div>
+    </div>
+    
+    <!-- Status -->
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Status</label>
+      <select name="status" class="form-select bg-dark border-secondary text-white">
+        <option value="">All Statuses</option>
+        {% for code, name in status_choices %}
+          <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Priority -->
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Priority</label>
+      <select name="priority" class="form-select bg-dark border-secondary text-white">
+        <option value="">All Priorities</option>
+        {% for code, name in priority_choices %}
+          <option value="{{ code }}" {% if priority == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Submit -->
+    <div class="col-md-1 d-flex align-items-end">
+      <button type="submit" class="btn btn-info text-white w-100 fw-bold"><i class="bi bi-funnel"></i></button>
+    </div>
+  </form>
+</div>
+
+<!-- Leads Table -->
+<div class="m-card">
+  <div class="table-responsive">
+    {% if page_obj %}
+      <table class="table m-table align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Email</th>
+            <th>Course Interest</th>
+            <th>Priority</th>
+            <th>Next Follow-up</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in page_obj %}
+            <tr>
+              <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
+              <td>{{ lead.inquiry.mobile_number }}</td>
+              <td>{{ lead.inquiry.email|default:"-" }}</td>
+              <td>{{ lead.inquiry.course_interest }}</td>
+              <td>
+                {% if lead.priority == 'High' %}
+                  <span class="badge bg-danger">High</span>
+                {% elif lead.priority == 'Medium' %}
+                  <span class="badge bg-warning text-dark">Medium</span>
+                {% else %}
+                  <span class="badge bg-secondary">Low</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if lead.next_followup_date %}
+                  {{ lead.next_followup_date|date:"d M Y" }}
+                {% else %}
+                  <span class="text-muted small">Not Scheduled</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if lead.status == 'New' %}
+                  <span class="badge bg-primary">New</span>
+                {% elif lead.status == 'Contacted' %}
+                  <span class="badge bg-info text-white">Contacted</span>
+                {% elif lead.status == 'Interested' %}
+                  <span class="badge bg-warning text-dark">Interested</span>
+                {% elif lead.status == 'Follow Up' %}
+                  <span class="badge bg-violet" style="background-color: #6f42c1;">Follow Up</span>
+                {% elif lead.status == 'Qualified' %}
+                  <span class="badge bg-success">Qualified</span>
+                {% else %}
+                  <span class="badge bg-dark">Closed</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-1">
+                  <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-info" title="View Lead Profile"><i class="bi bi-eye"></i> View</a>
+                  <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-sm btn-outline-warning" title="Update status/priority"><i class="bi bi-pencil"></i> Edit</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-funnel"></i>
+        <h4>No Leads Found</h4>
+        <p class="text-muted">You have no active leads matching these filters.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

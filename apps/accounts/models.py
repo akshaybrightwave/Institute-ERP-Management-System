@@ -8,12 +8,13 @@ from django.core.exceptions import ValidationError
 
 class User(AbstractUser):
     ROLE_CHOICES = (
-        ('admin', 'Admin'),
+        ('admin', 'Super Admin'),
         ('center', 'Center'),
         ('teacher', 'Teacher'),
         ('student', 'Student'),
+        ('telecaller', 'Telecaller'),
     )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=15, choices=ROLE_CHOICES)
     center = models.OneToOneField(
         'centers.Center',
         on_delete=models.SET_NULL,

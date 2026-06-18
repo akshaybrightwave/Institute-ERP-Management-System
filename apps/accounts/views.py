@@ -109,8 +109,12 @@ def user_login(request):
                 return redirect('center_dashboard')
             elif user.role == 'teacher':
                 return redirect('teacher_dashboard')
-            else:
+            elif user.role == 'student':
                 return redirect('student_dashboard')
+            elif user.role == 'telecaller':
+                return redirect('management_dashboard')
+            else:
+                return redirect('login')
         else:
             messages.error(request, 'Invalid credentials')
             return redirect('login')

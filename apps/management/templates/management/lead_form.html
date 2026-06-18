@@ -1,0 +1,69 @@
+{% extends 'management/base.html' %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">Edit Lead Details</h2>
+  <p class="text-muted small">Update priorities, next follow-ups, and notes for <strong>{{ lead.inquiry.full_name }}</strong></p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="m-card">
+      <form method="POST">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="row g-3">
+          <!-- Status -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Lead Status <span class="text-danger">*</span></label>
+            {{ form.status }}
+            {% if form.status.errors %}
+              <div class="text-danger small mt-1">{% for error in form.status.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Priority -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Priority <span class="text-danger">*</span></label>
+            {{ form.priority }}
+            {% if form.priority.errors %}
+              <div class="text-danger small mt-1">{% for error in form.priority.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Next Follow-up Date -->
+          <div class="col-md-12">
+            <label class="form-label text-muted small fw-bold">Next Planned Follow-Up Date</label>
+            {{ form.next_followup_date }}
+            {% if form.next_followup_date.errors %}
+              <div class="text-danger small mt-1">{% for error in form.next_followup_date.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Notes -->
+          <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Internal Lead Notes</label>
+            {{ form.notes }}
+            {% if form.notes.errors %}
+              <div class="text-danger small mt-1">{% for error in form.notes.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top border-secondary">
+          <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Lead Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

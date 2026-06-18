@@ -1,0 +1,103 @@
+{% extends 'management/base.html' %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Call Logs Registry</h2>
+    <p class="text-muted small mb-0">Review past telecalling connection records</p>
+  </div>
+  <div>
+    <a href="{% url 'call_log_add' %}" class="btn btn-info text-white fw-bold">
+      <i class="bi bi-telephone-outbound me-1"></i> Add Call Log
+    </a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="m-card mb-4">
+  <form method="GET" class="row g-3">
+    <!-- Filter by Date -->
+    <div class="col-md-5">
+      <label class="form-label text-muted small fw-bold">Call Date</label>
+      <input type="date" name="date" value="{{ date_str }}" class="form-control bg-dark border-secondary text-white">
+    </div>
+
+    <!-- Filter by Lead -->
+    <div class="col-md-5">
+      <label class="form-label text-muted small fw-bold">Lead ID (Optional)</label>
+      <input type="text" name="lead_id" value="{{ lead_id }}" class="form-control bg-dark border-secondary text-white" placeholder="Filter by Lead ID...">
+    </div>
+
+    <!-- Submit -->
+    <div class="col-md-2 d-flex align-items-end">
+      <button type="submit" class="btn btn-info text-white w-100 fw-bold"><i class="bi bi-funnel me-1"></i> Filter</button>
+    </div>
+  </form>
+</div>
+
+<!-- Logs Table -->
+<div class="m-card">
+  <div class="table-responsive">
+    {% if page_obj %}
+      <table class="table m-table align-middle">
+        <thead>
+          <tr>
+            <th>Lead Name</th>
+            <th>Call Date & Time</th>
+            <th>Duration</th>
+            <th>Call Status</th>
+            <th>Remarks</th>
+            <th>Recorded By</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in page_obj %}
+            <tr>
+              <td class="fw-bold text-white"><a href="{% url 'lead_detail' log.lead.pk %}" class="text-info text-decoration-none">{{ log.lead.inquiry.full_name }}</a></td>
+              <td>{{ log.call_date|date:"d M Y, H:i" }}</td>
+              <td>{{ log.call_duration }}s</td>
+              <td>
+                <span class="badge {% if log.call_status == 'Connected' %}bg-success{% elif log.call_status == 'Not Answered' %}bg-secondary{% else %}bg-danger{% endif %}">
+                  {{ log.call_status }}
+                </span>
+              </td>
+              <td class="small">{{ log.remarks|default:"-" }}</td>
+              <td>{{ log.created_by.username|default:"System" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if date_str %}&date={{ date_str }}{% endif %}{% if lead_id %}&lead_id={{ lead_id }}{% endif %}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if date_str %}&date={{ date_str }}{% endif %}{% if lead_id %}&lead_id={{ lead_id }}{% endif %}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if date_str %}&date={{ date_str }}{% endif %}{% if lead_id %}&lead_id={{ lead_id }}{% endif %}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-telephone-x"></i>
+        <h4>No Call Logs Found</h4>
+        <p class="text-muted">No call records found matching these criteria.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

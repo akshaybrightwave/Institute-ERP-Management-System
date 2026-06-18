@@ -1,0 +1,371 @@
+{% extends 'management/base.html' %}
+
+{% block extra_style %}
+<style>
+  /* Stats Cards Grid */
+  .stat-card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card-body {
+    padding: 1.25rem;
+  }
+  .stat-card-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
+    margin-bottom: 0.5rem;
+  }
+  .stat-card-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stat-card-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3.5rem;
+    opacity: 0.15;
+  }
+  .stat-card-footer {
+    padding: 0.5rem 1.25rem;
+    background: rgba(0,0,0,0.2);
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+  }
+  .stat-card-footer:hover {
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+  }
+
+  /* Colors */
+  .bg-blue   { background: linear-gradient(135deg, #1b3a82 0%, #2f60d4 100%); }
+  .bg-teal   { background: linear-gradient(135deg, #0f5c69 0%, #1796aa 100%); }
+  .bg-indigo { background: linear-gradient(135deg, #321f6b 0%, #5234ad 100%); }
+  .bg-orange { background: linear-gradient(135deg, #8a4802 0%, #cc710e 100%); }
+  .bg-red    { background: linear-gradient(135deg, #7c121e 0%, #b82335 100%); }
+  .bg-green  { background: linear-gradient(135deg, #125c34 0%, #1ea660 100%); }
+
+  /* Quick Actions */
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: #14142b;
+    border: 1px solid #242448;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .action-btn:hover {
+    transform: translateY(-2px);
+    border-color: #0dcaf0;
+    color: #fff;
+    background: #1e1e3d;
+  }
+  .action-btn i {
+    font-size: 1.2rem;
+    color: #0dcaf0;
+  }
+
+  /* Overdue alerts */
+  .badge-overdue {
+    background-color: #dc3545;
+    color: white;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.25em 0.5em;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Telecaller Dashboard</h2>
+    <p class="text-muted small mb-0">Welcome back, {{ request.user.username }} &middot; Role: Telecaller</p>
+  </div>
+  <div>
+    <span class="badge bg-dark border border-secondary py-2 px-3">
+      <i class="bi bi-calendar3 me-1"></i> Today: {% now "d M Y" %}
+    </span>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6">
+  <!-- Total Inquiries -->
+  <div class="col">
+    <div class="stat-card bg-blue">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Total Inquiries</div>
+        <div class="stat-card-value">{{ total_inquiries }}</div>
+        <div class="stat-card-icon"><i class="bi bi-person-lines-fill"></i></div>
+      </div>
+      <a href="{% url 'inquiry_list' %}" class="stat-card-footer">
+        <i class="bi bi-eye"></i> View list
+      </a>
+    </div>
+  </div>
+
+  <!-- New Inquiries -->
+  <div class="col">
+    <div class="stat-card bg-teal">
+      <div class="stat-card-body">
+        <div class="stat-card-title">New Inquiries</div>
+        <div class="stat-card-value">{{ new_inquiries }}</div>
+        <div class="stat-card-icon"><i class="bi bi-person-plus-fill"></i></div>
+      </div>
+      <a href="{% url 'inquiry_list' %}?status=New" class="stat-card-footer">
+        <i class="bi bi-funnel"></i> Filter new
+      </a>
+    </div>
+  </div>
+
+  <!-- Total Leads -->
+  <div class="col">
+    <div class="stat-card bg-indigo">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Total Leads</div>
+        <div class="stat-card-value">{{ total_leads }}</div>
+        <div class="stat-card-icon"><i class="bi bi-funnel-fill"></i></div>
+      </div>
+      <a href="{% url 'lead_list' %}" class="stat-card-footer">
+        <i class="bi bi-eye"></i> View list
+      </a>
+    </div>
+  </div>
+
+  <!-- Today's Calls -->
+  <div class="col">
+    <div class="stat-card bg-orange">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Today's Calls</div>
+        <div class="stat-card-value">{{ today_calls }}</div>
+        <div class="stat-card-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+      </div>
+      <a href="{% url 'call_log_list' %}" class="stat-card-footer">
+        <i class="bi bi-clock-history"></i> Call logs
+      </a>
+    </div>
+  </div>
+
+  <!-- Pending Followups -->
+  <div class="col">
+    <div class="stat-card bg-red">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Pending Follow-ups</div>
+        <div class="stat-card-value">{{ pending_followups }}</div>
+        <div class="stat-card-icon"><i class="bi bi-calendar-check-fill"></i></div>
+      </div>
+      <a href="{% url 'followup_list' %}?status=Pending" class="stat-card-footer">
+        <i class="bi bi-eye"></i> View follow-ups
+      </a>
+    </div>
+  </div>
+
+  <!-- Qualified Leads -->
+  <div class="col">
+    <div class="stat-card bg-green">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Qualified Leads</div>
+        <div class="stat-card-value">{{ qualified_leads }}</div>
+        <div class="stat-card-icon"><i class="bi bi-award-fill"></i></div>
+      </div>
+      <a href="{% url 'lead_list' %}?status=Qualified" class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View qualified
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Content Grid -->
+<div class="row g-4 mb-4">
+  <!-- Recent Inquiries -->
+  <div class="col-lg-8">
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-person-lines-fill me-2 text-info"></i>Recent Inquiries</h5>
+        <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-info">View All</a>
+      </div>
+      
+      <div class="table-responsive">
+        {% if recent_inquiries %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Course</th>
+                <th>Source</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for inquiry in recent_inquiries %}
+                <tr>
+                  <td class="fw-bold text-white">{{ inquiry.full_name }}</td>
+                  <td>{{ inquiry.mobile_number }}</td>
+                  <td>{{ inquiry.course_interest }}</td>
+                  <td><span class="badge bg-secondary">{{ inquiry.source }}</span></td>
+                  <td>
+                    {% if inquiry.status == 'New' %}
+                      <span class="badge bg-primary">New</span>
+                    {% elif inquiry.status == 'Contacted' %}
+                      <span class="badge bg-warning text-dark">Contacted</span>
+                    {% elif inquiry.status == 'Qualified' %}
+                      <span class="badge bg-success">Qualified</span>
+                    {% else %}
+                      <span class="badge bg-danger">Rejected</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="{% url 'inquiry_detail' inquiry.pk %}" class="btn btn-sm btn-outline-light" title="View details"><i class="bi bi-eye"></i></a>
+                      {% if not hasattr_lead and not inquiry.lead %}
+                        <a href="{% url 'inquiry_convert' inquiry.pk %}" class="btn btn-sm btn-info text-white" title="Convert to Lead"><i class="bi bi-arrow-right-short"></i> Convert</a>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-inboxes"></i>
+            <p>No recent inquiries found. Click "Add Inquiry" to create one.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Follow Ups -->
+    <div class="m-card">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-calendar-check-fill me-2 text-danger"></i>Active & Overdue Follow-Ups</h5>
+        <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if today_followups %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Phone</th>
+                <th>Scheduled Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in today_followups %}
+                <tr>
+                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
+                  <td>{{ fp.lead.inquiry.mobile_number }}</td>
+                  <td>
+                    {{ fp.followup_date }}
+                    {% if fp.is_overdue %}
+                      <span class="badge-overdue ms-1">Overdue</span>
+                    {% endif %}
+                  </td>
+                  <td><span class="badge bg-warning text-dark">{{ fp.status }}</span></td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i class="bi bi-eye"></i></a>
+                      <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-clipboard-check"></i>
+            <p>You have no pending follow-ups for today.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar: Quick Actions & Call Logs -->
+  <div class="col-lg-4">
+    <!-- Quick Actions -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'inquiry_add' %}" class="action-btn">
+          <i class="bi bi-person-plus"></i> Add New Inquiry
+        </a>
+        <a href="{% url 'call_log_add' %}" class="action-btn">
+          <i class="bi bi-telephone-outbound"></i> Add Call Log
+        </a>
+        <a href="{% url 'followup_add' %}" class="action-btn">
+          <i class="bi bi-calendar-event"></i> Schedule Follow-Up
+        </a>
+        <a href="{% url 'lead_list' %}" class="action-btn">
+          <i class="bi bi-funnel"></i> View Leads List
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Call Logs -->
+    <div class="m-card">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-telephone-inbound-fill me-2 text-info"></i>Recent Calls</h5>
+        <a href="{% url 'call_log_list' %}" class="btn btn-sm btn-outline-info">View All</a>
+      </div>
+
+      <div class="list-group list-group-flush bg-transparent">
+        {% if recent_call_logs %}
+          {% for log in recent_call_logs %}
+            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-bold text-white small">{{ log.lead.inquiry.full_name }}</span>
+                <span class="badge {% if log.call_status == 'Connected' %}bg-success{% else %}bg-secondary{% endif %} text-uppercase" style="font-size:0.65rem;">
+                  {{ log.call_status }}
+                </span>
+              </div>
+              <p class="text-muted small mb-0 d-flex justify-content-between">
+                <span>Duration: {{ log.call_duration }}s</span>
+                <span>{{ log.call_date|date:"H:i, d M" }}</span>
+              </p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state py-4">
+            <i class="bi bi-telephone-x small" style="font-size:2rem;"></i>
+            <p class="small mt-2">No recent call records logged.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

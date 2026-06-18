@@ -1,0 +1,130 @@
+{% extends 'management/base.html' %}
+
+{% block extra_style %}
+<style>
+  .badge-overdue {
+    background-color: #dc3545;
+    color: white;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.25em 0.5em;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Follow-Ups Registry</h2>
+    <p class="text-muted small mb-0">Track and schedule active customer follow-ups</p>
+  </div>
+  <div>
+    <a href="{% url 'followup_add' %}" class="btn btn-info text-white fw-bold">
+      <i class="bi bi-calendar-plus me-1"></i> Schedule Follow-up
+    </a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="m-card mb-4">
+  <form method="GET" class="row g-3">
+    <!-- Status -->
+    <div class="col-md-9">
+      <label class="form-label text-muted small fw-bold">Status</label>
+      <select name="status" class="form-select bg-dark border-secondary text-white">
+        <option value="">All Follow-ups</option>
+        <option value="Pending" {% if status == 'Pending' %}selected{% endif %}>Pending</option>
+        <option value="Completed" {% if status == 'Completed' %}selected{% endif %}>Completed</option>
+      </select>
+    </div>
+
+    <!-- Filter Button -->
+    <div class="col-md-3 d-flex align-items-end">
+      <button type="submit" class="btn btn-info text-white w-100 fw-bold"><i class="bi bi-funnel me-1"></i> Filter Logs</button>
+    </div>
+  </form>
+</div>
+
+<!-- Follow-ups Table -->
+<div class="m-card">
+  <div class="table-responsive">
+    {% if page_obj %}
+      <table class="table m-table align-middle">
+        <thead>
+          <tr>
+            <th>Lead Name</th>
+            <th>Follow-up Date</th>
+            <th>Next Scheduled Date</th>
+            <th>Status</th>
+            <th>Response Summary</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fp in page_obj %}
+            <tr class="{% if fp.is_overdue %}border border-danger border-start-0 border-end-0{% endif %}">
+              <td class="fw-bold text-white"><a href="{% url 'lead_detail' fp.lead.pk %}" class="text-info text-decoration-none">{{ fp.lead.inquiry.full_name }}</a></td>
+              <td>
+                {{ fp.followup_date|date:"d M Y" }}
+                {% if fp.is_overdue %}
+                  <span class="badge-overdue ms-1">Overdue</span>
+                {% endif %}
+              </td>
+              <td>{{ fp.next_followup_date|date:"d M Y"|default:"-" }}</td>
+              <td>
+                <span class="badge {% if fp.status == 'Completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                  {{ fp.status }}
+                </span>
+              </td>
+              <td class="small">{{ fp.response|default:"-" }}</td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-1">
+                  <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-info" title="View Lead"><i class="bi bi-eye"></i></a>
+                  {% if fp.status == 'Pending' %}
+                    <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
+                    <a href="{% url 'followup_edit' fp.pk %}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                  {% else %}
+                    <span class="text-muted small"><i class="bi bi-check-circle-fill text-success"></i> Finished</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if status %}&status={{ status }}{% endif %}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if status %}&status={{ status }}{% endif %}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if status %}&status={{ status }}{% endif %}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-calendar-x"></i>
+        <h4>No Follow-ups Scheduled</h4>
+        <p class="text-muted">No scheduled follow-up records found matching these criteria.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

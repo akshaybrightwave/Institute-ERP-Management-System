@@ -18,6 +18,7 @@ urlpatterns = [
     path('fees/', include('apps.fees.urls')),
     path('certificates/', include('apps.certificates.urls')),
     path('reports/', include('apps.reports.urls')),
+    path('management/', include('apps.management.urls')),
 ]
 
 if settings.DEBUG:

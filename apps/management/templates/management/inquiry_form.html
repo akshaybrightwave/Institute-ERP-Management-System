@@ -1,0 +1,105 @@
+{% extends 'management/base.html' %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">{{ title }}</h2>
+  <p class="text-muted small">Fill out the form below to register or update inquiry records</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="m-card">
+      <form method="POST">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="row g-3">
+          <!-- Full Name -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Full Name <span class="text-danger">*</span></label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}
+              <div class="text-danger small mt-1">{% for error in form.full_name.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Mobile Number -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Mobile Number <span class="text-danger">*</span></label>
+            {{ form.mobile_number }}
+            {% if form.mobile_number.errors %}
+              <div class="text-danger small mt-1">{% for error in form.mobile_number.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Email -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Email Address (Optional)</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+              <div class="text-danger small mt-1">{% for error in form.email.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- City -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">City <span class="text-danger">*</span></label>
+            {{ form.city }}
+            {% if form.city.errors %}
+              <div class="text-danger small mt-1">{% for error in form.city.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Course of Interest -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Course of Interest <span class="text-danger">*</span></label>
+            {{ form.course_interest }}
+            {% if form.course_interest.errors %}
+              <div class="text-danger small mt-1">{% for error in form.course_interest.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Source -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Lead Source <span class="text-danger">*</span></label>
+            {{ form.source }}
+            {% if form.source.errors %}
+              <div class="text-danger small mt-1">{% for error in form.source.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Status -->
+          <div class="col-md-12">
+            <label class="form-label text-muted small fw-bold">Inquiry Status <span class="text-danger">*</span></label>
+            {{ form.status }}
+            {% if form.status.errors %}
+              <div class="text-danger small mt-1">{% for error in form.status.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Remarks -->
+          <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Remarks / Notes</label>
+            {{ form.remarks }}
+            {% if form.remarks.errors %}
+              <div class="text-danger small mt-1">{% for error in form.remarks.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top border-secondary">
+          <a href="{% if inquiry %}{% url 'inquiry_detail' inquiry.pk %}{% else %}{% url 'inquiry_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Inquiry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

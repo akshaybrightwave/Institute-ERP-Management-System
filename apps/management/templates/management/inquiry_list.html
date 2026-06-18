@@ -1,0 +1,145 @@
+{% extends 'management/base.html' %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Inquiry Directory</h2>
+    <p class="text-muted small mb-0">Manage and track student inquiries</p>
+  </div>
+  <div>
+    <a href="{% url 'inquiry_add' %}" class="btn btn-info text-white fw-bold">
+      <i class="bi bi-person-plus me-1"></i> Add Inquiry
+    </a>
+  </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="m-card mb-4">
+  <form method="GET" class="row g-3">
+    <!-- Search -->
+    <div class="col-md-5">
+      <label class="form-label text-muted small fw-bold">Search</label>
+      <div class="input-group">
+        <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white" placeholder="Search by name, mobile, city...">
+      </div>
+    </div>
+    
+    <!-- Status -->
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Status</label>
+      <select name="status" class="form-select bg-dark border-secondary text-white">
+        <option value="">All Statuses</option>
+        {% for code, name in status_choices %}
+          <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Source -->
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Source</label>
+      <select name="source" class="form-select bg-dark border-secondary text-white">
+        <option value="">All Sources</option>
+        {% for code, name in source_choices %}
+          <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Submit/Reset -->
+    <div class="col-md-1 d-flex align-items-end">
+      <button type="submit" class="btn btn-info text-white w-100 fw-bold"><i class="bi bi-funnel"></i></button>
+    </div>
+  </form>
+</div>
+
+<!-- Inquiries Table -->
+<div class="m-card">
+  <div class="table-responsive">
+    {% if page_obj %}
+      <table class="table m-table align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Email</th>
+            <th>City</th>
+            <th>Course Interest</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inquiry in page_obj %}
+            <tr>
+              <td class="fw-bold text-white">{{ inquiry.full_name }}</td>
+              <td>{{ inquiry.mobile_number }}</td>
+              <td>{{ inquiry.email|default:"-" }}</td>
+              <td>{{ inquiry.city }}</td>
+              <td>{{ inquiry.course_interest }}</td>
+              <td><span class="badge bg-secondary">{{ inquiry.source }}</span></td>
+              <td>
+                {% if inquiry.status == 'New' %}
+                  <span class="badge bg-primary">New</span>
+                {% elif inquiry.status == 'Contacted' %}
+                  <span class="badge bg-warning text-dark">Contacted</span>
+                {% elif inquiry.status == 'Qualified' %}
+                  <span class="badge bg-success">Qualified</span>
+                {% else %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% endif %}
+              </td>
+              <td>{{ inquiry.created_at|date:"d M Y" }}</td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-1">
+                  <a href="{% url 'inquiry_detail' inquiry.pk %}" class="btn btn-sm btn-outline-info" title="View Details"><i class="bi bi-eye"></i></a>
+                  <a href="{% url 'inquiry_edit' inquiry.pk %}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                  {% if not inquiry.lead %}
+                    <a href="{% url 'inquiry_convert' inquiry.pk %}" class="btn btn-sm btn-success text-white fw-bold" title="Convert to Lead"><i class="bi bi-arrow-right-short"></i> Convert</a>
+                  {% else %}
+                    <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="btn btn-sm btn-outline-success" title="View Lead"><i class="bi bi-funnel"></i></a>
+                  {% endif %}
+                  <a href="{% url 'inquiry_delete' inquiry.pk %}" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-search"></i>
+        <h4>No Inquiries Found</h4>
+        <p class="text-muted">No records match your query or filters. Click "Add Inquiry" to create one.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
