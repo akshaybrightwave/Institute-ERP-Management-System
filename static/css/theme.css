@@ -183,6 +183,11 @@ a:hover { color: var(--color-primary-dark); }
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
 }
+.navbar-examly .navbar-shell {
+  max-width: 1480px;
+  padding-left: clamp(1rem, 3vw, 2rem);
+  padding-right: clamp(1rem, 3vw, 2rem);
+}
 .navbar-examly .navbar-brand {
   font-weight: 700;
   font-size: 1.35rem;
@@ -207,10 +212,45 @@ a:hover { color: var(--color-primary-dark); }
   color: var(--color-text-muted);
   font-weight: 500;
   margin-right: 0.25rem;
+  border-radius: var(--radius-pill);
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
 }
 .navbar-examly .nav-link:hover,
 .navbar-examly .nav-link.active {
   color: var(--color-primary) !important;
+  background: var(--color-primary-light);
+}
+.navbar-examly .portal-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: #F8FAFC;
+  white-space: nowrap;
+}
+.navbar-examly .portal-switcher-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.navbar-examly .portal-switcher-link:hover {
+  color: var(--color-primary);
+}
+.navbar-examly .portal-switcher-link.active {
+  background: var(--gradient-brand);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
 }
 .navbar-examly .role-badge {
   background: var(--color-primary-light);
@@ -242,12 +282,159 @@ a:hover { color: var(--color-primary-dark); }
   color: var(--color-danger);
 }
 
+.app-shell {
+  --app-navbar-height: 68px;
+  background: #0d0d1a;
+}
+.app-shell .navbar-examly {
+  top: 0;
+  z-index: 1100;
+  min-height: var(--app-navbar-height);
+  background: #111120;
+  border-bottom: 1px solid #1e1e35;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
+}
+.app-shell .navbar-examly .navbar-brand {
+  color: #f8f8ff;
+}
+.app-shell .navbar-examly .nav-link {
+  color: #a5a5d6;
+}
+.app-shell .navbar-examly .nav-link:hover,
+.app-shell .navbar-examly .nav-link.active {
+  background: #1a1a32;
+  color: #ffffff !important;
+}
+.app-shell .navbar-examly .nav-link.active {
+  box-shadow: inset 0 -2px 0 #5b5cff;
+}
+.app-shell .navbar-examly .portal-switcher {
+  background: #0d0d1a;
+  border-color: #272752;
+}
+.app-shell .navbar-examly .portal-switcher-link {
+  color: #a7a7dd;
+}
+.app-shell .navbar-examly .portal-switcher-link:hover {
+  color: #ffffff;
+}
+.app-shell .navbar-examly .portal-switcher-link.active {
+  background: linear-gradient(135deg, #4a46f3 0%, #6938d8 100%);
+  color: #ffffff;
+}
+.app-shell .navbar-examly .role-badge {
+  background: #191938;
+  color: #bdbdff;
+}
+.app-shell .navbar-examly .btn-logout {
+  border-color: #303055;
+  color: #d4d4ee;
+}
+.app-shell .navbar-examly .btn-logout:hover {
+  background: rgba(220, 38, 38, 0.12);
+}
+.app-shell .erp-sidebar,
+.app-shell .management-sidebar {
+  top: var(--app-navbar-height) !important;
+  z-index: 800;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  will-change: transform;
+}
+.app-shell .erp-content,
+.app-shell .management-content {
+  min-height: calc(100vh - var(--app-navbar-height)) !important;
+  border-top: 1px solid #15152a;
+  transition: margin-left 0.22s ease, padding-left 0.22s ease;
+}
+.sidebar-toggle {
+  display: none;
+}
+.app-shell .sidebar-toggle {
+  display: flex;
+  position: fixed;
+  top: calc(var(--app-navbar-height) + 14px);
+  left: 214px;
+  z-index: 900;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #303060;
+  border-radius: 10px;
+  background: #18182d;
+  color: #d6d6ff;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+  transition: left 0.22s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.app-shell .sidebar-toggle:hover {
+  background: #20203d;
+  border-color: #5b5cff;
+  color: #ffffff;
+}
+.app-shell.sidebar-collapsed .erp-sidebar,
+.app-shell.sidebar-collapsed .management-sidebar {
+  transform: translateX(-100%) !important;
+}
+.app-shell.sidebar-collapsed .erp-content,
+.app-shell.sidebar-collapsed .management-content {
+  margin-left: 0 !important;
+}
+.app-shell.sidebar-collapsed .sidebar-toggle {
+  left: 14px;
+}
+
+@media (max-width: 991.98px) {
+  .app-shell .erp-sidebar,
+  .app-shell .management-sidebar {
+    transform: translateX(-100%);
+    box-shadow: 18px 0 35px rgba(0, 0, 0, 0.35);
+  }
+
+  .app-shell:not(.sidebar-collapsed) .erp-sidebar,
+  .app-shell:not(.sidebar-collapsed) .management-sidebar {
+    transform: translateX(0);
+  }
+
+  .app-shell .erp-content,
+  .app-shell .management-content {
+    margin-left: 0 !important;
+  }
+
+  .app-shell .sidebar-toggle {
+    left: 14px;
+  }
+
+  .app-shell:not(.sidebar-collapsed) .sidebar-toggle {
+    left: 214px;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .navbar-examly .navbar-nav {
+    gap: 0.35rem;
+    padding-top: 0.75rem;
+  }
+
+  .navbar-examly .nav-link,
+  .navbar-examly .portal-switcher,
+  .navbar-examly .role-badge,
+  .navbar-examly .btn-logout {
+    width: 100%;
+  }
+
+  .navbar-examly .portal-switcher-link {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 /* ---------------------------------------------------------------------- */
 /* Footer                                                                  */
 /* ---------------------------------------------------------------------- */
 .footer-examly {
-  background: #0F172A;
-  color: #94A3B8;
+  background: #0d0d1a;
+  border-top: 1px solid #1e1e35;
+  color: #9090b8;
   margin-top: auto;
 }
 .footer-examly h5 {
@@ -257,11 +444,11 @@ a:hover { color: var(--color-primary-dark); }
   margin-bottom: 1rem;
 }
 .footer-examly a {
-  color: #94A3B8;
+  color: #a5a5d6;
   text-decoration: none;
   transition: color 0.2s ease;
 }
-.footer-examly a:hover { color: #fff; }
+.footer-examly a:hover { color: #0dcaf0; }
 .footer-examly .footer-brand {
   display: flex;
   align-items: center;
@@ -287,17 +474,19 @@ a:hover { color: var(--color-primary-dark); }
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: #14142b;
+  border: 1px solid #242448;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .footer-examly .social-icon:hover {
-  background: var(--gradient-brand);
+  background: #1e1e3d;
+  border-color: #0dcaf0;
   transform: translateY(-3px);
 }
-.footer-examly hr { border-color: rgba(255, 255, 255, 0.08); }
+.footer-examly hr { border-color: #1e1e35; opacity: 1; }
 
 /* ---------------------------------------------------------------------- */
 /* Hero                                                                    */

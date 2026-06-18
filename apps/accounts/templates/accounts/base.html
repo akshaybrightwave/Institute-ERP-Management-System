@@ -30,10 +30,10 @@
   </style>
 </head>
 
-<body>
+<body class="{% block body_class %}{% endblock %}">
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-examly sticky-top">
-    <div class="container">
+    <div class="container-fluid navbar-shell">
       <a class="navbar-brand" href="{% url 'home' %}">
         <span class="brand-icon"><i class="bi bi-mortarboard-fill"></i></span>
         Examly
@@ -80,7 +80,7 @@
           <!-- Dashboard Links -->
           {% if request.user.role == 'admin' %}
           <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' and 'management' not in request.path %}active{% endif %}"
               href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
           </li>
           <li class="nav-item">
@@ -99,19 +99,20 @@
             <a class="nav-link {% if request.resolver_match.url_name == 'feedback_list' or request.resolver_match.url_name == 'feedback_detail' %}active{% endif %}"
               href="{% url 'feedback_list' %}">Feedback</a>
           </li>
-          {% if 'management' in request.path %}
           <li class="nav-item ms-lg-2">
-            <a class="btn btn-sm btn-outline-primary text-info py-2" href="{% url 'admin_dashboard' %}">
-              <i class="bi bi-arrow-left-right me-1"></i> Switch to ERP
-            </a>
+            <div class="portal-switcher" aria-label="Portal switcher">
+              <a class="portal-switcher-link {% if 'management' not in request.path %}active{% endif %}"
+                href="{% url 'admin_dashboard' %}">
+                <i class="bi bi-grid-1x2"></i>
+                ERP
+              </a>
+              <a class="portal-switcher-link {% if 'management' in request.path %}active{% endif %}"
+                href="{% url 'management_dashboard' %}">
+                <i class="bi bi-headset"></i>
+                Management
+              </a>
+            </div>
           </li>
-          {% else %}
-          <li class="nav-item ms-lg-2">
-            <a class="btn btn-sm btn-outline-info text-info py-2" href="{% url 'management_dashboard' %}">
-              <i class="bi bi-arrow-left-right me-1"></i> Management Portal
-            </a>
-          </li>
-          {% endif %}
           {% elif request.user.role == 'center' %}
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'center_dashboard' %}active{% endif %}"
@@ -159,6 +160,10 @@
     </div>
   </nav>
 
+  <button class="sidebar-toggle" type="button" aria-label="Toggle sidebar" aria-expanded="true">
+    <i class="bi bi-chevron-left"></i>
+  </button>
+
   <!-- Flash Messages -->
   <div class="container mt-3">
     {% if messages %}
@@ -180,8 +185,9 @@
     </div>
   </main>
 
+  {% block footer %}
   <!-- Footer -->
-  <footer class="footer-examly py-5">
+  <footer class="footer-examly py-4">
     <div class="container">
       <div class="row gy-4">
         <!-- Brand -->
@@ -245,6 +251,7 @@
         reserved</p>
     </div>
   </footer>
+  {% endblock %}
 
   <!-- Back to Top Button -->
   <button id="backToTop" class="btn rounded-circle">
@@ -263,6 +270,34 @@
       }
     };
     backToTop.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const sidebarToggle = document.querySelector(".sidebar-toggle");
+    if (sidebarToggle) {
+      const sidebarIcon = sidebarToggle.querySelector("i");
+      const savedSidebarState = localStorage.getItem("examlySidebarCollapsed");
+
+      if (savedSidebarState === "true" || (!savedSidebarState && window.matchMedia("(max-width: 991.98px)").matches)) {
+        document.body.classList.add("sidebar-collapsed");
+      }
+
+      const syncSidebarToggle = () => {
+        const isCollapsed = document.body.classList.contains("sidebar-collapsed");
+        sidebarToggle.setAttribute("aria-expanded", String(!isCollapsed));
+        if (sidebarIcon) {
+          sidebarIcon.className = isCollapsed ? "bi bi-chevron-right" : "bi bi-chevron-left";
+        }
+      };
+
+      syncSidebarToggle();
+      sidebarToggle.addEventListener("click", () => {
+        document.body.classList.toggle("sidebar-collapsed");
+        localStorage.setItem(
+          "examlySidebarCollapsed",
+          String(document.body.classList.contains("sidebar-collapsed"))
+        );
+        syncSidebarToggle();
+      });
+    }
   </script>
 
   {% block scripts %}

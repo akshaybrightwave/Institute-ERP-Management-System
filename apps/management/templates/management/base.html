@@ -1,5 +1,7 @@
 {% extends 'accounts/base.html' %}
 
+{% block body_class %}app-shell management-shell{% endblock %}
+
 {% block style %}
 <style>
   body {
@@ -14,7 +16,7 @@
   }
   .management-sidebar {
     position: fixed;
-    top: 56px;
+    top: var(--app-navbar-height, 68px);
     left: 0;
     bottom: 0;
     width: 230px;
@@ -57,7 +59,7 @@
   .management-content {
     margin-left: 230px;
     padding: 1.4rem 1.8rem;
-    min-height: calc(100vh - 56px);
+    min-height: calc(100vh - var(--app-navbar-height, 68px));
     background: #0d0d1a;
   }
   
@@ -95,6 +97,8 @@
 </style>
 {% block extra_style %}{% endblock %}
 {% endblock %}
+
+{% block footer %}{% endblock %}
 
 {% block content %}
 <aside class="management-sidebar">
