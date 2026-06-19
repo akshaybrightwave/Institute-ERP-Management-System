@@ -1,0 +1,59 @@
+{% extends 'management/base.html' %}
+
+{% block extra_style %}
+<style>
+  .form-control, .form-select {
+    background-color: #14142b !important;
+    border: 1px solid #242448 !important;
+    color: #fff !important;
+  }
+  .form-control:focus, .form-select:focus {
+    background-color: #1e1e3d !important;
+    border-color: #0dcaf0 !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.25) !important;
+    color: #fff !important;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">Update Counselor Lead Status</h2>
+  <p class="text-muted small">Change the conversion status stage for candidate: <strong>{{ lead.inquiry.full_name }}</strong></p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="m-card">
+      <form method="POST">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="mb-4">
+          <label class="form-label text-muted small fw-bold">Select Counselor Status <span class="text-danger">*</span></label>
+          {{ form.counselor_status }}
+          {% if form.counselor_status.errors %}
+            <div class="text-danger small mt-1">{% for error in form.counselor_status.errors %}{{ error }}{% endfor %}</div>
+          {% endif %}
+          <div class="form-text text-muted small mt-2">
+            Status mapping pipeline:<br>
+            New &rarr; Contacted &rarr; Counseling Done &rarr; Follow Up Required &rarr; Interested &rarr; Converted / Lost / Not Interested
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top border-secondary">
+          <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Status</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

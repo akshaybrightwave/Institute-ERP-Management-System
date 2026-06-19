@@ -1,0 +1,87 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Import Error Reports | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4 d-flex align-items-center justify-content-between">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Import Error Reporting</h2>
+    {% if lead_import %}
+    <p class="text-muted small">Showing errors for upload run: <strong class="text-info">{{ lead_import.file.name }}</strong> (Run ID: {{ lead_import.id }})</p>
+    {% else %}
+    <p class="text-muted small">Showing all logged bulk import parsing errors.</p>
+    {% endif %}
+  </div>
+  
+  <div>
+    <a href="?export=csv{% if import_id %}&import_id={{ import_id }}{% endif %}" class="btn btn-outline-danger btn-sm fw-bold">
+      <i class="bi bi-filetype-csv me-1"></i> Download Error Report (CSV)
+    </a>
+  </div>
+</div>
+
+<div class="m-card">
+  {% if page_obj %}
+  <div class="table-responsive">
+    <table class="table m-table table-hover">
+      <thead>
+        <tr>
+          <th>Import ID</th>
+          <th>Spreadsheet File</th>
+          <th>Row #</th>
+          <th>Error Message</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for err in page_obj %}
+        <tr>
+          <td><span class="badge bg-secondary">{{ err.lead_import.id }}</span></td>
+          <td class="text-info">{{ err.lead_import.file.name }}</td>
+          <td class="fw-bold text-warning">{{ err.row_number }}</td>
+          <td class="text-white fw-bold">{{ err.error_message }}</td>
+          <td class="small text-muted">{{ err.created_at|date:"Y-m-d H:i:s" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-4">
+    <ul class="pagination pagination-sm justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if import_id %}&import_id={{ import_id }}{% endif %}">&laquo; First</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if import_id %}&import_id={{ import_id }}{% endif %}">Previous</a>
+      </li>
+      {% endif %}
+
+      <li class="page-item disabled">
+        <span class="page-link bg-dark border-secondary text-white">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      </li>
+
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if import_id %}&import_id={{ import_id }}{% endif %}">Next</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if import_id %}&import_id={{ import_id }}{% endif %}">Last &raquo;</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-check-circle text-success"></i>
+    <h5>No import errors logged</h5>
+    <p class="small text-muted">Imports with zero failed rows will not generate error reports.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Lead Assignment | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">Lead Assignment Management</h2>
+  <p class="text-muted small">Distribute inquiries and leads among registered telecallers.</p>
+</div>
+
+<!-- Filters -->
+<div class="m-card mb-4">
+  <form method="GET" class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label text-muted small fw-bold">Search Candidate</label>
+      <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white form-control-sm" placeholder="Name or Mobile...">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Status</label>
+      <select name="status" class="form-select bg-dark border-secondary text-white form-select-sm">
+        <option value="">All Statuses</option>
+        {% for choice in status_choices %}
+        <option value="{{ choice.0 }}" {% if status == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Assignment Status</label>
+      <select name="assigned" class="form-select bg-dark border-secondary text-white form-select-sm">
+        <option value="">All Leads</option>
+        <option value="yes" {% if assigned == 'yes' %}selected{% endif %}>Assigned Only</option>
+        <option value="no" {% if assigned == 'no' %}selected{% endif %}>Unassigned Only</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-info text-white w-100 fw-bold btn-sm"><i class="bi bi-funnel"></i> Apply Filter</button>
+    </div>
+  </form>
+</div>
+
+<!-- Assignment Form -->
+<form method="POST" id="assignment-form">
+  {% csrf_token %}
+  
+  <div class="m-card">
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom border-secondary border-opacity-50">
+      <div class="d-flex align-items-center gap-3">
+        <select name="telecaller" class="form-select bg-dark border-secondary text-white form-select-sm" style="max-width: 250px;" required>
+          <option value="">-- Select Telecaller --</option>
+          {% for tc in telecallers %}
+          <option value="{{ tc.id }}">{{ tc.username }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-success btn-sm fw-bold"><i class="bi bi-person-plus"></i> Assign Selected</button>
+      </div>
+      
+      <div class="small text-muted">
+        <input type="checkbox" id="select-all" class="form-check-input me-1"> Select All on Page
+      </div>
+    </div>
+
+    {% if page_obj %}
+    <div class="table-responsive">
+      <table class="table m-table table-hover">
+        <thead>
+          <tr>
+            <th style="width: 40px;">Select</th>
+            <th>Lead / Candidate</th>
+            <th>Mobile</th>
+            <th>City</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Assigned Telecaller</th>
+            <th>Assigned Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in page_obj %}
+          <tr>
+            <td>
+              <input type="checkbox" name="leads" value="{{ lead.id }}" class="form-check-input lead-checkbox">
+            </td>
+            <td>
+              <a href="{% url 'lead_detail' lead.pk %}" class="text-info fw-bold text-decoration-none">
+                {{ lead.inquiry.full_name }}
+              </a>
+            </td>
+            <td>{{ lead.inquiry.mobile_number }}</td>
+            <td>{{ lead.inquiry.city }}</td>
+            <td><span class="badge bg-secondary">{{ lead.inquiry.source }}</span></td>
+            <td>
+              <span class="badge {% if lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% else %}bg-primary{% endif %}">
+                {{ lead.status }}
+              </span>
+            </td>
+            <td>
+              {% if lead.assigned_telecaller %}
+              <span class="text-success fw-bold"><i class="bi bi-person-fill"></i> {{ lead.assigned_telecaller.username }}</span>
+              {% else %}
+              <span class="text-muted italic">Unassigned</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4">
+      <ul class="pagination pagination-sm justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">&laquo; First</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Previous</a>
+        </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+          <span class="page-link bg-dark border-secondary text-white">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Next</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Last &raquo;</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-person-check text-muted"></i>
+      <h5>No matching leads found</h5>
+      <p class="small text-muted">Adjust filters or search parameters.</p>
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+<script>
+  document.getElementById('select-all').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.lead-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+  });
+</script>
+{% endblock %}

@@ -1,9 +1,16 @@
 {% extends 'management/base.html' %}
 
 {% block management_content %}
-<div class="mb-4">
-  <h2 class="fw-bold text-white mb-1">Active Leads</h2>
-  <p class="text-muted small">Monitor, track, and qualify converted inquiries</p>
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Active Leads</h2>
+    <p class="text-muted small">Monitor, track, and qualify converted inquiries</p>
+  </div>
+  <div>
+    <a href="{% url 'lead_bulk_action' %}" class="btn btn-outline-warning btn-sm fw-bold">
+      <i class="bi bi-list-check me-1"></i> Bulk Status Updates
+    </a>
+  </div>
 </div>
 
 <!-- Filters -->
@@ -98,8 +105,14 @@
                   <span class="badge bg-violet" style="background-color: #6f42c1;">Follow Up</span>
                 {% elif lead.status == 'Qualified' %}
                   <span class="badge bg-success">Qualified</span>
+                {% elif lead.status == 'Rejected' %}
+                  <span class="badge bg-danger">Rejected</span>
+                {% elif lead.status == 'Invalid Number' %}
+                  <span class="badge bg-secondary">Invalid Number</span>
+                {% elif lead.status == 'Admission Done' %}
+                  <span class="badge bg-success" style="background-color: #198754;">Admission Done</span>
                 {% else %}
-                  <span class="badge bg-dark">Closed</span>
+                  <span class="badge bg-dark">{{ lead.status }}</span>
                 {% endif %}
               </td>
               <td class="text-end">

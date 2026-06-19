@@ -15,8 +15,8 @@ class PortalAccessMiddleware:
         if path.startswith('/logout') or path.startswith('/login') or path.startswith('/static/') or path.startswith('/media/'):
             return self.get_response(request)
 
-        # Telecaller role isolation: can ONLY access /management/*
-        if role == 'telecaller':
+        # Telecaller and Counselor role isolation: can ONLY access /management/*
+        if role in ('telecaller', 'counselor'):
             if not path.startswith('/management/'):
                 return HttpResponseForbidden("Access Denied: You only have access to the Management Portal.")
 

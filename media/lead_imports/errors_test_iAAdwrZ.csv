@@ -1,0 +1,5 @@
+Name,Phone,Email,Company,City
+,9876599999,test@example.com,,Mumbai
+John Doe,1234567890,john@example.com,,Thane
+Priya Patel,TooShort,priya@example.com,,Pune
+Alice Key,9876543211,bad_email,,Pune

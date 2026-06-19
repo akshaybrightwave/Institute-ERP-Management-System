@@ -1,5 +1,5 @@
 from django import forms
-from .models import Inquiry, Lead, CallLog, FollowUp
+from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession
 
 class InquiryForm(forms.ModelForm):
     class Meta:
@@ -67,4 +67,58 @@ class FollowUpForm(forms.ModelForm):
             'next_followup_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'response': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Response details...'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+
+class CounselingSessionForm(forms.ModelForm):
+    class Meta:
+        model = CounselingSession
+        fields = ['lead', 'session_date', 'discussion_notes', 'career_guidance_notes', 'next_action']
+        widgets = {
+            'lead': forms.Select(attrs={'class': 'form-select'}),
+            'session_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'discussion_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Enter detailed discussion notes...'}),
+            'career_guidance_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Enter career guidance notes (optional)...'}),
+            'next_action': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Next call scheduled, Waiting for response...'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            if user.role == 'admin':
+                self.fields['lead'].queryset = Lead.objects.all()
+            else:
+                self.fields['lead'].queryset = Lead.objects.filter(assigned_counselor=user)
+
+
+class CounselorFollowUpForm(forms.ModelForm):
+    class Meta:
+        model = FollowUp
+        fields = ['lead', 'followup_date', 'next_followup_date', 'response', 'outcome', 'status']
+        widgets = {
+            'lead': forms.Select(attrs={'class': 'form-select'}),
+            'followup_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'next_followup_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'response': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Follow-up notes...'}),
+            'outcome': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Outcome...'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            if user.role == 'admin':
+                self.fields['lead'].queryset = Lead.objects.all()
+            else:
+                self.fields['lead'].queryset = Lead.objects.filter(assigned_counselor=user)
+
+
+class CounselorLeadStatusForm(forms.ModelForm):
+    class Meta:
+        model = Lead
+        fields = ['counselor_status']
+        widgets = {
+            'counselor_status': forms.Select(attrs={'class': 'form-select'}),
         }

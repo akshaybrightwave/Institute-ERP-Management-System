@@ -1,0 +1,332 @@
+{% extends 'management/base.html' %}
+
+{% block extra_style %}
+<style>
+  .timeline-badge {
+    background-color: #242448;
+    border: 1px solid #3d3d6a;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  .bg-dark-soft {
+    background-color: #16162a !important;
+  }
+  .border-dashed {
+    border-style: dashed !important;
+    border-color: #2a2a4a !important;
+  }
+  .fs-8 {
+    font-size: 0.75rem !important;
+  }
+  .tracking-wider {
+    letter-spacing: 0.05em;
+  }
+  .badge-overdue {
+    background-color: #dc3545;
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .table-danger-row {
+    background-color: rgba(220, 53, 69, 0.03) !important;
+    border-left: 3px solid #dc3545 !important;
+  }
+  .table-danger-row td {
+    background-color: rgba(220, 53, 69, 0.03) !important;
+  }
+  @media (min-width: 768px) {
+    .lead-info-right {
+      border-left: 1px solid #2a2a4a;
+      padding-left: 2rem;
+      justify-content: flex-end;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Lead Counseling Profile</h2>
+    <p class="text-muted small mb-0">Overview of counseling stages, sessions, and outcomes</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'counselor_lead_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Back</a>
+    <a href="{% url 'counselor_lead_status_update' lead.pk %}" class="btn btn-warning"><i class="bi bi-pencil-square me-1"></i> Update Status</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Side: Profile, Sessions and Follow-Ups -->
+  <div class="col-lg-8">
+    <!-- Profile Card -->
+    <div class="m-card mb-4">
+      <div class="row g-4">
+        <div class="col-md-7">
+          <h4 class="fw-bold text-white mb-1">{{ lead.inquiry.full_name }}</h4>
+          <p class="text-info small mb-3">
+            <i class="bi bi-person-circle me-1"></i>Assigned Counselor: {{ lead.assigned_counselor.username|default:"Unassigned" }}
+            {% if lead.assigned_telecaller %}
+              &middot; Telecaller: {{ lead.assigned_telecaller.username }}
+            {% endif %}
+          </p>
+          
+          <div class="row g-3 text-muted small">
+            <div class="col-md-6 d-flex align-items-center gap-2">
+              <i class="bi bi-telephone text-info"></i>
+              <span>{{ lead.inquiry.mobile_number }}</span>
+            </div>
+            <div class="col-md-6 d-flex align-items-center gap-2">
+              <i class="bi bi-envelope text-info"></i>
+              <span class="text-truncate" title="{{ lead.inquiry.email }}">{{ lead.inquiry.email|default:"No email provided" }}</span>
+            </div>
+            <div class="col-md-6 d-flex align-items-center gap-2">
+              <i class="bi bi-geo-alt text-info"></i>
+              <span>{{ lead.inquiry.city }}</span>
+            </div>
+            <div class="col-md-6 d-flex align-items-center gap-2">
+              <i class="bi bi-journal-bookmark text-info"></i>
+              <span>{{ lead.inquiry.course_interest }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-5 d-flex flex-row flex-wrap align-items-center gap-4 ps-md-4 lead-info-right">
+          <div class="text-md-end">
+            <div class="text-muted small mb-1">Counselor Status</div>
+            <span class="badge px-3 py-2 fs-7 {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info text-white{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if lead.counselor_status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif lead.counselor_status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
+              {{ lead.get_counselor_status_display }}
+            </span>
+          </div>
+
+          <div class="text-md-end">
+            <div class="text-muted small mb-1">Priority</div>
+            <span class="badge px-3 py-2 fs-7 {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              {{ lead.priority }}
+            </span>
+          </div>
+
+          <div class="text-md-end">
+            <div class="text-muted small mb-1">Next Follow-Up</div>
+            <span class="fw-bold fs-7 {% if lead.next_followup_date %}text-white{% else %}text-muted{% endif %}">
+              {{ lead.next_followup_date|date:"d M Y"|default:"Not Scheduled" }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Area -->
+      <div class="mt-4 pt-3 border-top border-secondary">
+        <label class="text-muted small fw-bold mb-2">Telecaller Notes / Background</label>
+        {% if lead.notes %}
+          <div class="text-white bg-dark-soft border border-secondary p-3 rounded small" style="border-color: #2a2a4a !important;">
+            {{ lead.notes|linebreaksbr }}
+          </div>
+        {% else %}
+          <div class="text-muted bg-dark-soft border border-secondary border-dashed p-3 rounded small text-center" style="background-color: #16162a; border-style: dashed !important; border-color: #2a2a4a !important;">
+            <i class="bi bi-journal-text me-2"></i>No background notes available.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Counseling Sessions -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-journal-check text-info me-2"></i>Counseling Sessions</h5>
+        <a href="{% url 'counselor_session_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-info text-white fw-bold"><i class="bi bi-plus-lg"></i> Record Session</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if sessions %}
+          <table class="table m-table align-middle border-0 mb-0">
+            <thead>
+              <tr class="text-uppercase tracking-wider text-muted fs-8">
+                <th style="width: 25%">Session Date</th>
+                <th style="width: 35%">Discussion Notes</th>
+                <th style="width: 25%">Career Guidance</th>
+                <th style="width: 15%">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for session in sessions %}
+                <tr>
+                  <td class="text-white small">{{ session.session_date|date:"d M Y, H:i" }}</td>
+                  <td class="small">{{ session.discussion_notes|linebreaksbr }}</td>
+                  <td class="small text-muted">{{ session.career_guidance_notes|default:"-" }}</td>
+                  <td>
+                    <a href="{% url 'counselor_session_detail' session.pk %}" class="btn btn-sm btn-outline-light"><i class="bi bi-eye"></i> View</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
+            <i class="bi bi-chat-quote text-muted fs-2 d-block mb-2"></i>
+            <p class="small text-muted mb-0">No counseling sessions recorded yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Follow Ups History -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-calendar-event text-warning me-2"></i>Scheduled Follow-ups</h5>
+        <a href="{% url 'counselor_followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-warning fw-bold"><i class="bi bi-plus-lg"></i> Schedule Follow-up</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if followups %}
+          <table class="table m-table align-middle border-0 mb-0">
+            <thead>
+              <tr class="text-uppercase tracking-wider text-muted fs-8">
+                <th style="width: 20%">Follow-up Date</th>
+                <th style="width: 15%">Status</th>
+                <th style="width: 25%">Outcome</th>
+                <th style="width: 25%">Response</th>
+                <th style="width: 15%" class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in followups %}
+                <tr class="{% if fp.is_overdue %}table-danger-row{% endif %}">
+                  <td class="fw-bold text-white">
+                    {{ fp.followup_date|date:"d M Y" }}
+                    {% if fp.is_overdue %}
+                      <span class="badge-overdue ms-1">Overdue</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge {% if fp.status == 'Completed' %}bg-success{% elif fp.status == 'Missed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                      {{ fp.status }}
+                    </span>
+                  </td>
+                  <td>{{ fp.outcome|default:"-" }}</td>
+                  <td class="small">{{ fp.response|default:"-" }}</td>
+                  <td class="text-end">
+                    {% if fp.status == 'Pending' %}
+                      <div class="d-inline-flex gap-1">
+                        <a href="{% url 'counselor_followup_complete' fp.pk %}" class="btn btn-sm btn-success text-white" title="Complete"><i class="bi bi-check-lg"></i></a>
+                        <a href="{% url 'counselor_followup_miss' fp.pk %}" class="btn btn-sm btn-danger text-white" title="Miss"><i class="bi bi-x-lg"></i></a>
+                        <a href="{% url 'counselor_followup_edit' fp.pk %}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                      </div>
+                    {% else %}
+                      <span class="text-muted small text-nowrap"><i class="bi bi-check-circle-fill text-success"></i> Finished</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
+            <i class="bi bi-calendar-x text-muted fs-2 d-block mb-2"></i>
+            <p class="small text-muted mb-0">No follow-ups scheduled.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side: Quick Actions, Notes & Activities -->
+  <div class="col-lg-4">
+    <!-- Quick Actions Panel -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge text-warning me-2"></i>Actions</h5>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'counselor_session_add' %}?lead_id={{ lead.pk }}" class="btn btn-primary w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-journal-plus"></i> Record Counseling Session
+        </a>
+        <a href="{% url 'counselor_followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-outline-warning w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-calendar-plus"></i> Schedule Follow-up
+        </a>
+        <a href="{% url 'counselor_lead_status_update' lead.pk %}" class="btn btn-outline-info w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-pencil-square"></i> Change Status
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Note Form -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-chat-left-dots text-info me-2"></i>Add Counselor Note</h5>
+      <form method="POST" action="{% url 'counselor_note_add' lead.pk %}">
+        {% csrf_token %}
+        <div class="mb-3">
+          <textarea name="note" class="form-control bg-dark border-secondary text-white small" rows="3" placeholder="Enter comments or notes about candidate conversation..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-info text-white btn-sm w-100 fw-bold">Post Note to Timeline</button>
+      </form>
+    </div>
+
+    <!-- Notes History Timeline (Quick View) -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-chat-left-text text-success me-2"></i>Notes Timeline</h5>
+      
+      {% if notes %}
+        <div class="list-group list-group-flush bg-transparent">
+          {% for note in notes|slice:":4" %}
+            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-bold text-info small">{{ note.created_by.username|default:"System" }}</span>
+                <span class="text-muted small" style="font-size: 0.7rem;">{{ note.created_at|date:"d M Y, H:i" }}</span>
+              </div>
+              <p class="small mb-0 text-muted" style="line-height: 1.4;">{{ note.note }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state py-3 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
+          <p class="small text-muted mb-0"><i class="bi bi-chat-left-text me-2"></i>No timeline notes logged yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Lead Activity Timeline (Quick View) -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-activity text-info me-2"></i>Activity History</h5>
+      
+      {% if activities %}
+        <div class="list-group list-group-flush bg-transparent">
+          {% for act in activities|slice:":5" %}
+            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-bold text-info small">{{ act.get_activity_type_display }}</span>
+                <span class="text-muted small ms-auto" style="font-size: 0.7rem;">{{ act.created_at|date:"d M H:i" }}</span>
+              </div>
+              <p class="small mb-0 text-muted" style="line-height: 1.4;">{{ act.description }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state py-3 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
+          <p class="small text-muted mb-0"><i class="bi bi-activity me-2"></i>No activities logged yet.</p>
+        </div>
+      {% endif %}
+    </div>
+ 
+    <!-- Inquiry Origin Details -->
+    <div class="m-card">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-info-circle text-info me-2"></i>Inquiry Background</h5>
+      <div class="d-flex flex-column gap-3">
+        <div>
+          <div class="text-muted small mb-1">Inquiry Origin</div>
+          <span class="badge bg-secondary">{{ lead.inquiry.source }}</span>
+        </div>
+        <div>
+          <div class="text-muted small mb-1">Creation Date</div>
+          <span class="text-white small">{{ lead.created_at|date:"d M Y, H:i" }}</span>
+        </div>
+        <div>
+          <div class="text-muted small mb-1">Last Update Date</div>
+          <span class="text-white small">{{ lead.updated_at|date:"d M Y, H:i" }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

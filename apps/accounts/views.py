@@ -113,6 +113,8 @@ def user_login(request):
                 return redirect('student_dashboard')
             elif user.role == 'telecaller':
                 return redirect('management_dashboard')
+            elif user.role == 'counselor':
+                return redirect('counselor_dashboard')
             else:
                 return redirect('login')
         else:

@@ -1,0 +1,81 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Import History Audit | Examly{% endblock %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Import History Log</h2>
+    <p class="text-muted small mb-0">Audit history of bulk inquiry spreadsheets uploaded to the portal.</p>
+  </div>
+  <div>
+    <a href="{% url 'inquiry_import' %}" class="btn btn-info text-white fw-bold"><i class="bi bi-plus-lg"></i> Import New File</a>
+  </div>
+</div>
+
+<div class="m-card">
+  <div class="table-responsive">
+    {% if page_obj %}
+      <table class="table m-table align-middle">
+        <thead>
+          <tr>
+            <th>Upload Date</th>
+            <th>Uploaded By</th>
+            <th>File Name</th>
+            <th class="text-center">Total Records</th>
+            <th class="text-center">Imported</th>
+            <th class="text-center">Duplicates</th>
+            <th class="text-center">Failed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for imp in page_obj %}
+            <tr>
+              <td class="text-white fw-bold">{{ imp.created_at|date:"d M Y, H:i" }}</td>
+              <td class="small">{{ imp.uploaded_by.username|default:"System" }}</td>
+              <td class="text-info small">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+                {{ imp.file.name|cut:"lead_imports/" }}
+              </td>
+              <td class="text-center fw-bold text-white">{{ imp.total_records }}</td>
+              <td class="text-center"><span class="badge bg-success">{{ imp.successful_records }}</span></td>
+              <td class="text-center"><span class="badge bg-warning text-dark">{{ imp.duplicate_records }}</span></td>
+              <td class="text-center"><span class="badge bg-danger">{{ imp.failed_records }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-file-earmark-x"></i>
+        <h4>No Imports Logged</h4>
+        <p class="text-muted">No bulk inquiry uploads have been recorded yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

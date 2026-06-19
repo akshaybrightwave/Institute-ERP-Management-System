@@ -1,0 +1,83 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Counseling Sessions | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Counseling Sessions</h2>
+    <p class="text-muted small">Logs of all recorded counseling and guidance discussions</p>
+  </div>
+  <div>
+    <a href="{% url 'counselor_session_add' %}" class="btn btn-info text-white fw-bold btn-sm">
+      <i class="bi bi-journal-plus me-1"></i> Record Counseling Session
+    </a>
+  </div>
+</div>
+
+<!-- Sessions Table -->
+<div class="m-card">
+  <div class="table-responsive">
+    {% if page_obj %}
+      <table class="table m-table align-middle">
+        <thead>
+          <tr>
+            <th>Candidate Name</th>
+            <th>Counselor</th>
+            <th>Session Date</th>
+            <th>Discussion Notes Summary</th>
+            <th>Next Action Plan</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for session in page_obj %}
+            <tr>
+              <td class="fw-bold text-white">{{ session.lead.inquiry.full_name }}</td>
+              <td>{{ session.counselor.username }}</td>
+              <td>{{ session.session_date|date:"d M Y, H:i" }}</td>
+              <td class="small text-truncate" style="max-width: 250px;" title="{{ session.discussion_notes }}">{{ session.discussion_notes }}</td>
+              <td>{{ session.next_action|default:"-" }}</td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-1">
+                  <a href="{% url 'counselor_session_detail' session.pk %}" class="btn btn-sm btn-outline-info" title="View details"><i class="bi bi-eye"></i> View</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-journal-text"></i>
+        <h4>No Counseling Sessions</h4>
+        <p class="text-muted">You have not recorded any counseling sessions yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

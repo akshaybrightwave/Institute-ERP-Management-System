@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     # Dashboard
+    path('', views.management_super_admin_dashboard, name='management_super_admin_dashboard'),
     path('dashboard/', views.management_dashboard, name='management_dashboard'),
 
     # Inquiry CRUD
@@ -27,4 +28,39 @@ urlpatterns = [
     path('followups/add/', views.followup_add, name='followup_add'),
     path('followups/<int:pk>/edit/', views.followup_edit, name='followup_edit'),
     path('followups/<int:pk>/complete/', views.followup_complete, name='followup_complete'),
+
+    # Bulk Inquiry Import
+    path('import/', views.inquiry_import, name='inquiry_import'),
+    path('import/history/', views.import_history, name='import_history'),
+    path('import/sample-csv/', views.download_sample_csv, name='download_sample_csv'),
+    path('import/sample-excel/', views.download_sample_excel, name='download_sample_excel'),
+
+    # Lead Notes
+    path('leads/<int:pk>/notes/', views.lead_notes_list, name='lead_notes_list'),
+    path('leads/<int:pk>/notes/add/', views.lead_note_add, name='lead_note_add'),
+
+    # Phase 11.3 Enhancements
+    path('activities/', views.activities_list, name='activities_list'),
+    path('import/errors/', views.import_errors, name='import_errors'),
+    path('leads/assign/', views.lead_assign, name='lead_assign'),
+    path('leads/bulk-action/', views.lead_bulk_action, name='lead_bulk_action'),
+    path('reports/', views.reports_dashboard, name='reports_dashboard'),
+    path('reports/telecaller/', views.telecaller_report, name='telecaller_report'),
+
+    # Phase 11.2 Counselor Operations
+    path('counselor/dashboard/', views.counselor_dashboard, name='counselor_dashboard'),
+    path('counselor/leads/', views.counselor_lead_list, name='counselor_lead_list'),
+    path('counselor/leads/<int:pk>/', views.counselor_lead_detail, name='counselor_lead_detail'),
+    path('counselor/leads/<int:pk>/status/', views.counselor_lead_status_update, name='counselor_lead_status_update'),
+    path('counselor/sessions/', views.counselor_session_list, name='counselor_session_list'),
+    path('counselor/sessions/add/', views.counselor_session_add, name='counselor_session_add'),
+    path('counselor/sessions/<int:pk>/', views.counselor_session_detail, name='counselor_session_detail'),
+    path('counselor/followups/', views.counselor_followup_list, name='counselor_followup_list'),
+    path('counselor/followups/add/', views.counselor_followup_add, name='counselor_followup_add'),
+    path('counselor/followups/<int:pk>/edit/', views.counselor_followup_edit, name='counselor_followup_edit'),
+    path('counselor/followups/<int:pk>/complete/', views.counselor_followup_complete, name='counselor_followup_complete'),
+    path('counselor/followups/<int:pk>/miss/', views.counselor_followup_miss, name='counselor_followup_miss'),
+    path('counselor/notes/add/<int:lead_pk>/', views.counselor_note_add, name='counselor_note_add'),
+    path('counselor/reports/', views.counselor_reports_dashboard, name='counselor_reports_dashboard'),
+    path('leads/assign-counselor/', views.lead_assign_counselor, name='lead_assign_counselor'),
 ]

@@ -1,0 +1,5 @@
+full_name,mobile_number,email,city,course_interest,source,remarks
+Bob CSV,9876500001,bob@csv.com,Thane,Java,Website,CSV remark
+Duplicate Name,1234567890,dup@csv.com,Mumbai,Python,Other,Duplicate mobile
+Invalid Row,,empty@csv.com,Pune,Java,Other,
+Bad Mobile,Too Short,invalid@csv.com,Pune,Java,Other,

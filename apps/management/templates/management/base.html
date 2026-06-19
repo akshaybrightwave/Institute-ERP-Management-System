@@ -103,22 +103,80 @@
 {% block content %}
 <aside class="management-sidebar">
   <div class="sidebar-section">Management Portal</div>
+  {% if request.user.role == 'admin' %}
+  <a href="{% url 'management_super_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
+    <i class="bi bi-speedometer2"></i> Dashboard
+  </a>
+  {% elif request.user.role == 'telecaller' %}
   <a href="{% url 'management_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}">
     <i class="bi bi-speedometer2"></i> Dashboard
   </a>
+  {% elif request.user.role == 'counselor' %}
+  <a href="{% url 'counselor_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
+    <i class="bi bi-speedometer2"></i> Dashboard
+  </a>
+  {% endif %}
+
+  {% if request.user.role == 'admin' or request.user.role == 'telecaller' %}
   <div class="sidebar-section">Telecaller Module</div>
-  <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+  <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_list' or request.resolver_match.url_name == 'inquiry_detail' or request.resolver_match.url_name == 'inquiry_add' or request.resolver_match.url_name == 'inquiry_edit' %}active{% endif %}">
     <i class="bi bi-person-plus"></i> Inquiries
   </a>
-  <a href="{% url 'lead_list' %}" class="sidebar-item {% if 'lead' in request.resolver_match.url_name %}active{% endif %}">
+  <a href="{% url 'lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_edit' %}active{% endif %}">
     <i class="bi bi-funnel"></i> Leads
   </a>
+  {% if request.user.role == 'admin' %}
+  <a href="{% url 'lead_assign' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign' %}active{% endif %}">
+    <i class="bi bi-person-check"></i> Lead Assignment
+  </a>
+  {% endif %}
   <a href="{% url 'call_log_list' %}" class="sidebar-item {% if 'call_log' in request.resolver_match.url_name %}active{% endif %}">
     <i class="bi bi-telephone-outbound"></i> Call Logs
   </a>
-  <a href="{% url 'followup_list' %}" class="sidebar-item {% if 'followup' in request.resolver_match.url_name %}active{% endif %}">
+  <a href="{% url 'followup_list' %}" class="sidebar-item {% if 'followup' in request.resolver_match.url_name and 'counselor' not in request.resolver_match.url_name %}active{% endif %}">
     <i class="bi bi-clock-history"></i> Follow-Ups
   </a>
+  <a href="{% url 'inquiry_import' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_import' %}active{% endif %}">
+    <i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import
+  </a>
+  <a href="{% url 'import_history' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_history' %}active{% endif %}">
+    <i class="bi bi-journal-text"></i> Import History
+  </a>
+  <a href="{% url 'import_errors' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_errors' %}active{% endif %}">
+    <i class="bi bi-exclamation-triangle"></i> Import Errors
+  </a>
+  <a href="{% url 'activities_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'activities_list' %}active{% endif %}">
+    <i class="bi bi-activity"></i> Lead Activities
+  </a>
+  <div class="sidebar-section">Reports & Analytics</div>
+  <a href="{% url 'reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
+    <i class="bi bi-bar-chart-line"></i> Source Analytics
+  </a>
+  <a href="{% url 'telecaller_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'telecaller_report' %}active{% endif %}">
+    <i class="bi bi-file-earmark-bar-graph"></i> Performance Reports
+  </a>
+  {% endif %}
+
+  {% if request.user.role == 'admin' or request.user.role == 'counselor' %}
+  <div class="sidebar-section">Counselor Module</div>
+  <a href="{% url 'counselor_lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
+    <i class="bi bi-people-fill"></i> Assigned Leads
+  </a>
+  {% if request.user.role == 'admin' %}
+  <a href="{% url 'lead_assign_counselor' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign_counselor' %}active{% endif %}">
+    <i class="bi bi-person-check-fill"></i> Counselor Assignment
+  </a>
+  {% endif %}
+  <a href="{% url 'counselor_session_list' %}" class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-journal-check"></i> Counseling Sessions
+  </a>
+  <a href="{% url 'counselor_followup_list' %}" class="sidebar-item {% if 'counselor_followup' in request.resolver_match.url_name and 'counselor_followup_list' in request.resolver_match.url_name %}active{% endif %}">
+    <i class="bi bi-calendar-event"></i> Follow-Ups
+  </a>
+  <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
+    <i class="bi bi-bar-chart-steps"></i> Counselor Reports
+  </a>
+  {% endif %}
 </aside>
 
 <div class="management-content">

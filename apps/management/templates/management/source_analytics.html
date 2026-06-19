@@ -1,0 +1,135 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Lead Source Analytics | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">Lead Source Analytics</h2>
+  <p class="text-muted small">Evaluate performance and quality across marketing channels.</p>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Chart: Distribution -->
+  <div class="col-md-6">
+    <div class="m-card">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-pie-chart text-info me-2"></i>Lead Source Distribution</h5>
+      <div style="position: relative; height:250px; width:100%;">
+        <canvas id="distributionChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart: Conversion -->
+  <div class="col-md-6">
+    <div class="m-card">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-bar-chart text-success me-2"></i>Conversion Rate By Source (%)</h5>
+      <div style="position: relative; height:250px; width:100%;">
+        <canvas id="conversionChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Source Table -->
+<div class="m-card">
+  <h5 class="fw-bold text-white mb-3"><i class="bi bi-grid-3x3-gap text-warning me-2"></i>Channel Analytics Performance</h5>
+  <div class="table-responsive">
+    <table class="table m-table table-hover">
+      <thead>
+        <tr>
+          <th>Source Channel</th>
+          <th>Total Leads</th>
+          <th>Qualified Leads</th>
+          <th>Rejected Leads</th>
+          <th>Conversion Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stat in source_stats %}
+        <tr>
+          <td class="fw-bold text-info">{{ stat.source }}</td>
+          <td>{{ stat.total_leads }}</td>
+          <td class="text-success">{{ stat.qualified_leads }}</td>
+          <td class="text-danger">{{ stat.rejected_leads }}</td>
+          <td class="fw-bold text-warning">{{ stat.conversion_rate }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Include Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Lead Source Distribution
+  const distCtx = document.getElementById('distributionChart').getContext('2d');
+  const distChart = new Chart(distCtx, {
+    type: 'doughnut',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [{
+        data: {{ source_distribution_data|safe }},
+        backgroundColor: [
+          '#0dcaf0',
+          '#198754',
+          '#ffc107',
+          '#fd7e14',
+          '#20c997',
+          '#0d6efd',
+          '#6c757d'
+        ],
+        borderWidth: 1,
+        borderColor: '#111120'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            color: '#c0c0e0'
+          }
+        }
+      }
+    }
+  });
+
+  // Conversion Rates By Source
+  const convCtx = document.getElementById('conversionChart').getContext('2d');
+  const convChart = new Chart(convCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ chart_labels|safe }},
+      datasets: [{
+        label: 'Conversion Rate %',
+        data: {{ conversion_by_source_data|safe }},
+        backgroundColor: '#198754',
+        borderWidth: 0,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { color: '#c0c0e0' },
+          grid: { color: '#1e1e35' }
+        },
+        x: {
+          ticks: { color: '#c0c0e0' },
+          grid: { display: false }
+        }
+      },
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+</script>
+{% endblock %}

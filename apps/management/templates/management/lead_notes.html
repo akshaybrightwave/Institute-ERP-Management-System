@@ -1,0 +1,137 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Lead Notes Timeline | Examly{% endblock %}
+
+{% block extra_style %}
+<style>
+  /* Timeline Layout */
+  .timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 2rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 7px;
+    width: 2px;
+    background: #2b2b4d;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+  .timeline-marker {
+    position: absolute;
+    top: 5px;
+    left: calc(-2rem + 2px);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #0dcaf0;
+    border: 2px solid #0d0d1a;
+  }
+  .timeline-item.latest .timeline-marker {
+    background: #198754;
+    box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
+  }
+  .timeline-card {
+    background: #14142b;
+    border: 1px solid #222248;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #c0c0e0;
+  }
+  .timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #222240;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .timeline-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+  }
+  .timeline-author {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #bdbdff;
+  }
+  .timeline-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    white-space: pre-line;
+    color: #f8f8ff;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Lead Notes Timeline</h2>
+    <p class="text-muted small mb-0">Append-only timeline profile history for <strong class="text-white">{{ lead.inquiry.full_name }}</strong></p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Lead</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Notes Timeline -->
+  <div class="col-lg-8">
+    <div class="m-card">
+      <h5 class="fw-bold text-white mb-4"><i class="bi bi-chat-left-text text-info me-2"></i>Communication History</h5>
+
+      {% if notes %}
+        <div class="timeline">
+          {% for note in notes %}
+            <div class="timeline-item {% if forloop.last %}latest{% endif %}">
+              <div class="timeline-marker"></div>
+              <div class="timeline-card">
+                <div class="timeline-header">
+                  <span class="timeline-author"><i class="bi bi-person-circle me-1"></i>{{ note.created_by.username|default:"System" }}</span>
+                  <span class="timeline-time"><i class="bi bi-clock me-1"></i>{{ note.created_at|date:"d M Y, H:i" }}</span>
+                </div>
+                <div class="timeline-text">{{ note.note }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state py-5">
+          <i class="bi bi-chat-left-quote"></i>
+          <h4>No Timeline Notes</h4>
+          <p class="text-muted">No communication records or notes have been logged for this lead yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Add Note Sidebar Form -->
+  <div class="col-lg-4">
+    <div class="m-card">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-plus-circle text-success me-2"></i>Add Timeline Note</h5>
+      
+      <form action="{% url 'lead_note_add' lead.pk %}" method="POST" class="needs-validation" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label text-muted small fw-bold">Note Description</label>
+          <textarea name="note" class="form-control bg-dark border-secondary text-white" rows="5" placeholder="Write follow-up summary or student details here..." required></textarea>
+          <div class="form-text text-muted small mt-2">
+            Notes are append-only. Once submitted, they cannot be edited or deleted to preserve audit records.
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-success w-100 fw-bold py-2 mt-2">
+          <i class="bi bi-check-lg me-1"></i> Log Timeline Note
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

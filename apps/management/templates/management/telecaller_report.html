@@ -1,0 +1,96 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Telecaller Performance Reports | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">Telecaller Performance Reports</h2>
+  <p class="text-muted small">Evaluate telecaller productivity, logs, and conversions.</p>
+</div>
+
+<!-- Filters & Exports -->
+<div class="m-card mb-4">
+  <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
+    <!-- Preset Filter -->
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Date Preset</label>
+      <select name="date_filter" id="date-filter-select" class="form-select bg-dark border-secondary text-white form-select-sm">
+        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+        <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
+        <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
+        <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
+      </select>
+    </div>
+
+    <!-- Custom Start Date -->
+    <div class="col-md-3 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+      <label class="form-label text-muted small fw-bold">From Date</label>
+      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
+    </div>
+
+    <!-- Custom End Date -->
+    <div class="col-md-3 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+      <label class="form-label text-muted small fw-bold">To Date</label>
+      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
+    </div>
+
+    <!-- Submit Button -->
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-info text-white w-100 fw-bold btn-sm"><i class="bi bi-funnel"></i> Apply Filter</button>
+    </div>
+
+    <!-- Export Options -->
+    <div class="col-md-4 d-flex gap-2">
+      <button type="submit" name="export" value="csv" class="btn btn-outline-info w-50 fw-bold btn-sm"><i class="bi bi-filetype-csv me-1"></i> Export CSV</button>
+      <button type="submit" name="export" value="excel" class="btn btn-outline-success w-50 fw-bold btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel</button>
+    </div>
+  </form>
+</div>
+
+<!-- Performance Report Data -->
+<div class="m-card">
+  <div class="table-responsive">
+    <table class="table m-table table-hover">
+      <thead>
+        <tr>
+          <th>Telecaller Username</th>
+          <th>Total Inquiries</th>
+          <th>Total Leads</th>
+          <th>Calls Made</th>
+          <th>Follow-Ups Completed</th>
+          <th>Qualified Leads</th>
+          <th>Rejected Leads</th>
+          <th>Pending Follow-Ups</th>
+          <th>Conversion %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report_data %}
+        <tr>
+          <td class="fw-bold text-info"><i class="bi bi-person-fill me-1"></i>{{ row.telecaller }}</td>
+          <td>{{ row.total_inquiries }}</td>
+          <td>{{ row.total_leads }}</td>
+          <td>{{ row.calls_made }}</td>
+          <td class="text-success">{{ row.followups_completed }}</td>
+          <td class="text-success fw-bold">{{ row.qualified_leads }}</td>
+          <td class="text-danger">{{ row.rejected_leads }}</td>
+          <td class="text-warning">{{ row.pending_followups }}</td>
+          <td class="fw-bold text-warning">{{ row.conversion_pct }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.getElementById('date-filter-select').addEventListener('change', function() {
+    const customGroups = document.querySelectorAll('.custom-date-group');
+    if (this.value === 'custom') {
+      customGroups.forEach(el => el.style.display = 'block');
+    } else {
+      customGroups.forEach(el => el.style.display = 'none');
+    }
+  });
+</script>
+{% endblock %}

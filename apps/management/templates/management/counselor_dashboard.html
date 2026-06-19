@@ -1,0 +1,455 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Counselor Dashboard | Examly{% endblock %}
+
+{% block extra_style %}
+<style>
+  .stat-card {
+    display: block !important;
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+    color: #fff !important;
+    text-decoration: none !important;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .stat-card:hover {
+    color: #fff !important;
+    text-decoration: none !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .stat-card-body {
+    padding: 1.15rem;
+    position: relative;
+  }
+  .stat-card-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
+    margin-bottom: 0.4rem;
+  }
+  .stat-card-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stat-card-icon {
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3rem;
+    opacity: 0.15;
+  }
+  .stat-card-footer {
+    padding: 0.4rem 1.15rem;
+    background: rgba(0,0,0,0.2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.85);
+  }
+  .stat-card:hover .stat-card-footer {
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+  }
+
+  .bg-blue     { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+  .bg-teal     { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); }
+  .bg-indigo   { background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%); }
+  .bg-orange   { background: linear-gradient(135deg, #7c2d12 0%, #ea580c 100%); }
+  .bg-red      { background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%); }
+  .bg-green    { background: linear-gradient(135deg, #065f46 0%, #10b981 100%); }
+  .bg-purple   { background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%); }
+  .bg-pink     { background: linear-gradient(135deg, #9d174d 0%, #ec4899 100%); }
+  .bg-cyan     { background: linear-gradient(135deg, #155e75 0%, #06b6d4 100%); }
+  .bg-violet   { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%); }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: #14142b;
+    border: 1px solid #242448;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+  }
+  .action-btn:hover {
+    transform: translateY(-2px);
+    border-color: #0dcaf0;
+    color: #fff;
+    background: #1e1e3d;
+  }
+  .action-btn i {
+    font-size: 1.2rem;
+    color: #0dcaf0;
+  }
+
+  .badge-overdue {
+    background-color: #ef4444;
+    color: white;
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0.25em 0.5em;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Counselor Dashboard</h2>
+    <p class="text-muted small mb-0">Welcome back, {{ request.user.username }} &middot; Role: Counselor</p>
+  </div>
+  <div>
+    <span class="badge bg-dark border border-secondary py-2 px-3">
+      <i class="bi bi-calendar3 me-1"></i> Today: {% now "d M Y" %}
+    </span>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+  <!-- Total Assigned -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}" class="stat-card bg-blue d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Assigned Leads</div>
+        <div class="stat-card-value">{{ total_assigned }}</div>
+        <div class="stat-card-icon"><i class="bi bi-people-fill"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-eye"></i> View all
+      </div>
+    </a>
+  </div>
+
+  <!-- New Assigned -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}?status=NEW" class="stat-card bg-teal d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">New Leads</div>
+        <div class="stat-card-value">{{ new_leads }}</div>
+        <div class="stat-card-icon"><i class="bi bi-person-plus-fill"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View new
+      </div>
+    </a>
+  </div>
+
+  <!-- Counseling Done -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}?status=COUNSELING_DONE" class="stat-card bg-indigo d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Counseling Done</div>
+        <div class="stat-card-value">{{ counseling_done }}</div>
+        <div class="stat-card-icon"><i class="bi bi-journal-check"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View done
+      </div>
+    </a>
+  </div>
+
+  <!-- Converted -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}?status=CONVERTED" class="stat-card bg-green d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Converted</div>
+        <div class="stat-card-value">{{ converted_leads }}</div>
+        <div class="stat-card-icon"><i class="bi bi-check-circle-fill"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View converted
+      </div>
+    </a>
+  </div>
+
+  <!-- Lost -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}?status=LOST" class="stat-card bg-red d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Lost</div>
+        <div class="stat-card-value">{{ lost_leads }}</div>
+        <div class="stat-card-icon"><i class="bi bi-x-circle-fill"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View lost
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
+  <!-- Contacted -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}?status=CONTACTED" class="stat-card bg-cyan d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Contacted</div>
+        <div class="stat-card-value">{{ contacted_leads }}</div>
+        <div class="stat-card-icon"><i class="bi bi-telephone-fill"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View contacted
+      </div>
+    </a>
+  </div>
+
+  <!-- Follow-Up Required -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}?status=FOLLOW_UP_REQUIRED" class="stat-card bg-violet d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Follow-up Req.</div>
+        <div class="stat-card-value">{{ followup_req }}</div>
+        <div class="stat-card-icon"><i class="bi bi-hourglass-split"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View follow-up
+      </div>
+    </a>
+  </div>
+
+  <!-- Interested -->
+  <div class="col">
+    <a href="{% url 'counselor_lead_list' %}?status=INTERESTED" class="stat-card bg-purple d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Interested</div>
+        <div class="stat-card-value">{{ interested_leads }}</div>
+        <div class="stat-card-icon"><i class="bi bi-heart-fill"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View interested
+      </div>
+    </a>
+  </div>
+
+  <!-- Overdue Follow-ups -->
+  <div class="col">
+    <a href="{% url 'counselor_followup_list' %}?status=Pending" class="stat-card bg-pink d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Overdue Follow-ups</div>
+        <div class="stat-card-value">{{ overdue_followups }}</div>
+        <div class="stat-card-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-exclamation-circle"></i> Handle overdue
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Content Grid -->
+<div class="row g-4 mb-4">
+  <!-- Left Side: Data Tables -->
+  <div class="col-lg-8">
+    <!-- Recent Leads -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-funnel-fill me-2 text-info"></i>Recent Assigned Leads</h5>
+        <a href="{% url 'counselor_lead_list' %}" class="btn btn-sm btn-outline-info">View All</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if recent_leads %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Lead Name</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Next Follow-Up</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for lead in recent_leads %}
+                <tr>
+                  <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
+                  <td>
+                    <span class="badge {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info text-white{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if lead.counselor_status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif lead.counselor_status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
+                      {{ lead.get_counselor_status_display }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                      {{ lead.priority }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if lead.next_followup_date %}
+                      {{ lead.next_followup_date|date:"d M Y" }}
+                    {% else %}
+                      <span class="text-muted small">Not Scheduled</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i class="bi bi-eye"></i> Profile</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-4">
+            <i class="bi bi-funnel"></i>
+            <p>No leads assigned to you yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Today's Follow-Ups -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-calendar-check text-success me-2"></i>Today's Follow-Ups</h5>
+        <a href="{% url 'counselor_followup_list' %}?status=Pending" class="btn btn-sm btn-outline-success">View All</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if today_followups_list %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Scheduled Date</th>
+                <th>Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in today_followups_list %}
+                <tr>
+                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
+                  <td><span class="badge bg-success">Today</span></td>
+                  <td class="small">{{ fp.response|default:"-" }}</td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="{% url 'counselor_lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i class="bi bi-eye"></i></a>
+                      <a href="{% url 'counselor_followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
+                      <a href="{% url 'counselor_followup_miss' fp.pk %}" class="btn btn-sm btn-danger" title="Mark Missed"><i class="bi bi-x-lg"></i> Miss</a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-3">
+            <i class="bi bi-calendar2-check text-muted"></i>
+            <p class="small text-muted mb-0">No follow-ups due today.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Overdue Follow-Ups -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Overdue Follow-Ups</h5>
+        <a href="{% url 'counselor_followup_list' %}?status=Pending" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if overdue_followups_list %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Follow-Up Date</th>
+                <th>Days Overdue</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in overdue_followups_list %}
+                <tr>
+                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
+                  <td>
+                    {{ fp.followup_date|date:"d M Y" }}
+                    <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">⚠ Overdue</span>
+                  </td>
+                  <td class="text-danger fw-bold">{{ fp.days_overdue }} days</td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="{% url 'counselor_lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i class="bi bi-eye"></i></a>
+                      <a href="{% url 'counselor_followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
+                      <a href="{% url 'counselor_followup_miss' fp.pk %}" class="btn btn-sm btn-danger" title="Mark Missed"><i class="bi bi-x-lg"></i> Miss</a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-3">
+            <i class="bi bi-clipboard-check text-muted"></i>
+            <p class="small text-muted mb-0">No overdue follow-ups.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar: Quick Actions & Recent Activities -->
+  <div class="col-lg-4">
+    <!-- Quick Actions -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'counselor_session_add' %}" class="action-btn">
+          <i class="bi bi-journal-plus"></i> Record Counseling Session
+        </a>
+        <a href="{% url 'counselor_followup_add' %}" class="action-btn">
+          <i class="bi bi-calendar-plus"></i> Schedule Follow-Up
+        </a>
+        <a href="{% url 'counselor_reports_dashboard' %}" class="action-btn">
+          <i class="bi bi-bar-chart-steps"></i> View Reports
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Activities Timeline -->
+    <div class="m-card">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-activity text-info me-2"></i>Recent Activities</h5>
+      </div>
+      
+      {% if recent_activities %}
+        <div class="list-group list-group-flush bg-transparent">
+          {% for act in recent_activities %}
+            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-bold text-info small">{{ act.get_activity_type_display }}</span>
+                <span class="text-muted small" style="font-size: 0.7rem;">{{ act.created_at|date:"d M, H:i" }}</span>
+              </div>
+              <p class="small mb-0 text-muted">{{ act.description }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state py-3">
+          <p class="small text-muted mb-0">No activities logged yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -107,7 +107,7 @@
                 ERP
               </a>
               <a class="portal-switcher-link {% if 'management' in request.path %}active{% endif %}"
-                href="{% url 'management_dashboard' %}">
+                href="{% url 'management_super_admin_dashboard' %}">
                 <i class="bi bi-headset"></i>
                 Management
               </a>
@@ -129,9 +129,7 @@
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <span class="role-badge">
               <i class="bi bi-person-circle"></i>
-              {% if request.user.role == 'admin' %}Super Admin{% elif request.user.role == 'center' %}Center{% elif
-              request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'telecaller' %}Telecaller{% else
-              %}Student{% endif %}
+              {% if request.user.role == 'admin' %}Super Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'telecaller' %}Telecaller{% else %}Student{% endif %}
               &middot; {{ request.user.username }}
             </span>
           </li>

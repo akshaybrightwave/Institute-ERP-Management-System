@@ -1,0 +1,122 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Bulk Actions | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">Bulk Lead Actions</h2>
+  <p class="text-muted small">Update the status of multiple leads at once.</p>
+</div>
+
+<!-- Bulk Action Form -->
+<form method="POST" action="{% url 'lead_bulk_action' %}" id="bulk-action-form">
+  {% csrf_token %}
+  
+  <div class="m-card">
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom border-secondary border-opacity-50">
+      <div class="d-flex align-items-center gap-3">
+        <select name="action" class="form-select bg-dark border-secondary text-white form-select-sm" style="max-width: 250px;" required>
+          <option value="">-- Choose Status Action --</option>
+          <option value="Mark Contacted">Mark Contacted</option>
+          <option value="Mark Interested">Mark Interested</option>
+          <option value="Mark Follow Up">Mark Follow Up</option>
+          <option value="Mark Qualified">Mark Qualified</option>
+          <option value="Mark Rejected">Mark Rejected</option>
+          <option value="Mark Invalid Number">Mark Invalid Number</option>
+        </select>
+        <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold"><i class="bi bi-play-fill"></i> Apply Action</button>
+      </div>
+      
+      <div class="small text-muted">
+        <input type="checkbox" id="select-all" class="form-check-input me-1"> Select All Leads
+      </div>
+    </div>
+
+    {% if page_obj %}
+    <div class="table-responsive">
+      <table class="table m-table table-hover">
+        <thead>
+          <tr>
+            <th style="width: 40px;">Select</th>
+            <th>Lead / Candidate</th>
+            <th>Mobile</th>
+            <th>City</th>
+            <th>Source</th>
+            <th>Priority</th>
+            <th>Current Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lead in page_obj %}
+          <tr>
+            <td>
+              <input type="checkbox" name="leads" value="{{ lead.id }}" class="form-check-input lead-checkbox">
+            </td>
+            <td>
+              <a href="{% url 'lead_detail' lead.pk %}" class="text-info fw-bold text-decoration-none">
+                {{ lead.inquiry.full_name }}
+              </a>
+            </td>
+            <td>{{ lead.inquiry.mobile_number }}</td>
+            <td>{{ lead.inquiry.city }}</td>
+            <td><span class="badge bg-secondary">{{ lead.inquiry.source }}</span></td>
+            <td>
+              <span class="badge {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ lead.priority }}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-primary">{{ lead.status }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4">
+      <ul class="pagination pagination-sm justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page=1">&laquo; First</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+          <span class="page-link bg-dark border-secondary text-white">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}">Next</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-funnel text-muted"></i>
+      <h5>No leads available for bulk actions</h5>
+      <p class="small text-muted">Please assign inquiries to yourself first.</p>
+    </div>
+    {% endif %}
+  </div>
+</form>
+
+<script>
+  document.getElementById('select-all').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.lead-checkbox');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+  });
+</script>
+{% endblock %}

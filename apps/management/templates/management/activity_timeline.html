@@ -1,0 +1,111 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Lead Activities | Examly{% endblock %}
+
+{% block extra_style %}
+<style>
+  .timeline-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+  .timeline-LEAD_CREATED { background-color: #0dcaf0; color: #000; }
+  .timeline-STATUS_CHANGED { background-color: #ffc107; color: #000; }
+  .timeline-CALL_LOG_ADDED { background-color: #198754; color: #fff; }
+  .timeline-FOLLOWUP_CREATED { background-color: #6f42c1; color: #fff; }
+  .timeline-FOLLOWUP_COMPLETED { background-color: #20c997; color: #fff; }
+  .timeline-NOTE_ADDED { background-color: #fd7e14; color: #fff; }
+  .timeline-ASSIGNED { background-color: #0d6efd; color: #fff; }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="mb-4 d-flex align-items-center justify-content-between">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Lead Activities Log</h2>
+    <p class="text-muted small">A chronological feed of lead interactions and changes.</p>
+  </div>
+  
+  <form method="GET" class="d-flex gap-2">
+    <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white form-control-sm" placeholder="Search activities...">
+    <button type="submit" class="btn btn-info btn-sm text-white fw-bold"><i class="bi bi-search"></i></button>
+    {% if q %}
+    <a href="{% url 'activities_list' %}" class="btn btn-secondary btn-sm"><i class="bi bi-x-lg"></i></a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="m-card">
+  {% if page_obj %}
+  <div class="table-responsive">
+    <table class="table m-table table-hover">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Lead / Candidate</th>
+          <th>Activity Type</th>
+          <th>Description</th>
+          <th>Performed By</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for act in page_obj %}
+        <tr>
+          <td class="small text-muted">{{ act.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td>
+            <a href="{% url 'lead_detail' act.lead.pk %}" class="text-info fw-bold text-decoration-none">
+              {{ act.lead.inquiry.full_name }}
+            </a>
+          </td>
+          <td>
+            <span class="timeline-badge timeline-{{ act.activity_type }}">
+              {{ act.get_activity_type_display }}
+            </span>
+          </td>
+          <td class="text-white">{{ act.description }}</td>
+          <td class="small">{{ act.created_by.username|default:"System" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-4">
+    <ul class="pagination pagination-sm justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if q %}&q={{ q }}{% endif %}">&laquo; First</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">Previous</a>
+      </li>
+      {% endif %}
+
+      <li class="page-item disabled">
+        <span class="page-link bg-dark border-secondary text-white">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      </li>
+
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}">Next</a>
+      </li>
+      <li class="page-item">
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}">Last &raquo;</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-activity"></i>
+    <h5>No activities recorded yet</h5>
+    <p class="small text-muted">Activities will appear automatically as leads are created, modified, or updated.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

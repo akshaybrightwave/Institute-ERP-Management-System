@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from apps.management.models import Inquiry, Lead, CallLog, FollowUp
+from apps.management.models import Inquiry, Lead, CallLog, FollowUp, CounselingSession
 import datetime
 
 User = get_user_model()
@@ -51,21 +51,31 @@ class TelecallerModuleTests(TestCase):
         )
 
     def test_portal_access_restrictions(self):
-        # Student should be blocked from management dashboard
+        # Student should be blocked from management dashboard and super admin dashboard
         response = self.client_student.get(reverse('management_dashboard'))
+        self.assertEqual(response.status_code, 403)
+        response = self.client_student.get(reverse('management_super_admin_dashboard'))
         self.assertEqual(response.status_code, 403)
 
         # Telecaller should be blocked from ERP center list
         response = self.client_tele1.get(reverse('center_list'))
         self.assertEqual(response.status_code, 403)
 
-        # Admin can access management dashboard
+        # Admin accessing management_dashboard should be redirected to management_super_admin_dashboard
         response = self.client_admin.get(reverse('management_dashboard'))
+        self.assertRedirects(response, reverse('management_super_admin_dashboard'))
+
+        # Admin can access super admin dashboard
+        response = self.client_admin.get(reverse('management_super_admin_dashboard'))
         self.assertEqual(response.status_code, 200)
 
         # Telecaller can access management dashboard
         response = self.client_tele1.get(reverse('management_dashboard'))
         self.assertEqual(response.status_code, 200)
+
+        # Telecaller accessing super admin dashboard should be redirected to management dashboard
+        response = self.client_tele1.get(reverse('management_super_admin_dashboard'))
+        self.assertRedirects(response, reverse('management_dashboard'))
 
     def test_inquiry_data_isolation(self):
         # Tele1 should see inquiry1 but not inquiry2
@@ -111,4 +121,530 @@ class TelecallerModuleTests(TestCase):
 
         # Prevent duplicate conversion
         response = self.client_tele1.post(reverse('inquiry_convert', kwargs={'pk': self.inquiry1.pk}))
-        self.assertEqual(response.status_code, 302) # Redirects to existing lead detail
+        self.assertEqual(response.status_code, 302)
+
+    def test_csv_import_workflow(self):
+        # Create in-memory CSV file
+        from io import BytesIO
+        csv_data = "full_name,mobile_number,email,city,course_interest,source,remarks\n" \
+                   "Bob CSV,9876500001,bob@csv.com,Thane,Java,Website,CSV remark\n" \
+                   "Duplicate Name,1234567890,dup@csv.com,Mumbai,Python,Other,Duplicate mobile\n" \
+                   "Invalid Row,,empty@csv.com,Pune,Java,Other,\n" \
+                   "Bad Mobile,Too Short,invalid@csv.com,Pune,Java,Other,"
+        csv_file = BytesIO(csv_data.encode('utf-8'))
+        csv_file.name = 'test.csv'
+
+        # Import using telecaller 1 client
+        response = self.client_tele1.post(reverse('inquiry_import'), {'file': csv_file})
+        self.assertEqual(response.status_code, 302) # Redirect to history
+        
+        # Verify LeadImport log
+        from apps.management.models import LeadImport
+        imports = LeadImport.objects.filter(uploaded_by=self.tele1)
+        self.assertEqual(imports.count(), 1)
+        imp = imports.first()
+        self.assertEqual(imp.total_records, 4)
+        self.assertEqual(imp.successful_records, 1) # Only Bob CSV is successfully imported
+        self.assertEqual(imp.duplicate_records, 1)  # Duplicate mobile (matching John Doe's 1234567890)
+        self.assertEqual(imp.failed_records, 2)     # Invalid Row and Bad Mobile
+
+        # Verify Bob CSV is in database
+        self.assertTrue(Inquiry.objects.filter(full_name='Bob CSV', created_by=self.tele1).exists())
+
+    def test_xlsx_import_workflow(self):
+        import openpyxl
+        from io import BytesIO
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.append(['full_name', 'mobile_number', 'email', 'city', 'course_interest', 'source', 'remarks'])
+        ws.append(['Alice Excel', '9876500002', 'alice@excel.com', 'Pune', 'Python', 'Website', 'Excel test remark'])
+        excel_file = BytesIO()
+        wb.save(excel_file)
+        excel_file.seek(0)
+        excel_file.name = 'test.xlsx'
+
+        response = self.client_tele1.post(reverse('inquiry_import'), {'file': excel_file})
+        self.assertEqual(response.status_code, 302)
+
+        # Verify LeadImport log
+        from apps.management.models import LeadImport
+        imports = LeadImport.objects.filter(uploaded_by=self.tele1)
+        self.assertEqual(imports.count(), 1)
+        self.assertEqual(imports.first().successful_records, 1)
+
+        # Verify Alice is in database
+        self.assertTrue(Inquiry.objects.filter(full_name='Alice Excel', created_by=self.tele1).exists())
+
+    def test_invalid_file_rejection(self):
+        from io import BytesIO
+        bad_file = BytesIO(b"dummy doc content")
+        bad_file.name = 'report.pdf'
+
+        response = self.client_tele1.post(reverse('inquiry_import'), {'file': bad_file})
+        self.assertEqual(response.status_code, 200) # Form re-rendered
+        self.assertContains(response, "Only CSV and Excel files are allowed.")
+
+    def test_lead_status_choices(self):
+        # Create a lead to update
+        lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
+        
+        # Edit lead with new status choices
+        for status in ['Rejected', 'Invalid Number', 'Admission Done']:
+            lead.status = status
+            lead.save()
+            lead.refresh_from_db()
+            self.assertEqual(lead.status, status)
+
+    def test_lead_notes_timeline(self):
+        # Create a lead
+        lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
+
+        # Add notes
+        self.client_tele1.post(reverse('lead_note_add', kwargs={'pk': lead.pk}), {'note': 'Call #1: Left voicemail'})
+        self.client_tele1.post(reverse('lead_note_add', kwargs={'pk': lead.pk}), {'note': 'Call #2: Scheduled meeting'})
+
+        # Verify notes timeline ordering (chronological - oldest first)
+        response = self.client_tele1.get(reverse('lead_notes_list', kwargs={'pk': lead.pk}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Call #1: Left voicemail')
+        self.assertContains(response, 'Call #2: Scheduled meeting')
+
+        from apps.management.models import LeadNote
+        notes = LeadNote.objects.filter(lead=lead).order_by('created_at')
+        self.assertEqual(notes.count(), 2)
+        self.assertEqual(notes[0].note, 'Call #1: Left voicemail')
+        self.assertEqual(notes[1].note, 'Call #2: Scheduled meeting')
+
+    def test_followup_overdue_and_dashboard(self):
+        lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
+        
+        # Create overdue followup (yesterday)
+        from apps.management.models import FollowUp
+        overdue_date = datetime.date.today() - datetime.timedelta(days=2)
+        followup = FollowUp.objects.create(
+            lead=lead,
+            followup_date=overdue_date,
+            status='Pending',
+            created_by=self.tele1
+        )
+
+        self.assertTrue(followup.is_overdue)
+        self.assertEqual(followup.days_overdue, 2)
+        self.assertFalse(followup.reminder_sent)
+
+        # Check telecaller dashboard displays metrics correctly
+        response = self.client_tele1.get(reverse('management_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Overdue Follow-ups")
+        self.assertContains(response, "⚠ Overdue Follow-Up")
+
+    def test_flexible_column_mapping_import(self):
+        from io import BytesIO
+        # Example header mapping: Name, Phone, Email, Company, City
+        csv_data = "Name,Phone,Email,Company,City\n" \
+                   "Rahul Sharma,9876543210,rahul.sharma@example.com,TechSoft,Thane\n" \
+                   "Priya Patel,9123456780,priya.patel@example.com,InnoTech,Mumbai\n"
+        csv_file = BytesIO(csv_data.encode('utf-8'))
+        csv_file.name = 'flexible_test.csv'
+
+        response = self.client_tele1.post(reverse('inquiry_import'), {'file': csv_file})
+        self.assertEqual(response.status_code, 302)
+
+        # Verify LeadImport log
+        from apps.management.models import LeadImport
+        imports = LeadImport.objects.filter(uploaded_by=self.tele1)
+        self.assertTrue(imports.exists())
+        imp = imports.first()
+        self.assertEqual(imp.total_records, 2)
+        self.assertEqual(imp.successful_records, 2)
+        self.assertEqual(imp.failed_records, 0)
+        self.assertEqual(imp.duplicate_records, 0)
+
+        # Verify Rahul Sharma and Priya Patel are in the database
+        self.assertTrue(Inquiry.objects.filter(full_name='Rahul Sharma', mobile_number='9876543210', city='Thane').exists())
+        self.assertTrue(Inquiry.objects.filter(full_name='Priya Patel', mobile_number='9123456780', city='Mumbai').exists())
+
+    def test_sample_downloads(self):
+        # Test download sample CSV
+        response = self.client_tele1.get(reverse('download_sample_csv'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertIn('attachment; filename="sample_inquiries.csv"', response['Content-Disposition'])
+
+        # Test download sample Excel
+        response = self.client_tele1.get(reverse('download_sample_excel'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertIn('attachment; filename="sample_inquiries.xlsx"', response['Content-Disposition'])
+
+    def test_activity_timeline_and_isolation(self):
+        # 1. Lead creation logs activity
+        response = self.client_tele1.post(reverse('inquiry_convert', kwargs={'pk': self.inquiry1.pk}))
+        self.assertEqual(response.status_code, 302)
+        lead = Lead.objects.get(inquiry=self.inquiry1)
+        
+        # Verify LEAD_CREATED & ASSIGNED activities
+        self.assertEqual(lead.activities.filter(activity_type='LEAD_CREATED').count(), 1)
+        self.assertEqual(lead.activities.filter(activity_type='ASSIGNED').count(), 1)
+
+        # 2. Lead note added logs activity
+        self.client_tele1.post(reverse('lead_note_add', kwargs={'pk': lead.pk}), {'note': 'Meeting scheduled'})
+        self.assertEqual(lead.activities.filter(activity_type='NOTE_ADDED').count(), 1)
+
+        # 3. Call log added logs activity
+        self.client_tele1.post(reverse('call_log_add'), {
+            'lead': lead.pk,
+            'call_duration': 30,
+            'call_status': 'Connected',
+            'remarks': 'Log test'
+        })
+        self.assertEqual(lead.activities.filter(activity_type='CALL_LOG_ADDED').count(), 1)
+
+        # 4. Follow up created and completed logs activities
+        self.client_tele1.post(reverse('followup_add'), {
+            'lead': lead.pk,
+            'followup_date': (datetime.date.today() + datetime.timedelta(days=1)).strftime('%Y-%m-%d'),
+            'status': 'Pending',
+            'response': 'Followup scheduled'
+        })
+        self.assertEqual(lead.activities.filter(activity_type='FOLLOWUP_CREATED').count(), 1)
+        
+        followup = FollowUp.objects.filter(lead=lead).first()
+        self.client_tele1.post(reverse('followup_complete', kwargs={'pk': followup.pk}))
+        self.assertEqual(lead.activities.filter(activity_type='FOLLOWUP_COMPLETED').count(), 1)
+
+        # 5. Verify activity feed view and isolation
+        response = self.client_tele1.get(reverse('activities_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Lead created from inquiry conversion')
+
+        response = self.client_tele2.get(reverse('activities_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Lead created from inquiry conversion')
+
+    def test_import_error_logging_and_csv_export(self):
+        from io import BytesIO
+        # Uploading file with validation issues (Missing Name, Missing Mobile, Duplicate, Invalid Email)
+        csv_data = "Name,Phone,Email,Company,City\n" \
+                   ",9876599999,test@example.com,,Mumbai\n" \
+                   "John Doe,1234567890,john@example.com,,Thane\n" \
+                   "Priya Patel,TooShort,priya@example.com,,Pune\n" \
+                   "Alice Key,9876543211,bad_email,,Pune\n"
+        csv_file = BytesIO(csv_data.encode('utf-8'))
+        csv_file.name = 'errors_test.csv'
+
+        response = self.client_tele1.post(reverse('inquiry_import'), {'file': csv_file})
+        self.assertEqual(response.status_code, 302)
+
+        from apps.management.models import LeadImport, ImportErrorLog
+        imp = LeadImport.objects.filter(uploaded_by=self.tele1).first()
+        self.assertEqual(imp.failed_records, 3) 
+        self.assertEqual(imp.duplicate_records, 1) 
+        self.assertEqual(imp.successful_records, 0)
+
+        errors = ImportErrorLog.objects.filter(lead_import=imp)
+        self.assertEqual(errors.count(), 4)
+        
+        self.assertTrue(errors.filter(error_message="Missing Full Name").exists())
+        self.assertTrue(errors.filter(error_message="Duplicate Mobile Number").exists())
+        self.assertTrue(errors.filter(error_message="Invalid Mobile Number").exists())
+        self.assertTrue(errors.filter(error_message="Invalid Email").exists())
+
+        response = self.client_tele1.get(reverse('import_errors'), {'import_id': imp.id, 'export': 'csv'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertContains(response, "Missing Full Name")
+        self.assertContains(response, "Duplicate Mobile Number")
+
+    def test_lead_assignment_management(self):
+        lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
+
+        # 1. Telecaller tries to reassign - forbidden
+        response = self.client_tele1.post(reverse('lead_assign'), {'lead_id': lead.pk, 'telecaller': self.tele2.pk})
+        self.assertEqual(response.status_code, 403)
+
+        # 2. Admin assigns lead to telecaller 2
+        response = self.client_admin.post(reverse('lead_assign'), {'leads': [lead.pk], 'telecaller': self.tele2.pk})
+        self.assertEqual(response.status_code, 302)
+
+        lead.refresh_from_db()
+        self.assertEqual(lead.assigned_telecaller, self.tele2)
+        self.assertEqual(lead.assigned_by, self.admin)
+        self.assertIsNotNone(lead.assigned_at)
+        
+        self.assertTrue(lead.activities.filter(activity_type='ASSIGNED', description__icontains="assigned to tele2 by admin").exists())
+
+    def test_bulk_lead_actions_and_isolation(self):
+        lead1 = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
+        lead2 = Lead.objects.create(inquiry=self.inquiry2, assigned_telecaller=self.tele2, status='New')
+
+        # 1. Telecaller 1 bulk updates their own lead
+        response = self.client_tele1.post(reverse('lead_bulk_action'), {
+            'leads': [lead1.pk],
+            'action': 'Mark Interested'
+        })
+        self.assertEqual(response.status_code, 302)
+        lead1.refresh_from_db()
+        self.assertEqual(lead1.status, 'Interested')
+
+        # 2. Telecaller 1 tries to bulk update Telecaller 2's lead - should be skipped (status remains New)
+        response = self.client_tele1.post(reverse('lead_bulk_action'), {
+            'leads': [lead2.pk],
+            'action': 'Mark Contacted'
+        })
+        self.assertEqual(response.status_code, 302)
+        lead2.refresh_from_db()
+        self.assertEqual(lead2.status, 'New') 
+
+    def test_source_analytics_view(self):
+        lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='Qualified')
+
+        response = self.client_tele1.get(reverse('reports_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Website")
+
+    def test_telecaller_performance_report(self):
+        lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='Qualified')
+        CallLog.objects.create(lead=lead, call_duration=45, call_status='Connected', created_by=self.tele1)
+
+        # 1. Telecaller views report (can only see own row)
+        response = self.client_tele1.get(reverse('telecaller_report'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'tele1')
+        self.assertNotContains(response, 'tele2')
+
+        # 2. Admin views report (can see all rows)
+        response = self.client_admin.get(reverse('telecaller_report'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'tele1')
+        self.assertContains(response, 'tele2')
+
+        # 3. Export CSV
+        response = self.client_admin.get(reverse('telecaller_report'), {'export': 'csv'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertContains(response, 'tele1')
+
+        # 4. Export Excel
+        response = self.client_admin.get(reverse('telecaller_report'), {'export': 'excel'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+class CounselorModuleTests(TestCase):
+    def setUp(self):
+        # Create users
+        self.admin = User.objects.create_user(username='admin_user', password='password', role='admin')
+        self.counselor1 = User.objects.create_user(username='counselor1', password='password', role='counselor')
+        self.counselor2 = User.objects.create_user(username='counselor2', password='password', role='counselor')
+        self.telecaller = User.objects.create_user(username='tele_user', password='password', role='telecaller')
+        self.student = User.objects.create_user(username='student_user', password='password', role='student')
+
+        # Create clients
+        self.client_admin = Client()
+        self.client_counselor1 = Client()
+        self.client_counselor2 = Client()
+        self.client_tele = Client()
+        self.client_student = Client()
+
+        # Log in
+        self.client_admin.login(username='admin_user', password='password')
+        self.client_counselor1.login(username='counselor1', password='password')
+        self.client_counselor2.login(username='counselor2', password='password')
+        self.client_tele.login(username='tele_user', password='password')
+        self.client_student.login(username='student_user', password='password')
+
+        # Create base inquiries & leads
+        self.inquiry1 = Inquiry.objects.create(
+            full_name='Alice Candidate',
+            mobile_number='9999999991',
+            email='alice@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='Qualified',
+            created_by=self.telecaller
+        )
+        self.lead1 = Lead.objects.create(
+            inquiry=self.inquiry1,
+            assigned_telecaller=self.telecaller,
+            assigned_counselor=self.counselor1,
+            status='Qualified',
+            counselor_status='NEW'
+        )
+
+        self.inquiry2 = Inquiry.objects.create(
+            full_name='Bob Candidate',
+            mobile_number='9999999992',
+            email='bob@example.com',
+            city='Pune',
+            course_interest='Java',
+            source='Walk-In',
+            status='Qualified',
+            created_by=self.telecaller
+        )
+        self.lead2 = Lead.objects.create(
+            inquiry=self.inquiry2,
+            assigned_telecaller=self.telecaller,
+            assigned_counselor=self.counselor2,
+            status='Qualified',
+            counselor_status='NEW'
+        )
+
+    def test_counselor_portal_access_restrictions(self):
+        # Counselor can access counselor dashboard
+        response = self.client_counselor1.get(reverse('counselor_dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+        # Telecaller is blocked from counselor dashboard
+        response = self.client_tele.get(reverse('counselor_dashboard'))
+        self.assertEqual(response.status_code, 403)
+
+        # Student is blocked from counselor dashboard
+        response = self.client_student.get(reverse('counselor_dashboard'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_counselor_data_isolation(self):
+        # Counselor 1 sees lead 1 but not lead 2
+        response = self.client_counselor1.get(reverse('counselor_lead_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Alice Candidate')
+        self.assertNotContains(response, 'Bob Candidate')
+
+        # Counselor 2 sees lead 2 but not lead 1
+        response = self.client_counselor2.get(reverse('counselor_lead_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Bob Candidate')
+        self.assertNotContains(response, 'Alice Candidate')
+
+        # Counselor 1 cannot view Counselor 2's lead detail
+        response = self.client_counselor1.get(reverse('counselor_lead_detail', kwargs={'pk': self.lead2.pk}))
+        self.assertEqual(response.status_code, 403)
+
+    def test_record_counseling_session_transition(self):
+        # Counselor 1 records a session for Lead 1
+        response = self.client_counselor1.post(reverse('counselor_session_add'), {
+            'lead': self.lead1.pk,
+            'session_date': '2026-06-19 12:00:00',
+            'discussion_notes': 'Alice is very keen on learning Django.',
+            'career_guidance_notes': 'Recommended Full Stack Python path.',
+            'next_action': 'Follow up next Monday'
+        })
+        self.assertEqual(response.status_code, 302)
+
+        # Verify CounselingSession created
+        from apps.management.models import CounselingSession
+        self.assertTrue(CounselingSession.objects.filter(lead=self.lead1, counselor=self.counselor1).exists())
+
+        # Verify Lead state changed to COUNSELING_DONE
+        self.lead1.refresh_from_db()
+        self.assertEqual(self.lead1.counselor_status, 'COUNSELING_DONE')
+
+    def test_counselor_followup_and_outcome(self):
+        # Schedule follow-up
+        response = self.client_counselor1.post(reverse('counselor_followup_add'), {
+            'lead': self.lead1.pk,
+            'followup_date': '2026-06-25',
+            'status': 'Pending',
+            'outcome': '',
+            'response': 'Call back scheduled'
+        })
+        self.assertEqual(response.status_code, 302)
+
+        # Verify FollowUp created and Lead state transitioned to FOLLOW_UP_REQUIRED
+        followup = FollowUp.objects.filter(lead=self.lead1, created_by=self.counselor1).first()
+        self.assertIsNotNone(followup)
+        self.lead1.refresh_from_db()
+        self.assertEqual(self.lead1.counselor_status, 'FOLLOW_UP_REQUIRED')
+
+        # Mark followup as Completed
+        response = self.client_counselor1.get(reverse('counselor_followup_complete', kwargs={'pk': followup.pk}))
+        self.assertEqual(response.status_code, 302)
+        followup.refresh_from_db()
+        self.assertEqual(followup.status, 'Completed')
+
+        # Reschedule & Mark as Missed
+        followup2 = FollowUp.objects.create(
+            lead=self.lead1,
+            followup_date='2026-06-20',
+            status='Pending',
+            created_by=self.counselor1
+        )
+        response = self.client_counselor1.get(reverse('counselor_followup_miss', kwargs={'pk': followup2.pk}))
+        self.assertEqual(response.status_code, 302)
+        followup2.refresh_from_db()
+        self.assertEqual(followup2.status, 'Missed')
+
+    def test_counselor_note_timeline(self):
+        # Post note
+        response = self.client_counselor1.post(reverse('counselor_note_add', kwargs={'lead_pk': self.lead1.pk}), {
+            'note': 'Candidate requested batch details.'
+        })
+        self.assertEqual(response.status_code, 302)
+
+        # Verify note in timeline
+        from apps.management.models import LeadNote
+        self.assertTrue(LeadNote.objects.filter(lead=self.lead1, note='Candidate requested batch details.').exists())
+
+    def test_counselor_lead_status_update(self):
+        # Update counselor status of lead 1 to INTERESTED
+        response = self.client_counselor1.post(reverse('counselor_lead_status_update', kwargs={'pk': self.lead1.pk}), {
+            'counselor_status': 'INTERESTED'
+        })
+        self.assertEqual(response.status_code, 302)
+        self.lead1.refresh_from_db()
+        self.assertEqual(self.lead1.counselor_status, 'INTERESTED')
+
+    def test_counselor_assignment_management(self):
+        # Telecaller tries counselor assignment - forbidden
+        response = self.client_tele.post(reverse('lead_assign_counselor'), {
+            'leads': [self.lead1.pk],
+            'counselor': self.counselor2.pk
+        })
+        self.assertEqual(response.status_code, 403)
+
+        # Admin assigns Lead 1 to Counselor 2
+        response = self.client_admin.post(reverse('lead_assign_counselor'), {
+            'leads': [self.lead1.pk],
+            'counselor': self.counselor2.pk
+        })
+        self.assertEqual(response.status_code, 302)
+
+        self.lead1.refresh_from_db()
+        self.assertEqual(self.lead1.assigned_counselor, self.counselor2)
+
+    def test_counselor_reports_dashboard_and_exports(self):
+        # Record counseling session & followup to populate reports
+        CounselingSession.objects.create(
+            lead=self.lead1,
+            counselor=self.counselor1,
+            discussion_notes='Guidance session notes.'
+        )
+        FollowUp.objects.create(
+            lead=self.lead1,
+            followup_date='2026-06-19',
+            status='Completed',
+            outcome='Interested',
+            created_by=self.counselor1
+        )
+
+        # Counselor views dashboard
+        response = self.client_counselor1.get(reverse('counselor_reports_dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+        # Export performance report to CSV
+        response = self.client_counselor1.get(reverse('counselor_reports_dashboard'), {
+            'report_type': 'performance',
+            'export': 'csv'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+
+        # Export conversion report to Excel
+        response = self.client_counselor1.get(reverse('counselor_reports_dashboard'), {
+            'report_type': 'conversion',
+            'export': 'excel'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+

@@ -52,7 +52,20 @@ class Lead(models.Model):
         ('Interested', 'Interested'),
         ('Follow Up', 'Follow Up'),
         ('Qualified', 'Qualified'),
+        ('Rejected', 'Rejected'),
+        ('Invalid Number', 'Invalid Number'),
+        ('Admission Done', 'Admission Done'),
         ('Closed', 'Closed'),
+    )
+    COUNSELOR_STATUS_CHOICES = (
+        ('NEW', 'New'),
+        ('CONTACTED', 'Contacted'),
+        ('COUNSELING_DONE', 'Counseling Done'),
+        ('FOLLOW_UP_REQUIRED', 'Follow Up Required'),
+        ('INTERESTED', 'Interested'),
+        ('CONVERTED', 'Converted'),
+        ('NOT_INTERESTED', 'Not Interested'),
+        ('LOST', 'Lost'),
     )
     PRIORITY_CHOICES = (
         ('Low', 'Low'),
@@ -68,6 +81,30 @@ class Lead(models.Model):
         blank=True,
         related_name='assigned_leads'
     )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_leads_by'
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    
+    assigned_counselor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_counselor_leads'
+    )
+    counselor_status = models.CharField(
+        max_length=25,
+        choices=COUNSELOR_STATUS_CHOICES,
+        default='NEW',
+        db_index=True
+    )
+    counselor_status_updated_at = models.DateTimeField(null=True, blank=True)
+    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='New', db_index=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='Medium', db_index=True)
     next_followup_date = models.DateField(null=True, blank=True)
@@ -116,6 +153,7 @@ class FollowUp(models.Model):
     STATUS_CHOICES = (
         ('Pending', 'Pending'),
         ('Completed', 'Completed'),
+        ('Missed', 'Missed'),
     )
 
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='followups')
@@ -123,6 +161,8 @@ class FollowUp(models.Model):
     next_followup_date = models.DateField(null=True, blank=True)
     response = models.TextField(blank=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='Pending')
+    outcome = models.CharField(max_length=255, blank=True, null=True)
+    reminder_sent = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -139,5 +179,114 @@ class FollowUp(models.Model):
     def is_overdue(self):
         return self.status == 'Pending' and self.followup_date < datetime.date.today()
 
+    @property
+    def days_overdue(self):
+        if self.status == 'Pending' and self.followup_date < datetime.date.today():
+            return (datetime.date.today() - self.followup_date).days
+        return 0
+
     def __str__(self):
         return f"FollowUp for {self.lead.inquiry.full_name} on {self.followup_date} ({self.status})"
+
+
+class LeadImport(models.Model):
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='uploaded_imports'
+    )
+    file = models.FileField(upload_to='lead_imports/')
+    total_records = models.PositiveIntegerField(default=0)
+    successful_records = models.PositiveIntegerField(default=0)
+    duplicate_records = models.PositiveIntegerField(default=0)
+    failed_records = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Import by {self.uploaded_by} on {self.created_at}"
+
+
+class LeadNote(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notes_timeline')
+    note = models.TextField()
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_lead_notes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Note on {self.lead.inquiry.full_name} by {self.created_by} at {self.created_at}"
+
+
+class LeadActivity(models.Model):
+    ACTIVITY_TYPE_CHOICES = (
+        ('LEAD_CREATED', 'Lead Created'),
+        ('STATUS_CHANGED', 'Status Changed'),
+        ('CALL_LOG_ADDED', 'Call Log Added'),
+        ('FOLLOWUP_CREATED', 'Follow-Up Created'),
+        ('FOLLOWUP_COMPLETED', 'Follow-Up Completed'),
+        ('NOTE_ADDED', 'Note Added'),
+        ('ASSIGNED', 'Lead Assigned'),
+    )
+
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='activities')
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPE_CHOICES)
+    description = models.TextField()
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.activity_type} for {self.lead.inquiry.full_name} at {self.created_at}"
+
+
+class ImportErrorLog(models.Model):
+    lead_import = models.ForeignKey(LeadImport, on_delete=models.CASCADE, related_name='error_logs')
+    row_number = models.PositiveIntegerField()
+    error_message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['row_number']
+
+    def __str__(self):
+        return f"ImportError in {self.lead_import} at row {self.row_number}: {self.error_message}"
+
+
+class CounselingSession(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='counseling_sessions')
+    counselor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='counseling_sessions'
+    )
+    session_date = models.DateTimeField(default=timezone.now)
+    discussion_notes = models.TextField()
+    career_guidance_notes = models.TextField(blank=True)
+    next_action = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-session_date']
+
+    def __str__(self):
+        return f"Session with {self.lead.inquiry.full_name} on {self.session_date}"

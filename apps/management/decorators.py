@@ -8,3 +8,12 @@ def telecaller_required(view_func):
             return view_func(request, *args, **kwargs)
         return HttpResponseForbidden("Access Denied: Telecaller Portal access only.")
     return wrapper
+
+
+def counselor_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_authenticated and request.user.role in ('admin', 'counselor'):
+            return view_func(request, *args, **kwargs)
+        return HttpResponseForbidden("Access Denied: Counselor Portal access only.")
+    return wrapper
