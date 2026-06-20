@@ -256,6 +256,65 @@
   </div>
 </div>
 
+<!-- Visits Row -->
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
+  <!-- Today's Visits -->
+  <div class="col">
+    <a href="{% url 'counselor_visit_list' %}?start_date={% now 'Y-m-d' %}&end_date={% now 'Y-m-d' %}" class="stat-card bg-orange d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Today's Visits</div>
+        <div class="stat-card-value">{{ today_visits }}</div>
+        <div class="stat-card-icon"><i class="bi bi-calendar-event"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-eye"></i> View today's
+      </div>
+    </a>
+  </div>
+
+  <!-- Upcoming Visits -->
+  <div class="col">
+    <a href="{% url 'counselor_visit_list' %}?status=Scheduled" class="stat-card bg-purple d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Upcoming Visits</div>
+        <div class="stat-card-value">{{ upcoming_visits }}</div>
+        <div class="stat-card-icon"><i class="bi bi-calendar-range"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View scheduled
+      </div>
+    </a>
+  </div>
+
+  <!-- Completed Visits -->
+  <div class="col">
+    <a href="{% url 'counselor_visit_list' %}?status=Visited" class="stat-card bg-green d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Completed Visits</div>
+        <div class="stat-card-value">{{ completed_visits }}</div>
+        <div class="stat-card-icon"><i class="bi bi-building"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View completed
+      </div>
+    </a>
+  </div>
+
+  <!-- No Shows -->
+  <div class="col">
+    <a href="{% url 'counselor_visit_list' %}?status=No Show" class="stat-card bg-red d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">No Shows</div>
+        <div class="stat-card-value">{{ no_shows }}</div>
+        <div class="stat-card-icon"><i class="bi bi-person-x"></i></div>
+      </div>
+      <div class="stat-card-footer">
+        <i class="bi bi-funnel"></i> View no-shows
+      </div>
+    </a>
+  </div>
+</div>
+
 <!-- Content Grid -->
 <div class="row g-4 mb-4">
   <!-- Left Side: Data Tables -->
@@ -419,6 +478,12 @@
         </a>
         <a href="{% url 'counselor_followup_add' %}" class="action-btn">
           <i class="bi bi-calendar-plus"></i> Schedule Follow-Up
+        </a>
+        <a href="{% url 'counselor_visit_add' %}" class="action-btn">
+          <i class="bi bi-geo-alt"></i> Schedule Candidate Visit
+        </a>
+        <a href="{% url 'counselor_visit_list' %}" class="action-btn">
+          <i class="bi bi-card-checklist"></i> View Visit Sheets
         </a>
         <a href="{% url 'counselor_reports_dashboard' %}" class="action-btn">
           <i class="bi bi-bar-chart-steps"></i> View Reports

@@ -1,0 +1,109 @@
+{% extends 'management/base.html' %}
+
+{% block extra_style %}
+<style>
+  .form-control, .form-select {
+    background-color: #14142b !important;
+    border: 1px solid #242448 !important;
+    color: #fff !important;
+  }
+  .form-control:focus, .form-select:focus {
+    background-color: #1e1e3d !important;
+    border-color: #0dcaf0 !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.25) !important;
+    color: #fff !important;
+  }
+  .form-control::placeholder {
+    color: #5a5a8a !important;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">{{ title }}</h2>
+  <p class="text-muted small">Manage physical visit details and status for student counseling</p>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="m-card">
+      <form method="POST">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div class="row g-3">
+          <!-- Lead Select -->
+          <div class="col-md-12">
+            <label class="form-label text-muted small fw-bold">Candidate Lead <span class="text-danger">*</span></label>
+            {% if selected_lead %}
+              <input type="hidden" name="lead" value="{{ selected_lead.pk }}">
+              <input type="text" class="form-control" value="{{ selected_lead.inquiry.full_name }} ({{ selected_lead.inquiry.mobile_number }})" readonly>
+            {% else %}
+              <select name="lead" class="form-select" required>
+                <option value="">-- Select Candidate Lead --</option>
+                {% for lead in leads %}
+                  <option value="{{ lead.pk }}" {% if form.lead.value == lead.pk or form.initial.lead == lead.pk %}selected{% endif %}>
+                    {{ lead.inquiry.full_name }} ({{ lead.inquiry.mobile_number }})
+                  </option>
+                {% endfor %}
+              </select>
+            {% endif %}
+            {% if form.lead.errors %}
+              <div class="text-danger small mt-1">{% for error in form.lead.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Visit Date -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Visit Date <span class="text-danger">*</span></label>
+            {{ form.visit_date }}
+            {% if form.visit_date.errors %}
+              <div class="text-danger small mt-1">{% for error in form.visit_date.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Visit Time -->
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Visit Time <span class="text-danger">*</span></label>
+            {{ form.visit_time }}
+            {% if form.visit_time.errors %}
+              <div class="text-danger small mt-1">{% for error in form.visit_time.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Status -->
+          <div class="col-md-12">
+            <label class="form-label text-muted small fw-bold">Visit Status <span class="text-danger">*</span></label>
+            {{ form.status }}
+            {% if form.status.errors %}
+              <div class="text-danger small mt-1">{% for error in form.status.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+
+          <!-- Remarks -->
+          <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Remarks / Discussion Summary (Optional)</label>
+            {{ form.remarks }}
+            {% if form.remarks.errors %}
+              <div class="text-danger small mt-1">{% for error in form.remarks.errors %}{{ error }}{% endfor %}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top border-secondary">
+          <a href="{% if selected_lead %}{% url 'counselor_lead_detail' selected_lead.pk %}{% else %}{% url 'counselor_visit_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Visit Sheet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -63,4 +63,7 @@ urlpatterns = [
     path('counselor/notes/add/<int:lead_pk>/', views.counselor_note_add, name='counselor_note_add'),
     path('counselor/reports/', views.counselor_reports_dashboard, name='counselor_reports_dashboard'),
     path('leads/assign-counselor/', views.lead_assign_counselor, name='lead_assign_counselor'),
+    path('counselor/visits/', views.counselor_visit_list, name='counselor_visit_list'),
+    path('counselor/visits/add/', views.counselor_visit_add, name='counselor_visit_add'),
+    path('counselor/visits/<int:pk>/edit/', views.counselor_visit_edit, name='counselor_visit_edit'),
 ]

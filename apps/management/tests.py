@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from apps.management.models import Inquiry, Lead, CallLog, FollowUp, CounselingSession
+from apps.management.models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet
 import datetime
 
 User = get_user_model()
@@ -647,4 +647,79 @@ class CounselorModuleTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    def test_counselor_visit_sheet_crud_and_security(self):
+        # 1. Access Control: Telecaller and Student are blocked from visits list
+        response = self.client_tele.get(reverse('counselor_visit_list'))
+        self.assertEqual(response.status_code, 403)
+        response = self.client_student.get(reverse('counselor_visit_list'))
+        self.assertEqual(response.status_code, 403)
+
+        # Counselor can access visits list
+        response = self.client_counselor1.get(reverse('counselor_visit_list'))
+        self.assertEqual(response.status_code, 200)
+
+        # 2. CRUD: Counselor 1 adds a visit sheet for Lead 1
+        response = self.client_counselor1.post(reverse('counselor_visit_add'), {
+            'lead': self.lead1.pk,
+            'visit_date': '2026-06-25',
+            'visit_time': '14:30:00',
+            'status': 'Scheduled',
+            'remarks': 'F2F discussion on course syllabus.'
+        })
+        self.assertEqual(response.status_code, 302) # Redirect to visit list
+
+        # Verify VisitSheet created in database
+        visit = VisitSheet.objects.filter(lead=self.lead1, counselor=self.counselor1).first()
+        self.assertIsNotNone(visit)
+        self.assertEqual(visit.remarks, 'F2F discussion on course syllabus.')
+        self.assertEqual(visit.created_by, self.counselor1)
+
+        # Verify LeadActivity logged
+        self.assertTrue(self.lead1.activities.filter(activity_type='NOTE_ADDED', description__icontains="scheduled candidate visit").exists())
+
+        # 3. Data Isolation: Counselor 2 cannot view Counselor 1's visit in the list or edit it
+        response = self.client_counselor2.get(reverse('counselor_visit_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Alice Candidate')
+
+        # Counselor 2 tries to edit Counselor 1's visit sheet - forbidden
+        response = self.client_counselor2.get(reverse('counselor_visit_edit', kwargs={'pk': visit.pk}))
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client_counselor2.post(reverse('counselor_visit_edit', kwargs={'pk': visit.pk}), {
+            'lead': self.lead1.pk,
+            'visit_date': '2026-06-25',
+            'visit_time': '15:00:00',
+            'status': 'Visited',
+            'remarks': 'Updated by counselor 2.'
+        })
+        self.assertEqual(response.status_code, 403)
+
+        # Counselor 1 can edit their own visit sheet
+        response = self.client_counselor1.post(reverse('counselor_visit_edit', kwargs={'pk': visit.pk}), {
+            'lead': self.lead1.pk,
+            'visit_date': '2026-06-25',
+            'visit_time': '16:00:00',
+            'status': 'Visited',
+            'remarks': 'Successfully visited and discussed syllabus.'
+        })
+        self.assertEqual(response.status_code, 302) # Redirect
+        visit.refresh_from_db()
+        self.assertEqual(visit.status, 'Visited')
+        self.assertEqual(visit.visit_time, datetime.time(16, 0))
+
+        # 4. Reports Export Security Check: Export to CSV/Excel is blocked for visit report type
+        response = self.client_counselor1.get(reverse('counselor_reports_dashboard'), {
+            'report_type': 'visit',
+            'export': 'csv'
+        })
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client_counselor1.get(reverse('counselor_reports_dashboard'), {
+            'report_type': 'visit',
+            'export': 'excel'
+        })
+        self.assertEqual(response.status_code, 403)
+
 

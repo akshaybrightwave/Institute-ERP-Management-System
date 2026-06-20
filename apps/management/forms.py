@@ -1,5 +1,5 @@
 from django import forms
-from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession
+from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet
 
 class InquiryForm(forms.ModelForm):
     class Meta:
@@ -122,3 +122,26 @@ class CounselorLeadStatusForm(forms.ModelForm):
         widgets = {
             'counselor_status': forms.Select(attrs={'class': 'form-select'}),
         }
+
+
+class VisitSheetForm(forms.ModelForm):
+    class Meta:
+        model = VisitSheet
+        fields = ['lead', 'visit_date', 'visit_time', 'status', 'remarks']
+        widgets = {
+            'lead': forms.Select(attrs={'class': 'form-select'}),
+            'visit_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'visit_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Enter remarks...'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            if user.role == 'admin':
+                self.fields['lead'].queryset = Lead.objects.all()
+            else:
+                self.fields['lead'].queryset = Lead.objects.filter(assigned_counselor=user)
+

@@ -231,6 +231,52 @@
         {% endif %}
       </div>
     </div>
+
+    <!-- Visit History -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-geo-alt text-success me-2"></i>Visit History</h5>
+        <a href="{% url 'counselor_visit_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-success text-white fw-bold"><i class="bi bi-plus-lg"></i> Schedule Visit</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if visits %}
+          <table class="table m-table align-middle border-0 mb-0">
+            <thead>
+              <tr class="text-uppercase tracking-wider text-muted fs-8">
+                <th style="width: 25%">Visit Date & Time</th>
+                <th style="width: 20%">Status</th>
+                <th style="width: 40%">Remarks</th>
+                <th style="width: 15%" class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for visit in visits %}
+                <tr>
+                  <td class="fw-bold text-white">
+                    {{ visit.visit_date|date:"d M Y" }} at {{ visit.visit_time|time:"H:i" }}
+                  </td>
+                  <td>
+                    <span class="badge {% if visit.status == 'Visited' or visit.status == 'Admission Done' %}bg-success{% elif visit.status == 'Cancelled' or visit.status == 'No Show' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                      {{ visit.get_status_display }}
+                    </span>
+                  </td>
+                  <td class="small">{{ visit.remarks|default:"-" }}</td>
+                  <td class="text-end">
+                    <a href="{% url 'counselor_visit_edit' visit.pk %}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
+            <i class="bi bi-geo-alt text-muted fs-2 d-block mb-2"></i>
+            <p class="small text-muted mb-0">No visits scheduled.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 
   <!-- Right Side: Quick Actions, Notes & Activities -->
@@ -244,6 +290,9 @@
         </a>
         <a href="{% url 'counselor_followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-outline-warning w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
           <i class="bi bi-calendar-plus"></i> Schedule Follow-up
+        </a>
+        <a href="{% url 'counselor_visit_add' %}?lead_id={{ lead.pk }}" class="btn btn-outline-success w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-geo-alt"></i> Schedule Visit
         </a>
         <a href="{% url 'counselor_lead_status_update' lead.pk %}" class="btn btn-outline-info w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
           <i class="bi bi-pencil-square"></i> Change Status

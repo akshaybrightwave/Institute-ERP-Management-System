@@ -1,0 +1,139 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Counselor Visits | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Visit Sheets</h2>
+    <p class="text-muted small">Manage physical student visits, follow-up meetings, and face-to-face counseling</p>
+  </div>
+  <div>
+    <a href="{% url 'counselor_visit_add' %}" class="btn btn-info text-white fw-bold"><i class="bi bi-calendar-plus me-1"></i> Schedule Visit</a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="m-card mb-4">
+  <form method="GET" class="row g-3">
+    <!-- Search -->
+    <div class="col-md-4">
+      <label class="form-label text-muted small fw-bold">Search</label>
+      <div class="input-group">
+        <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white" placeholder="Search by name, mobile, or course...">
+      </div>
+    </div>
+    
+    <!-- Status -->
+    <div class="col-md-2">
+      <label class="form-label text-muted small fw-bold">Visit Status</label>
+      <select name="status" class="form-select bg-dark border-secondary text-white">
+        <option value="">All Statuses</option>
+        {% for code, name in status_choices %}
+          <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Date From -->
+    <div class="col-md-2">
+      <label class="form-label text-muted small fw-bold">From Date</label>
+      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white">
+    </div>
+
+    <!-- Date To -->
+    <div class="col-md-2">
+      <label class="form-label text-muted small fw-bold">To Date</label>
+      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white">
+    </div>
+
+    <!-- Submit -->
+    <div class="col-md-2 d-flex gap-1 align-items-end">
+      <button type="submit" class="btn btn-info text-white w-150 fw-bold"><i class="bi bi-funnel me-1"></i> Filter</button>
+      {% if q or status or start_date or end_date %}
+        <a href="{% url 'counselor_visit_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<!-- Visits Table -->
+<div class="m-card">
+  <div class="table-responsive">
+    {% if page_obj %}
+      <table class="table m-table align-middle">
+        <thead>
+          <tr>
+            <th>SR No</th>
+            <th>Student Name</th>
+            <th>Mobile Number</th>
+            <th>Interested Course</th>
+            <th>Visit Date</th>
+            <th>Visit Time</th>
+            <th>Visit Status</th>
+            <th>Counselor</th>
+            <th>Remarks</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for visit in page_obj %}
+            <tr>
+              <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+              <td class="fw-bold text-white">{{ visit.lead.inquiry.full_name }}</td>
+              <td>{{ visit.lead.inquiry.mobile_number }}</td>
+              <td>{{ visit.lead.inquiry.course_interest }}</td>
+              <td class="text-white">{{ visit.visit_date|date:"d M Y" }}</td>
+              <td>{{ visit.visit_time|time:"H:i" }}</td>
+              <td>
+                <span class="badge {% if visit.status == 'Scheduled' %}bg-primary{% elif visit.status == 'Visited' %}bg-success{% elif visit.status == 'No Show' %}bg-danger{% elif visit.status == 'Cancelled' %}bg-secondary{% elif visit.status == 'Admission Done' %}bg-info text-white{% else %}bg-dark{% endif %}" {% if visit.status == 'Admission Done' %}style="background-color: #8b5cf6;"{% endif %}>
+                  {{ visit.get_status_display }}
+                </span>
+              </td>
+              <td>{{ visit.counselor.username }}</td>
+              <td class="small text-truncate" style="max-width: 150px;" title="{{ visit.remarks }}">{{ visit.remarks|default:"-" }}</td>
+              <td class="text-end">
+                <div class="d-inline-flex gap-1">
+                  <a href="{% url 'counselor_visit_edit' visit.pk %}" class="btn btn-sm btn-outline-warning" title="Edit Visit"><i class="bi bi-pencil-square"></i> Edit</a>
+                  <a href="{% url 'counselor_lead_detail' visit.lead.pk %}" class="btn btn-sm btn-outline-info" title="View Profile"><i class="bi bi-eye"></i> Profile</a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+          <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="empty-state text-center py-4">
+        <i class="bi bi-calendar-x text-muted fs-1 mb-2 d-block"></i>
+        <h4 class="text-white">No Visits Found</h4>
+        <p class="text-muted">No scheduled candidate visits match your current search/filter settings.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

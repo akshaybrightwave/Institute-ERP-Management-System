@@ -31,6 +31,11 @@
         <i class="bi bi-x-octagon-fill me-1"></i> Lost Candidates
       </a>
     </li>
+    <li class="nav-item">
+      <a class="nav-link {% if report_type == 'visit' %}active bg-dark text-white border-secondary{% else %}text-info{% endif %}" href="?report_type=visit&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+        <i class="bi bi-geo-alt me-1"></i> Visit Sheets
+      </a>
+    </li>
   </ul>
 </div>
 
@@ -69,7 +74,7 @@
     </div>
 
     <!-- Export Options -->
-    <div class="col-md-3 d-flex gap-2">
+    <div class="col-md-3 d-flex gap-2" {% if report_type == 'visit' %}style="display: none !important;"{% endif %}>
       <button type="submit" name="export" value="csv" class="btn btn-outline-info w-50 fw-bold btn-sm"><i class="bi bi-filetype-csv me-1"></i> Export CSV</button>
       <button type="submit" name="export" value="excel" class="btn btn-outline-success w-50 fw-bold btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel</button>
     </div>
@@ -200,6 +205,73 @@
           {% empty %}
           <tr>
             <td colspan="4" class="text-center py-4 text-muted">No lost candidates recorded for the selected period.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    {% elif report_type == 'visit' %}
+      <!-- Visit Metrics Summary -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3">
+          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
+            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Total Scheduled</div>
+            <h3 class="fw-bold text-warning mb-0">{{ total_scheduled }}</h3>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
+            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Total Visited</div>
+            <h3 class="fw-bold text-success mb-0">{{ total_completed }}</h3>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
+            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Total No Shows</div>
+            <h3 class="fw-bold text-danger mb-0">{{ total_no_shows }}</h3>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
+            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Admissions Done</div>
+            <h3 class="fw-bold text-info mb-0">{{ total_admissions_visit }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visit Logs Table -->
+      <table class="table m-table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Candidate Name</th>
+            <th>Mobile Number</th>
+            <th>Course</th>
+            <th>Visit Date</th>
+            <th>Visit Time</th>
+            <th>Status</th>
+            <th>Counselor</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in report_data %}
+          <tr>
+            <td class="fw-bold text-white">{{ row.candidate }}</td>
+            <td>{{ row.mobile_number }}</td>
+            <td>{{ row.course }}</td>
+            <td>{{ row.visit_date }}</td>
+            <td>{{ row.visit_time }}</td>
+            <td>
+              <span class="badge {% if row.status == 'Visited' or row.status == 'Admission Done' %}bg-success{% elif row.status == 'Cancelled' or row.status == 'No Show' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                {{ row.status }}
+              </span>
+            </td>
+            <td>{{ row.counselor }}</td>
+            <td class="small">{{ row.remarks }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="text-center py-4 text-muted">No candidate visits scheduled/recorded for the selected period.</td>
           </tr>
           {% endfor %}
         </tbody>

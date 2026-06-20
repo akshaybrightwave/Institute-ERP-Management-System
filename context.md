@@ -901,6 +901,21 @@ Verified functionality:
 
 ---
 
+## Phase 11.4 — Counselor Visit Sheet Management
+
+### Objective
+Implement a visit-sheet candidate tracking system within the Counselor Module of the Management Portal. This lets counselors track prospective candidates planning physically to visit the institute.
+
+### Implemented Capabilities
+- **Visit Sheet Model**: Added `VisitSheet` tracking candidate (`lead`), `counselor`, `visit_date`, `visit_time`, `status`, `remarks`, and creation metadata.
+- **CRUD Operations**: Counselor-specific visit scheduling, editing, listing, and filtering.
+- **Data Isolation**: Counselors can only query and manage candidate visits assigned to themselves; Admins see all; Tele Callers are forbidden from viewing or modifying visit sheets.
+- **Lead Integration**: A dynamic "Visit History" panel and "Schedule Visit" actions added directly inside the Lead Details profiling dashboard.
+- **Dashboard Widgets**: Integrates 4 dashboard metrics counters (Today's Visits, Upcoming Visits, Completed Visits, No Shows) and sidebar quick actions.
+- **Visits Report**: Integrated a dedicated reports tab featuring total metrics aggregation and search/log listings (with CSV/Excel exports disabled for visits).
+
+---
+
 ## Completion Status
 
 Module Status: Completed
@@ -913,4 +928,4 @@ Completion Percentage: 100%
 
 ## Notes
 
-This module forms the first business workflow inside the Management Portal and serves as the lead-generation layer before Counselor admission processing and ERP student onboarding.
+This module forms the business workflow inside the Counselor Module of the Management Portal and serves as the follow-up physical visit log layer before admission conversion and ERP student onboarding.

@@ -7,8 +7,8 @@ from django.db.models import Q
 import datetime
 from django.utils import timezone
 
-from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession
-from .forms import InquiryForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm
+from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet
+from .forms import InquiryForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm
 from .decorators import telecaller_required, counselor_required
 
 @login_required
@@ -1366,6 +1366,17 @@ def counselor_dashboard(request):
     # Followup statistics
     pending_followups = followups_qs.filter(status='Pending').count()
     overdue_followups = followups_qs.filter(status='Pending', followup_date__lt=today).count()
+
+    # Visit statistics
+    if request.user.role == 'admin':
+        visits_qs = VisitSheet.objects.all()
+    else:
+        visits_qs = VisitSheet.objects.filter(counselor=request.user)
+
+    today_visits = visits_qs.filter(visit_date=today).count()
+    upcoming_visits = visits_qs.filter(visit_date__gt=today, status='Scheduled').count()
+    completed_visits = visits_qs.filter(status__in=['Visited', 'Admission Done']).count()
+    no_shows = visits_qs.filter(status='No Show').count()
     
     # Table Contexts
     recent_leads = leads_qs.order_by('-created_at')[:5]
@@ -1389,6 +1400,10 @@ def counselor_dashboard(request):
         'today_followups_list': today_followups_list,
         'overdue_followups_list': overdue_followups_list,
         'recent_activities': recent_activities,
+        'today_visits': today_visits,
+        'upcoming_visits': upcoming_visits,
+        'completed_visits': completed_visits,
+        'no_shows': no_shows,
     }
     return render(request, 'management/counselor_dashboard.html', context)
 
@@ -1442,6 +1457,7 @@ def counselor_lead_detail(request, pk):
     followups = lead.followups.all().order_by('-followup_date')
     notes = lead.notes_timeline.all().order_by('-created_at')
     activities = lead.activities.all().order_by('-created_at')
+    visits = lead.visit_sheets.all().order_by('-visit_date', '-visit_time')
 
     return render(request, 'management/counselor_lead_detail.html', {
         'lead': lead,
@@ -1449,6 +1465,7 @@ def counselor_lead_detail(request, pk):
         'followups': followups,
         'notes': notes,
         'activities': activities,
+        'visits': visits,
     })
 
 
@@ -1771,7 +1788,41 @@ def counselor_reports_dashboard(request):
     report_type = request.GET.get('report_type', 'performance').strip()
     report_data = []
 
-    if report_type == 'performance':
+    # Default values for visit metrics
+    total_scheduled = 0
+    total_completed = 0
+    total_no_shows = 0
+    total_admissions_visit = 0
+
+    if report_type == 'visit':
+        if request.user.role == 'admin':
+            visits_qs = VisitSheet.objects.all()
+        else:
+            visits_qs = VisitSheet.objects.filter(counselor=request.user)
+
+        if start_date:
+            visits_qs = visits_qs.filter(visit_date__gte=start_date)
+        if end_date:
+            visits_qs = visits_qs.filter(visit_date__lte=end_date)
+
+        total_scheduled = visits_qs.filter(status='Scheduled').count()
+        total_completed = visits_qs.filter(status='Visited').count()
+        total_no_shows = visits_qs.filter(status='No Show').count()
+        total_admissions_visit = visits_qs.filter(status='Admission Done').count()
+
+        for v in visits_qs:
+            report_data.append({
+                'candidate': v.lead.inquiry.full_name,
+                'mobile_number': v.lead.inquiry.mobile_number,
+                'course': v.lead.inquiry.course_interest,
+                'visit_date': v.visit_date.strftime('%Y-%m-%d'),
+                'visit_time': v.visit_time.strftime('%H:%M'),
+                'status': v.status,
+                'counselor': v.counselor.username,
+                'remarks': v.remarks or '-',
+            })
+
+    elif report_type == 'performance':
         for cs in counselors:
             leads_qs = Lead.objects.filter(assigned_counselor=cs)
             sessions_qs = CounselingSession.objects.filter(counselor=cs)
@@ -1866,6 +1917,9 @@ def counselor_reports_dashboard(request):
             })
 
     export_format = request.GET.get('export', '').strip()
+    if export_format in ('csv', 'excel') and report_type == 'visit':
+        return HttpResponseForbidden("Exporting is not supported for visit reports.")
+
     if export_format == 'csv':
         import csv
         from django.http import HttpResponse
@@ -1927,6 +1981,10 @@ def counselor_reports_dashboard(request):
         'date_filter': date_filter,
         'start_date': request.GET.get('start_date', ''),
         'end_date': request.GET.get('end_date', ''),
+        'total_scheduled': total_scheduled,
+        'total_completed': total_completed,
+        'total_no_shows': total_no_shows,
+        'total_admissions_visit': total_admissions_visit,
     })
 
 
@@ -1992,4 +2050,140 @@ def lead_assign_counselor(request):
         'status': status,
         'assigned': assigned_status,
         'status_choices': Lead.COUNSELOR_STATUS_CHOICES,
+    })
+
+
+@login_required
+@counselor_required
+def counselor_visit_list(request):
+    if request.user.role == 'admin':
+        visits = VisitSheet.objects.all()
+    elif request.user.role == 'counselor':
+        visits = VisitSheet.objects.filter(counselor=request.user)
+    else:
+        return HttpResponseForbidden("Access Denied.")
+
+    # Search candidates
+    q = request.GET.get('q', '').strip()
+    if q:
+        visits = visits.filter(
+            Q(lead__inquiry__full_name__icontains=q) |
+            Q(lead__inquiry__mobile_number__icontains=q) |
+            Q(lead__inquiry__course_interest__icontains=q)
+        )
+
+    # Filters
+    status = request.GET.get('status', '').strip()
+    if status:
+        visits = visits.filter(status=status)
+
+    start_date = request.GET.get('start_date', '').strip()
+    end_date = request.GET.get('end_date', '').strip()
+    if start_date:
+        try:
+            visits = visits.filter(visit_date__gte=datetime.datetime.strptime(start_date, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            visits = visits.filter(visit_date__lte=datetime.datetime.strptime(end_date, "%Y-%m-%d").date())
+        except ValueError:
+            pass
+
+    paginator = Paginator(visits, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'management/counselor_visit_list.html', {
+        'page_obj': page_obj,
+        'q': q,
+        'status': status,
+        'start_date': start_date,
+        'end_date': end_date,
+        'status_choices': VisitSheet.STATUS_CHOICES,
+    })
+
+
+@login_required
+@counselor_required
+def counselor_visit_add(request):
+    lead_id = request.GET.get('lead_id')
+    lead = None
+    if lead_id:
+        lead = get_object_or_404(Lead, pk=lead_id)
+        if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+            return HttpResponseForbidden("Access Denied: You do not own this lead record.")
+
+    if request.method == 'POST':
+        form = VisitSheetForm(request.POST, user=request.user)
+        selected_lead_id = request.POST.get('lead')
+        selected_lead = get_object_or_404(Lead, pk=selected_lead_id)
+
+        if request.user.role != 'admin' and selected_lead.assigned_counselor != request.user:
+            return HttpResponseForbidden("Access Denied: You do not own this lead record.")
+
+        if form.is_valid():
+            visit = form.save(commit=False)
+            visit.lead = selected_lead
+            visit.counselor = selected_lead.assigned_counselor or request.user
+            visit.created_by = request.user
+            visit.save()
+
+            # Log activity
+            log_lead_activity(
+                selected_lead,
+                'FOLLOWUP_CREATED',
+                f"Visit scheduled for {visit.visit_date} at {visit.visit_time}.",
+                request.user
+            )
+
+            messages.success(request, f"Visit scheduled successfully for {selected_lead.inquiry.full_name}.")
+            return redirect('counselor_lead_detail', pk=selected_lead.pk)
+    else:
+        form = VisitSheetForm(initial={'lead': lead}, user=request.user)
+
+    if request.user.role == 'admin':
+        leads = Lead.objects.all()
+    else:
+        leads = Lead.objects.filter(assigned_counselor=request.user)
+
+    return render(request, 'management/counselor_visit_form.html', {
+        'form': form,
+        'leads': leads,
+        'selected_lead': lead,
+        'title': 'Schedule Visit',
+    })
+
+
+@login_required
+@counselor_required
+def counselor_visit_edit(request, pk):
+    visit = get_object_or_404(VisitSheet, pk=pk)
+    if request.user.role != 'admin' and visit.counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this visit record.")
+
+    if request.method == 'POST':
+        form = VisitSheetForm(request.POST, instance=visit, user=request.user)
+        if form.is_valid():
+            old_status = visit.status
+            updated_visit = form.save()
+
+            if old_status != updated_visit.status:
+                log_lead_activity(
+                    updated_visit.lead,
+                    'STATUS_CHANGED',
+                    f"Visit status updated from {old_status} to {updated_visit.status}.",
+                    request.user
+                )
+
+            messages.success(request, "Visit sheet updated successfully.")
+            return redirect('counselor_lead_detail', pk=updated_visit.lead.pk)
+    else:
+        form = VisitSheetForm(instance=visit, user=request.user)
+
+    return render(request, 'management/counselor_visit_form.html', {
+        'form': form,
+        'visit': visit,
+        'selected_lead': visit.lead,
+        'title': 'Edit Visit Sheet',
     })

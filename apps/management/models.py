@@ -290,3 +290,41 @@ class CounselingSession(models.Model):
 
     def __str__(self):
         return f"Session with {self.lead.inquiry.full_name} on {self.session_date}"
+
+
+class VisitSheet(models.Model):
+    STATUS_CHOICES = (
+        ('Scheduled', 'Scheduled'),
+        ('Visited', 'Visited'),
+        ('No Show', 'No Show'),
+        ('Cancelled', 'Cancelled'),
+        ('Admission Done', 'Admission Done'),
+    )
+
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='visit_sheets', db_index=True)
+    counselor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='counselor_visits',
+        db_index=True
+    )
+    visit_date = models.DateField(db_index=True)
+    visit_time = models.TimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Scheduled', db_index=True)
+    remarks = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_visits'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-visit_date', '-visit_time']
+
+    def __str__(self):
+        return f"Visit for {self.lead.inquiry.full_name} on {self.visit_date} at {self.visit_time}"
+
