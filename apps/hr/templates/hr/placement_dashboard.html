@@ -1,0 +1,170 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Placement Dashboard | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Internal <i class="bi bi-chevron-right mx-1"></i> Placement <i class="bi bi-chevron-right mx-1"></i> Dashboard</div>
+    <h1 class="fw-bold mb-1">Placement Dashboard</h1>
+    <p class="hr-muted mb-0">Manage placement drives, companies and student placements.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-hr-primary" href="{% url 'hr:placement_company_create' %}"><i class="bi bi-plus-lg me-1"></i>Add Company</a>
+    <a class="btn btn-soft" href="{% url 'hr:placement_drive_create' %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Drive</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for metric in metrics %}
+  <div class="col-sm-6 col-xl-3">
+    <div class="hr-kpi">
+      <div class="hr-kpi-top">
+        <div class="hr-kpi-icon tone-{{ metric.color }}"><i class="bi {{ metric.icon }}"></i></div>
+        <div>
+          <div class="small hr-muted">{{ metric.label }}</div>
+          <div class="hr-stat-number">{{ metric.value }}</div>
+        </div>
+      </div>
+      <div class="d-flex align-items-end justify-content-between">
+        <span class="small hr-muted">{{ metric.trend }} <i class="bi bi-arrow-up-right text-success"></i></span>
+        <div class="mini-bars">
+          {% for bar in metric.spark %}<span style="height: {{ bar }}%;"></span>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-xxl-8">
+    <div class="hr-panel p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Recent Placement Drives</h5>
+        <a class="fw-semibold" href="{% url 'hr:placement_drive_list' %}">View All Drives <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+      <div class="table-responsive">
+        <table class="table hr-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Drive Date</th>
+              <th>Role</th>
+              <th>Students Sent</th>
+              <th>Appeared</th>
+              <th>Selected</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for drive in recent_drives %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {% if drive.company.logo %}<img class="candidate-avatar" src="{{ drive.company.logo.url }}" alt="{{ drive.company }}">{% else %}<span class="candidate-avatar d-inline-grid align-items-center text-center"><i class="bi bi-building"></i></span>{% endif %}
+                  <span class="fw-semibold">{{ drive.company|default:"Unassigned Company" }}</span>
+                </div>
+              </td>
+              <td>{{ drive.drive_date|date:"d M Y"|default:"--" }}</td>
+              <td>{{ drive.job_role|default:"--" }}</td>
+              <td>{{ drive.assignments_count }}</td>
+              <td>{{ drive.appeared_count }}</td>
+              <td>{{ drive.selected_count }}</td>
+              <td><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></td>
+              <td>
+                <a class="action-btn" href="{% url 'hr:placement_drive_detail' drive.id %}"><i class="bi bi-eye"></i></a>
+                <a class="action-btn" href="{% url 'hr:placement_drive_edit' drive.id %}"><i class="bi bi-pencil"></i></a>
+                <a class="action-btn" href="{% url 'hr:placement_drive_interview_create' drive.id %}"><i class="bi bi-calendar-plus"></i></a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center py-5 hr-muted">No placement drives yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="hr-panel p-4 mb-4">
+      <h5 class="fw-bold mb-4">Placement Drive Pipeline</h5>
+      <div class="row text-center g-3">
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-calendar-event fs-3 text-primary"></i><div class="fw-semibold mt-2">Drive Scheduled</div><div class="hr-stat-number">{{ pipeline.scheduled }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-people fs-3 text-success"></i><div class="fw-semibold mt-2">Students Shortlisted</div><div class="hr-stat-number">{{ pipeline.shortlisted }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-person-video3 fs-3 text-primary"></i><div class="fw-semibold mt-2">Students Appeared</div><div class="hr-stat-number">{{ pipeline.appeared }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-envelope-check fs-3 text-warning"></i><div class="fw-semibold mt-2">Offers Received</div><div class="hr-stat-number">{{ pipeline.offers }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-award fs-3 text-success"></i><div class="fw-semibold mt-2">Students Placed</div><div class="hr-stat-number">{{ pipeline.placed }}</div></div></div>
+      </div>
+    </div>
+
+    <div class="hr-panel p-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Recent Placement Activities</h5>
+        <a href="{% url 'hr:placement_reports' %}" class="fw-semibold">View Reports <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+      {% for activity in activities %}
+      <div class="d-flex align-items-center gap-3 border-bottom py-2">
+        <span class="hr-kpi-icon tone-violet" style="width: 40px; height: 40px;"><i class="bi bi-lightning-charge"></i></span>
+        <div class="flex-grow-1">
+          <div class="fw-semibold">{{ activity.title }}</div>
+          <div class="small hr-muted">{{ activity.description|default:"Placement activity" }}</div>
+        </div>
+        <div class="small hr-muted">{{ activity.created_at|date:"d M Y h:i A" }}</div>
+      </div>
+      {% empty %}
+      <p class="hr-muted text-center py-4 mb-0">No placement activity yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-xxl-4">
+    <div class="hr-panel p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Top Recruiting Companies</h5>
+        <a class="btn btn-soft btn-sm" href="{% url 'hr:placement_company_list' %}">View</a>
+      </div>
+      {% for company in top_companies %}
+      <div class="d-flex align-items-center gap-3 border-bottom py-3">
+        <span class="badge rounded-pill text-bg-light">{{ forloop.counter }}</span>
+        {% if company.logo %}<img class="candidate-avatar" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<span class="candidate-avatar d-inline-grid align-items-center text-center"><i class="bi bi-building"></i></span>{% endif %}
+        <div class="flex-grow-1 fw-semibold">{{ company }}</div>
+        <span class="small hr-muted">{{ company.joined_count }} placed</span>
+      </div>
+      {% empty %}
+      <p class="hr-muted text-center py-4">No companies yet.</p>
+      {% endfor %}
+    </div>
+
+    <div class="hr-panel p-3 mb-4">
+      <h5 class="fw-bold mb-3">Drive Summary</h5>
+      {% for key, count in status_counts.items %}
+      <div class="mb-3">
+        <div class="d-flex justify-content-between small">
+          <span>{{ key|title }}</span>
+          <strong>{{ count }}</strong>
+        </div>
+        <div class="progress" style="height: 10px;">
+          <div class="progress-bar" style="width: {% widthratio count total_drives 100 %}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="hr-panel p-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Upcoming Interviews</h5>
+        <a href="{% url 'hr:placement_interview_list' %}" class="fw-semibold">View All</a>
+      </div>
+      {% for interview in upcoming_interviews %}
+      <div class="border rounded p-3 mb-2">
+        <div class="fw-semibold">{{ interview.company|default:"Company" }} - {{ interview.interview_round|default:"Interview" }}</div>
+        <div class="small hr-muted">{{ interview.date|date:"d M Y"|default:"--" }} {{ interview.time|time:"h:i A"|default:"" }}</div>
+      </div>
+      {% empty %}
+      <p class="hr-muted mb-0">No interviews scheduled.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

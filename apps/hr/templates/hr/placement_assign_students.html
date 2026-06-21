@@ -1,0 +1,55 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Assign Students | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Assign Students</div>
+    <h1 class="fw-bold mb-1">{{ drive }}</h1>
+    <p class="hr-muted mb-0">Select students and assign them to this placement drive.</p>
+  </div>
+</div>
+
+<div class="hr-panel p-3 mb-4">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-md-10">
+      <label class="form-label small fw-semibold">Search students</label>
+      <input class="form-control" name="q" value="{{ query }}" placeholder="Name, phone or email">
+    </div>
+    <div class="col-md-2"><button class="btn btn-hr-primary w-100">Search</button></div>
+  </form>
+</div>
+
+<form method="post" class="hr-panel p-3">
+  {% csrf_token %}
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead><tr><th></th><th>Student</th><th>Course</th><th>Phone</th><th>Email</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for student in students %}
+        <tr>
+          <td><input class="form-check-input" type="checkbox" name="students" value="{{ student.id }}"></td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {% if student.profile_picture %}<img class="candidate-avatar" src="{{ student.profile_picture.url }}" alt="{{ student.full_name }}">{% else %}<span class="candidate-avatar d-inline-grid align-items-center text-center"><i class="bi bi-person"></i></span>{% endif %}
+              <span class="fw-semibold">{{ student.full_name }}</span>
+            </div>
+          </td>
+          <td>{% if student.batch and student.batch.course %}{{ student.batch.course.name }}{% else %}--{% endif %}</td>
+          <td>{{ student.phone|default:"--" }}</td>
+          <td>{{ student.email|default:"--" }}</td>
+          <td><span class="status-badge">Eligible</span></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-5 hr-muted">No available students found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex justify-content-end gap-2 pt-3">
+    <a class="btn btn-soft" href="{% url 'hr:placement_drive_detail' drive.id %}">Cancel</a>
+    <button class="btn btn-hr-primary" type="submit">Assign to Company</button>
+  </div>
+</form>
+{% endblock %}

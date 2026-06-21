@@ -1,0 +1,58 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}HR Performance | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Management <i class="bi bi-chevron-right mx-1"></i> HR Performance</div>
+    <h1 class="fw-bold mb-1">HR Performance Dashboard</h1>
+    <p class="hr-muted mb-0">Calls, candidates handled, interviews, decisions and conversion ratio.</p>
+  </div>
+</div>
+
+<div class="hr-panel p-3">
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>HR</th>
+          <th>Calls Made</th>
+          <th>Candidates Handled</th>
+          <th>Interviews</th>
+          <th>Selected</th>
+          <th>Rejected</th>
+          <th>Conversion</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td><span class="badge text-bg-primary">#{{ forloop.counter }}</span></td>
+          <td>
+            <div class="fw-semibold">{{ row.user.get_full_name|default:row.user.username }}</div>
+            <div class="small hr-muted">{{ row.user.email|default:"No email" }}</div>
+          </td>
+          <td>{{ row.calls }}</td>
+          <td>{{ row.handled }}</td>
+          <td>{{ row.interviews }}</td>
+          <td class="text-success fw-semibold">{{ row.selected }}</td>
+          <td class="text-danger fw-semibold">{{ row.rejected }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 10px; min-width: 110px;">
+                <div class="progress-bar bg-success" style="width: {{ row.conversion }}%"></div>
+              </div>
+              <strong>{{ row.conversion }}%</strong>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center py-5 hr-muted">No HR users available.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

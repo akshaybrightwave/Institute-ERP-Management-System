@@ -1,0 +1,63 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ drive }} | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Drive Profile</div>
+    <h1 class="fw-bold mb-1">{{ drive.company|default:"Placement Drive" }}</h1>
+    <p class="hr-muted mb-0">{{ drive.job_role|default:"Role not set" }} · {{ drive.drive_date|date:"d M Y"|default:"Date not set" }}</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-soft" href="{% url 'hr:placement_drive_edit' drive.id %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+    <a class="btn btn-hr-primary" href="{% url 'hr:placement_assign_students' drive.id %}"><i class="bi bi-people me-1"></i>Add Students</a>
+    <a class="btn btn-soft" href="{% url 'hr:placement_drive_interview_create' drive.id %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Interviews</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Students Sent</div><div class="hr-stat-number">{{ drive.assignments_count }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Appeared</div><div class="hr-stat-number">{{ drive.appeared_count }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Selected</div><div class="hr-stat-number">{{ drive.selected_count }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Status</div><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></div></div>
+</div>
+
+<div class="hr-panel p-4 mb-4">
+  <h5 class="fw-bold mb-3">Drive Details</h5>
+  <dl class="row mb-0">
+    <dt class="col-md-3 hr-muted">Company</dt><dd class="col-md-9">{{ drive.company|default:"--" }}</dd>
+    <dt class="col-md-3 hr-muted">Package</dt><dd class="col-md-9">{{ drive.package|default:"--" }}</dd>
+    <dt class="col-md-3 hr-muted">Venue</dt><dd class="col-md-9">{{ drive.venue|default:"--" }}</dd>
+    <dt class="col-md-3 hr-muted">Eligibility</dt><dd class="col-md-9">{{ drive.eligibility_criteria|linebreaksbr|default:"--" }}</dd>
+    <dt class="col-md-3 hr-muted">Remarks</dt><dd class="col-md-9">{{ drive.remarks|linebreaksbr|default:"--" }}</dd>
+  </dl>
+</div>
+
+<div class="hr-panel p-3">
+  <h5 class="fw-bold mb-3">Assigned Students</h5>
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead><tr><th>Student</th><th>Course</th><th>Skills</th><th>Interview Status</th><th>Final Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for item in assignments %}
+        <tr>
+          <td>{{ item.display_name }}</td>
+          <td>{{ item.display_course|default:"--" }}</td>
+          <td>{{ item.skills|truncatechars:50|default:"--" }}</td>
+          <td><span class="status-badge status-{{ item.interview_status }}">{{ item.get_interview_status_display }}</span></td>
+          <td><span class="status-badge status-{{ item.final_status }}">{{ item.get_final_status_display }}</span></td>
+          <td>
+            <a class="action-btn" href="{% url 'hr:placement_assignment_edit' item.id %}"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn" href="{% url 'hr:placement_assignment_interview_create' item.id %}"><i class="bi bi-calendar-plus"></i></a>
+            <a class="action-btn" href="{% url 'hr:placement_assignment_offer_create' item.id %}"><i class="bi bi-envelope-check"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-5 hr-muted">No students assigned yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

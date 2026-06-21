@@ -1,0 +1,32 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ title }} | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Companies</div>
+    <h1 class="fw-bold mb-1">{{ title }}</h1>
+    <p class="hr-muted mb-0">All fields are optional. Save partial company information anytime.</p>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="hr-panel p-4">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="row g-3">
+    {% for field in form %}
+    <div class="col-md-{% if field.name == 'address' or field.name == 'notes' %}12{% else %}6{% endif %}">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      <div class="text-danger small">{{ field.errors }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <a class="btn btn-soft" href="{% url 'hr:placement_company_list' %}">Cancel</a>
+    <button class="btn btn-soft" type="submit" name="draft" value="1">Save Draft</button>
+    <button class="btn btn-hr-primary" type="submit">Save Company</button>
+  </div>
+</form>
+{% endblock %}

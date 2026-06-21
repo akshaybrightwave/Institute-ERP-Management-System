@@ -1,0 +1,37 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Placement Interviews | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Interviews</div>
+    <h1 class="fw-bold mb-1">Placement Interviews</h1>
+    <p class="hr-muted mb-0">Schedule and update student interview rounds.</p>
+  </div>
+  <a class="btn btn-hr-primary" href="{% url 'hr:placement_interview_create' %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Interview</a>
+</div>
+
+<div class="hr-panel p-3">
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead><tr><th>Student</th><th>Company</th><th>Round</th><th>Date</th><th>Interviewer</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for interview in page_obj %}
+        <tr>
+          <td>{{ interview.assignment.display_name|default:"--" }}</td>
+          <td>{{ interview.company|default:"--" }}</td>
+          <td>{{ interview.interview_round|default:"--" }}</td>
+          <td>{{ interview.date|date:"d M Y"|default:"--" }} <div class="small hr-muted">{{ interview.time|time:"h:i A"|default:"" }}</div></td>
+          <td>{{ interview.interviewer|default:"--" }}</td>
+          <td><span class="status-badge status-{{ interview.status }}">{{ interview.get_status_display }}</span></td>
+          <td><a class="action-btn" href="{% url 'hr:placement_interview_edit' interview.id %}"><i class="bi bi-pencil"></i></a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center py-5 hr-muted">No placement interviews scheduled.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

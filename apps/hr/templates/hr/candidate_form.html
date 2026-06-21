@@ -1,0 +1,80 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Add Candidate | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Add Candidate</div>
+    <h1 class="fw-bold mb-1">Add Candidate</h1>
+    <p class="hr-muted mb-0">Create a complete recruitment profile.</p>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="wizard-step"><strong>1</strong><span>Basic Information</span></div></div>
+    <div class="col-md-3"><div class="wizard-step"><strong>2</strong><span>Professional Information</span></div></div>
+    <div class="col-md-3"><div class="wizard-step"><strong>3</strong><span>Recruitment Information</span></div></div>
+    <div class="col-md-3"><div class="wizard-step"><strong>4</strong><span>Documents</span></div></div>
+  </div>
+
+  <div class="hr-panel p-4 mb-4">
+    <h5 class="fw-bold mb-3">Basic Information</h5>
+    <div class="row g-3">
+      {% for field in forms.basic %}
+      <div class="col-md-{% if field.name == 'address' %}12{% else %}6{% endif %}">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        <div class="text-danger small">{{ field.errors }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="hr-panel p-4 mb-4">
+    <h5 class="fw-bold mb-3">Professional Information</h5>
+    <div class="row g-3">
+      {% for field in forms.professional %}
+      <div class="col-md-{% if field.name == 'skills' %}12{% else %}6{% endif %}">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        <div class="text-danger small">{{ field.errors }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="hr-panel p-4 mb-4">
+    <h5 class="fw-bold mb-3">Recruitment Information</h5>
+    <div class="row g-3">
+      {% for field in forms.recruitment %}
+      <div class="col-md-6">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        <div class="text-danger small">{{ field.errors }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="hr-panel p-4 mb-4">
+    <h5 class="fw-bold mb-3">Documents</h5>
+    <div class="row g-3">
+      {% for field in forms.documents %}
+      <div class="col-md-4">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        <div class="text-danger small">{{ field.errors }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2">
+    <a class="btn btn-soft" href="{% url 'hr:candidate_list' %}">Cancel</a>
+    <button class="btn btn-hr-primary" type="submit"><i class="bi bi-check-circle me-1"></i>Save Candidate</button>
+  </div>
+</form>
+{% endblock %}

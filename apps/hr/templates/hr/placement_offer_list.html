@@ -1,0 +1,37 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Offers & Placements | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Offers</div>
+    <h1 class="fw-bold mb-1">Offers & Placements</h1>
+    <p class="hr-muted mb-0">Track packages, offer status and joining status.</p>
+  </div>
+  <a class="btn btn-hr-primary" href="{% url 'hr:placement_offer_create' %}"><i class="bi bi-envelope-plus me-1"></i>Add Offer</a>
+</div>
+
+<div class="hr-panel p-3">
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead><tr><th>Student</th><th>Company</th><th>Package</th><th>Offer Status</th><th>Joining Status</th><th>Joining Date</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for offer in page_obj %}
+        <tr>
+          <td>{{ offer.assignment.display_name|default:"--" }}</td>
+          <td>{{ offer.company|default:"--" }}</td>
+          <td>{{ offer.offered_package|default:"--" }}</td>
+          <td><span class="status-badge status-{{ offer.offer_status }}">{{ offer.get_offer_status_display }}</span></td>
+          <td><span class="status-badge status-{{ offer.joining_status }}">{{ offer.get_joining_status_display }}</span></td>
+          <td>{{ offer.joining_date|date:"d M Y"|default:"--" }}</td>
+          <td><a class="action-btn" href="{% url 'hr:placement_offer_edit' offer.id %}"><i class="bi bi-pencil"></i></a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center py-5 hr-muted">No offers recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

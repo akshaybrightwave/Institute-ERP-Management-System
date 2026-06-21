@@ -1,0 +1,84 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Reports | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Management <i class="bi bi-chevron-right mx-1"></i> Reports</div>
+    <h1 class="fw-bold mb-1">Recruitment Analytics</h1>
+    <p class="hr-muted mb-0">Status distribution, funnel health, source analysis and report exports.</p>
+  </div>
+  <a class="btn btn-soft" href="{% url 'hr:export_candidates' %}"><i class="bi bi-download me-1"></i>Export Candidate Report</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="hr-kpi">
+      <div class="small hr-muted">Selection Ratio</div>
+      <div class="hr-stat-number">{{ selection_ratio }}%</div>
+      <div class="small text-success"><i class="bi bi-arrow-up-right"></i> Selected plus joined</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="hr-kpi">
+      <div class="small hr-muted">Interviews</div>
+      <div class="hr-stat-number">{{ interview_count }}</div>
+      <div class="small hr-muted">Scheduled and completed</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="hr-kpi">
+      <div class="small hr-muted">Follow-ups</div>
+      <div class="hr-stat-number">{{ followup_count }}</div>
+      <div class="small hr-muted">All follow-up records</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="hr-panel p-4 h-100">
+      <h5 class="fw-bold mb-3">Candidate Status Distribution</h5>
+      {% for key, count in status_counts.items %}
+      <div class="mb-3">
+        <div class="d-flex justify-content-between small">
+          <span>{{ key|title }}</span>
+          <strong>{{ count }}</strong>
+        </div>
+        <div class="progress" style="height: 10px;">
+          <div class="progress-bar" style="width: {% widthratio count total 100 %}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="hr-panel p-4 h-100">
+      <h5 class="fw-bold mb-3">Source Analysis</h5>
+      {% for key, count in source_counts.items %}
+      <div class="mb-3">
+        <div class="d-flex justify-content-between small">
+          <span>{{ key|title }}</span>
+          <strong>{{ count }}</strong>
+        </div>
+        <div class="progress" style="height: 10px;">
+          <div class="progress-bar bg-success" style="width: {% widthratio count total 100 %}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="hr-panel p-4 mt-4">
+  <h5 class="fw-bold mb-3">Available Reports</h5>
+  <div class="row g-3">
+    <div class="col-md-4"><a class="btn btn-soft w-100 text-start" href="{% url 'hr:export_candidates' %}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Candidate Report</a></div>
+    <div class="col-md-4"><a class="btn btn-soft w-100 text-start" href="{% url 'hr:performance' %}"><i class="bi bi-person-lines-fill me-2"></i>HR Productivity Report</a></div>
+    <div class="col-md-4"><a class="btn btn-soft w-100 text-start" href="{% url 'hr:interview_list' %}"><i class="bi bi-calendar-check me-2"></i>Interview Report</a></div>
+    <div class="col-md-4"><a class="btn btn-soft w-100 text-start" href="{% url 'hr:followup_list' %}"><i class="bi bi-telephone-forward me-2"></i>Follow-up Report</a></div>
+    <div class="col-md-4"><a class="btn btn-soft w-100 text-start" href="{% url 'hr:candidate_list' %}?status=selected"><i class="bi bi-patch-check me-2"></i>Selection Report</a></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Placement Students | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Students</div>
+    <h1 class="fw-bold mb-1">Student Placements</h1>
+    <p class="hr-muted mb-0">Track students sent to companies and final outcomes.</p>
+  </div>
+  <a class="btn btn-hr-primary" href="{% url 'hr:placement_assignment_create' %}"><i class="bi bi-person-plus me-1"></i>Add Student</a>
+</div>
+
+<div class="hr-panel p-3 mb-4">
+  <form class="row g-3 align-items-end" method="get">
+    <div class="col-md-7"><label class="form-label small fw-semibold">Search</label><input class="form-control" name="q" value="{{ query }}" placeholder="Student or company"></div>
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">Final Status</label>
+      <select class="form-select" name="status">
+        <option value="">All Status</option>
+        {% for value, label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2"><button class="btn btn-hr-primary w-100">Filter</button></div>
+  </form>
+</div>
+
+<div class="hr-panel p-3">
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead><tr><th>Student</th><th>Course</th><th>Company</th><th>Drive</th><th>Interview</th><th>Final</th><th>Action</th></tr></thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td>{{ item.display_name }}</td>
+          <td>{{ item.display_course|default:"--" }}</td>
+          <td>{{ item.company|default:"--" }}</td>
+          <td>{{ item.drive.job_role|default:"--" }}</td>
+          <td><span class="status-badge status-{{ item.interview_status }}">{{ item.get_interview_status_display }}</span></td>
+          <td><span class="status-badge status-{{ item.final_status }}">{{ item.get_final_status_display }}</span></td>
+          <td>
+            <a class="action-btn" href="{% url 'hr:placement_assignment_edit' item.id %}"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn" href="{% url 'hr:placement_assignment_interview_create' item.id %}"><i class="bi bi-calendar-plus"></i></a>
+            <a class="action-btn" href="{% url 'hr:placement_assignment_offer_create' item.id %}"><i class="bi bi-envelope-check"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="text-center py-5 hr-muted">No placement students found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -111,6 +111,8 @@ def user_login(request):
                 return redirect('teacher_dashboard')
             elif user.role == 'student':
                 return redirect('student_dashboard')
+            elif user.role == 'hr':
+                return redirect('hr:dashboard')
             elif user.role == 'telecaller':
                 return redirect('management_dashboard')
             elif user.role == 'counselor':

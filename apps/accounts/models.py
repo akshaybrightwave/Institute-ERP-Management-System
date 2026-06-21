@@ -12,6 +12,7 @@ class User(AbstractUser):
         ('center', 'Center'),
         ('teacher', 'Teacher'),
         ('student', 'Student'),
+        ('hr', 'HR'),
         ('telecaller', 'Telecaller'),
         ('counselor', 'Counselor'),
     )

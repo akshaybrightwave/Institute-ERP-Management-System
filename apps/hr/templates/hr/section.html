@@ -1,0 +1,19 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ title }} | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">HR Portal</div>
+    <h1 class="fw-bold mb-1">{{ title }}</h1>
+    <p class="hr-muted mb-0">This section is kept inside the HR portal boundary.</p>
+  </div>
+</div>
+
+<div class="hr-panel p-5 text-center">
+  <i class="bi bi-folder2-open fs-1 text-primary"></i>
+  <h4 class="fw-bold mt-3">{{ title }}</h4>
+  <p class="hr-muted mb-0">Ready for HR-specific workflows without affecting the existing ERP modules.</p>
+</div>
+{% endblock %}

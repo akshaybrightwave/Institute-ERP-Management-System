@@ -1,0 +1,15 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Confirm Delete | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-panel p-4" style="max-width: 640px;">
+  <h3 class="fw-bold">Delete {{ object }}</h3>
+  <p class="hr-muted">This action cannot be undone.</p>
+  <form method="post" class="d-flex gap-2">
+    {% csrf_token %}
+    <a class="btn btn-soft" href="{{ cancel_url }}">Cancel</a>
+    <button class="btn btn-danger" type="submit">Delete</button>
+  </form>
+</div>
+{% endblock %}

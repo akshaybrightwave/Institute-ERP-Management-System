@@ -61,19 +61,24 @@
             </div>
 
             <div class="row g-2">
-                <div class="col-4">
+                <div class="col-6 col-lg-3">
                     <a href="{% url 'signup_student' %}" class="btn btn-outline-primary w-100 btn-sm">
                         <i class="bi bi-mortarboard d-block fs-5 mb-1"></i> Student
                     </a>
                 </div>
-                <div class="col-4">
+                <div class="col-6 col-lg-3">
                     <a href="{% url 'signup_teacher' %}" class="btn btn-outline-primary w-100 btn-sm">
                         <i class="bi bi-person-workspace d-block fs-5 mb-1"></i> Teacher
                     </a>
                 </div>
-                <div class="col-4">
+                <div class="col-6 col-lg-3">
                     <a href="{% url 'signup_admin' %}" class="btn btn-outline-primary w-100 btn-sm">
                         <i class="bi bi-shield-lock d-block fs-5 mb-1"></i> Admin
+                    </a>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <a href="{% url 'hr:signup' %}" class="btn btn-outline-primary w-100 btn-sm">
+                        <i class="bi bi-person-badge d-block fs-5 mb-1"></i> HR
                     </a>
                 </div>
             </div>

@@ -1,0 +1,213 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Recruitment Dashboard | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Internal <i class="bi bi-chevron-right mx-1"></i> Recruitment <i class="bi bi-chevron-right mx-1"></i> Dashboard</div>
+    <h1 class="fw-bold mb-1">Recruitment Dashboard</h1>
+    <p class="hr-muted mb-0">Track recruitment activities and candidate status.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-soft" href="{% url 'hr:reports' %}"><i class="bi bi-calendar3 me-1"></i>This Month</a>
+    <a class="btn btn-hr-primary" href="{% url 'hr:candidate_create' %}"><i class="bi bi-plus-lg me-1"></i>Add Candidate</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for metric in metrics %}
+  <div class="col-sm-6 col-xl-3">
+    <div class="hr-kpi">
+      <div class="hr-kpi-top">
+        <div class="hr-kpi-icon tone-{{ metric.color }}"><i class="bi {{ metric.icon }}"></i></div>
+        <div>
+          <div class="small hr-muted">{{ metric.label }}</div>
+          <div class="hr-stat-number">{{ metric.value }}</div>
+        </div>
+      </div>
+      <div class="d-flex align-items-end justify-content-between">
+        <span class="small hr-muted">{{ metric.trend }} this month <i class="bi bi-arrow-up-right text-success"></i></span>
+        <div class="mini-bars">
+          {% for bar in metric.spark %}
+          <span style="height: {{ bar }}%;"></span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-xxl-9">
+    <div class="hr-panel p-3 mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0">Recent Candidates</h5>
+        <div class="d-flex gap-2">
+          <a class="btn btn-soft btn-sm" href="{% url 'hr:candidate_list' %}"><i class="bi bi-funnel me-1"></i>Filter</a>
+          <a class="btn btn-soft btn-sm" href="{% url 'hr:export_candidates' %}"><i class="bi bi-download"></i></a>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table hr-table">
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Applied For</th>
+              <th>HR</th>
+              <th>Status</th>
+              <th>Last Activity</th>
+              <th>Next Follow-up</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for candidate in recent_candidates %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {% if candidate.photo %}
+                  <img class="candidate-avatar" src="{{ candidate.photo.url }}" alt="{{ candidate.full_name }}">
+                  {% else %}
+                  <span class="candidate-avatar d-inline-grid text-center align-items-center"><i class="bi bi-person"></i></span>
+                  {% endif %}
+                  <div>
+                    <div class="fw-semibold">{{ candidate.full_name }}</div>
+                    <div class="small hr-muted">{{ candidate.mobile }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ candidate.applying_position }}</td>
+              <td>{{ candidate.assigned_hr.username|default:"Unassigned" }}</td>
+              <td><span class="status-badge status-{{ candidate.status }}">{{ candidate.get_status_display }}</span></td>
+              <td>
+                {% with activity=candidate.latest_activity %}
+                <div>{{ activity.created_at|date:"d M Y"|default:"--" }}</div>
+                <div class="small hr-muted">{{ activity.title|default:"No activity" }}</div>
+                {% endwith %}
+              </td>
+              <td>
+                {% with next=candidate.next_follow_up %}
+                {% if next %}
+                <span class="text-warning fw-semibold">{{ next.follow_up_date|date:"d M Y" }}</span>
+                <div class="small text-warning">{{ next.follow_up_time|time:"h:i A" }}</div>
+                {% else %}
+                <span class="hr-muted">--</span>
+                {% endif %}
+                {% endwith %}
+              </td>
+              <td>
+                <a class="action-btn" href="{% url 'hr:candidate_detail' candidate.id %}" title="View"><i class="bi bi-eye"></i></a>
+                <a class="action-btn" href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
+                <a class="action-btn" href="{% url 'hr:mark_call' candidate.id %}" title="Call"><i class="bi bi-telephone"></i></a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <div class="fw-semibold">No candidates yet</div>
+                <a href="{% url 'hr:candidate_create' %}" class="btn btn-hr-primary btn-sm mt-3">Add Candidate</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="text-center pt-3">
+        <a href="{% url 'hr:candidate_list' %}" class="fw-semibold">View All Candidates <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="hr-panel p-3 h-100">
+          <h6 class="fw-bold mb-3">Recruitment Summary</h6>
+          {% for key, count in status_counts.items %}
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="small">{{ key|title }}</span>
+            <div class="w-50">
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar" style="width: {% widthratio count status_total 100 %}%"></div>
+              </div>
+            </div>
+            <span class="small fw-semibold">{{ count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="hr-panel p-3 h-100">
+          <h6 class="fw-bold mb-3">HR Performance</h6>
+          {% for row in hr_performance %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small">
+              <span>{{ row.name }}</span>
+              <span>{{ row.selected }} selected</span>
+            </div>
+            <div class="progress" style="height: 10px;">
+              <div class="progress-bar bg-success" style="width: {% widthratio row.selected 10 100 %}%"></div>
+            </div>
+          </div>
+          {% empty %}
+          <p class="hr-muted small mb-0">No HR performance data.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="hr-panel p-3 h-100">
+          <h6 class="fw-bold mb-3">Today's Follow-ups</h6>
+          <div class="display-6 fw-bold">{{ todays_followups }}</div>
+          <p class="hr-muted">Pending follow-ups: {{ pending_followups }}</p>
+          <a class="btn btn-soft btn-sm" href="{% url 'hr:followup_list' %}">View Follow-ups <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xxl-3">
+    <div class="hr-panel p-3 h-100">
+      {% if selected_candidate %}
+      <div class="text-center border-bottom pb-3 mb-3">
+        {% if selected_candidate.photo %}
+        <img class="candidate-avatar mb-2" style="width: 74px; height: 74px;" src="{{ selected_candidate.photo.url }}" alt="{{ selected_candidate.full_name }}">
+        {% else %}
+        <div class="candidate-avatar mx-auto mb-2 d-grid align-items-center" style="width: 74px; height: 74px;"><i class="bi bi-person fs-1"></i></div>
+        {% endif %}
+        <h5 class="fw-bold mb-1">{{ selected_candidate.full_name }}</h5>
+        <span class="status-badge status-{{ selected_candidate.status }}">{{ selected_candidate.get_status_display }}</span>
+        <div class="small hr-muted mt-2">{{ selected_candidate.email }}<br>{{ selected_candidate.mobile }}</div>
+        {% if selected_candidate.resume %}
+        <a class="btn btn-hr-primary btn-sm mt-3" href="{{ selected_candidate.resume.url }}"><i class="bi bi-download me-1"></i>View Resume</a>
+        {% endif %}
+      </div>
+      <h6 class="fw-bold">Candidate Information</h6>
+      <dl class="row small mb-3">
+        <dt class="col-5 hr-muted">Applying For</dt><dd class="col-7">{{ selected_candidate.applying_position }}</dd>
+        <dt class="col-5 hr-muted">Qualification</dt><dd class="col-7">{{ selected_candidate.qualification|default:"--" }}</dd>
+        <dt class="col-5 hr-muted">Experience</dt><dd class="col-7">{{ selected_candidate.experience|default:"--" }}</dd>
+        <dt class="col-5 hr-muted">Source</dt><dd class="col-7">{{ selected_candidate.get_source_display|default:"--" }}</dd>
+      </dl>
+      <h6 class="fw-bold">Activity Timeline</h6>
+      <div class="timeline">
+        {% for activity in selected_candidate.activities.all|slice:":7" %}
+        <div class="timeline-item">
+          <span class="timeline-dot"></span>
+          <div class="small fw-semibold">{{ activity.title }}</div>
+          <div class="small hr-muted">{{ activity.created_at|date:"d M Y, h:i A" }}</div>
+        </div>
+        {% empty %}
+        <p class="small hr-muted">No activity yet.</p>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-person-plus fs-1 text-primary"></i>
+        <h5 class="fw-bold mt-3">No candidate selected</h5>
+        <a class="btn btn-hr-primary btn-sm mt-2" href="{% url 'hr:candidate_create' %}">Add Candidate</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

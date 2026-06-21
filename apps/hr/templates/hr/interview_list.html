@@ -1,0 +1,63 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Interviews | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Interviews</div>
+    <h1 class="fw-bold mb-1">Interview Management</h1>
+    <p class="hr-muted mb-0">Schedule interviews, manage panels and capture feedback.</p>
+  </div>
+  <a class="btn btn-hr-primary" href="{% url 'hr:interview_create' %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Interview</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="hr-panel p-3">
+      <h5 class="fw-bold mb-3">All Interviews</h5>
+      <div class="table-responsive">
+        <table class="table hr-table">
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Type</th>
+              <th>Interviewer</th>
+              <th>Date</th>
+              <th>Decision</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for interview in interviews %}
+            <tr>
+              <td><a class="fw-semibold" href="{% url 'hr:candidate_detail' interview.candidate.id %}">{{ interview.candidate.full_name }}</a></td>
+              <td>{{ interview.get_interview_type_display }}</td>
+              <td>{{ interview.interviewer }}</td>
+              <td>{{ interview.date|date:"d M Y" }}<div class="small hr-muted">{{ interview.time|time:"h:i A" }}</div></td>
+              <td>{{ interview.get_decision_display }}</td>
+              <td><a class="btn btn-soft btn-sm" href="{% url 'hr:interview_feedback' interview.id %}">Feedback</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center py-5 hr-muted">No interviews scheduled.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="hr-panel p-3 h-100">
+      <h5 class="fw-bold mb-3">Weekly View</h5>
+      {% for interview in weekly_interviews %}
+      <div class="border rounded p-3 mb-2">
+        <div class="fw-semibold">{{ interview.candidate.full_name }}</div>
+        <div class="small hr-muted">{{ interview.get_interview_type_display }} · {{ interview.date|date:"D, d M" }} {{ interview.time|time:"h:i A" }}</div>
+      </div>
+      {% empty %}
+      <p class="hr-muted">No interviews this week.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

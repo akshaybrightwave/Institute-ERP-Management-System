@@ -1,0 +1,141 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Candidates | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Internal <i class="bi bi-chevron-right mx-1"></i> Recruitment</div>
+    <h1 class="fw-bold mb-1">Candidates</h1>
+    <p class="hr-muted mb-0">Search, filter, update and export recruitment candidates.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'hr:export_candidates' %}?{{ request.GET.urlencode }}" class="btn btn-soft"><i class="bi bi-download me-1"></i>Export CSV</a>
+    <a href="{% url 'hr:candidate_create' %}" class="btn btn-hr-primary"><i class="bi bi-plus-lg me-1"></i>Add Candidate</a>
+  </div>
+</div>
+
+<div class="hr-panel p-3 mb-4">
+  <form class="row g-3 align-items-end" method="get">
+    <div class="col-md-4">
+      <label class="form-label small fw-semibold">Search</label>
+      <input class="form-control" name="q" value="{{ query }}" placeholder="Name, mobile, email, position">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small fw-semibold">Status</label>
+      <select class="form-select" name="status">
+        <option value="">All Status</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small fw-semibold">Source</label>
+      <select class="form-select" name="source">
+        <option value="">All Sources</option>
+        {% for value, label in source_choices %}
+        <option value="{{ value }}" {% if selected_source == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small fw-semibold">Assigned HR</label>
+      <select class="form-select" name="hr">
+        <option value="">All HR</option>
+        {% for hr in hr_users %}
+        <option value="{{ hr.id }}" {% if selected_hr == hr.id|stringformat:"s" %}selected{% endif %}>{{ hr.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button class="btn btn-hr-primary flex-fill" type="submit"><i class="bi bi-funnel me-1"></i>Filter</button>
+      <a class="btn btn-soft" href="{% url 'hr:candidate_list' %}"><i class="bi bi-x-lg"></i></a>
+    </div>
+  </form>
+</div>
+
+<div class="hr-panel p-3">
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead>
+        <tr>
+          <th>Candidate</th>
+          <th>Applied For</th>
+          <th>Assigned HR</th>
+          <th>Status</th>
+          <th>Last Activity</th>
+          <th>Next Follow-up</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for candidate in page_obj %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              {% if candidate.photo %}
+              <img class="candidate-avatar" src="{{ candidate.photo.url }}" alt="{{ candidate.full_name }}">
+              {% else %}
+              <span class="candidate-avatar d-inline-grid align-items-center text-center"><i class="bi bi-person"></i></span>
+              {% endif %}
+              <div>
+                <div class="fw-semibold">{{ candidate.full_name }}</div>
+                <div class="small hr-muted">{{ candidate.mobile }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ candidate.applying_position }}</td>
+          <td>{{ candidate.assigned_hr.username|default:"Unassigned" }}</td>
+          <td><span class="status-badge status-{{ candidate.status }}">{{ candidate.get_status_display }}</span></td>
+          <td>
+            {% with activity=candidate.latest_activity %}
+            <div>{{ activity.title|default:"No activity" }}</div>
+            <div class="small hr-muted">{{ activity.created_at|date:"d M Y"|default:"--" }}</div>
+            {% endwith %}
+          </td>
+          <td>
+            {% with next=candidate.next_follow_up %}
+            {% if next %}
+            <span class="fw-semibold text-warning">{{ next.follow_up_date|date:"d M Y" }}</span>
+            <div class="small text-warning">{{ next.follow_up_time|time:"h:i A" }}</div>
+            {% else %}
+            <span class="hr-muted">--</span>
+            {% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            <a class="action-btn" href="{% url 'hr:candidate_detail' candidate.id %}" title="View"><i class="bi bi-eye"></i></a>
+            <a class="action-btn" href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn" href="{% url 'hr:mark_call' candidate.id %}" title="Call"><i class="bi bi-telephone"></i></a>
+            <a class="action-btn" href="{% url 'hr:candidate_interview_create' candidate.id %}" title="Schedule Interview"><i class="bi bi-calendar-plus"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-5">
+            <i class="bi bi-inbox fs-1 text-primary"></i>
+            <h5 class="fw-bold mt-3">No candidates found</h5>
+            <a class="btn btn-hr-primary btn-sm mt-2" href="{% url 'hr:candidate_create' %}">Add Candidate</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center pt-3">
+    <span class="small hr-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <div class="btn-group">
+      {% if page_obj.has_previous %}
+      <a class="btn btn-soft btn-sm" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ selected_status }}&source={{ selected_source }}&hr={{ selected_hr }}">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+      <a class="btn btn-soft btn-sm" href="?page={{ page_obj.next_page_number }}&q={{ query }}&status={{ selected_status }}&source={{ selected_source }}&hr={{ selected_hr }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

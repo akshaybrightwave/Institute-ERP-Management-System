@@ -1,0 +1,62 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Follow-ups | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Follow-ups</div>
+    <h1 class="fw-bold mb-1">Follow-up Management</h1>
+    <p class="hr-muted mb-0">Track today's, upcoming, overdue and completed follow-ups.</p>
+  </div>
+  <a class="btn btn-hr-primary" href="{% url 'hr:followup_create' %}"><i class="bi bi-plus-lg me-1"></i>Add Follow-up</a>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for key, value in counts.items %}
+  <div class="col-sm-6 col-lg-3">
+    <a class="hr-kpi d-block {% if bucket == key %}border-primary{% endif %}" href="?bucket={{ key }}">
+      <div class="small hr-muted">{{ key|title }}</div>
+      <div class="hr-stat-number">{{ value }}</div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="hr-panel p-3">
+  <div class="table-responsive">
+    <table class="table hr-table">
+      <thead>
+        <tr>
+          <th>Candidate</th>
+          <th>Date & Time</th>
+          <th>Type</th>
+          <th>Outcome</th>
+          <th>Remarks</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for followup in followups %}
+        <tr>
+          <td>
+            <a class="fw-semibold" href="{% url 'hr:candidate_detail' followup.candidate.id %}">{{ followup.candidate.full_name }}</a>
+            <div class="small hr-muted">{{ followup.candidate.mobile }}</div>
+          </td>
+          <td>
+            <span {% if followup.is_overdue %}class="text-danger fw-semibold"{% endif %}>{{ followup.follow_up_date|date:"d M Y" }}</span>
+            <div class="small hr-muted">{{ followup.follow_up_time|time:"h:i A" }}</div>
+          </td>
+          <td>{{ followup.get_follow_up_type_display }}</td>
+          <td>{{ followup.get_outcome_display|default:"--" }}{% if followup.completed %}<span class="badge text-bg-success ms-1">Done</span>{% endif %}</td>
+          <td>{{ followup.remarks|truncatechars:80|default:"--" }}</td>
+          <td><a class="action-btn" href="{% url 'hr:followup_edit' followup.id %}"><i class="bi bi-pencil"></i></a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-5 hr-muted">No follow-ups in this bucket.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

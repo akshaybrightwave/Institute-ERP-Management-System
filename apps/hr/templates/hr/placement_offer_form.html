@@ -1,0 +1,30 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Placement Offer | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Offer</div>
+    <h1 class="fw-bold mb-1">Offer & Final Placement</h1>
+    <p class="hr-muted mb-0">Update offer and joining status.</p>
+  </div>
+</div>
+
+<form method="post" class="hr-panel p-4">
+  {% csrf_token %}
+  <div class="row g-3">
+    {% for field in form %}
+    <div class="col-md-{% if field.name == 'remarks' %}12{% else %}6{% endif %}">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      <div class="text-danger small">{{ field.errors }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <a class="btn btn-soft" href="{% url 'hr:placement_offer_list' %}">Cancel</a>
+    <button class="btn btn-hr-primary" type="submit">Save Offer</button>
+  </div>
+</form>
+{% endblock %}

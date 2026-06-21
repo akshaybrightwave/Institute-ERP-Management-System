@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}HR Portal | Examly{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --hr-primary: #5b5fef;
+      --hr-primary-dark: #3929b8;
+      --hr-bg: #f8fafc;
+      --hr-text: #111827;
+      --hr-muted: #64748b;
+      --hr-line: #e5e7eb;
+      --hr-emerald: #10b981;
+      --hr-amber: #f59e0b;
+      --hr-red: #ef4444;
+    }
+
+    body {
+      margin: 0;
+      background: var(--hr-bg);
+      color: var(--hr-text);
+      font-family: Inter, Poppins, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+
+    a { text-decoration: none; }
+
+    .hr-layout {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+    }
+
+    .hr-sidebar {
+      background: linear-gradient(180deg, #20115f 0%, #1c1b5c 48%, #17174d 100%);
+      color: #fff;
+      padding: 22px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .hr-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 18px;
+      margin-bottom: 28px;
+    }
+
+    .hr-brand-icon {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--hr-primary);
+    }
+
+    .hr-nav-label {
+      color: rgba(255, 255, 255, .58);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin: 22px 8px 9px;
+    }
+
+    .hr-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: rgba(255, 255, 255, .88);
+      padding: 12px 13px;
+      border-radius: 8px;
+      margin-bottom: 5px;
+      transition: background .16s ease, color .16s ease, transform .16s ease;
+    }
+
+    .hr-nav-link:hover,
+    .hr-nav-link.active {
+      color: #fff;
+      background: rgba(91, 95, 239, .55);
+      transform: translateX(2px);
+    }
+
+    .hr-main {
+      min-width: 0;
+    }
+
+    .hr-topbar {
+      min-height: 76px;
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--hr-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .hr-search {
+      max-width: 520px;
+      flex: 1;
+      position: relative;
+    }
+
+    .hr-search i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--hr-muted);
+    }
+
+    .hr-search input {
+      width: 100%;
+      border: 1px solid var(--hr-line);
+      border-radius: 8px;
+      padding: 12px 14px 12px 42px;
+      outline: none;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+    }
+
+    .hr-content {
+      padding: 28px;
+    }
+
+    .hr-page-title {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .hr-card,
+    .hr-panel,
+    .hr-kpi {
+      background: #fff;
+      border: 1px solid var(--hr-line);
+      border-radius: 8px;
+      box-shadow: 0 18px 42px rgba(15, 23, 42, .06);
+    }
+
+    .hr-kpi {
+      padding: 18px;
+      min-height: 122px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hr-kpi-top {
+      display: flex;
+      gap: 13px;
+      align-items: center;
+    }
+
+    .hr-kpi-icon {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(91, 95, 239, .12);
+      color: var(--hr-primary);
+      font-size: 20px;
+    }
+
+    .tone-emerald { background: rgba(16, 185, 129, .12); color: var(--hr-emerald); }
+    .tone-amber { background: rgba(245, 158, 11, .14); color: var(--hr-amber); }
+    .tone-red { background: rgba(239, 68, 68, .12); color: var(--hr-red); }
+    .tone-blue { background: rgba(59, 130, 246, .12); color: #2563eb; }
+    .tone-teal { background: rgba(20, 184, 166, .12); color: #0f766e; }
+    .tone-orange { background: rgba(249, 115, 22, .13); color: #ea580c; }
+    .tone-violet { background: rgba(124, 58, 237, .12); color: #6d28d9; }
+
+    .hr-stat-number {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .hr-muted { color: var(--hr-muted); }
+
+    .btn-hr-primary {
+      background: var(--hr-primary);
+      border-color: var(--hr-primary);
+      color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 12px 24px rgba(91, 95, 239, .22);
+    }
+
+    .btn-hr-primary:hover {
+      background: var(--hr-primary-dark);
+      border-color: var(--hr-primary-dark);
+      color: #fff;
+    }
+
+    .btn-soft {
+      background: #fff;
+      border: 1px solid var(--hr-line);
+      color: var(--hr-text);
+      border-radius: 8px;
+    }
+
+    .hr-table {
+      margin: 0;
+      vertical-align: middle;
+    }
+
+    .hr-table thead {
+      background: #f8fafc;
+      color: #475569;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .candidate-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eef2ff;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #4338ca;
+      white-space: nowrap;
+    }
+
+    .status-selected,
+    .status-joined { background: #d1fae5; color: #047857; }
+    .status-rejected { background: #ffe4e6; color: #be123c; }
+    .status-follow_up_pending,
+    .status-on_hold { background: #fef3c7; color: #b45309; }
+    .status-interview_scheduled,
+    .status-interview_completed { background: #dbeafe; color: #1d4ed8; }
+    .status-called { background: #ede9fe; color: #5b21b6; }
+    .status-no_response { background: #f1f5f9; color: #475569; }
+    .status-upcoming { background: #dbeafe; color: #1d4ed8; }
+    .status-scheduled { background: #fef3c7; color: #b45309; }
+    .status-completed,
+    .status-accepted,
+    .status-offered { background: #d1fae5; color: #047857; }
+    .status-cancelled,
+    .status-not_joined { background: #ffe4e6; color: #be123c; }
+    .status-pending,
+    .status-awaiting { background: #eef2ff; color: #4338ca; }
+
+    .action-btn {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      border: 1px solid var(--hr-line);
+      color: #334155;
+      background: #fff;
+    }
+
+    .action-btn:hover {
+      color: var(--hr-primary);
+      border-color: rgba(91, 95, 239, .38);
+      background: #f5f3ff;
+    }
+
+    .mini-bars {
+      display: flex;
+      align-items: end;
+      gap: 4px;
+      height: 24px;
+    }
+
+    .mini-bars span {
+      width: 18px;
+      border-radius: 4px 4px 0 0;
+      background: rgba(91, 95, 239, .32);
+    }
+
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 16px;
+      border-left: 1px solid var(--hr-line);
+      padding-left: 18px;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -7px;
+      top: 2px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--hr-primary);
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 1px var(--hr-line);
+    }
+
+    .wizard-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--hr-line);
+      height: 100%;
+    }
+
+    @media (max-width: 991.98px) {
+      .hr-layout { grid-template-columns: 1fr; }
+      .hr-sidebar {
+        position: static;
+        height: auto;
+      }
+      .hr-topbar {
+        flex-wrap: wrap;
+        padding: 16px;
+      }
+      .hr-content { padding: 18px; }
+      .hr-page-title { flex-direction: column; }
+    }
+  </style>
+  {% block style %}{% endblock %}
+</head>
+
+<body>
+  <div class="hr-layout">
+    <aside class="hr-sidebar">
+      <a class="hr-brand" href="{% url 'hr:dashboard' %}">
+        <span class="hr-brand-icon"><i class="bi bi-flower1"></i></span>
+        HR PORTAL
+      </a>
+
+      <div class="hr-nav-label">Internal</div>
+      <a class="hr-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'hr:dashboard' %}">
+        <i class="bi bi-grid-1x2"></i> Dashboard
+      </a>
+      <a class="hr-nav-link {% if 'candidate' in request.resolver_match.url_name or 'followup' in request.resolver_match.url_name or 'interview' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'hr:candidate_list' %}">
+        <i class="bi bi-diagram-3"></i> Recruitment
+      </a>
+      <a class="hr-nav-link {% if 'placement' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'hr:placement_dashboard' %}">
+        <i class="bi bi-pin-map"></i> Placement
+      </a>
+      {% if 'placement' in request.resolver_match.url_name %}
+      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_dashboard' %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_company_list' %}">
+        <i class="bi bi-buildings"></i> Companies
+      </a>
+      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_drive_list' %}">
+        <i class="bi bi-megaphone"></i> Placement Drives
+      </a>
+      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_student_list' %}">
+        <i class="bi bi-mortarboard"></i> Students
+      </a>
+      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_interview_list' %}">
+        <i class="bi bi-calendar-check"></i> Interviews
+      </a>
+      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_offer_list' %}">
+        <i class="bi bi-envelope-check"></i> Offers & Placements
+      </a>
+      {% endif %}
+
+      <div class="hr-nav-label">External</div>
+      <a class="hr-nav-link" href="{% url 'hr:section' 'external-hiring' %}">
+        <i class="bi bi-briefcase"></i> External Hiring
+      </a>
+
+      <div class="hr-nav-label">Projects</div>
+      <a class="hr-nav-link" href="{% url 'hr:section' 'projects' %}">
+        <i class="bi bi-clipboard-check"></i> Projects
+      </a>
+
+      <div class="hr-nav-label">Management</div>
+      <a class="hr-nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'hr:reports' %}">
+        <i class="bi bi-bar-chart"></i> Reports
+      </a>
+      {% if 'placement' in request.resolver_match.url_name %}
+      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_reports' %}">
+        <i class="bi bi-file-earmark-bar-graph"></i> Placement Reports
+      </a>
+      {% endif %}
+      <a class="hr-nav-link {% if request.resolver_match.url_name == 'performance' %}active{% endif %}" href="{% url 'hr:performance' %}">
+        <i class="bi bi-trophy"></i> HR Performance
+      </a>
+      <a class="hr-nav-link" href="{% url 'hr:section' 'calendar' %}">
+        <i class="bi bi-calendar3"></i> Calendar
+      </a>
+
+      <div class="hr-nav-label">Settings</div>
+      <a class="hr-nav-link" href="{% url 'hr:section' 'settings' %}">
+        <i class="bi bi-gear"></i> Settings
+      </a>
+    </aside>
+
+    <div class="hr-main">
+      <header class="hr-topbar">
+        <form class="hr-search" action="{% url 'hr:candidate_list' %}" method="get">
+          <i class="bi bi-search"></i>
+          <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search companies, candidates, drives...">
+        </form>
+        <div class="d-flex align-items-center gap-2">
+          <a class="btn btn-soft" href="{% url 'hr:followup_list' %}">
+            <i class="bi bi-bell"></i>
+          </a>
+          <a class="btn btn-soft" href="{% url 'hr:interview_list' %}">
+            <i class="bi bi-calendar-event"></i>
+          </a>
+          {% if 'placement' in request.resolver_match.url_name %}
+          <a class="btn btn-soft" href="{% url 'hr:placement_company_create' %}">
+            <i class="bi bi-plus-lg me-1"></i>Add Company
+          </a>
+          <a class="btn btn-hr-primary" href="{% url 'hr:placement_drive_create' %}">
+            <i class="bi bi-plus-lg me-1"></i>Schedule Drive
+          </a>
+          {% else %}
+          <a class="btn btn-hr-primary" href="{% url 'hr:candidate_create' %}">
+            <i class="bi bi-plus-lg me-1"></i>Add Candidate
+          </a>
+          {% endif %}
+          <div class="dropdown">
+            <button class="btn btn-soft dropdown-toggle" data-bs-toggle="dropdown" type="button">
+              <i class="bi bi-person-circle me-1"></i>{{ request.user.username }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'hr:dashboard' %}">Dashboard</a></li>
+              <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <main class="hr-content">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

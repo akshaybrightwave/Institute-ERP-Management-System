@@ -123,13 +123,17 @@
             <a class="nav-link {% if request.resolver_match.url_name == 'teacher_dashboard' %}active{% endif %}"
               href="{% url 'teacher_dashboard' %}">Teacher Dashboard</a>
           </li>
+          {% elif request.user.role == 'hr' %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'hr:dashboard' %}">HR Dashboard</a>
+          </li>
           {% endif %}
 
           <!-- Role badge -->
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <span class="role-badge">
               <i class="bi bi-person-circle"></i>
-              {% if request.user.role == 'admin' %}Super Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'telecaller' %}Telecaller{% elif request.user.role == 'counselor' %}Counselor{% else %}Student{% endif %}
+              {% if request.user.role == 'admin' %}Super Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'hr' %}HR{% elif request.user.role == 'telecaller' %}Telecaller{% elif request.user.role == 'counselor' %}Counselor{% else %}Student{% endif %}
               &middot; {{ request.user.username }}
             </span>
           </li>
@@ -220,6 +224,9 @@
                 Dashboard</a></li>
             {% elif user.role == 'student' %}
             <li class="mb-2"><a href="{% url 'student_dashboard' %}"><i class="bi bi-chevron-right small"></i>
+                Dashboard</a></li>
+            {% elif user.role == 'hr' %}
+            <li class="mb-2"><a href="{% url 'hr:dashboard' %}"><i class="bi bi-chevron-right small"></i>
                 Dashboard</a></li>
             {% endif %}
             <li class="mb-2"><a href="{% url 'contact' %}"><i class="bi bi-chevron-right small"></i> Contact</a></li>
