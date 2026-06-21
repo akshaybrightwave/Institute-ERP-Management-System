@@ -2,7 +2,35 @@
 
 {% block title %}Counseling Session Detail | Examly{% endblock %}
 
+{% block extra_style %}
+<style>
+  .session-detail-page .session-note-panel {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #111827;
+    min-height: 64px;
+    padding: 14px 16px;
+    line-height: 1.55;
+  }
+
+  .session-detail-page .session-meta {
+    color: #475569;
+  }
+
+  .session-detail-page .session-meta i {
+    color: #5b5fef !important;
+  }
+
+  .session-detail-page .m-card {
+    max-width: 980px;
+    margin: 0 auto;
+  }
+</style>
+{% endblock %}
+
 {% block management_content %}
+<div class="session-detail-page">
 <div class="mb-4 d-flex justify-content-between align-items-center">
   <div>
     <h2 class="fw-bold text-white mb-1">Counseling Session Details</h2>
@@ -27,7 +55,7 @@
         </div>
       </div>
 
-      <div class="row g-4 small text-muted mb-4">
+      <div class="row g-4 small session-meta mb-4">
         <div class="col-sm-6">
           <div class="mb-1"><i class="bi bi-person text-info me-2"></i><strong>Assigned Counselor:</strong> {{ session.counselor.username }}</div>
           <div><i class="bi bi-telephone text-info me-2"></i><strong>Mobile:</strong> {{ session.lead.inquiry.mobile_number }}</div>
@@ -40,7 +68,7 @@
 
       <div class="mb-4">
         <label class="text-muted small fw-bold mb-2">Discussion Notes</label>
-        <div class="bg-dark p-3 rounded text-white border border-secondary" style="background-color: #14142b !important; border-color: #242448 !important;">
+        <div class="session-note-panel">
           {{ session.discussion_notes|linebreaksbr }}
         </div>
       </div>
@@ -48,7 +76,7 @@
       {% if session.career_guidance_notes %}
         <div class="mb-4">
           <label class="text-muted small fw-bold mb-2">Career Guidance & Course Recommendations</label>
-          <div class="bg-dark p-3 rounded text-white border border-secondary" style="background-color: #14142b !important; border-color: #242448 !important;">
+          <div class="session-note-panel">
             {{ session.career_guidance_notes|linebreaksbr }}
           </div>
         </div>
@@ -60,5 +88,6 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 {% endblock %}

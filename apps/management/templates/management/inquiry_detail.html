@@ -1,6 +1,38 @@
 {% extends 'management/base.html' %}
 
+{% block extra_style %}
+<style>
+  .inquiry-detail-page .detail-readonly-panel {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #111827;
+    min-height: 80px;
+    padding: 14px 16px;
+    line-height: 1.55;
+  }
+
+  .inquiry-detail-page .status-panel {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+  }
+
+  .inquiry-detail-page .workflow-note {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+    border-radius: 8px;
+  }
+
+  .inquiry-detail-page .border-secondary {
+    border-color: #e5e7eb !important;
+  }
+</style>
+{% endblock %}
+
 {% block management_content %}
+<div class="inquiry-detail-page">
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div>
     <h2 class="fw-bold text-white mb-1">Inquiry Details</h2>
@@ -57,7 +89,7 @@
         </div>
         <div class="col-12">
           <div class="text-muted small">Remarks</div>
-          <div class="text-white border border-secondary bg-dark p-3 rounded mt-1" style="min-height: 80px;">
+          <div class="detail-readonly-panel mt-1">
             {{ inquiry.remarks|linebreaksbr|default:"No remarks added." }}
           </div>
         </div>
@@ -71,14 +103,14 @@
       <div>
         <h5 class="fw-bold text-white mb-4"><i class="bi bi-check-circle-fill text-warning me-2"></i>Status & Workflow</h5>
         
-        <div class="text-center py-4 bg-dark border border-secondary rounded mb-4">
+        <div class="status-panel text-center py-4 mb-4">
           <div class="text-muted small mb-2">Current Status</div>
           <span class="fs-4 fw-bold badge {% if inquiry.status == 'New' %}bg-primary{% elif inquiry.status == 'Contacted' %}bg-warning text-dark{% elif inquiry.status == 'Qualified' %}bg-success{% else %}bg-danger{% endif %}">
             {{ inquiry.status }}
           </span>
         </div>
 
-        <div class="alert alert-secondary bg-transparent border-secondary text-muted small">
+        <div class="workflow-note alert alert-secondary small">
           <i class="bi bi-info-circle-fill text-info me-1"></i>
           Qualified inquiries can be converted into Leads to track follow-ups and schedule future actions.
         </div>
@@ -95,5 +127,6 @@
       {% endif %}
     </div>
   </div>
+</div>
 </div>
 {% endblock %}

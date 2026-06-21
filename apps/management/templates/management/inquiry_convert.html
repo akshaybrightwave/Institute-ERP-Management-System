@@ -1,6 +1,27 @@
 {% extends 'management/base.html' %}
 
+{% block extra_style %}
+<style>
+  .inquiry-convert-page .conversion-checklist {
+    max-width: 440px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #475569;
+  }
+
+  .inquiry-convert-page .conversion-checklist li {
+    margin-bottom: 6px;
+  }
+
+  .inquiry-convert-page .conversion-checklist li:last-child {
+    margin-bottom: 0;
+  }
+</style>
+{% endblock %}
+
 {% block management_content %}
+<div class="inquiry-convert-page">
 <div class="row justify-content-center">
   <div class="col-md-6">
     <div class="m-card text-center py-4">
@@ -13,7 +34,7 @@
         This will:
       </p>
       
-      <div class="text-start bg-dark border border-secondary p-3 rounded mb-4 text-muted small mx-auto" style="max-width: 400px;">
+      <div class="conversion-checklist text-start p-3 mb-4 small mx-auto">
         <ul class="mb-0">
           <li>Create a corresponding Lead record.</li>
           <li>Assign the Lead to you ({{ request.user.username }}).</li>
@@ -29,5 +50,6 @@
       </form>
     </div>
   </div>
+</div>
 </div>
 {% endblock %}

@@ -21,7 +21,7 @@
     <!-- Status Filter -->
     <div class="col-md-4">
       <label class="form-label text-muted small fw-bold">Follow-Up Status</label>
-      <select name="status" class="form-select bg-dark border-secondary text-white" style="background-color: #14142b !important; border-color: #242448 !important;">
+      <select name="status" class="form-select bg-dark border-secondary text-white">
         <option value="">All Statuses</option>
         <option value="Pending" {% if status == 'Pending' %}selected{% endif %}>Pending</option>
         <option value="Completed" {% if status == 'Completed' %}selected{% endif %}>Completed</option>

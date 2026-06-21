@@ -13,11 +13,11 @@
   <form method="GET" class="row g-3 align-items-end">
     <div class="col-md-4">
       <label class="form-label text-muted small fw-bold">Search Candidate</label>
-      <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white form-control-sm" placeholder="Name or Mobile..." style="background-color: #14142b !important; border-color: #242448 !important;">
+      <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white form-control-sm" placeholder="Name or Mobile...">
     </div>
     <div class="col-md-3">
       <label class="form-label text-muted small fw-bold">Counselor Status</label>
-      <select name="status" class="form-select bg-dark border-secondary text-white form-select-sm" style="background-color: #14142b !important; border-color: #242448 !important;">
+      <select name="status" class="form-select bg-dark border-secondary text-white form-select-sm">
         <option value="">All Statuses</option>
         {% for choice in status_choices %}
         <option value="{{ choice.0 }}" {% if status == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
@@ -26,7 +26,7 @@
     </div>
     <div class="col-md-3">
       <label class="form-label text-muted small fw-bold">Counselor Assignment Status</label>
-      <select name="assigned" class="form-select bg-dark border-secondary text-white form-select-sm" style="background-color: #14142b !important; border-color: #242448 !important;">
+      <select name="assigned" class="form-select bg-dark border-secondary text-white form-select-sm">
         <option value="">All Leads</option>
         <option value="yes" {% if assigned == 'yes' %}selected{% endif %}>Assigned Only</option>
         <option value="no" {% if assigned == 'no' %}selected{% endif %}>Unassigned Only</option>
@@ -45,7 +45,7 @@
   <div class="m-card">
     <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom border-secondary border-opacity-50">
       <div class="d-flex align-items-center gap-3">
-        <select name="counselor" class="form-select bg-dark border-secondary text-white form-select-sm" style="max-width: 250px; background-color: #14142b !important; border-color: #242448 !important;" required>
+        <select name="counselor" class="form-select bg-dark border-secondary text-white form-select-sm" style="max-width: 250px;" required>
           <option value="">-- Select Counselor --</option>
           {% for counselor in counselors %}
           <option value="{{ counselor.id }}">{{ counselor.username }}</option>

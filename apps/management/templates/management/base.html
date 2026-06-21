@@ -4,186 +4,945 @@
 
 {% block style %}
 <style>
-  body {
-    background-color: #0d0d1a !important;
-    color: #fff;
+  :root {
+    --mg-primary: #5b5fef;
+    --mg-primary-dark: #3929b8;
+    --mg-bg: #f8fafc;
+    --mg-text: #111827;
+    --mg-muted: #64748b;
+    --mg-line: #e5e7eb;
+    --mg-emerald: #10b981;
+    --mg-red: #ef4444;
   }
-  main.container {
+
+  body.management-shell {
+    --app-navbar-height: 0px;
+    background: var(--mg-bg) !important;
+    color: var(--mg-text);
+    font-family: Inter, Poppins, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  html,
+  body.management-shell {
+    min-height: 100%;
+  }
+
+  body.management-shell .navbar-examly,
+  body.management-shell .sidebar-toggle,
+  body.management-shell .container.mt-3,
+  body.management-shell #backToTop {
+    display: none !important;
+  }
+
+  body.management-shell .navbar-examly {
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.management-shell main.container {
     max-width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
+    min-height: 100vh !important;
   }
+
+  .management-layout {
+    min-height: 100vh !important;
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    align-items: stretch;
+  }
+
   .management-sidebar {
-    position: fixed;
-    top: var(--app-navbar-height, 68px);
-    left: 0;
-    bottom: 0;
-    width: 230px;
-    background: #111120;
-    border-right: 1px solid #1e1e35;
+    background: linear-gradient(180deg, #20115f 0%, #1c1b5c 48%, #17174d 100%);
+    color: #fff;
+    padding: 22px 18px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
     overflow-y: auto;
-    z-index: 600;
+  }
+
+  body.management-shell.app-shell .management-sidebar {
+    top: 0 !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+  }
+
+  body.management-shell.app-shell .management-content {
+    min-height: calc(100vh - 76px) !important;
+  }
+
+  .management-brand {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #fff;
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 28px;
+    text-decoration: none;
   }
+
+  .management-brand:hover { color: #fff; }
+
+  .management-brand-icon {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--mg-primary);
+  }
+
   .sidebar-section {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: #4a4a6a;
-    padding: 1rem 1.2rem 0.35rem;
+    color: rgba(255, 255, 255, .58);
+    font-size: 12px;
+    letter-spacing: .08em;
     text-transform: uppercase;
+    margin: 22px 8px 9px;
+    padding: 0;
+    font-weight: 500;
   }
+
   .sidebar-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 0.65rem 1.2rem;
-    color: #9090b8;
+    gap: 11px;
+    color: rgba(255, 255, 255, .88);
+    padding: 12px 13px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    font-size: 16px;
+    font-weight: 400;
     text-decoration: none;
-    font-size: 0.88rem;
-    font-weight: 500;
-    transition: background 0.15s, color 0.15s;
+    transition: background .16s ease, color .16s ease, transform .16s ease;
   }
-  .sidebar-item:hover, .sidebar-item.active {
-    color: #fff;
-    background: #1a1a30;
-    text-decoration: none;
-  }
+
+  .sidebar-item:hover,
   .sidebar-item.active {
-    border-left: 3px solid #0dcaf0;
-    padding-left: calc(1.2rem - 3px);
-    background: #14142b;
+    color: #fff;
+    background: rgba(91, 95, 239, .55);
+    transform: translateX(2px);
+    text-decoration: none;
   }
+
+  .management-main { min-width: 0; }
+
+  .management-topbar {
+    min-height: 76px;
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--mg-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .management-search {
+    max-width: 520px;
+    flex: 1;
+    position: relative;
+  }
+
+  .management-search i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--mg-muted);
+  }
+
+  .management-search input {
+    width: 100%;
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    padding: 12px 14px 12px 42px;
+    outline: none;
+    background: #fff;
+    color: var(--mg-text);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+  }
+
+  .management-search input::placeholder {
+    color: #64748b;
+    opacity: 1;
+  }
+
   .management-content {
-    margin-left: 230px;
-    padding: 1.4rem 1.8rem;
-    min-height: calc(100vh - var(--app-navbar-height, 68px));
-    background: #0d0d1a;
+    padding: 28px;
+    min-height: calc(100vh - 76px);
+    background: var(--mg-bg);
   }
-  
-  .m-card {
-    background: #111120;
-    border: 1px solid #1e1e35;
-    border-radius: 12px;
-    padding: 1.2rem;
-    color: #fff;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.4);
+
+  .management-content h1,
+  .management-content h2,
+  .management-content h5,
+  .management-content h6,
+  .management-content .text-white {
+    color: var(--mg-text) !important;
   }
+
+  .management-content h2 {
+    font-size: clamp(2rem, 4vw, 2.65rem);
+    font-weight: 800 !important;
+  }
+
+  .management-content .text-muted { color: var(--mg-muted) !important; }
+
+  .m-card,
+  .stat-card {
+    background: #fff !important;
+    border: 1px solid var(--mg-line) !important;
+    border-radius: 8px !important;
+    color: var(--mg-text) !important;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .06) !important;
+  }
+
+  .m-card { padding: 18px !important; }
+
+  .stat-card {
+    min-height: 122px;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
+  }
+
+  .stat-card:hover {
+    color: var(--mg-text) !important;
+    transform: translateY(-2px);
+    border-color: rgba(91, 95, 239, .38) !important;
+    box-shadow: 0 22px 50px rgba(15, 23, 42, .10) !important;
+  }
+
+  .stat-card-body {
+    padding: 18px 18px 8px !important;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    position: relative;
+  }
+
+  .stat-card-title {
+    color: var(--mg-muted) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    margin-bottom: 4px !important;
+    text-transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .stat-card-value {
+    color: #001b44 !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+
+  .stat-card-icon {
+    position: static !important;
+    transform: none !important;
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(91, 95, 239, .12);
+    color: var(--mg-primary);
+    font-size: 22px !important;
+    opacity: 1 !important;
+    order: -1;
+    flex: 0 0 auto;
+  }
+
+  .stat-card-footer {
+    padding: 10px 18px 18px !important;
+    background: transparent !important;
+    border-top: 0 !important;
+    color: var(--mg-muted) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+  }
+
+  .stat-card-footer i { color: #047857; }
+  .stat-card.bg-blue .stat-card-icon,
+  .stat-card.bg-indigo .stat-card-icon { background: rgba(91, 95, 239, .12); color: var(--mg-primary); }
+  .stat-card.bg-teal .stat-card-icon,
+  .stat-card.bg-green .stat-card-icon { background: rgba(16, 185, 129, .12); color: var(--mg-emerald); }
+  .stat-card.bg-cyan .stat-card-icon { background: rgba(20, 184, 166, .12); color: #0f766e; }
+  .stat-card.bg-orange .stat-card-icon { background: rgba(249, 115, 22, .13); color: #ea580c; }
+  .stat-card.bg-red .stat-card-icon { background: rgba(239, 68, 68, .12); color: var(--mg-red); }
+  .stat-card.bg-purple .stat-card-icon,
+  .stat-card.bg-violet .stat-card-icon { background: rgba(124, 58, 237, .12); color: #6d28d9; }
+  .stat-card.bg-pink .stat-card-icon { background: rgba(236, 72, 153, .12); color: #be185d; }
+
   .m-table {
-    color: #c0c0e0;
-  }
-  .m-table th {
-    color: #fff;
-    background-color: #16162a !important;
-    border-bottom: 2px solid #2a2a4a;
-  }
-  .m-table td {
-    border-bottom: 1px solid #1e1e35;
-    background-color: transparent !important;
+    margin: 0;
+    color: var(--mg-text) !important;
     vertical-align: middle;
   }
+
+  .m-table thead,
+  .m-table th {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    font-size: 12px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--mg-line) !important;
+  }
+
+  .m-table td {
+    background: transparent !important;
+    border-bottom: 1px solid var(--mg-line) !important;
+    color: var(--mg-text) !important;
+    vertical-align: middle;
+  }
+
+  .btn-primary,
+  .btn-success {
+    background: var(--mg-primary) !important;
+    border-color: var(--mg-primary) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 12px 24px rgba(91, 95, 239, .22);
+  }
+
+  .btn-primary:hover,
+  .btn-success:hover {
+    background: var(--mg-primary-dark) !important;
+    border-color: var(--mg-primary-dark) !important;
+  }
+
+  .btn-outline-info,
+  .btn-outline-light,
+  .btn-outline-success,
+  .btn-outline-danger,
+  .btn-outline-secondary,
+  .btn-secondary {
+    background: #fff !important;
+    border: 1px solid var(--mg-line) !important;
+    color: var(--mg-text) !important;
+    border-radius: 8px !important;
+    font-weight: 500;
+  }
+
+  .btn-outline-info:hover,
+  .btn-outline-light:hover,
+  .btn-outline-success:hover,
+  .btn-outline-danger:hover,
+  .btn-outline-secondary:hover,
+  .btn-secondary:hover {
+    color: var(--mg-primary) !important;
+    border-color: rgba(91, 95, 239, .38) !important;
+    background: #f5f3ff !important;
+  }
+
+  .action-btn {
+    background: #fff !important;
+    border: 1px solid var(--mg-line) !important;
+    color: var(--mg-text) !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+  }
+
+  .action-btn:hover {
+    color: var(--mg-primary) !important;
+    border-color: rgba(91, 95, 239, .38) !important;
+    background: #f5f3ff !important;
+  }
+
+  .action-btn i { color: var(--mg-primary) !important; }
+
+  .badge {
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .badge.bg-dark,
+  .badge-overdue {
+    background: #eef2ff !important;
+    color: #4338ca !important;
+    border: 0 !important;
+  }
+
+  .form-control,
+  .form-select {
+    background-color: #fff !important;
+    border-radius: 8px;
+    border-color: var(--mg-line) !important;
+    color: var(--mg-text) !important;
+    padding: 10px 12px;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    background-color: #fff !important;
+    color: var(--mg-text) !important;
+    border-color: var(--mg-primary);
+    box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12);
+  }
+
+  .form-control::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+  }
+
+  .form-label,
+  label {
+    color: var(--mg-text);
+    font-weight: 500;
+  }
+
   .empty-state {
     text-align: center;
     padding: 3rem;
-    color: #5a5a8a;
+    color: var(--mg-muted) !important;
   }
+
   .empty-state i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: #3a3a5a;
+    color: rgba(91, 95, 239, .45) !important;
+    background: transparent !important;
+  }
+
+  .list-group-item {
+    color: var(--mg-text) !important;
+    border-color: var(--mg-line) !important;
+  }
+
+  .pagination .page-link {
+    border-color: var(--mg-line);
+    color: var(--mg-text);
+  }
+
+  .page-item.active .page-link {
+    background: var(--mg-primary);
+    border-color: var(--mg-primary);
+  }
+
+  @media (max-width: 991.98px) {
+    .management-layout { grid-template-columns: 1fr; }
+    .management-sidebar {
+      position: static;
+      height: auto;
+    }
+    .management-topbar {
+      flex-wrap: wrap;
+      padding: 16px;
+    }
+    .management-content { padding: 18px; }
   }
 </style>
 {% block extra_style %}{% endblock %}
+<style>
+  .management-content .m-card,
+  .management-content .stat-card {
+    background: #fff !important;
+    border: 1px solid var(--mg-line) !important;
+    border-radius: 8px !important;
+    color: var(--mg-text) !important;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, .06) !important;
+  }
+
+  .management-content .stat-card:hover {
+    color: var(--mg-text) !important;
+    transform: translateY(-2px);
+    border-color: rgba(91, 95, 239, .38) !important;
+    box-shadow: 0 22px 50px rgba(15, 23, 42, .10) !important;
+  }
+
+  .management-content .stat-card-body {
+    padding: 18px 18px 8px !important;
+    display: flex !important;
+    align-items: center;
+    gap: 13px;
+  }
+
+  .management-content .stat-card-title {
+    color: var(--mg-muted) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    margin-bottom: 4px !important;
+    text-transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .management-content .stat-card-value {
+    color: #001b44 !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+  }
+
+  .management-content .stat-card-icon {
+    position: static !important;
+    transform: none !important;
+    width: 50px !important;
+    height: 50px !important;
+    display: grid !important;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(91, 95, 239, .12);
+    color: var(--mg-primary);
+    font-size: 22px !important;
+    opacity: 1 !important;
+    order: -1;
+    flex: 0 0 auto;
+  }
+
+  .management-content .stat-card-footer {
+    padding: 10px 18px 18px !important;
+    background: transparent !important;
+    border-top: 0 !important;
+    color: var(--mg-muted) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+  }
+
+  .management-content .action-btn {
+    background: #fff !important;
+    border: 1px solid var(--mg-line) !important;
+    color: var(--mg-text) !important;
+    border-radius: 8px !important;
+  }
+
+  .management-content .action-btn:hover {
+    color: var(--mg-primary) !important;
+    border-color: rgba(91, 95, 239, .38) !important;
+    background: #f5f3ff !important;
+  }
+
+  .management-content .action-btn i {
+    color: var(--mg-primary) !important;
+  }
+
+  .management-content .nav-tabs {
+    border-color: var(--mg-line) !important;
+    gap: 6px;
+  }
+
+  .management-content .nav-tabs .nav-link {
+    border: 1px solid transparent !important;
+    border-radius: 8px 8px 0 0 !important;
+    color: var(--mg-primary) !important;
+    font-weight: 500;
+    padding: 10px 18px;
+    background: transparent !important;
+  }
+
+  .management-content .nav-tabs .nav-link:hover {
+    background: #f5f3ff !important;
+    border-color: #ddd6fe !important;
+    color: var(--mg-primary-dark) !important;
+  }
+
+  .management-content .nav-tabs .nav-link.active,
+  .management-content .nav-tabs .nav-link.bg-dark,
+  .management-content .nav-tabs .nav-link.text-white {
+    background: #fff !important;
+    border-color: var(--mg-line) var(--mg-line) #fff !important;
+    color: var(--mg-text) !important;
+    box-shadow: 0 -1px 0 #fff inset, 0 10px 24px rgba(15, 23, 42, .05);
+  }
+
+  .management-content .nav-tabs .nav-link.active i,
+  .management-content .nav-tabs .nav-link.bg-dark i,
+  .management-content .nav-tabs .nav-link.text-white i {
+    color: var(--mg-primary) !important;
+  }
+
+  .management-content .form-control,
+  .management-content .form-select,
+  .management-content textarea.form-control {
+    background-color: #fff !important;
+    border: 1px solid var(--mg-line) !important;
+    color: var(--mg-text) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+
+  .management-content .form-control:focus,
+  .management-content .form-select:focus,
+  .management-content textarea.form-control:focus {
+    background-color: #fff !important;
+    border-color: var(--mg-primary) !important;
+    color: var(--mg-text) !important;
+    box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
+  }
+
+  .management-content .form-control::placeholder,
+  .management-content textarea.form-control::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+  }
+
+  .management-content .input-group-text {
+    background: #fff !important;
+    border-color: var(--mg-line) !important;
+    color: var(--mg-muted) !important;
+  }
+
+  .management-content .form-select option {
+    background: #fff;
+    color: var(--mg-text);
+  }
+
+  .management-content .form-control[readonly],
+  .management-content .form-control:disabled,
+  .management-content .form-select:disabled {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+  }
+
+  .lead-profile-page > .d-flex:first-child {
+    align-items: flex-start !important;
+    gap: 16px;
+    margin-bottom: 22px !important;
+    flex-wrap: wrap;
+  }
+
+  .lead-profile-page > .d-flex:first-child h2 {
+    line-height: 1.12;
+  }
+
+  .lead-profile-page > .d-flex:first-child .btn {
+    min-height: 38px;
+  }
+
+  .lead-profile-page > .row {
+    --bs-gutter-x: 18px;
+    --bs-gutter-y: 18px;
+  }
+
+  .lead-profile-page .m-card {
+    padding: 20px !important;
+  }
+
+  .lead-profile-page .m-card h4 {
+    color: var(--mg-text) !important;
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .lead-profile-page .m-card h5 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mg-text) !important;
+    font-size: 18px;
+  }
+
+  .lead-profile-page .m-card h5 i {
+    margin-right: 0 !important;
+  }
+
+  .lead-profile-page .lead-info-right {
+    border-color: var(--mg-line) !important;
+  }
+
+  .lead-profile-page .lead-info-right > div {
+    min-width: 112px;
+    padding: 10px 12px;
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+
+  .lead-profile-page .border-top,
+  .lead-profile-page .border-bottom,
+  .lead-profile-page .border-secondary {
+    border-color: var(--mg-line) !important;
+  }
+
+  .lead-profile-page .bg-dark-soft,
+  .lead-profile-page .empty-state,
+  .lead-profile-page .border-dashed {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+    color: var(--mg-muted) !important;
+  }
+
+  .lead-profile-page .empty-state {
+    min-height: 92px;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    border-radius: 8px !important;
+  }
+
+  .lead-profile-page .empty-state i {
+    color: #94a3b8 !important;
+  }
+
+  .lead-profile-page .list-group-item {
+    background: transparent !important;
+    color: var(--mg-text) !important;
+  }
+
+  .lead-profile-page .list-group-item + .list-group-item {
+    border-top: 1px solid var(--mg-line) !important;
+  }
+
+  .lead-profile-page .btn-outline-warning {
+    background: #fff7ed !important;
+    border-color: #fed7aa !important;
+    color: #c2410c !important;
+  }
+
+  .lead-profile-page .btn-outline-warning:hover {
+    background: #ffedd5 !important;
+    color: #9a3412 !important;
+  }
+
+  .lead-profile-page .btn-outline-success {
+    background: #ecfdf5 !important;
+    border-color: #bbf7d0 !important;
+    color: #047857 !important;
+  }
+
+  .lead-profile-page .btn-outline-success:hover {
+    background: #d1fae5 !important;
+    color: #065f46 !important;
+  }
+
+  .lead-profile-page .btn-outline-info {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+    color: #1d4ed8 !important;
+  }
+
+  .lead-profile-page .btn-info {
+    background: #0ea5e9 !important;
+    border-color: #0ea5e9 !important;
+    color: #fff !important;
+  }
+
+  .lead-profile-page .btn-warning {
+    background: #facc15 !important;
+    border-color: #facc15 !important;
+    color: #111827 !important;
+  }
+
+  .lead-profile-page .m-table td {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  @media (max-width: 991.98px) {
+    .lead-profile-page > .d-flex:first-child {
+      flex-direction: column;
+    }
+
+    .lead-profile-page > .d-flex:first-child > .d-flex {
+      width: 100%;
+    }
+
+    .lead-profile-page > .d-flex:first-child > .d-flex .btn {
+      flex: 1;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .lead-profile-page .lead-info-right > div {
+      flex: 1 1 100%;
+      text-align: left !important;
+    }
+  }
+
+  .management-content [style*="background-color: #16162a"],
+  .management-content [style*="background-color:#16162a"] {
+    background-color: #f8fafc !important;
+  }
+
+  .management-content [style*="border-color: #2a2a4a"],
+  .management-content [style*="border-color:#2a2a4a"] {
+    border-color: var(--mg-line) !important;
+  }
+</style>
 {% endblock %}
 
 {% block footer %}{% endblock %}
 
 {% block content %}
-<aside class="management-sidebar">
-  <div class="sidebar-section">Management Portal</div>
-  {% if request.user.role == 'admin' %}
-  <a href="{% url 'management_super_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
-    <i class="bi bi-speedometer2"></i> Dashboard
-  </a>
-  {% elif request.user.role == 'telecaller' %}
-  <a href="{% url 'management_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}">
-    <i class="bi bi-speedometer2"></i> Dashboard
-  </a>
-  {% elif request.user.role == 'counselor' %}
-  <a href="{% url 'counselor_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
-    <i class="bi bi-speedometer2"></i> Dashboard
-  </a>
-  {% endif %}
+<div class="management-layout">
+  <aside class="management-sidebar">
+    {% if request.user.role == 'admin' %}
+    <a class="management-brand" href="{% url 'management_super_admin_dashboard' %}">
+      <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
+      MANAGEMENT
+    </a>
+    {% elif request.user.role == 'telecaller' %}
+    <a class="management-brand" href="{% url 'management_dashboard' %}">
+      <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
+      MANAGEMENT
+    </a>
+    {% elif request.user.role == 'counselor' %}
+    <a class="management-brand" href="{% url 'counselor_dashboard' %}">
+      <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
+      MANAGEMENT
+    </a>
+    {% endif %}
 
-  {% if request.user.role == 'admin' or request.user.role == 'telecaller' %}
-  <div class="sidebar-section">Telecaller Module</div>
-  <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_list' or request.resolver_match.url_name == 'inquiry_detail' or request.resolver_match.url_name == 'inquiry_add' or request.resolver_match.url_name == 'inquiry_edit' %}active{% endif %}">
-    <i class="bi bi-person-plus"></i> Inquiries
-  </a>
-  <a href="{% url 'lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_edit' %}active{% endif %}">
-    <i class="bi bi-funnel"></i> Leads
-  </a>
-  {% if request.user.role == 'admin' %}
-  <a href="{% url 'lead_assign' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign' %}active{% endif %}">
-    <i class="bi bi-person-check"></i> Lead Assignment
-  </a>
-  {% endif %}
-  <a href="{% url 'call_log_list' %}" class="sidebar-item {% if 'call_log' in request.resolver_match.url_name %}active{% endif %}">
-    <i class="bi bi-telephone-outbound"></i> Call Logs
-  </a>
-  <a href="{% url 'followup_list' %}" class="sidebar-item {% if 'followup' in request.resolver_match.url_name and 'counselor' not in request.resolver_match.url_name %}active{% endif %}">
-    <i class="bi bi-clock-history"></i> Follow-Ups
-  </a>
-  <a href="{% url 'inquiry_import' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_import' %}active{% endif %}">
-    <i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import
-  </a>
-  <a href="{% url 'import_history' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_history' %}active{% endif %}">
-    <i class="bi bi-journal-text"></i> Import History
-  </a>
-  <a href="{% url 'import_errors' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_errors' %}active{% endif %}">
-    <i class="bi bi-exclamation-triangle"></i> Import Errors
-  </a>
-  <a href="{% url 'activities_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'activities_list' %}active{% endif %}">
-    <i class="bi bi-activity"></i> Lead Activities
-  </a>
-  <div class="sidebar-section">Reports & Analytics</div>
-  <a href="{% url 'reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
-    <i class="bi bi-bar-chart-line"></i> Source Analytics
-  </a>
-  <a href="{% url 'telecaller_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'telecaller_report' %}active{% endif %}">
-    <i class="bi bi-file-earmark-bar-graph"></i> Performance Reports
-  </a>
-  {% endif %}
+    <div class="sidebar-section">Management Portal</div>
+    {% if request.user.role == 'admin' %}
+    <a href="{% url 'management_super_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    {% elif request.user.role == 'telecaller' %}
+    <a href="{% url 'management_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    {% elif request.user.role == 'counselor' %}
+    <a href="{% url 'counselor_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    {% endif %}
 
-  {% if request.user.role == 'admin' or request.user.role == 'counselor' %}
-  <div class="sidebar-section">Counselor Module</div>
-  <a href="{% url 'counselor_lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
-    <i class="bi bi-people-fill"></i> Assigned Leads
-  </a>
-  {% if request.user.role == 'admin' %}
-  <a href="{% url 'lead_assign_counselor' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign_counselor' %}active{% endif %}">
-    <i class="bi bi-person-check-fill"></i> Counselor Assignment
-  </a>
-  {% endif %}
-  <a href="{% url 'counselor_session_list' %}" class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
-    <i class="bi bi-journal-check"></i> Counseling Sessions
-  </a>
-  <a href="{% url 'counselor_followup_list' %}" class="sidebar-item {% if 'counselor_followup' in request.resolver_match.url_name and 'counselor_followup_list' in request.resolver_match.url_name %}active{% endif %}">
-    <i class="bi bi-calendar-event"></i> Follow-Ups
-  </a>
-  <a href="{% url 'counselor_visit_list' %}" class="sidebar-item {% if 'counselor_visit' in request.resolver_match.url_name %}active{% endif %}">
-    <i class="bi bi-geo-alt"></i> Visit Sheets
-  </a>
-  <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
-    <i class="bi bi-bar-chart-steps"></i> Counselor Reports
-  </a>
-  {% endif %}
-</aside>
+    {% if request.user.role == 'admin' or request.user.role == 'telecaller' %}
+    <div class="sidebar-section">Telecaller Module</div>
+    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_list' or request.resolver_match.url_name == 'inquiry_detail' or request.resolver_match.url_name == 'inquiry_add' or request.resolver_match.url_name == 'inquiry_edit' %}active{% endif %}">
+      <i class="bi bi-person-plus"></i> Inquiries
+    </a>
+    <a href="{% url 'lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_edit' %}active{% endif %}">
+      <i class="bi bi-funnel"></i> Leads
+    </a>
+    {% if request.user.role == 'admin' %}
+    <a href="{% url 'lead_assign' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign' %}active{% endif %}">
+      <i class="bi bi-person-check"></i> Lead Assignment
+    </a>
+    {% endif %}
+    <a href="{% url 'call_log_list' %}" class="sidebar-item {% if 'call_log' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-telephone-outbound"></i> Call Logs
+    </a>
+    <a href="{% url 'followup_list' %}" class="sidebar-item {% if 'followup' in request.resolver_match.url_name and 'counselor' not in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-clock-history"></i> Follow-Ups
+    </a>
+    <a href="{% url 'inquiry_import' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_import' %}active{% endif %}">
+      <i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import
+    </a>
+    <a href="{% url 'import_history' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_history' %}active{% endif %}">
+      <i class="bi bi-journal-text"></i> Import History
+    </a>
+    <a href="{% url 'import_errors' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_errors' %}active{% endif %}">
+      <i class="bi bi-exclamation-triangle"></i> Import Errors
+    </a>
+    <a href="{% url 'activities_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'activities_list' %}active{% endif %}">
+      <i class="bi bi-activity"></i> Lead Activities
+    </a>
+    <div class="sidebar-section">Reports & Analytics</div>
+    <a href="{% url 'reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
+      <i class="bi bi-bar-chart-line"></i> Source Analytics
+    </a>
+    <a href="{% url 'telecaller_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'telecaller_report' %}active{% endif %}">
+      <i class="bi bi-file-earmark-bar-graph"></i> Performance Reports
+    </a>
+    {% endif %}
 
-<div class="management-content">
-  {% block management_content %}
-  {% endblock %}
+    {% if request.user.role == 'admin' or request.user.role == 'counselor' %}
+    <div class="sidebar-section">Counselor Module</div>
+    <a href="{% url 'counselor_lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
+      <i class="bi bi-people-fill"></i> Assigned Leads
+    </a>
+    {% if request.user.role == 'admin' %}
+    <a href="{% url 'lead_assign_counselor' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign_counselor' %}active{% endif %}">
+      <i class="bi bi-person-check-fill"></i> Counselor Assignment
+    </a>
+    {% endif %}
+    <a href="{% url 'counselor_session_list' %}" class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-journal-check"></i> Counseling Sessions
+    </a>
+    <a href="{% url 'counselor_followup_list' %}" class="sidebar-item {% if 'counselor_followup' in request.resolver_match.url_name and 'counselor_followup_list' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-calendar-event"></i> Follow-Ups
+    </a>
+    <a href="{% url 'counselor_visit_list' %}" class="sidebar-item {% if 'counselor_visit' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-geo-alt"></i> Visit Sheets
+    </a>
+    <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
+      <i class="bi bi-bar-chart-steps"></i> Counselor Reports
+    </a>
+    {% endif %}
+  </aside>
+
+  <div class="management-main">
+    <header class="management-topbar">
+      {% if request.user.role == 'counselor' %}
+      <form class="management-search" action="{% url 'counselor_lead_list' %}" method="get">
+        <i class="bi bi-search"></i>
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search assigned leads, follow-ups, visits...">
+      </form>
+      {% else %}
+      <form class="management-search" action="{% url 'lead_list' %}" method="get">
+        <i class="bi bi-search"></i>
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search inquiries, leads, follow-ups...">
+      </form>
+      {% endif %}
+      <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+        {% if request.user.role == 'counselor' %}
+        <a class="btn btn-outline-secondary" href="{% url 'counselor_followup_list' %}">
+          <i class="bi bi-bell"></i>
+        </a>
+        <a class="btn btn-outline-secondary" href="{% url 'counselor_visit_list' %}">
+          <i class="bi bi-calendar-event"></i>
+        </a>
+        <a class="btn btn-primary" href="{% url 'counselor_session_add' %}">
+          <i class="bi bi-plus-lg me-1"></i>Add Session
+        </a>
+        {% else %}
+        <a class="btn btn-outline-secondary" href="{% url 'followup_list' %}">
+          <i class="bi bi-bell"></i>
+        </a>
+        <a class="btn btn-outline-secondary" href="{% url 'call_log_list' %}">
+          <i class="bi bi-calendar-event"></i>
+        </a>
+        <a class="btn btn-primary" href="{% url 'inquiry_add' %}">
+          <i class="bi bi-plus-lg me-1"></i>Add Inquiry
+        </a>
+        {% endif %}
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">
+            <i class="bi bi-person-circle me-1"></i>{{ request.user.username }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% if request.user.role == 'admin' %}
+            <li><a class="dropdown-item" href="{% url 'management_super_admin_dashboard' %}">Dashboard</a></li>
+            {% elif request.user.role == 'telecaller' %}
+            <li><a class="dropdown-item" href="{% url 'management_dashboard' %}">Dashboard</a></li>
+            {% elif request.user.role == 'counselor' %}
+            <li><a class="dropdown-item" href="{% url 'counselor_dashboard' %}">Dashboard</a></li>
+            {% endif %}
+            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <main class="management-content">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% block management_content %}
+      {% endblock %}
+    </main>
+  </div>
 </div>
 {% endblock %}

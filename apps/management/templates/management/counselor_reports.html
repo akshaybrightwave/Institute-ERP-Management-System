@@ -48,7 +48,7 @@
     <!-- Preset Filter -->
     <div class="col-md-3">
       <label class="form-label text-muted small fw-bold">Date Preset</label>
-      <select name="date_filter" id="date-filter-select" class="form-select bg-dark border-secondary text-white form-select-sm" style="background-color: #14142b !important; border-color: #242448 !important;">
+      <select name="date_filter" id="date-filter-select" class="form-select bg-dark border-secondary text-white form-select-sm">
         <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
         <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
         <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
@@ -59,13 +59,13 @@
     <!-- Custom Start Date -->
     <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
       <label class="form-label text-muted small fw-bold">From Date</label>
-      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white form-control-sm" style="background-color: #14142b !important; border-color: #242448 !important;">
+      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
     </div>
 
     <!-- Custom End Date -->
     <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
       <label class="form-label text-muted small fw-bold">To Date</label>
-      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white form-control-sm" style="background-color: #14142b !important; border-color: #242448 !important;">
+      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
     </div>
 
     <!-- Submit Button -->
