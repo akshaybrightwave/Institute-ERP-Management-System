@@ -172,6 +172,7 @@ def inquiry_list(request):
 
     return render(request, 'management/inquiry_list.html', {
         'page_obj': page_obj,
+        'inquiry_form': InquiryForm(),
         'q': q,
         'status': status,
         'source': source,
@@ -1128,7 +1129,7 @@ def lead_assign(request):
 
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    telecallers = User.objects.filter(role='telecaller')
+    telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
 
     if request.method == 'POST':
         telecaller_id = request.POST.get('telecaller')
@@ -1144,7 +1145,7 @@ def lead_assign(request):
         elif not lead_ids:
             messages.error(request, "Please select at least one lead.")
         else:
-            telecaller = get_object_or_404(User, pk=telecaller_id)
+            telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
             updated_count = 0
             for lid in lead_ids:
                 lead = get_object_or_404(Lead, pk=lid)
@@ -1252,12 +1253,21 @@ def lead_bulk_action(request):
 @telecaller_required
 def reports_dashboard(request):
     sources = [choice[0] for choice in Inquiry.SOURCE_CHOICES]
+    if request.user.role == 'admin':
+        leads_qs = Lead.objects.select_related('inquiry')
+    else:
+        leads_qs = Lead.objects.filter(assigned_telecaller=request.user).select_related('inquiry')
+
     source_stats = []
+    total_leads_all = leads_qs.count()
+    total_qualified_all = leads_qs.filter(status='Qualified').count()
+    total_rejected_all = leads_qs.filter(status='Rejected').count()
 
     for src in sources:
-        total_leads = Lead.objects.filter(inquiry__source=src).count()
-        qualified_leads = Lead.objects.filter(inquiry__source=src, status='Qualified').count()
-        rejected_leads = Lead.objects.filter(inquiry__source=src, status='Rejected').count()
+        source_leads = leads_qs.filter(inquiry__source=src)
+        total_leads = source_leads.count()
+        qualified_leads = source_leads.filter(status='Qualified').count()
+        rejected_leads = source_leads.filter(status='Rejected').count()
         
         conversion_rate = 0.0
         if total_leads > 0:
@@ -1269,22 +1279,24 @@ def reports_dashboard(request):
             'qualified_leads': qualified_leads,
             'rejected_leads': rejected_leads,
             'conversion_rate': conversion_rate,
+            'share_rate': round((total_leads / total_leads_all) * 100, 2) if total_leads_all > 0 else 0.0,
         })
 
     chart_labels = sources
-    source_distribution_data = [Lead.objects.filter(inquiry__source=src).count() for src in sources]
-    conversion_by_source_data = []
-    for src in sources:
-        total = Lead.objects.filter(inquiry__source=src).count()
-        qualified = Lead.objects.filter(inquiry__source=src, status='Qualified').count()
-        rate = round((qualified / total) * 100, 2) if total > 0 else 0.0
-        conversion_by_source_data.append(rate)
+    source_distribution_data = [stat['total_leads'] for stat in source_stats]
+    conversion_by_source_data = [stat['conversion_rate'] for stat in source_stats]
+    best_source = max(source_stats, key=lambda item: item['conversion_rate']) if total_leads_all > 0 else None
 
     return render(request, 'management/source_analytics.html', {
         'source_stats': source_stats,
         'chart_labels': chart_labels,
         'source_distribution_data': source_distribution_data,
         'conversion_by_source_data': conversion_by_source_data,
+        'total_leads_all': total_leads_all,
+        'total_qualified_all': total_qualified_all,
+        'total_rejected_all': total_rejected_all,
+        'overall_conversion_rate': round((total_qualified_all / total_leads_all) * 100, 2) if total_leads_all > 0 else 0.0,
+        'best_source': best_source,
     })
 
 
@@ -1295,9 +1307,9 @@ def telecaller_report(request):
     User = get_user_model()
     
     if request.user.role == 'admin':
-        telecallers = User.objects.filter(role='telecaller')
+        telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
     else:
-        telecallers = User.objects.filter(pk=request.user.pk)
+        telecallers = User.objects.filter(pk=request.user.pk, is_deleted=False, is_active=True)
 
     date_filter = request.GET.get('date_filter', 'this_month')
     start_date = None
@@ -1323,6 +1335,10 @@ def telecaller_report(request):
                 end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
         except ValueError:
             pass
+    else:
+        date_filter = 'this_month'
+        start_date = today.replace(day=1)
+        end_date = today
 
     report_data = []
     for tc in telecallers:
@@ -1378,6 +1394,18 @@ def telecaller_report(request):
             'cs_not_interested': cs_not_interested,
         })
 
+    totals = {
+        'telecallers': len(report_data),
+        'total_inquiries': sum(row['total_inquiries'] for row in report_data),
+        'total_leads': sum(row['total_leads'] for row in report_data),
+        'calls_made': sum(row['calls_made'] for row in report_data),
+        'followups_completed': sum(row['followups_completed'] for row in report_data),
+        'qualified_leads': sum(row['qualified_leads'] for row in report_data),
+        'rejected_leads': sum(row['rejected_leads'] for row in report_data),
+        'pending_followups': sum(row['pending_followups'] for row in report_data),
+    }
+    totals['conversion_pct'] = round((totals['qualified_leads'] / totals['total_leads']) * 100, 2) if totals['total_leads'] > 0 else 0.0
+
     export_format = request.GET.get('export', '').strip()
     if export_format == 'csv':
         import csv
@@ -1418,6 +1446,7 @@ def telecaller_report(request):
 
     return render(request, 'management/telecaller_report.html', {
         'report_data': report_data,
+        'totals': totals,
         'date_filter': date_filter,
         'start_date': request.GET.get('start_date', ''),
         'end_date': request.GET.get('end_date', ''),
@@ -1869,9 +1898,9 @@ def counselor_reports_dashboard(request):
     User = get_user_model()
     
     if request.user.role == 'admin':
-        counselors = User.objects.filter(role='counselor')
+        counselors = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
     else:
-        counselors = User.objects.filter(pk=request.user.pk)
+        counselors = User.objects.filter(pk=request.user.pk, is_deleted=False, is_active=True)
 
     date_filter = request.GET.get('date_filter', 'this_month')
     start_date = None
@@ -2108,7 +2137,7 @@ def lead_assign_counselor(request):
 
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    counselors = User.objects.filter(role='counselor')
+    counselors = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
 
     if request.method == 'POST':
         counselor_id = request.POST.get('counselor')
@@ -2122,7 +2151,7 @@ def lead_assign_counselor(request):
         elif not lead_ids:
             messages.error(request, "Please select at least one lead.")
         else:
-            counselor = get_object_or_404(User, pk=counselor_id)
+            counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
             updated_count = 0
             for lid in lead_ids:
                 lead = get_object_or_404(Lead, pk=lid)
@@ -2342,7 +2371,7 @@ def admission_list(request):
     # Counselor choices for filter (admin only)
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    counselor_choices = User.objects.filter(role='counselor').order_by('username')
+    counselor_choices = User.objects.filter(role='counselor', is_deleted=False, is_active=True).order_by('username')
 
     paginator = Paginator(admissions, 15)
     page_number = request.GET.get('page')

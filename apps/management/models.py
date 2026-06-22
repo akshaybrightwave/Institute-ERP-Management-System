@@ -2,8 +2,9 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 import datetime
+from apps.soft_delete import SoftDeleteModel
 
-class Inquiry(models.Model):
+class Inquiry(SoftDeleteModel):
     SOURCE_CHOICES = (
         ('Website', 'Website'),
         ('Walk-In', 'Walk-In'),
@@ -56,7 +57,7 @@ class Inquiry(models.Model):
         return f"{self.full_name} ({self.status})"
 
 
-class Lead(models.Model):
+class Lead(SoftDeleteModel):
     STATUS_CHOICES = (
         ('New', 'New'),
         ('Contacted', 'Contacted'),
@@ -130,7 +131,7 @@ class Lead(models.Model):
         return f"Lead: {self.inquiry.full_name} ({self.status})"
 
 
-class CallLog(models.Model):
+class CallLog(SoftDeleteModel):
     STATUS_CHOICES = (
         ('Connected', 'Connected'),
         ('Not Answered', 'Not Answered'),
@@ -160,7 +161,7 @@ class CallLog(models.Model):
         return f"Call to {self.lead.inquiry.full_name} - {self.call_status}"
 
 
-class FollowUp(models.Model):
+class FollowUp(SoftDeleteModel):
     STATUS_CHOICES = (
         ('Pending', 'Pending'),
         ('Completed', 'Completed'),
@@ -200,7 +201,7 @@ class FollowUp(models.Model):
         return f"FollowUp for {self.lead.inquiry.full_name} on {self.followup_date} ({self.status})"
 
 
-class LeadImport(models.Model):
+class LeadImport(SoftDeleteModel):
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -222,7 +223,7 @@ class LeadImport(models.Model):
         return f"Import by {self.uploaded_by} on {self.created_at}"
 
 
-class LeadNote(models.Model):
+class LeadNote(SoftDeleteModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notes_timeline')
     note = models.TextField()
     created_by = models.ForeignKey(
@@ -241,7 +242,7 @@ class LeadNote(models.Model):
         return f"Note on {self.lead.inquiry.full_name} by {self.created_by} at {self.created_at}"
 
 
-class LeadActivity(models.Model):
+class LeadActivity(SoftDeleteModel):
     ACTIVITY_TYPE_CHOICES = (
         ('LEAD_CREATED', 'Lead Created'),
         ('STATUS_CHANGED', 'Status Changed'),
@@ -270,7 +271,7 @@ class LeadActivity(models.Model):
         return f"{self.activity_type} for {self.lead.inquiry.full_name} at {self.created_at}"
 
 
-class ImportErrorLog(models.Model):
+class ImportErrorLog(SoftDeleteModel):
     lead_import = models.ForeignKey(LeadImport, on_delete=models.CASCADE, related_name='error_logs')
     row_number = models.PositiveIntegerField()
     error_message = models.TextField()
@@ -283,7 +284,7 @@ class ImportErrorLog(models.Model):
         return f"ImportError in {self.lead_import} at row {self.row_number}: {self.error_message}"
 
 
-class CounselingSession(models.Model):
+class CounselingSession(SoftDeleteModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='counseling_sessions')
     counselor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -303,7 +304,7 @@ class CounselingSession(models.Model):
         return f"Session with {self.lead.inquiry.full_name} on {self.session_date}"
 
 
-class VisitSheet(models.Model):
+class VisitSheet(SoftDeleteModel):
     STATUS_CHOICES = (
         ('Scheduled', 'Scheduled'),
         ('Visited', 'Visited'),
@@ -340,7 +341,7 @@ class VisitSheet(models.Model):
         return f"Visit for {self.lead.inquiry.full_name} on {self.visit_date} at {self.visit_time}"
 
 
-class AdmissionSheet(models.Model):
+class AdmissionSheet(SoftDeleteModel):
     ADMISSION_STATUS_CHOICES = (
         ('CONFIRMED', 'Confirmed'),
         ('PENDING_PAYMENT', 'Pending Payment'),

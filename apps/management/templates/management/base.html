@@ -135,6 +135,135 @@
     min-height: calc(100vh - 76px) !important;
   }
 
+  body.management-shell.modal-embedded .sidebar-overlay,
+  body.management-shell.modal-embedded .management-sidebar,
+  body.management-shell.modal-embedded .management-topbar {
+    display: none !important;
+  }
+
+  body.management-shell.modal-embedded .management-layout {
+    display: block !important;
+    min-height: auto !important;
+  }
+
+  body.management-shell.modal-embedded .management-content {
+    min-height: auto !important;
+    padding: 18px !important;
+  }
+
+  body.management-shell.modal-embedded .management-content > .mb-4:first-child {
+    margin-bottom: 16px !important;
+  }
+
+  body.management-shell.modal-embedded a.btn:has(.bi-arrow-left) {
+    display: none !important;
+  }
+
+  body.management-shell.modal-embedded .management-content h2 {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  body.management-shell.modal-embedded .m-card {
+    box-shadow: none !important;
+  }
+
+  .management-action-modal .modal-dialog {
+    max-width: min(980px, calc(100vw - 28px));
+  }
+
+  .management-action-modal .modal-content {
+    border: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, .28);
+  }
+
+  .management-action-modal .modal-header {
+    min-height: 68px;
+    align-items: flex-start;
+    background: linear-gradient(135deg, #111827 0%, #1e1b4b 100%);
+    border-bottom: 0;
+    color: #fff;
+    padding: 18px 22px;
+  }
+
+  .management-action-modal .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .management-action-modal .modal-title::before {
+    content: "\F4CB";
+    font-family: "bootstrap-icons";
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .12);
+    color: #67e8f9;
+    font-size: 18px;
+  }
+
+  .management-action-modal .modal-subtitle {
+    margin: 5px 0 0 44px;
+    color: rgba(255, 255, 255, .62);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .management-action-modal .modal-body {
+    position: relative;
+    padding: 0;
+    background: #f8fafc;
+  }
+
+  .management-action-frame {
+    width: 100%;
+    height: min(76vh, 760px);
+    min-height: 520px;
+    border: 0;
+    background: #f8fafc;
+    display: block;
+  }
+
+  .management-action-loader {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #f8fafc;
+    color: var(--mg-muted);
+    font-weight: 700;
+    z-index: 2;
+  }
+
+  .management-action-modal.is-loading .management-action-loader {
+    display: flex;
+  }
+
+  @media (max-width: 767.98px) {
+    .management-action-modal .modal-dialog {
+      max-width: none;
+      margin: 8px;
+    }
+
+    .management-action-modal .modal-header {
+      padding: 16px;
+    }
+
+    .management-action-frame {
+      height: 78vh;
+      min-height: 460px;
+    }
+  }
+
   .management-brand {
     display: flex;
     align-items: center;
@@ -1023,7 +1152,71 @@
   </div>
 </div>
 
+<div class="modal fade management-action-modal" id="managementActionModal" tabindex="-1" aria-labelledby="managementActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title fw-bold" id="managementActionModalLabel">Management Action</h5>
+          <p class="modal-subtitle">Complete this action without leaving the current list.</p>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="management-action-loader">
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          <span>Loading form...</span>
+        </div>
+        <iframe id="managementActionFrame" class="management-action-frame" title="Management action"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+(function() {
+  if (window.self !== window.top) {
+    document.body.classList.add('modal-embedded');
+
+    document.querySelectorAll('a.btn').forEach(function(button) {
+      if (button.querySelector('.bi-arrow-left')) {
+        button.style.display = 'none';
+      }
+    });
+
+    document.addEventListener('click', function(event) {
+      var link = event.target.closest('a[href]');
+      if (!link || link.target || link.hasAttribute('download') || link.dataset.bsToggle) return;
+
+      var href = link.getAttribute('href') || '';
+      if (!href || href === '#' || href.indexOf('javascript:') === 0) return;
+
+      var url;
+      try {
+        url = new URL(href, window.location.href);
+      } catch (e) {
+        return;
+      }
+
+      if (url.origin !== window.location.origin || url.pathname.indexOf('/management/') === -1) return;
+
+      var path = url.pathname;
+      var isFormAction = /\/(add|edit|delete)\/?$/.test(path);
+      var isNumericDetail = /\/\d+\/?$/.test(path);
+      var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
+
+      if (!looksLikeActionButton || (!isFormAction && !isNumericDetail)) return;
+
+      event.preventDefault();
+      window.parent.postMessage({
+        type: 'management-action-modal:navigate',
+        href: url.href,
+        title: link.getAttribute('title') || (link.textContent || '').replace(/\s+/g, ' ').trim() || 'Management Action'
+      }, window.location.origin);
+    });
+  }
+})();
+
 (function() {
   var sidebar = document.getElementById('managementSidebar');
   var overlay = document.getElementById('sidebarOverlay');
@@ -1048,6 +1241,123 @@
 
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeSidebar();
+  });
+})();
+
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  if (window.self !== window.top) return;
+
+  var modalEl = document.getElementById('managementActionModal');
+  var frame = document.getElementById('managementActionFrame');
+  var titleEl = document.getElementById('managementActionModalLabel');
+  if (!modalEl || !frame || !window.bootstrap) return;
+
+  var modal = new bootstrap.Modal(modalEl);
+  var initialPath = '';
+  var hasLoadedInitialPage = false;
+
+  function isManagementActionLink(link) {
+    if (!link || link.target || link.hasAttribute('download') || link.dataset.bsToggle || link.classList.contains('js-skip-action-modal')) {
+      return false;
+    }
+
+    var href = link.getAttribute('href') || '';
+    if (!href || href === '#' || href.indexOf('javascript:') === 0) return false;
+
+    var url;
+    try {
+      url = new URL(href, window.location.href);
+    } catch (e) {
+      return false;
+    }
+
+    if (url.origin !== window.location.origin || url.pathname.indexOf('/management/') === -1) {
+      return false;
+    }
+
+    var path = url.pathname;
+    var isFormAction = /\/(add|edit|delete)\/?$/.test(path);
+    var isNumericDetail = /\/\d+\/?$/.test(path);
+    var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
+
+    return looksLikeActionButton && (isFormAction || isNumericDetail);
+  }
+
+  function getActionTitle(link) {
+    var explicitTitle = link.getAttribute('title');
+    var text = (link.textContent || '').replace(/\s+/g, ' ').trim();
+    var href = link.getAttribute('href') || '';
+
+    if (explicitTitle) return explicitTitle;
+    if (text) return text;
+    if (href.indexOf('/add') !== -1) return 'Add Record';
+    if (href.indexOf('/edit') !== -1) return 'Edit Record';
+    if (href.indexOf('/delete') !== -1) return 'Delete Record';
+    return 'View Details';
+  }
+
+  document.addEventListener('click', function(event) {
+    var link = event.target.closest('a[href]');
+    if (!isManagementActionLink(link)) return;
+
+    event.preventDefault();
+    initialPath = new URL(link.href, window.location.href).pathname;
+    hasLoadedInitialPage = false;
+    titleEl.textContent = getActionTitle(link);
+    modalEl.classList.add('is-loading');
+    frame.src = link.href;
+    modal.show();
+  });
+
+  window.addEventListener('message', function(event) {
+    if (event.origin !== window.location.origin || !event.data || event.data.type !== 'management-action-modal:navigate') {
+      return;
+    }
+
+    var url;
+    try {
+      url = new URL(event.data.href, window.location.href);
+    } catch (e) {
+      return;
+    }
+
+    initialPath = url.pathname;
+    hasLoadedInitialPage = false;
+    titleEl.textContent = event.data.title || 'Management Action';
+    modalEl.classList.add('is-loading');
+    frame.src = url.href;
+    modal.show();
+  });
+
+  frame.addEventListener('load', function() {
+    if (!frame.src) return;
+
+    if (!hasLoadedInitialPage) {
+      hasLoadedInitialPage = true;
+      modalEl.classList.remove('is-loading');
+      return;
+    }
+
+    try {
+      var framePath = frame.contentWindow.location.pathname;
+      if (framePath && framePath !== initialPath) {
+        window.location.reload();
+      }
+    } catch (e) {
+      // Ignore cross-context access failures; all app pages should be same-origin.
+    }
+  });
+
+  modalEl.addEventListener('hidden.bs.modal', function() {
+    frame.removeAttribute('src');
+    modalEl.classList.remove('is-loading');
+    initialPath = '';
+    hasLoadedInitialPage = false;
   });
 })();
 </script>

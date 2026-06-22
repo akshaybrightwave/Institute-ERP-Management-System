@@ -208,8 +208,8 @@ def admin_dashboard(request):
     # Dashboard Analytics (ERP Phase 8)
     import datetime
     today = datetime.date.today()
-    active_students = User.objects.filter(role='student', is_active=True).count()
-    active_teachers = User.objects.filter(role='teacher', is_active=True).count()
+    active_students = User.objects.filter(role='student', is_active=True, is_deleted=False).count()
+    active_teachers = User.objects.filter(role='teacher', is_active=True, is_deleted=False).count()
     active_batches = Batch.objects.filter(start_date__lte=today, end_date__gte=today).count()
     
     total_att_count = Attendance.objects.count()
@@ -223,8 +223,8 @@ def admin_dashboard(request):
     exam_pass_rate = round((passed_attempts / total_attempts * 100), 1) if total_attempts > 0 else 0.0
 
     context = {
-        'total_students': User.objects.filter(role='student').count(),
-        'total_teachers': User.objects.filter(role='teacher').count(),
+        'total_students': User.objects.filter(role='student', is_deleted=False).count(),
+        'total_teachers': User.objects.filter(role='teacher', is_deleted=False).count(),
         'total_exams': Exam.objects.count(),
         'active_exams': Exam.objects.filter(is_published=True).count(),
         'batch_assigned_exams': Exam.objects.filter(batches__isnull=False).distinct().count(),
@@ -264,9 +264,9 @@ def user_list(request):
                 Q(role='student', studentprofile__batch__isnull=True) |
                 Q(role='teacher', teacherprofile__batch__course__center=request.user.center) |
                 Q(role='teacher', teacherprofile__batch__isnull=True)
-            ).distinct()
+            ).filter(is_deleted=False).distinct()
     else:
-        users = User.objects.exclude(role='admin')
+        users = User.objects.filter(is_deleted=False).exclude(role='admin')
 
     query = request.GET.get('q', '').strip()
     role = request.GET.get('role', '').strip()
@@ -347,7 +347,7 @@ def user_edit(request, user_id):
     if request.user.role not in ('admin', 'center'):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
 
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(User, id=user_id, is_deleted=False)
 
     if request.user.role == 'center':
         if user.role not in ('student', 'teacher'):
@@ -416,7 +416,7 @@ def user_delete(request, user_id):
     if request.user.role not in ('admin', 'center'):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
 
-    user = get_object_or_404(User, id=user_id)
+    user = get_object_or_404(User, id=user_id, is_deleted=False)
     if user.role == 'admin':
         return HttpResponseForbidden("Cannot delete admin user.")
 
@@ -439,6 +439,10 @@ def user_delete(request, user_id):
             except TeacherProfile.DoesNotExist:
                 pass
 
+    for profile_attr in ('studentprofile', 'teacherprofile'):
+        profile = getattr(user, profile_attr, None)
+        if profile:
+            profile.delete()
     user.delete()
     messages.success(request, f"User {user.username} deleted successfully.")
     return redirect('user_list')

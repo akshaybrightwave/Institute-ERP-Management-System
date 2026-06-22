@@ -1,15 +1,129 @@
 {% extends 'management/base.html' %}
 
+{% block extra_style %}
+<style>
+  .lead-list-page,
+  .lead-modal input,
+  .lead-modal select,
+  .lead-modal textarea,
+  .lead-modal button {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .lead-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .lead-bulk-btn {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px !important;
+    font-weight: 800;
+  }
+
+  .lead-action-btn {
+    min-height: 34px;
+    width: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 8px !important;
+  }
+
+  .lead-action-btn i {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .lead-modal .modal-content {
+    border: 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .lead-modal .modal-header {
+    background: #0f172a;
+    border-bottom: 0;
+    color: #fff;
+  }
+
+  .lead-modal .modal-body {
+    background: #f8fafc;
+  }
+
+  .lead-modal .form-label {
+    color: var(--mg-muted);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .lead-modal .form-control,
+  .lead-modal .form-select {
+    min-height: 44px;
+    border: 1px solid var(--mg-line) !important;
+    background: #fff !important;
+    color: var(--mg-text) !important;
+    border-radius: 8px !important;
+  }
+
+  .lead-modal .form-control:focus,
+  .lead-modal .form-select:focus {
+    border-color: rgba(91, 95, 239, .55) !important;
+    box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
+  }
+
+  .lead-modal-info {
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #fff;
+    padding: 14px;
+  }
+
+  .lead-modal-info small {
+    display: block;
+    color: var(--mg-muted);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+
+  .lead-bulk-table {
+    max-height: 430px;
+    overflow: auto;
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #fff;
+  }
+
+  .lead-bulk-table .table {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 991.98px) {
+    .lead-page-header {
+      flex-direction: column;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block management_content %}
-<div class="mb-4 d-flex justify-content-between align-items-center">
+<div class="lead-list-page">
+<div class="lead-page-header">
   <div>
     <h2 class="fw-bold text-white mb-1">Active Leads</h2>
     <p class="text-muted small">Monitor, track, and qualify converted inquiries</p>
   </div>
   <div>
-    <a href="{% url 'lead_bulk_action' %}" class="btn btn-outline-warning btn-sm fw-bold">
+    <button type="button" class="btn btn-outline-warning lead-bulk-btn" data-bs-toggle="modal" data-bs-target="#bulkLeadStatusModal">
       <i class="bi bi-list-check me-1"></i> Bulk Status Updates
-    </a>
+    </button>
   </div>
 </div>
 
@@ -117,8 +231,12 @@
               </td>
               <td class="text-end">
                 <div class="d-inline-flex gap-1">
-                  <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-info" title="View Lead Profile"><i class="bi bi-eye"></i> View</a>
-                  <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-sm btn-outline-warning" title="Update status/priority"><i class="bi bi-pencil"></i> Edit</a>
+                  <button type="button" class="btn btn-sm btn-outline-info lead-action-btn" title="View Lead Profile" data-bs-toggle="modal" data-bs-target="#viewLeadModal{{ lead.pk }}">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-warning lead-action-btn" title="Update status/priority" data-bs-toggle="modal" data-bs-target="#editLeadModal{{ lead.pk }}">
+                    <i class="bi bi-pencil"></i>
+                  </button>
                 </div>
               </td>
             </tr>
@@ -158,4 +276,179 @@
     {% endif %}
   </div>
 </div>
+</div>
+
+{# ---- Bulk Status Update Modal ---- #}
+<div class="modal fade lead-modal" id="bulkLeadStatusModal" tabindex="-1" aria-labelledby="bulkLeadStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-xl">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'lead_bulk_action' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold" id="bulkLeadStatusModalLabel">
+              <i class="bi bi-list-check me-2"></i>Bulk Status Update
+            </h5>
+            <p class="mb-0 small text-white-50">Select leads from this page and apply one status update.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3 align-items-end mb-3">
+            <div class="col-md-8">
+              <label class="form-label">Choose Status Action</label>
+              <select name="action" class="form-select" required>
+                <option value="">Select action</option>
+                <option value="Mark Contacted">Mark Contacted</option>
+                <option value="Mark Interested">Mark Interested</option>
+                <option value="Mark Follow Up">Mark Follow Up</option>
+                <option value="Mark Qualified">Mark Qualified</option>
+                <option value="Mark Rejected">Mark Rejected</option>
+                <option value="Mark Invalid Number">Mark Invalid Number</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check mb-2">
+                <input type="checkbox" id="lead-select-all" class="form-check-input">
+                <label for="lead-select-all" class="form-check-label fw-bold">Select all visible leads</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="lead-bulk-table">
+            <table class="table m-table align-middle">
+              <thead>
+                <tr>
+                  <th style="width: 52px;">Select</th>
+                  <th>Lead</th>
+                  <th>Mobile</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for lead in page_obj %}
+                <tr>
+                  <td><input type="checkbox" name="leads" value="{{ lead.id }}" class="form-check-input lead-bulk-checkbox"></td>
+                  <td class="fw-bold">{{ lead.inquiry.full_name }}</td>
+                  <td>{{ lead.inquiry.mobile_number }}</td>
+                  <td>{{ lead.priority }}</td>
+                  <td>{{ lead.status }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">No leads available for bulk update.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning fw-bold">Apply Status Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{# ---- Lead View and Edit Modals ---- #}
+{% for lead in page_obj %}
+<div class="modal fade lead-modal" id="viewLeadModal{{ lead.pk }}" tabindex="-1" aria-labelledby="viewLeadModalLabel{{ lead.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title fw-bold" id="viewLeadModalLabel{{ lead.pk }}">
+            <i class="bi bi-person-lines-fill me-2"></i>{{ lead.inquiry.full_name }}
+          </h5>
+          <p class="mb-0 small text-white-50">Lead profile summary</p>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6"><div class="lead-modal-info"><small>Mobile</small><div class="fw-bold">{{ lead.inquiry.mobile_number }}</div></div></div>
+          <div class="col-md-6"><div class="lead-modal-info"><small>Email</small><div class="fw-bold">{{ lead.inquiry.email|default:"-" }}</div></div></div>
+          <div class="col-md-6"><div class="lead-modal-info"><small>Course Interest</small><div class="fw-bold">{{ lead.inquiry.course_interest }}</div></div></div>
+          <div class="col-md-6"><div class="lead-modal-info"><small>City</small><div class="fw-bold">{{ lead.inquiry.city }}</div></div></div>
+          <div class="col-md-4"><div class="lead-modal-info"><small>Status</small><div class="fw-bold">{{ lead.status }}</div></div></div>
+          <div class="col-md-4"><div class="lead-modal-info"><small>Priority</small><div class="fw-bold">{{ lead.priority }}</div></div></div>
+          <div class="col-md-4"><div class="lead-modal-info"><small>Next Follow-Up</small><div class="fw-bold">{{ lead.next_followup_date|date:"d M Y"|default:"Not Scheduled" }}</div></div></div>
+          <div class="col-12"><div class="lead-modal-info"><small>Notes</small><div>{{ lead.notes|default:"No notes added."|linebreaksbr }}</div></div></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-info text-white fw-bold">Open Full Profile</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade lead-modal" id="editLeadModal{{ lead.pk }}" tabindex="-1" aria-labelledby="editLeadModalLabel{{ lead.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'lead_edit' lead.pk %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold" id="editLeadModalLabel{{ lead.pk }}">
+              <i class="bi bi-pencil-square me-2"></i>Edit Lead
+            </h5>
+            <p class="mb-0 small text-white-50">Update status, priority, follow-up date, and notes.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="lead-status-{{ lead.pk }}">Lead Status</label>
+              <select class="form-select" id="lead-status-{{ lead.pk }}" name="status" required>
+                {% for code, name in status_choices %}
+                  <option value="{{ code }}" {% if lead.status == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="lead-priority-{{ lead.pk }}">Priority</label>
+              <select class="form-select" id="lead-priority-{{ lead.pk }}" name="priority" required>
+                {% for code, name in priority_choices %}
+                  <option value="{{ code }}" {% if lead.priority == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label" for="lead-followup-{{ lead.pk }}">Next Planned Follow-Up Date</label>
+              <input type="date" class="form-control" id="lead-followup-{{ lead.pk }}" name="next_followup_date" value="{{ lead.next_followup_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="lead-notes-{{ lead.pk }}">Internal Lead Notes</label>
+              <textarea class="form-control" id="lead-notes-{{ lead.pk }}" name="notes" rows="4" placeholder="Enter follow-up details or notes">{{ lead.notes }}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Lead Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<script>
+  (function() {
+    const selectAll = document.getElementById('lead-select-all');
+    if (!selectAll) return;
+
+    selectAll.addEventListener('change', function() {
+      document.querySelectorAll('.lead-bulk-checkbox').forEach(function(checkbox) {
+        checkbox.checked = selectAll.checked;
+      });
+    });
+  })();
+</script>
 {% endblock %}

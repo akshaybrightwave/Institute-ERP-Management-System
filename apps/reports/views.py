@@ -60,7 +60,7 @@ def reports_dashboard(request):
             total_attendance_records = 0
         else:
             total_students = StudentProfile.objects.filter(batch__course__center=center).count()
-            total_teachers = User.objects.filter(role='teacher', teacherprofile__batch__course__center=center).distinct().count()
+            total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__course__center=center).distinct().count()
             total_batches = Batch.objects.filter(course__center=center).count()
             total_courses = Course.objects.filter(center=center).count()
             total_centers = 1
@@ -68,8 +68,8 @@ def reports_dashboard(request):
             total_certificates = Certificate.objects.filter(course__center=center).count()
             total_attendance_records = Attendance.objects.filter(batch__course__center=center).count()
     else:
-        total_students = User.objects.filter(role='student').count()
-        total_teachers = User.objects.filter(role='teacher').count()
+        total_students = User.objects.filter(role='student', is_deleted=False).count()
+        total_teachers = User.objects.filter(role='teacher', is_deleted=False).count()
         total_batches = Batch.objects.count()
         total_courses = Course.objects.count()
         total_centers = Center.objects.count()

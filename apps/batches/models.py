@@ -1,9 +1,10 @@
 from django.db import models
+from apps.soft_delete import SoftDeleteModel
 from apps.courses.models import Course
 from apps.teachers.models import TeacherProfile
 
 
-class Batch(models.Model):
+class Batch(SoftDeleteModel):
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE

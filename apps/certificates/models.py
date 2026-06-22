@@ -1,10 +1,11 @@
 from django.db import models
+from apps.soft_delete import SoftDeleteModel
 from apps.students.models import StudentProfile
 from apps.batches.models import Batch
 from apps.courses.models import Course
 
 
-class Certificate(models.Model):
+class Certificate(SoftDeleteModel):
     STATUS_CHOICES = [
         ('issued', 'Issued'),
         ('revoked', 'Revoked'),

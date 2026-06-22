@@ -2,105 +2,371 @@
 
 {% block title %}Telecaller Performance Reports | Examly{% endblock %}
 
+{% block extra_style %}
+<style>
+  .tele-report-page {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .tele-report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .tele-filter-card {
+    padding: 18px !important;
+  }
+
+  .tele-filter-card .form-label {
+    color: var(--mg-muted) !important;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 7px;
+  }
+
+  .tele-filter-card .form-control,
+  .tele-filter-card .form-select {
+    min-height: 46px;
+    border: 1px solid var(--mg-line) !important;
+    background: #fff !important;
+    color: var(--mg-text) !important;
+    font-weight: 600;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+
+  .tele-filter-card .form-control:focus,
+  .tele-filter-card .form-select:focus {
+    border-color: rgba(91, 95, 239, .55) !important;
+    box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
+  }
+
+  .tele-kpi {
+    min-height: 126px;
+    padding: 18px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .tele-kpi-label {
+    color: var(--mg-muted);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 8px;
+  }
+
+  .tele-kpi-value {
+    color: var(--mg-text);
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .tele-kpi-sub {
+    color: var(--mg-muted);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .tele-kpi-icon {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    background: rgba(91, 95, 239, .12);
+    color: var(--mg-primary);
+    font-size: 24px;
+  }
+
+  .tele-table-card {
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .tele-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 20px;
+    border-bottom: 1px solid var(--mg-line);
+  }
+
+  .tele-table-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--mg-text) !important;
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .tele-table-title i {
+    color: var(--mg-primary);
+  }
+
+  .tele-table-subtitle {
+    color: var(--mg-muted);
+    font-size: 13px;
+    margin-bottom: 0;
+  }
+
+  .tele-table {
+    min-width: 1320px;
+    margin-bottom: 0;
+  }
+
+  .tele-table th {
+    padding: 14px 16px !important;
+    background: #f8fafc !important;
+    color: var(--mg-muted) !important;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    border-bottom: 1px solid var(--mg-line) !important;
+    white-space: nowrap;
+  }
+
+  .tele-table td {
+    padding: 16px !important;
+    color: var(--mg-text) !important;
+    border-bottom: 1px solid var(--mg-line) !important;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .tele-table tbody tr:hover td {
+    background: #fbfdff !important;
+  }
+
+  .tele-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 900;
+  }
+
+  .tele-user-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: var(--mg-primary);
+  }
+
+  .tele-metric-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .tele-empty {
+    padding: 48px 18px;
+    text-align: center;
+    color: var(--mg-muted);
+  }
+
+  .tele-empty i {
+    display: block;
+    color: rgba(91, 95, 239, .42);
+    font-size: 42px;
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 991.98px) {
+    .tele-report-header,
+    .tele-table-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block management_content %}
-<div class="mb-4">
-  <h2 class="fw-bold text-white mb-1">Telecaller Performance Reports</h2>
-  <p class="text-muted small">Evaluate telecaller productivity, logs, and conversions.</p>
-</div>
+<div class="tele-report-page">
+  <div class="tele-report-header">
+    <div>
+      <h2 class="fw-bold text-white mb-1">Telecaller Performance Reports</h2>
+      <p class="text-muted small mb-0">Evaluate productivity, calling outcomes, follow-ups, and qualified lead conversion.</p>
+    </div>
+    <a href="{% url 'management_dashboard' %}" class="btn btn-outline-secondary fw-bold">
+      <i class="bi bi-arrow-left me-1"></i> Dashboard
+    </a>
+  </div>
 
-<!-- Filters & Exports -->
-<div class="m-card mb-4">
-  <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
-    <!-- Preset Filter -->
-    <div class="col-md-3">
-      <label class="form-label text-muted small fw-bold">Date Preset</label>
-      <select name="date_filter" id="date-filter-select" class="form-select bg-dark border-secondary text-white form-select-sm">
-        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
-        <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
-        <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
-        <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
-      </select>
+  <div class="m-card tele-filter-card mb-4">
+    <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Date Preset</label>
+        <select name="date_filter" id="date-filter-select" class="form-select">
+          <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+          <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
+          <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
+          <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
+        </select>
+      </div>
+
+      <div class="col-lg-2 col-md-6 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+        <label class="form-label">From Date</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+      </div>
+
+      <div class="col-lg-2 col-md-6 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+        <label class="form-label">To Date</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+      </div>
+
+      <div class="col-lg-2 col-md-6">
+        <button type="submit" class="btn btn-info text-white w-100 fw-bold">
+          <i class="bi bi-funnel me-1"></i> Apply
+        </button>
+      </div>
+
+      <div class="col-lg-3 col-md-12 d-flex gap-2 flex-wrap">
+        <button type="submit" name="export" value="csv" class="btn btn-outline-info flex-fill fw-bold">
+          <i class="bi bi-filetype-csv me-1"></i> CSV
+        </button>
+        <button type="submit" name="export" value="excel" class="btn btn-outline-success flex-fill fw-bold">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Telecallers</div>
+          <div class="tele-kpi-value">{{ totals.telecallers }}</div>
+          <div class="tele-kpi-sub">Included in this report</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-headset"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Calls Made</div>
+          <div class="tele-kpi-value">{{ totals.calls_made }}</div>
+          <div class="tele-kpi-sub">Logged call records</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-telephone-outbound"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Qualified Leads</div>
+          <div class="tele-kpi-value">{{ totals.qualified_leads }}</div>
+          <div class="tele-kpi-sub">{{ totals.conversion_pct }}% total conversion</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-check2-circle"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Pending Follow-Ups</div>
+          <div class="tele-kpi-value">{{ totals.pending_followups }}</div>
+          <div class="tele-kpi-sub">Need attention</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-clock-history"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-card tele-table-card">
+    <div class="tele-table-header">
+      <div>
+        <h5 class="tele-table-title"><i class="bi bi-bar-chart-line"></i>Performance Breakdown</h5>
+        <p class="tele-table-subtitle">Source workload, conversion, follow-up, and call outcome metrics by telecaller.</p>
+      </div>
     </div>
 
-    <!-- Custom Start Date -->
-    <div class="col-md-3 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">From Date</label>
-      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
+    <div class="table-responsive">
+      {% if report_data %}
+        <table class="table tele-table">
+          <thead>
+            <tr>
+              <th>Telecaller</th>
+              <th>Inquiries</th>
+              <th>Leads</th>
+              <th>Calls</th>
+              <th>Completed Follow-Ups</th>
+              <th>Qualified</th>
+              <th>Rejected</th>
+              <th>Pending Follow-Ups</th>
+              <th>Conversion</th>
+              <th>Accepted</th>
+              <th>Busy</th>
+              <th>Call Back</th>
+              <th>Interested</th>
+              <th>Not Interested</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report_data %}
+            <tr>
+              <td>
+                <span class="tele-user">
+                  <span class="tele-user-icon"><i class="bi bi-person"></i></span>
+                  {{ row.telecaller }}
+                </span>
+              </td>
+              <td class="fw-bold">{{ row.total_inquiries }}</td>
+              <td>{{ row.total_leads }}</td>
+              <td>{{ row.calls_made }}</td>
+              <td><span class="tele-metric-badge" style="background:#dcfce7;color:#15803d;">{{ row.followups_completed }}</span></td>
+              <td><span class="tele-metric-badge" style="background:#dcfce7;color:#15803d;">{{ row.qualified_leads }}</span></td>
+              <td><span class="tele-metric-badge" style="background:#fee2e2;color:#b91c1c;">{{ row.rejected_leads }}</span></td>
+              <td><span class="tele-metric-badge" style="background:#fef3c7;color:#a16207;">{{ row.pending_followups }}</span></td>
+              <td class="fw-bold">{{ row.conversion_pct }}%</td>
+              <td><span class="tele-metric-badge" style="background:#dcfce7;color:#15803d;">{{ row.cs_accepted }}</span></td>
+              <td><span class="tele-metric-badge" style="background:#fff7ed;color:#c2410c;">{{ row.cs_busy }}</span></td>
+              <td><span class="tele-metric-badge" style="background:#dbeafe;color:#1d4ed8;">{{ row.cs_call_back }}</span></td>
+              <td><span class="tele-metric-badge" style="background:#d1fae5;color:#047857;">{{ row.cs_interested }}</span></td>
+              <td><span class="tele-metric-badge" style="background:#fecdd3;color:#9f1239;">{{ row.cs_not_interested }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="tele-empty">
+          <i class="bi bi-bar-chart"></i>
+          <h5>No report data</h5>
+          <p class="mb-0">No telecaller activity was found for the selected period.</p>
+        </div>
+      {% endif %}
     </div>
-
-    <!-- Custom End Date -->
-    <div class="col-md-3 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">To Date</label>
-      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
-    </div>
-
-    <!-- Submit Button -->
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-info text-white w-100 fw-bold btn-sm"><i class="bi bi-funnel"></i> Apply Filter</button>
-    </div>
-
-    <!-- Export Options -->
-    <div class="col-md-4 d-flex gap-2">
-      <button type="submit" name="export" value="csv" class="btn btn-outline-info w-50 fw-bold btn-sm"><i class="bi bi-filetype-csv me-1"></i> Export CSV</button>
-      <button type="submit" name="export" value="excel" class="btn btn-outline-success w-50 fw-bold btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel</button>
-    </div>
-  </form>
-</div>
-
-<!-- Performance Report Data -->
-<div class="m-card">
-  <div class="table-responsive">
-    <table class="table m-table table-hover">
-      <thead>
-        <tr>
-          <th>Telecaller Username</th>
-          <th>Total Inquiries</th>
-          <th>Total Leads</th>
-          <th>Calls Made</th>
-          <th>Follow-Ups Completed</th>
-          <th>Qualified Leads</th>
-          <th>Rejected Leads</th>
-          <th>Pending Follow-Ups</th>
-          <th>Conversion %</th>
-          <th>Accepted</th>
-          <th>Busy</th>
-          <th>Call Back</th>
-          <th>Interested</th>
-          <th>Not Interested</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in report_data %}
-        <tr>
-          <td class="fw-bold text-info"><i class="bi bi-person-fill me-1"></i>{{ row.telecaller }}</td>
-          <td>{{ row.total_inquiries }}</td>
-          <td>{{ row.total_leads }}</td>
-          <td>{{ row.calls_made }}</td>
-          <td class="text-success">{{ row.followups_completed }}</td>
-          <td class="text-success fw-bold">{{ row.qualified_leads }}</td>
-          <td class="text-danger">{{ row.rejected_leads }}</td>
-          <td class="text-warning">{{ row.pending_followups }}</td>
-          <td class="fw-bold text-warning">{{ row.conversion_pct }}%</td>
-          <td><span class="badge" style="background:#dcfce7;color:#15803d;">{{ row.cs_accepted }}</span></td>
-          <td><span class="badge" style="background:#fff7ed;color:#c2410c;">{{ row.cs_busy }}</span></td>
-          <td><span class="badge" style="background:#dbeafe;color:#1d4ed8;">{{ row.cs_call_back }}</span></td>
-          <td><span class="badge" style="background:#dcfce7;color:#15803d;">{{ row.cs_interested }}</span></td>
-          <td><span class="badge" style="background:#fecdd3;color:#9f1239;">{{ row.cs_not_interested }}</span></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
   </div>
 </div>
 
 <script>
   document.getElementById('date-filter-select').addEventListener('change', function() {
     const customGroups = document.querySelectorAll('.custom-date-group');
-    if (this.value === 'custom') {
-      customGroups.forEach(el => el.style.display = 'block');
-    } else {
-      customGroups.forEach(el => el.style.display = 'none');
-    }
+    const displayValue = this.value === 'custom' ? 'block' : 'none';
+    customGroups.forEach(el => el.style.display = displayValue);
   });
 </script>
 {% endblock %}

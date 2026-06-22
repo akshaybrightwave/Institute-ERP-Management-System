@@ -2,113 +2,380 @@
 
 {% block title %}Lead Source Analytics | Examly{% endblock %}
 
+{% block extra_style %}
+<style>
+  .source-analytics-page {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .source-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .source-kpi {
+    padding: 18px !important;
+    min-height: 128px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .source-kpi-label {
+    color: var(--mg-muted);
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 8px;
+  }
+
+  .source-kpi-value {
+    color: var(--mg-text);
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .source-kpi-sub {
+    color: var(--mg-muted);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+
+  .source-kpi-icon {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 8px;
+    background: rgba(91, 95, 239, .12);
+    color: var(--mg-primary);
+    font-size: 24px;
+  }
+
+  .source-chart-card {
+    padding: 20px !important;
+    min-height: 360px;
+  }
+
+  .source-card-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--mg-text) !important;
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .source-card-title i {
+    color: var(--mg-primary);
+  }
+
+  .source-card-subtitle {
+    color: var(--mg-muted);
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+
+  .source-chart-wrap {
+    position: relative;
+    height: 260px;
+    width: 100%;
+  }
+
+  .source-table-card {
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  .source-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 20px;
+    border-bottom: 1px solid var(--mg-line);
+  }
+
+  .source-table {
+    min-width: 860px;
+    margin-bottom: 0;
+  }
+
+  .source-table th {
+    padding: 14px 18px !important;
+    background: #f8fafc !important;
+    color: var(--mg-muted) !important;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    border-bottom: 1px solid var(--mg-line) !important;
+  }
+
+  .source-table td {
+    padding: 16px 18px !important;
+    color: var(--mg-text) !important;
+    border-bottom: 1px solid var(--mg-line) !important;
+    vertical-align: middle;
+  }
+
+  .source-table tbody tr:hover td {
+    background: #fbfdff !important;
+  }
+
+  .source-channel {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-weight: 900;
+  }
+
+  .source-channel-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: var(--mg-primary);
+  }
+
+  .source-progress {
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    min-width: 120px;
+  }
+
+  .source-progress span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--mg-primary), #06b6d4);
+  }
+
+  .source-empty {
+    padding: 48px 18px;
+    text-align: center;
+    color: var(--mg-muted);
+  }
+
+  .source-empty i {
+    display: block;
+    color: rgba(91, 95, 239, .42);
+    font-size: 42px;
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 991.98px) {
+    .source-header,
+    .source-table-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block management_content %}
-<div class="mb-4">
-  <h2 class="fw-bold text-white mb-1">Lead Source Analytics</h2>
-  <p class="text-muted small">Evaluate performance and quality across marketing channels.</p>
-</div>
+<div class="source-analytics-page">
+  <div class="source-header">
+    <div>
+      <h2 class="fw-bold text-white mb-1">Lead Source Analytics</h2>
+      <p class="text-muted small mb-0">Evaluate acquisition quality and conversion performance across marketing channels.</p>
+    </div>
+    <a href="{% url 'lead_list' %}" class="btn btn-outline-secondary fw-bold">
+      <i class="bi bi-funnel me-1"></i> View Leads
+    </a>
+  </div>
 
-<div class="row g-4 mb-4">
-  <!-- Chart: Distribution -->
-  <div class="col-md-6">
-    <div class="m-card">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-pie-chart text-info me-2"></i>Lead Source Distribution</h5>
-      <div style="position: relative; height:250px; width:100%;">
-        <canvas id="distributionChart"></canvas>
+  <div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card source-kpi">
+        <div>
+          <div class="source-kpi-label">Total Leads</div>
+          <div class="source-kpi-value">{{ total_leads_all }}</div>
+          <div class="source-kpi-sub">Across all tracked sources</div>
+        </div>
+        <div class="source-kpi-icon"><i class="bi bi-people"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card source-kpi">
+        <div>
+          <div class="source-kpi-label">Qualified</div>
+          <div class="source-kpi-value">{{ total_qualified_all }}</div>
+          <div class="source-kpi-sub">{{ overall_conversion_rate }}% overall conversion</div>
+        </div>
+        <div class="source-kpi-icon"><i class="bi bi-check2-circle"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card source-kpi">
+        <div>
+          <div class="source-kpi-label">Rejected</div>
+          <div class="source-kpi-value">{{ total_rejected_all }}</div>
+          <div class="source-kpi-sub">Leads marked rejected</div>
+        </div>
+        <div class="source-kpi-icon"><i class="bi bi-x-circle"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card source-kpi">
+        <div>
+          <div class="source-kpi-label">Best Source</div>
+          <div class="source-kpi-value" style="font-size:22px;">{{ best_source.source|default:"No data" }}</div>
+          <div class="source-kpi-sub">{% if best_source %}{{ best_source.conversion_rate }}% conversion rate{% else %}Add leads to calculate{% endif %}</div>
+        </div>
+        <div class="source-kpi-icon"><i class="bi bi-stars"></i></div>
       </div>
     </div>
   </div>
 
-  <!-- Chart: Conversion -->
-  <div class="col-md-6">
-    <div class="m-card">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-bar-chart text-success me-2"></i>Conversion Rate By Source (%)</h5>
-      <div style="position: relative; height:250px; width:100%;">
-        <canvas id="conversionChart"></canvas>
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="m-card source-chart-card">
+        <h5 class="source-card-title"><i class="bi bi-pie-chart"></i>Lead Source Distribution</h5>
+        <p class="source-card-subtitle">Volume share by source channel.</p>
+        <div class="source-chart-wrap">
+          <canvas id="distributionChart"></canvas>
+        </div>
       </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="m-card source-chart-card">
+        <h5 class="source-card-title"><i class="bi bi-bar-chart"></i>Conversion Rate By Source</h5>
+        <p class="source-card-subtitle">Qualified leads as a percentage of total leads per source.</p>
+        <div class="source-chart-wrap">
+          <canvas id="conversionChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-card source-table-card">
+    <div class="source-table-header">
+      <div>
+        <h5 class="source-card-title mb-1"><i class="bi bi-grid-3x3-gap"></i>Channel Performance</h5>
+        <p class="source-card-subtitle mb-0">Detailed source-wise lead quality metrics.</p>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      {% if source_stats %}
+        <table class="table source-table">
+          <thead>
+            <tr>
+              <th>Source Channel</th>
+              <th>Total Leads</th>
+              <th>Qualified</th>
+              <th>Rejected</th>
+              <th>Lead Share</th>
+              <th>Conversion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for stat in source_stats %}
+            <tr>
+              <td>
+                <span class="source-channel">
+                  <span class="source-channel-icon"><i class="bi bi-megaphone"></i></span>
+                  {{ stat.source }}
+                </span>
+              </td>
+              <td class="fw-bold">{{ stat.total_leads }}</td>
+              <td><span class="badge bg-success">{{ stat.qualified_leads }}</span></td>
+              <td><span class="badge bg-danger">{{ stat.rejected_leads }}</span></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="source-progress"><span style="width: {{ stat.share_rate }}%;"></span></div>
+                  <span class="small fw-bold text-muted">{{ stat.share_rate }}%</span>
+                </div>
+              </td>
+              <td class="fw-bold">{{ stat.conversion_rate }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="source-empty">
+          <i class="bi bi-bar-chart"></i>
+          <h5>No source data yet</h5>
+          <p class="mb-0">Create or convert inquiries into leads to populate analytics.</p>
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>
 
-<!-- Source Table -->
-<div class="m-card">
-  <h5 class="fw-bold text-white mb-3"><i class="bi bi-grid-3x3-gap text-warning me-2"></i>Channel Analytics Performance</h5>
-  <div class="table-responsive">
-    <table class="table m-table table-hover">
-      <thead>
-        <tr>
-          <th>Source Channel</th>
-          <th>Total Leads</th>
-          <th>Qualified Leads</th>
-          <th>Rejected Leads</th>
-          <th>Conversion Rate</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for stat in source_stats %}
-        <tr>
-          <td class="fw-bold text-info">{{ stat.source }}</td>
-          <td>{{ stat.total_leads }}</td>
-          <td class="text-success">{{ stat.qualified_leads }}</td>
-          <td class="text-danger">{{ stat.rejected_leads }}</td>
-          <td class="fw-bold text-warning">{{ stat.conversion_rate }}%</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+{{ chart_labels|json_script:"source-labels-data" }}
+{{ source_distribution_data|json_script:"source-distribution-data" }}
+{{ conversion_by_source_data|json_script:"source-conversion-data" }}
 
-<!-- Include Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Lead Source Distribution
-  const distCtx = document.getElementById('distributionChart').getContext('2d');
-  const distChart = new Chart(distCtx, {
+  const sourceLabels = JSON.parse(document.getElementById('source-labels-data').textContent);
+  const sourceDistribution = JSON.parse(document.getElementById('source-distribution-data').textContent);
+  const sourceConversion = JSON.parse(document.getElementById('source-conversion-data').textContent);
+  const palette = ['#5b5fef', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
+
+  const chartFont = {
+    family: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    size: 12,
+    weight: '600'
+  };
+
+  new Chart(document.getElementById('distributionChart'), {
     type: 'doughnut',
     data: {
-      labels: {{ chart_labels|safe }},
+      labels: sourceLabels,
       datasets: [{
-        data: {{ source_distribution_data|safe }},
-        backgroundColor: [
-          '#0dcaf0',
-          '#198754',
-          '#ffc107',
-          '#fd7e14',
-          '#20c997',
-          '#0d6efd',
-          '#6c757d'
-        ],
-        borderWidth: 1,
-        borderColor: '#111120'
+        data: sourceDistribution,
+        backgroundColor: palette,
+        borderColor: '#fff',
+        borderWidth: 3,
+        hoverOffset: 8
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      cutout: '64%',
       plugins: {
         legend: {
           position: 'right',
           labels: {
-            color: '#c0c0e0'
+            boxWidth: 12,
+            boxHeight: 12,
+            color: '#334155',
+            font: chartFont,
+            padding: 16
           }
         }
       }
     }
   });
 
-  // Conversion Rates By Source
-  const convCtx = document.getElementById('conversionChart').getContext('2d');
-  const convChart = new Chart(convCtx, {
+  new Chart(document.getElementById('conversionChart'), {
     type: 'bar',
     data: {
-      labels: {{ chart_labels|safe }},
+      labels: sourceLabels,
       datasets: [{
         label: 'Conversion Rate %',
-        data: {{ conversion_by_source_data|safe }},
-        backgroundColor: '#198754',
-        borderWidth: 0,
-        borderRadius: 4
+        data: sourceConversion,
+        backgroundColor: '#5b5fef',
+        borderRadius: 8,
+        maxBarThickness: 42
       }]
     },
     options: {
@@ -118,16 +385,21 @@
         y: {
           beginAtZero: true,
           max: 100,
-          ticks: { color: '#c0c0e0' },
-          grid: { color: '#1e1e35' }
+          ticks: { color: '#64748b', font: chartFont, callback: value => value + '%' },
+          grid: { color: '#e5e7eb' }
         },
         x: {
-          ticks: { color: '#c0c0e0' },
+          ticks: { color: '#64748b', font: chartFont },
           grid: { display: false }
         }
       },
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: context => context.parsed.y + '% conversion'
+          }
+        }
       }
     }
   });

@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from apps.soft_delete import SoftDeleteModel
 
 
-class Exam(models.Model):
+class Exam(SoftDeleteModel):
     title = models.CharField(max_length=255)
     description = models.TextField()
     date = models.DateField()
@@ -33,7 +34,7 @@ class Exam(models.Model):
         return self.title
 
 
-class Question(models.Model):
+class Question(SoftDeleteModel):
     exam = models.ForeignKey(
         Exam,
         on_delete=models.CASCADE,
@@ -46,7 +47,7 @@ class Question(models.Model):
         return self.question_text
 
 
-class Option(models.Model):
+class Option(SoftDeleteModel):
     question = models.ForeignKey(
         Question,
         on_delete=models.CASCADE,
@@ -60,7 +61,7 @@ class Option(models.Model):
         return self.text
 
 
-class StudentExamAttempt(models.Model):
+class StudentExamAttempt(SoftDeleteModel):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_attempts')
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='attempts')
 

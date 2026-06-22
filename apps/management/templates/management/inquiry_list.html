@@ -11,6 +11,18 @@
     --inquiry-yellow-soft: #fef3c7;
     --inquiry-red: #b91c1c;
     --inquiry-red-soft: #fee2e2;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .inquiry-directory-page button,
+  .inquiry-directory-page input,
+  .inquiry-directory-page select,
+  .inquiry-directory-page textarea,
+  .inquiry-modal button,
+  .inquiry-modal input,
+  .inquiry-modal select,
+  .inquiry-modal textarea {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
   .inquiry-page-header {
@@ -37,14 +49,87 @@
     box-shadow: 0 12px 28px rgba(6, 182, 212, .24);
   }
 
+  .inquiry-modal .modal-content {
+    border: 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .inquiry-modal .modal-header {
+    background: #0f172a;
+    border-bottom: 0;
+    color: #fff;
+  }
+
+  .inquiry-modal .modal-body {
+    background: #f8fafc;
+  }
+
+  .inquiry-modal .form-label {
+    color: #475569;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
   .inquiry-filter-card {
-    padding: 20px !important;
+    padding: 18px !important;
+    border-color: var(--mg-line) !important;
   }
 
   .inquiry-filter-card .form-label {
-    color: #475569 !important;
+    color: var(--mg-muted) !important;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    margin-bottom: 7px;
+  }
+
+  .inquiry-filter-card .input-group-text {
+    border-color: var(--mg-line) !important;
+    border-right: 0 !important;
+    background: #fff !important;
+    color: var(--mg-primary) !important;
+    border-radius: 8px 0 0 8px !important;
+  }
+
+  .inquiry-filter-card .form-control,
+  .inquiry-filter-card .form-select {
+    min-height: 46px;
+    border: 1px solid var(--mg-line) !important;
+    background-color: #fff !important;
+    color: var(--mg-text) !important;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: none !important;
+  }
+
+  .inquiry-filter-card .input-group .form-control {
+    border-left: 0 !important;
+    border-radius: 0 8px 8px 0 !important;
+  }
+
+  .inquiry-filter-card .form-select {
+    cursor: pointer;
+    padding-right: 42px;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--mg-primary) 50%),
+      linear-gradient(135deg, var(--mg-primary) 50%, transparent 50%);
+    background-position:
+      calc(100% - 18px) 20px,
+      calc(100% - 13px) 20px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .inquiry-filter-card .form-control:focus,
+  .inquiry-filter-card .form-select:focus {
+    border-color: rgba(91, 95, 239, .55) !important;
+    box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
+  }
+
+  .inquiry-filter-card .input-group:focus-within .input-group-text {
+    border-color: rgba(91, 95, 239, .55) !important;
+    color: var(--mg-primary-dark) !important;
   }
 
   .inquiry-filter-actions {
@@ -54,7 +139,20 @@
   }
 
   .inquiry-filter-actions .btn {
-    min-height: 45px;
+    min-height: 46px;
+    width: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
+    background: var(--mg-primary) !important;
+    border-color: var(--mg-primary) !important;
+    box-shadow: 0 12px 24px rgba(91, 95, 239, .22);
+  }
+
+  .inquiry-filter-actions .btn i {
+    font-size: 20px;
+    line-height: 1;
   }
 
   .inquiry-result-meta {
@@ -62,37 +160,65 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding-bottom: 14px;
+    padding: 2px 2px 18px;
     border-bottom: 1px solid var(--mg-line);
-    margin-bottom: 4px;
+    margin-bottom: 14px;
+    color: var(--mg-muted);
+    font-size: 13px;
   }
 
   .inquiry-result-meta strong {
-    color: #0f172a;
+    color: var(--mg-text);
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+
+  .inquiry-table-shell {
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #fff;
+    overflow: auto;
   }
 
   .inquiry-table {
-    min-width: 1050px;
+    min-width: 1120px;
+    border-collapse: separate;
+    border-spacing: 0;
   }
 
   .inquiry-table th {
-    padding: 10px 8px !important;
+    padding: 14px 16px !important;
     white-space: nowrap;
-    text-align: center !important;
+    text-align: left !important;
     font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #64748b;
+    letter-spacing: 0.08em;
+    color: var(--mg-muted);
+    background: #f8fafc !important;
+    border-bottom: 1px solid var(--mg-line) !important;
   }
 
   .inquiry-table td {
-    padding: 10px 8px !important;
+    padding: 16px !important;
     vertical-align: middle;
-<<<<<<< HEAD
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: center;
+    text-align: left;
+    border-bottom: 1px solid var(--mg-line) !important;
+    background: #fff !important;
+  }
+
+  .inquiry-table tbody tr {
+    transition: background-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .inquiry-table tbody tr:hover td {
+    background: #fbfdff !important;
+  }
+
+  .inquiry-table tbody tr:last-child td {
+    border-bottom: 0 !important;
   }
 
   /* Column widths (7 columns) */
@@ -110,41 +236,28 @@
   .inquiry-table td:nth-child(6) { width: 12%; overflow: visible; }
   .inquiry-table th:nth-child(7),
   .inquiry-table td:nth-child(7) { width: 26%; }
-=======
-  }
->>>>>>> 7421d9b (admision form done)
 
   .candidate-name {
     font-weight: 800;
-    color: #0f172a;
-<<<<<<< HEAD
-    font-size: 13px;
-    margin-bottom: 2px;
+    color: var(--mg-text);
+    font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-=======
-    margin-bottom: 7px;
->>>>>>> 7421d9b (admision form done)
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
   }
 
   .candidate-contact,
   .candidate-context,
   .inquiry-date {
     display: flex;
-<<<<<<< HEAD
     flex-wrap: nowrap;
-    justify-content: center;
-    gap: 6px 10px;
-    color: #64748b;
-    font-size: 11px;
+    justify-content: flex-start;
+    gap: 8px 12px;
+    color: var(--mg-muted);
+    font-size: 12px;
     white-space: nowrap;
-=======
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    color: #64748b;
-    font-size: 13px;
->>>>>>> 7421d9b (admision form done)
   }
 
   .candidate-contact span,
@@ -152,13 +265,9 @@
   .inquiry-date span {
     display: inline-flex;
     align-items: center;
-<<<<<<< HEAD
     gap: 4px;
     white-space: nowrap;
     flex-shrink: 0;
-=======
-    gap: 5px;
->>>>>>> 7421d9b (admision form done)
   }
 
   .course-pill,
@@ -166,10 +275,10 @@
   .status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     border-radius: 999px;
-    padding: 5px 9px;
-    font-size: 11px;
+    padding: 7px 10px;
+    font-size: 12px;
     font-weight: 800;
     line-height: 1;
     white-space: nowrap;
@@ -181,8 +290,9 @@
   }
 
   .source-pill {
-    background: #f1f5f9;
+    background: #f8fafc;
     color: #334155;
+    border: 1px solid var(--mg-line);
   }
 
   .status-new {
@@ -211,7 +321,7 @@
     align-items: center;
     gap: 4px;
     border-radius: 999px;
-    padding: 4px 8px;
+    padding: 5px 9px;
     font-size: 11px;
     font-weight: 700;
     line-height: 1;
@@ -235,16 +345,16 @@
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    border: 2px solid #dbe3ee;
+    border: 1px solid var(--mg-line);
     border-radius: 8px;
     background: #fff;
     color: #334155;
     font-size: 11px;
     font-weight: 700;
-    padding: 4px 24px 4px 8px;
+    padding: 7px 26px 7px 10px;
     cursor: pointer;
     transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
-    min-width: 110px;
+    min-width: 128px;
     width: 100%;
   }
   .call-status-select:focus {
@@ -256,7 +366,6 @@
     opacity: 0.6;
     pointer-events: none;
   }
-<<<<<<< HEAD
 
   /* Color-coded select classes */
   .call-status-select.cs-NEW { background: #f3e8ff; color: #7c3aed; border-color: #c4b5fd; }
@@ -268,8 +377,6 @@
   .call-status-select.cs-WRONG_NUMBER { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
   .call-status-select.cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; border-color: #fda4af; }
 
-=======
->>>>>>> 7421d9b (admision form done)
   .call-status-wrapper::after {
     content: '\25BC';
     position: absolute;
@@ -309,48 +416,47 @@
 
   .inquiry-actions {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-<<<<<<< HEAD
-    gap: 5px;
+    gap: 7px;
     flex-wrap: nowrap;
     white-space: nowrap;
-=======
-    gap: 8px;
-    flex-wrap: wrap;
->>>>>>> 7421d9b (admision form done)
   }
 
   .inquiry-icon-btn,
   .inquiry-convert-btn,
   .inquiry-lead-btn {
-    min-height: 30px;
+    min-height: 34px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: 800;
     text-decoration: none;
     font-size: 11px;
   }
 
   .inquiry-icon-btn {
-<<<<<<< HEAD
-    width: 30px;
-    min-width: 30px;
+    width: 34px;
+    min-width: 34px;
     flex-shrink: 0;
-=======
-    width: 38px;
->>>>>>> 7421d9b (admision form done)
+    padding: 0;
     border: 1px solid #dbe3ee;
     color: #475569;
     background: #fff;
+    cursor: pointer;
   }
 
   .inquiry-icon-btn:hover {
-    background: #f8fafc;
-    color: #0f172a;
+    background: #eef2ff;
+    color: var(--mg-primary);
+    border-color: rgba(91, 95, 239, .35);
+  }
+
+  .inquiry-icon-btn i {
+    font-size: 15px;
+    line-height: 1;
   }
 
   .inquiry-icon-btn.edit {
@@ -364,35 +470,21 @@
   }
 
   .inquiry-convert-btn {
-<<<<<<< HEAD
-    padding: 0 10px;
+    padding: 0 12px;
     flex-shrink: 0;
     background: #4f46e5;
     color: #fff !important;
     box-shadow: 0 10px 22px rgba(79, 70, 229, .22);
     font-size: 11px;
-  }
-
-  .inquiry-lead-btn {
-    padding: 0 8px;
-    flex-shrink: 0;
-    border: 1px solid #bbf7d0;
-    background: #f0fdf4;
-    color: #15803d !important;
-    font-size: 11px;
-=======
-    padding: 0 14px;
-    background: #4f46e5;
-    color: #fff !important;
-    box-shadow: 0 10px 22px rgba(79, 70, 229, .22);
   }
 
   .inquiry-lead-btn {
     padding: 0 12px;
+    flex-shrink: 0;
     border: 1px solid #bbf7d0;
     background: #f0fdf4;
     color: #15803d !important;
->>>>>>> 7421d9b (admision form done)
+    font-size: 11px;
   }
 
   .inquiry-pagination .page-link {
@@ -431,6 +523,13 @@
   @media (max-width: 767.98px) {
     .inquiry-table {
       min-width: 0;
+      border-spacing: 0;
+    }
+
+    .inquiry-table-shell {
+      border: 0;
+      background: transparent;
+      overflow: visible;
     }
 
     .inquiry-table thead {
@@ -451,21 +550,33 @@
       margin-bottom: 14px;
       padding: 12px;
       background: #fff;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
     }
 
     .inquiry-table td {
       border: 0 !important;
-      padding: 8px 0 !important;
+      padding: 9px 0 !important;
+      background: transparent !important;
+      text-align: left;
+      white-space: normal;
+      overflow: visible;
     }
 
     .inquiry-table td::before {
       content: attr(data-label);
       display: block;
       color: #64748b;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: 0.08em;
       margin-bottom: 6px;
+    }
+
+    .candidate-contact,
+    .candidate-context,
+    .inquiry-date {
+      flex-wrap: wrap;
     }
 
     .inquiry-actions {
@@ -487,9 +598,9 @@
       <h2 class="fw-bold text-white mb-2">Inquiry Directory</h2>
       <p class="text-muted mb-0">Find each inquiry quickly, check the status, and convert qualified students into leads.</p>
     </div>
-    <a href="{% url 'inquiry_add' %}" class="btn inquiry-primary-action fw-bold">
+    <button type="button" class="btn inquiry-primary-action fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">
       <i class="bi bi-person-plus"></i> Add Inquiry
-    </a>
+    </button>
   </div>
 
   <div class="m-card inquiry-filter-card mb-4">
@@ -507,11 +618,7 @@
         <select name="status" class="form-select">
           <option value="">All Statuses</option>
           {% for code, name in status_choices %}
-<<<<<<< HEAD
           <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
-=======
-            <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
->>>>>>> 7421d9b (admision form done)
           {% endfor %}
         </select>
       </div>
@@ -521,11 +628,7 @@
         <select name="source" class="form-select">
           <option value="">All Sources</option>
           {% for code, name in source_choices %}
-<<<<<<< HEAD
           <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
-=======
-            <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
->>>>>>> 7421d9b (admision form done)
           {% endfor %}
         </select>
       </div>
@@ -535,11 +638,7 @@
         <select name="call_status" class="form-select">
           <option value="">All Call Statuses</option>
           {% for code, name in call_status_choices %}
-<<<<<<< HEAD
           <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
-=======
-            <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
->>>>>>> 7421d9b (admision form done)
           {% endfor %}
         </select>
       </div>
@@ -572,7 +671,7 @@
         </div>
       </div>
 
-      <div class="table-responsive">
+      <div class="table-responsive inquiry-table-shell">
         <table class="table m-table inquiry-table align-middle">
           <thead>
             <tr>
@@ -590,16 +689,9 @@
               <tr>
                 <td data-label="Student">
                   <div class="candidate-name">{{ inquiry.full_name }}</div>
-                  <div class="candidate-contact">
-                    <span><i class="bi bi-telephone"></i>{{ inquiry.mobile_number }}</span>
-                    <span><i class="bi bi-envelope"></i>{{ inquiry.email|default:"No email" }}</span>
-                  </div>
                 </td>
                 <td data-label="Interest">
                   <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
-                  <div class="candidate-context mt-2">
-                    <span><i class="bi bi-geo-alt"></i>{{ inquiry.city|default:"No city" }}</span>
-                  </div>
                 </td>
                 <td data-label="Source">
                   <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
@@ -637,12 +729,12 @@
                 </td>
                 <td data-label="Actions">
                   <div class="inquiry-actions">
-                    <a href="{% url 'inquiry_detail' inquiry.pk %}" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}">
+                    <button type="button" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#inquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="{% url 'inquiry_edit' inquiry.pk %}" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}">
+                    </button>
+                    <button type="button" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#editInquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-pencil"></i>
-                    </a>
+                    </button>
                     {% if not inquiry.lead %}
                       <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
                         <i class="bi bi-arrow-right-circle"></i> Convert to Lead
@@ -652,9 +744,9 @@
                         <i class="bi bi-check2-circle"></i> View Lead
                       </a>
                     {% endif %}
-                    <a href="{% url 'inquiry_delete' inquiry.pk %}" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}">
+                    <button type="button" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#deleteInquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-trash"></i>
-                    </a>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -692,10 +784,70 @@
           {% if q or status or source or call_status %}
             <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
           {% endif %}
-          <a href="{% url 'inquiry_add' %}" class="btn btn-info text-white fw-bold">Add Inquiry</a>
+          <button type="button" class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">Add Inquiry</button>
         </div>
       </div>
     {% endif %}
+  </div>
+</div>
+
+{# ---- Add Inquiry Modal ---- #}
+<div class="modal fade inquiry-modal" id="addInquiryModal" tabindex="-1" aria-labelledby="addInquiryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'inquiry_add' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold" id="addInquiryModalLabel">
+              <i class="bi bi-person-plus me-2"></i>Add Inquiry
+            </h5>
+            <p class="mb-0 small text-white-50">Fill student inquiry details and save the record.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Full Name <span class="text-danger">*</span></label>
+              {{ inquiry_form.full_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
+              {{ inquiry_form.mobile_number }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email Address</label>
+              {{ inquiry_form.email }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">City <span class="text-danger">*</span></label>
+              {{ inquiry_form.city }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Course of Interest <span class="text-danger">*</span></label>
+              {{ inquiry_form.course_interest }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Lead Source <span class="text-danger">*</span></label>
+              {{ inquiry_form.source }}
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">Inquiry Status <span class="text-danger">*</span></label>
+              {{ inquiry_form.status }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Remarks / Notes</label>
+              {{ inquiry_form.remarks }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Inquiry</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -744,6 +896,106 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{# ---- Inquiry Edit and Delete Modals ---- #}
+{% for inquiry in page_obj %}
+<div class="modal fade inquiry-modal" id="editInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="editInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'inquiry_edit' inquiry.pk %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold" id="editInquiryModalLabel{{ inquiry.pk }}">
+              <i class="bi bi-pencil-square me-2"></i>Edit Inquiry
+            </h5>
+            <p class="mb-0 small text-white-50">Update inquiry details for {{ inquiry.full_name }}.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="edit-full-name-{{ inquiry.pk }}">Full Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-full-name-{{ inquiry.pk }}" name="full_name" value="{{ inquiry.full_name }}" placeholder="Enter Full Name" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-mobile-{{ inquiry.pk }}">Mobile Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-mobile-{{ inquiry.pk }}" name="mobile_number" value="{{ inquiry.mobile_number }}" placeholder="Enter Mobile Number" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-email-{{ inquiry.pk }}">Email Address</label>
+              <input type="email" class="form-control" id="edit-email-{{ inquiry.pk }}" name="email" value="{{ inquiry.email }}" placeholder="Enter Email (Optional)">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-city-{{ inquiry.pk }}">City <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-city-{{ inquiry.pk }}" name="city" value="{{ inquiry.city }}" placeholder="Enter City" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-course-{{ inquiry.pk }}">Course of Interest <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-course-{{ inquiry.pk }}" name="course_interest" value="{{ inquiry.course_interest }}" placeholder="Enter Course of Interest" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-source-{{ inquiry.pk }}">Lead Source <span class="text-danger">*</span></label>
+              <select class="form-select" id="edit-source-{{ inquiry.pk }}" name="source" required>
+                {% for code, name in source_choices %}
+                  <option value="{{ code }}" {% if inquiry.source == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label" for="edit-status-{{ inquiry.pk }}">Inquiry Status <span class="text-danger">*</span></label>
+              <select class="form-select" id="edit-status-{{ inquiry.pk }}" name="status" required>
+                {% for code, name in status_choices %}
+                  <option value="{{ code }}" {% if inquiry.status == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="edit-remarks-{{ inquiry.pk }}">Remarks / Notes</label>
+              <textarea class="form-control" id="edit-remarks-{{ inquiry.pk }}" name="remarks" rows="3" placeholder="Remarks">{{ inquiry.remarks }}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info text-white fw-bold">Update Inquiry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade inquiry-modal" id="deleteInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="deleteInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'inquiry_delete' inquiry.pk %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold" id="deleteInquiryModalLabel{{ inquiry.pk }}">
+              <i class="bi bi-trash me-2"></i>Delete Inquiry
+            </h5>
+            <p class="mb-0 small text-white-50">Please confirm before removing this record.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">Are you sure you want to delete this inquiry?</p>
+          <div class="p-3 rounded bg-white border">
+            <div class="fw-bold">{{ inquiry.full_name }}</div>
+            <div class="text-muted small">{{ inquiry.mobile_number }}{% if inquiry.course_interest %} - {{ inquiry.course_interest }}{% endif %}</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger fw-bold">Delete Inquiry</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
