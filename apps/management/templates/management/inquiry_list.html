@@ -73,30 +73,55 @@
 
   .inquiry-table {
     min-width: 920px;
+    table-layout: fixed;
   }
 
   .inquiry-table th {
     padding: 14px 12px !important;
+    white-space: nowrap;
   }
 
   .inquiry-table td {
     padding: 18px 12px !important;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
+
+  /* Column widths */
+  .inquiry-table th:nth-child(1),
+  .inquiry-table td:nth-child(1) { width: 22%; }
+  .inquiry-table th:nth-child(2),
+  .inquiry-table td:nth-child(2) { width: 16%; }
+  .inquiry-table th:nth-child(3),
+  .inquiry-table td:nth-child(3) { width: 12%; }
+  .inquiry-table th:nth-child(4),
+  .inquiry-table td:nth-child(4) { width: 12%; }
+  .inquiry-table th:nth-child(5),
+  .inquiry-table td:nth-child(5) { width: 12%; }
+  .inquiry-table th:nth-child(6),
+  .inquiry-table td:nth-child(6) { width: 26%; }
 
   .candidate-name {
     font-weight: 800;
     color: #0f172a;
-    margin-bottom: 7px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .candidate-contact,
   .candidate-context,
   .inquiry-date {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px 14px;
     color: #64748b;
     font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   .candidate-contact span,
@@ -105,6 +130,8 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .course-pill,
@@ -155,8 +182,9 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
   .inquiry-icon-btn,
@@ -173,7 +201,9 @@
   }
 
   .inquiry-icon-btn {
-    width: 38px;
+    width: 36px;
+    min-width: 36px;
+    flex-shrink: 0;
     border: 1px solid #dbe3ee;
     color: #475569;
     background: #fff;
@@ -195,17 +225,21 @@
   }
 
   .inquiry-convert-btn {
-    padding: 0 14px;
+    padding: 0 12px;
+    flex-shrink: 0;
     background: #4f46e5;
     color: #fff !important;
     box-shadow: 0 10px 22px rgba(79, 70, 229, .22);
+    font-size: 12px;
   }
 
   .inquiry-lead-btn {
-    padding: 0 12px;
+    padding: 0 10px;
+    flex-shrink: 0;
     border: 1px solid #bbf7d0;
     background: #f0fdf4;
     color: #15803d !important;
+    font-size: 12px;
   }
 
   .inquiry-pagination .page-link {
@@ -241,53 +275,21 @@
     }
   }
 
-  @media (max-width: 767.98px) {
+  @media (max-width: 1199.98px) {
     .inquiry-table {
-      min-width: 0;
+      min-width: 860px;
     }
+  }
 
-    .inquiry-table thead {
-      display: none;
-    }
-
-    .inquiry-table,
-    .inquiry-table tbody,
-    .inquiry-table tr,
-    .inquiry-table td {
-      display: block;
-      width: 100%;
-    }
-
-    .inquiry-table tr {
-      border: 1px solid var(--mg-line);
-      border-radius: 8px;
-      margin-bottom: 14px;
-      padding: 12px;
-      background: #fff;
-    }
-
-    .inquiry-table td {
-      border: 0 !important;
-      padding: 8px 0 !important;
-    }
-
-    .inquiry-table td::before {
-      content: attr(data-label);
-      display: block;
-      color: #64748b;
-      font-size: 12px;
-      font-weight: 800;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
+  @media (max-width: 767.98px) {
     .inquiry-actions {
-      justify-content: flex-start;
+      gap: 5px;
     }
 
-    .inquiry-actions .inquiry-convert-btn,
-    .inquiry-actions .inquiry-lead-btn {
-      flex: 1 1 100%;
+    .inquiry-convert-btn,
+    .inquiry-lead-btn {
+      font-size: 11px;
+      padding: 0 8px;
     }
   }
 </style>
@@ -377,62 +379,60 @@
           </thead>
           <tbody>
             {% for inquiry in page_obj %}
-              <tr>
-                <td data-label="Student">
-                  <div class="candidate-name">{{ inquiry.full_name }}</div>
-                  <div class="candidate-contact">
-                    <span><i class="bi bi-telephone"></i>{{ inquiry.mobile_number }}</span>
-                    <span><i class="bi bi-envelope"></i>{{ inquiry.email|default:"No email" }}</span>
-                  </div>
-                </td>
-                <td data-label="Interest">
-                  <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
-                  <div class="candidate-context mt-2">
-                    <span><i class="bi bi-geo-alt"></i>{{ inquiry.city|default:"No city" }}</span>
-                  </div>
-                </td>
-                <td data-label="Source">
-                  <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
-                </td>
-                <td data-label="Status">
-                  {% if inquiry.status == 'New' %}
-                    <span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>
-                  {% elif inquiry.status == 'Contacted' %}
-                    <span class="status-pill status-contacted"><i class="bi bi-telephone-outbound"></i>Contacted</span>
-                  {% elif inquiry.status == 'Qualified' %}
-                    <span class="status-pill status-qualified"><i class="bi bi-check-circle"></i>Qualified</span>
+            <tr>
+              <td data-label="Student">
+                <div class="candidate-name">{{ inquiry.full_name }}</div>
+                <div class="candidate-contact">
+                </div>
+              </td>
+              <td data-label="Interest">
+                <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
+                <div class="candidate-context mt-2">
+                  <span><i class="bi bi-geo-alt"></i>{{ inquiry.city|default:"No city" }}</span>
+                </div>
+              </td>
+              <td data-label="Source">
+                <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
+              </td>
+              <td data-label="Status">
+                {% if inquiry.status == 'New' %}
+                <span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>
+                {% elif inquiry.status == 'Contacted' %}
+                <span class="status-pill status-contacted"><i class="bi bi-telephone-outbound"></i>Contacted</span>
+                {% elif inquiry.status == 'Qualified' %}
+                <span class="status-pill status-qualified"><i class="bi bi-check-circle"></i>Qualified</span>
+                {% else %}
+                <span class="status-pill status-rejected"><i class="bi bi-x-circle"></i>Rejected</span>
+                {% endif %}
+              </td>
+              <td data-label="Added">
+                <div class="inquiry-date">
+                  <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
+                </div>
+              </td>
+              <td data-label="Actions">
+                <div class="inquiry-actions">
+                  <button type="button" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#inquiryModal{{ inquiry.pk }}">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <a href="{% url 'inquiry_edit' inquiry.pk %}" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  {% if not inquiry.lead %}
+                  <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                    <i class="bi bi-arrow-right-circle"></i> Convert to Lead
+                  </a>
                   {% else %}
-                    <span class="status-pill status-rejected"><i class="bi bi-x-circle"></i>Rejected</span>
+                  <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
+                    <i class="bi bi-check2-circle"></i> View Lead
+                  </a>
                   {% endif %}
-                </td>
-                <td data-label="Added">
-                  <div class="inquiry-date">
-                    <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
-                  </div>
-                </td>
-                <td data-label="Actions">
-                  <div class="inquiry-actions">
-                    <a href="{% url 'inquiry_detail' inquiry.pk %}" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}">
-                      <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="{% url 'inquiry_edit' inquiry.pk %}" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}">
-                      <i class="bi bi-pencil"></i>
-                    </a>
-                    {% if not inquiry.lead %}
-                      <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
-                        <i class="bi bi-arrow-right-circle"></i> Convert to Lead
-                      </a>
-                    {% else %}
-                      <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
-                        <i class="bi bi-check2-circle"></i> View Lead
-                      </a>
-                    {% endif %}
-                    <a href="{% url 'inquiry_delete' inquiry.pk %}" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}">
-                      <i class="bi bi-trash"></i>
-                    </a>
-                  </div>
-                </td>
-              </tr>
+                  <a href="{% url 'inquiry_delete' inquiry.pk %}" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
             {% endfor %}
           </tbody>
         </table>
@@ -474,4 +474,94 @@
     {% endif %}
   </div>
 </div>
+
+{% for inquiry in page_obj %}
+<!-- Inquiry Detail Modal {{ inquiry.pk }} -->
+<div class="modal fade" id="inquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="inquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content" style="background:#0f172a;border:1px solid #1e293b;border-radius:14px;">
+      <div class="modal-header" style="border-bottom:1px solid #1e293b;">
+        <h5 class="modal-title fw-bold text-white" id="inquiryModalLabel{{ inquiry.pk }}">
+          <i class="bi bi-person-badge-fill text-info me-2"></i>Inquiry Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+          <!-- Details Card -->
+          <div class="col-lg-8">
+            <div class="m-card h-100">
+              <h5 class="fw-bold text-white mb-4"><i class="bi bi-person-badge-fill text-info me-2"></i>Contact Information</h5>
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <div class="text-muted small">Full Name</div>
+                  <div class="fw-bold text-white fs-5">{{ inquiry.full_name }}</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Mobile Number</div>
+                  <div class="fw-bold text-white fs-5">{{ inquiry.mobile_number }}</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Email Address</div>
+                  <div class="text-white">{{ inquiry.email|default:"Not Provided" }}</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">City</div>
+                  <div class="text-white">{{ inquiry.city }}</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Course of Interest</div>
+                  <div class="text-white fw-bold">{{ inquiry.course_interest }}</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Lead Source</div>
+                  <div class="text-white"><span class="badge bg-secondary">{{ inquiry.source }}</span></div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Created By</div>
+                  <div class="text-white">{{ inquiry.created_by.username|default:"System" }}</div>
+                </div>
+                <div class="col-sm-6">
+                  <div class="text-muted small">Registration Date</div>
+                  <div class="text-white">{{ inquiry.created_at|date:"d M Y, H:i" }}</div>
+                </div>
+                <div class="col-12">
+                  <div class="text-muted small">Remarks</div>
+                  <div class="detail-readonly-panel mt-1">
+                    {{ inquiry.remarks|linebreaksbr|default:"No remarks added." }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Side Info -->
+          <div class="col-lg-4">
+            <div class="m-card h-100">
+              <h6 class="fw-bold text-white mb-3"><i class="bi bi-info-circle-fill text-info me-2"></i>Status</h6>
+              <div class="mb-3">
+                {% if inquiry.status == 'New' %}
+                  <span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>
+                {% elif inquiry.status == 'Contacted' %}
+                  <span class="status-pill status-contacted"><i class="bi bi-telephone-outbound"></i>Contacted</span>
+                {% elif inquiry.status == 'Qualified' %}
+                  <span class="status-pill status-qualified"><i class="bi bi-check-circle"></i>Qualified</span>
+                {% else %}
+                  <span class="status-pill status-rejected"><i class="bi bi-x-circle"></i>Rejected</span>
+                {% endif %}
+              </div>
+              <div class="text-muted small">Last Updated</div>
+              <div class="text-white">{{ inquiry.updated_at|date:"d M Y, H:i"|default:"N/A" }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #1e293b;">
+        <a href="{% url 'inquiry_detail' inquiry.pk %}" class="btn btn-outline-info btn-sm">Open Full Page</a>
+        <a href="{% url 'inquiry_edit' inquiry.pk %}" class="btn btn-warning btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
 {% endblock %}
