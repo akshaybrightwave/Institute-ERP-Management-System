@@ -77,53 +77,45 @@
   }
 
   .inquiry-table th {
-    padding: 14px 12px !important;
+    padding: 10px 8px !important;
     white-space: nowrap;
+    text-align: center !important;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
   }
 
   .inquiry-table td {
-    padding: 18px 12px !important;
+    padding: 10px 8px !important;
     vertical-align: middle;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
   }
 
-  /* Column widths */
+  /* Column widths (7 columns) */
   .inquiry-table th:nth-child(1),
-  .inquiry-table td:nth-child(1) {
-    width: 22%;
-  }
-
+  .inquiry-table td:nth-child(1) { width: 17%; }
   .inquiry-table th:nth-child(2),
-  .inquiry-table td:nth-child(2) {
-    width: 16%;
-  }
-
+  .inquiry-table td:nth-child(2) { width: 14%; }
   .inquiry-table th:nth-child(3),
-  .inquiry-table td:nth-child(3) {
-    width: 12%;
-  }
-
+  .inquiry-table td:nth-child(3) { width: 10%; }
   .inquiry-table th:nth-child(4),
-  .inquiry-table td:nth-child(4) {
-    width: 12%;
-  }
-
+  .inquiry-table td:nth-child(4) { width: 10%; }
   .inquiry-table th:nth-child(5),
-  .inquiry-table td:nth-child(5) {
-    width: 12%;
-  }
-
+  .inquiry-table td:nth-child(5) { width: 11%; overflow: visible; }
   .inquiry-table th:nth-child(6),
-  .inquiry-table td:nth-child(6) {
-    width: 26%;
-  }
+  .inquiry-table td:nth-child(6) { width: 12%; overflow: visible; }
+  .inquiry-table th:nth-child(7),
+  .inquiry-table td:nth-child(7) { width: 26%; }
 
   .candidate-name {
     font-weight: 800;
     color: #0f172a;
-    margin-bottom: 4px;
+    font-size: 13px;
+    margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -134,11 +126,11 @@
   .inquiry-date {
     display: flex;
     flex-wrap: nowrap;
-    gap: 8px 14px;
+    justify-content: center;
+    gap: 6px 10px;
     color: #64748b;
-    font-size: 13px;
+    font-size: 11px;
     white-space: nowrap;
-    overflow: hidden;
   }
 
   .candidate-contact span,
@@ -146,7 +138,7 @@
   .inquiry-date span {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     white-space: nowrap;
     flex-shrink: 0;
   }
@@ -156,10 +148,10 @@
   .status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     border-radius: 999px;
-    padding: 7px 11px;
-    font-size: 13px;
+    padding: 5px 9px;
+    font-size: 11px;
     font-weight: 800;
     line-height: 1;
     white-space: nowrap;
@@ -199,10 +191,10 @@
   .call-status-badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     border-radius: 999px;
-    padding: 5px 10px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
     font-weight: 700;
     line-height: 1;
     white-space: nowrap;
@@ -257,16 +249,18 @@
   .call-status-select {
     appearance: none;
     -webkit-appearance: none;
-    border: 1px solid #334155;
+    -moz-appearance: none;
+    border: 2px solid #dbe3ee;
     border-radius: 8px;
-    background: #1a1a2e;
-    color: #fff;
-    font-size: 12px;
+    background: #fff;
+    color: #334155;
+    font-size: 11px;
     font-weight: 700;
-    padding: 6px 28px 6px 10px;
+    padding: 4px 24px 4px 8px;
     cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    min-width: 130px;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
+    min-width: 110px;
+    width: 100%;
   }
 
   .call-status-select:focus {
@@ -280,15 +274,26 @@
     pointer-events: none;
   }
 
+  /* Color-coded select classes */
+  .call-status-select.cs-NEW { background: #f3e8ff; color: #7c3aed; border-color: #c4b5fd; }
+  .call-status-select.cs-ACCEPTED { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .call-status-select.cs-INTERESTED { background: #d1fae5; color: #047857; border-color: #6ee7b7; }
+  .call-status-select.cs-BUSY { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
+  .call-status-select.cs-CALL_BACK { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+  .call-status-select.cs-NO_ANSWER { background: #f1f5f9; color: #475569; border-color: #94a3b8; }
+  .call-status-select.cs-WRONG_NUMBER { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+  .call-status-select.cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; border-color: #fda4af; }
+
   .call-status-wrapper::after {
     content: '\25BC';
     position: absolute;
-    right: 10px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 9px;
-    color: #94a3b8;
+    font-size: 8px;
+    color: #64748b;
     pointer-events: none;
+    transition: color 0.2s;
   }
 
   /* Call Status Toast */
@@ -320,9 +325,9 @@
 
   .inquiry-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     flex-wrap: nowrap;
     white-space: nowrap;
   }
@@ -330,19 +335,20 @@
   .inquiry-icon-btn,
   .inquiry-convert-btn,
   .inquiry-lead-btn {
-    min-height: 38px;
+    min-height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
-    border-radius: 8px;
+    gap: 5px;
+    border-radius: 6px;
     font-weight: 800;
     text-decoration: none;
+    font-size: 11px;
   }
 
   .inquiry-icon-btn {
-    width: 36px;
-    min-width: 36px;
+    width: 30px;
+    min-width: 30px;
     flex-shrink: 0;
     border: 1px solid #dbe3ee;
     color: #475569;
@@ -365,21 +371,21 @@
   }
 
   .inquiry-convert-btn {
-    padding: 0 12px;
+    padding: 0 10px;
     flex-shrink: 0;
     background: #4f46e5;
     color: #fff !important;
     box-shadow: 0 10px 22px rgba(79, 70, 229, .22);
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .inquiry-lead-btn {
-    padding: 0 10px;
+    padding: 0 8px;
     flex-shrink: 0;
     border: 1px solid #bbf7d0;
     background: #f0fdf4;
     color: #15803d !important;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .inquiry-pagination .page-link {
@@ -450,7 +456,7 @@
 
   <div class="m-card inquiry-filter-card mb-4">
     <form method="GET" class="row g-3 align-items-end">
-      <div class="col-lg-5">
+      <div class="col-lg-4">
         <label class="form-label">Search inquiries</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-search"></i></span>
@@ -458,22 +464,22 @@
         </div>
       </div>
 
-      <div class="col-lg-3 col-md-6">
+      <div class="col-lg-2 col-md-6">
         <label class="form-label">Status</label>
         <select name="status" class="form-select">
           <option value="">All Statuses</option>
           {% for code, name in status_choices %}
-          <option value="{{ code }}" {% if status==code %}selected{% endif %}>{{ name }}</option>
+          <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <div class="col-lg-3 col-md-6">
+      <div class="col-lg-2 col-md-6">
         <label class="form-label">Source</label>
         <select name="source" class="form-select">
           <option value="">All Sources</option>
           {% for code, name in source_choices %}
-          <option value="{{ code }}" {% if source==code %}selected{% endif %}>{{ name }}</option>
+          <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -483,7 +489,7 @@
         <select name="call_status" class="form-select">
           <option value="">All Call Statuses</option>
           {% for code, name in call_status_choices %}
-          <option value="{{ code }}" {% if call_status==code %}selected{% endif %}>{{ name }}</option>
+          <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -534,16 +540,9 @@
           <tr>
             <td data-label="Student">
               <div class="candidate-name">{{ inquiry.full_name }}</div>
-              <div class="candidate-contact">
-                <span><i class="bi bi-telephone"></i>{{ inquiry.mobile_number }}</span>
-                <span><i class="bi bi-envelope"></i>{{ inquiry.email|default:"No email" }}</span>
-              </div>
             </td>
             <td data-label="Interest">
               <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
-              <div class="candidate-context mt-2">
-                <span><i class="bi bi-geo-alt"></i>{{ inquiry.city|default:"No city" }}</span>
-              </div>
             </td>
             <td data-label="Source">
               <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
@@ -564,12 +563,22 @@
                 <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
               </div>
             </td>
+            <td data-label="Call Status">
+              <div class="call-status-wrapper">
+                <select class="call-status-select" data-inquiry-pk="{{ inquiry.pk }}" data-current="{{ inquiry.call_status }}">
+                  {% for code, name in call_status_choices %}
+                  <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </td>
             <td data-label="Actions">
               <div class="inquiry-actions">
-                <a href="{% url 'inquiry_detail' inquiry.pk %}" class="inquiry-icon-btn" title="View details"
-                  aria-label="View {{ inquiry.full_name }}">
+                <button type="button" class="inquiry-icon-btn" title="View details"
+                  aria-label="View {{ inquiry.full_name }}"
+                  data-bs-toggle="modal" data-bs-target="#inquiryModal{{ inquiry.pk }}">
                   <i class="bi bi-eye"></i>
-                </a>
+                </button>
                 <a href="{% url 'inquiry_edit' inquiry.pk %}" class="inquiry-icon-btn edit" title="Edit inquiry"
                   aria-label="Edit {{ inquiry.full_name }}">
                   <i class="bi bi-pencil"></i>
@@ -637,4 +646,112 @@
     {% endif %}
   </div>
 </div>
+
+{# ---- Inquiry Detail Modals ---- #}
+{% for inquiry in page_obj %}
+<div class="modal fade" id="inquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="inquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content" style="background:#fff;border:1px solid #dee2e6;border-radius:14px;">
+      <div class="modal-header" style="border-bottom:1px solid #e2e8f0;">
+        <h5 class="modal-title fw-bold" id="inquiryModalLabel{{ inquiry.pk }}" style="color:#0f172a;">
+          <i class="bi bi-person-circle text-primary me-2"></i>{{ inquiry.full_name }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+              <h6 class="fw-bold mb-3" style="color:#334155;"><i class="bi bi-telephone text-primary me-2"></i>Contact Information</h6>
+              <div class="row g-2">
+                <div class="col-6"><small class="text-muted">Full Name</small><div class="fw-bold">{{ inquiry.full_name }}</div></div>
+                <div class="col-6"><small class="text-muted">Mobile</small><div class="fw-bold">{{ inquiry.mobile_number }}</div></div>
+                <div class="col-6"><small class="text-muted">Email</small><div class="fw-bold">{{ inquiry.email|default:"—" }}</div></div>
+                <div class="col-6"><small class="text-muted">City</small><div class="fw-bold">{{ inquiry.city|default:"—" }}</div></div>
+                <div class="col-6"><small class="text-muted">Course Interest</small><div class="fw-bold">{{ inquiry.course_interest|default:"—" }}</div></div>
+                <div class="col-6"><small class="text-muted">Source</small><div class="fw-bold">{{ inquiry.source }}</div></div>
+                <div class="col-12"><small class="text-muted">Remarks</small><div>{{ inquiry.remarks|default:"—" }}</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;">
+              <h6 class="fw-bold mb-3" style="color:#334155;"><i class="bi bi-info-circle text-primary me-2"></i>Status</h6>
+              <div class="mb-2"><small class="text-muted">Status</small><div>
+                {% if inquiry.status == 'New' %}<span class="status-pill status-new">New</span>
+                {% elif inquiry.status == 'Contacted' %}<span class="status-pill status-contacted">Contacted</span>
+                {% elif inquiry.status == 'Qualified' %}<span class="status-pill status-qualified">Qualified</span>
+                {% else %}<span class="status-pill status-rejected">Rejected</span>
+                {% endif %}
+              </div></div>
+              <div class="mb-2"><small class="text-muted">Call Status</small><div>
+                <span class="call-status-badge cs-{{ inquiry.call_status }}">{{ inquiry.get_call_status_display }}</span>
+              </div></div>
+              <div><small class="text-muted">Added</small><div>{{ inquiry.created_at|date:"d M Y, h:i A" }}</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{# ---- Toast ---- #}
+<div class="cs-toast" id="csToast"></div>
+
+<script>
+(function(){
+  /* Color coding for select elements */
+  function applySelectColor(el){
+    var val=el.value;
+    var all=['cs-NEW','cs-ACCEPTED','cs-INTERESTED','cs-BUSY','cs-CALL_BACK','cs-NO_ANSWER','cs-WRONG_NUMBER','cs-NOT_INTERESTED'];
+    all.forEach(function(c){el.classList.remove(c);});
+    if(val) el.classList.add('cs-'+val);
+  }
+
+  var selects=document.querySelectorAll('.call-status-select');
+  selects.forEach(function(sel){
+    applySelectColor(sel);
+    sel.addEventListener('change',function(){
+      var el=this;
+      var pk=el.dataset.inquiryPk;
+      var newVal=el.value;
+      var oldVal=el.dataset.current;
+      el.classList.add('saving');
+      fetch('{% url "update_call_status" 0 %}'.replace('0',pk),{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},
+        body:JSON.stringify({call_status:newVal})
+      })
+      .then(function(r){return r.json();})
+      .then(function(data){
+        el.classList.remove('saving');
+        if(data.success){
+          el.dataset.current=newVal;
+          applySelectColor(el);
+          showToast(data.message,false);
+        }else{
+          el.value=oldVal;
+          applySelectColor(el);
+          showToast(data.message,true);
+        }
+      })
+      .catch(function(){
+        el.classList.remove('saving');
+        el.value=oldVal;
+        applySelectColor(el);
+        showToast('Network error',true);
+      });
+    });
+  });
+
+  function showToast(msg,isError){
+    var t=document.getElementById('csToast');
+    t.textContent=msg;
+    t.className='cs-toast show'+(isError?' error':'');
+    setTimeout(function(){t.className='cs-toast';},3000);
+  }
+})();
+</script>
 {% endblock %}

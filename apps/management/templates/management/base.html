@@ -53,7 +53,7 @@
   .management-layout {
     min-height: 100vh !important;
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
   }
 
@@ -61,16 +61,74 @@
     background: linear-gradient(180deg, #20115f 0%, #1c1b5c 48%, #17174d 100%);
     color: #fff;
     padding: 22px 18px;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: -280px;
+    width: 260px;
     height: 100vh;
     overflow-y: auto;
+    z-index: 1050 !important;
+    transition: left 0.3s ease;
+    transform: none !important;
+  }
+
+  .management-sidebar.sidebar-open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1040 !important;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+  }
+
+  .sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .hamburger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--mg-text);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 20px;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .hamburger-btn:hover {
+    background: var(--mg-primary);
+    color: #fff;
+    border-color: var(--mg-primary);
   }
 
   body.management-shell.app-shell .management-sidebar {
     top: 0 !important;
     height: 100vh !important;
     min-height: 100vh !important;
+    left: -280px;
+    z-index: 1050 !important;
+    transition: left 0.3s ease;
+    transform: none !important;
+  }
+
+  body.management-shell.app-shell .management-sidebar.sidebar-open {
+    left: 0 !important;
+    transform: none !important;
   }
 
   body.management-shell.app-shell .management-content {
@@ -437,8 +495,12 @@
   @media (max-width: 991.98px) {
     .management-layout { grid-template-columns: 1fr; }
     .management-sidebar {
-      position: static;
-      height: auto;
+      position: fixed;
+      height: 100vh;
+      left: -280px;
+    }
+    .management-sidebar.sidebar-open {
+      left: 0;
     }
     .management-topbar {
       flex-wrap: wrap;
@@ -778,8 +840,14 @@
 {% block footer %}{% endblock %}
 
 {% block content %}
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="management-layout">
-  <aside class="management-sidebar">
+  <aside class="management-sidebar" id="managementSidebar">
+    <div class="d-flex justify-content-end mb-2">
+      <button class="hamburger-btn" id="sidebarClose" aria-label="Close sidebar" style="background:transparent;border-color:rgba(255,255,255,.2);color:#fff;">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
     {% if request.user.role == 'admin' %}
     <a class="management-brand" href="{% url 'management_super_admin_dashboard' %}">
       <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
@@ -879,6 +947,9 @@
 
   <div class="management-main">
     <header class="management-topbar">
+      <button class="hamburger-btn" id="sidebarToggle" aria-label="Open sidebar">
+        <i class="bi bi-list"></i>
+      </button>
       {% if request.user.role == 'counselor' %}
       <form class="management-search" action="{% url 'counselor_lead_list' %}" method="get">
         <i class="bi bi-search"></i>
@@ -945,4 +1016,33 @@
     </main>
   </div>
 </div>
+
+<script>
+(function() {
+  var sidebar = document.getElementById('managementSidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  var toggleBtn = document.getElementById('sidebarToggle');
+  var closeBtn = document.getElementById('sidebarClose');
+
+  function openSidebar() {
+    sidebar.classList.add('sidebar-open');
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('sidebar-open');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+  if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+  if (overlay) overlay.addEventListener('click', closeSidebar);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSidebar();
+  });
+})();
+</script>
 {% endblock %}
