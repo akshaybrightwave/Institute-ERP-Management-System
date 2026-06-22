@@ -939,6 +939,12 @@
     <a href="{% url 'counselor_visit_list' %}" class="sidebar-item {% if 'counselor_visit' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-geo-alt"></i> Visit Sheets
     </a>
+    <a href="{% url 'admission_list' %}" class="sidebar-item {% if 'admission' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-journal-check"></i> Admissions
+    </a>
+    <a href="{% url 'admission_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admission_report' %}active{% endif %}">
+      <i class="bi bi-bar-chart"></i> Admission Report
+    </a>
     <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
       <i class="bi bi-bar-chart-steps"></i> Counselor Reports
     </a>

@@ -8,8 +8,8 @@ import datetime
 import json
 from django.utils import timezone
 
-from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet
-from .forms import InquiryForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm
+from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
+from .forms import InquiryForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm
 from .decorators import telecaller_required, counselor_required
 
 @login_required
@@ -100,6 +100,14 @@ def management_super_admin_dashboard(request):
         'not_interested': Inquiry.objects.filter(call_status='NOT_INTERESTED').count(),
     }
 
+    # Admission Metrics
+    admission_metrics = {
+        'total': AdmissionSheet.objects.count(),
+        'confirmed': AdmissionSheet.objects.filter(admission_status='CONFIRMED').count(),
+        'pending_payment': AdmissionSheet.objects.filter(admission_status='PENDING_PAYMENT').count(),
+        'cancelled': AdmissionSheet.objects.filter(admission_status='CANCELLED').count(),
+    }
+
     # Tables
     recent_leads = Lead.objects.order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.all().order_by('-created_at')[:5]
@@ -117,6 +125,7 @@ def management_super_admin_dashboard(request):
         'pending_followups': pending_followups,
         'overdue_followups': overdue_followups,
         'call_outcomes': call_outcomes,
+        'admission_metrics': admission_metrics,
         'recent_leads': recent_leads,
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
@@ -359,10 +368,17 @@ def lead_detail(request, pk):
     call_logs = lead.call_logs.all().order_by('-call_date')
     followups = lead.followups.all().order_by('-followup_date')
 
+    # Check admission sheet
+    try:
+        admission = lead.admission_sheet
+    except AdmissionSheet.DoesNotExist:
+        admission = None
+
     return render(request, 'management/lead_detail.html', {
         'lead': lead,
         'call_logs': call_logs,
         'followups': followups,
+        'admission': admission,
     })
 
 
@@ -1454,6 +1470,18 @@ def counselor_dashboard(request):
     upcoming_visits = visits_qs.filter(visit_date__gt=today, status='Scheduled').count()
     completed_visits = visits_qs.filter(status__in=['Visited', 'Admission Done']).count()
     no_shows = visits_qs.filter(status='No Show').count()
+
+    # Admission statistics
+    if request.user.role == 'admin':
+        admissions_qs = AdmissionSheet.objects.all()
+    else:
+        admissions_qs = AdmissionSheet.objects.filter(counselor=request.user)
+    admission_metrics = {
+        'total': admissions_qs.count(),
+        'confirmed': admissions_qs.filter(admission_status='CONFIRMED').count(),
+        'pending_payment': admissions_qs.filter(admission_status='PENDING_PAYMENT').count(),
+        'cancelled': admissions_qs.filter(admission_status='CANCELLED').count(),
+    }
     
     # Table Contexts
     recent_leads = leads_qs.order_by('-created_at')[:5]
@@ -1481,6 +1509,7 @@ def counselor_dashboard(request):
         'upcoming_visits': upcoming_visits,
         'completed_visits': completed_visits,
         'no_shows': no_shows,
+        'admission_metrics': admission_metrics,
     }
     return render(request, 'management/counselor_dashboard.html', context)
 
@@ -1536,6 +1565,12 @@ def counselor_lead_detail(request, pk):
     activities = lead.activities.all().order_by('-created_at')
     visits = lead.visit_sheets.all().order_by('-visit_date', '-visit_time')
 
+    # Check admission sheet
+    try:
+        admission = lead.admission_sheet
+    except AdmissionSheet.DoesNotExist:
+        admission = None
+
     return render(request, 'management/counselor_lead_detail.html', {
         'lead': lead,
         'sessions': sessions,
@@ -1543,6 +1578,7 @@ def counselor_lead_detail(request, pk):
         'notes': notes,
         'activities': activities,
         'visits': visits,
+        'admission': admission,
     })
 
 
@@ -2263,4 +2299,201 @@ def counselor_visit_edit(request, pk):
         'visit': visit,
         'selected_lead': visit.lead,
         'title': 'Edit Visit Sheet',
+    })
+
+
+# ==================================================
+# PHASE 11.5 — ADMISSION SHEET MANAGEMENT
+# ==================================================
+
+@login_required
+@counselor_required
+def admission_list(request):
+    """List all admissions with search, filters, and pagination."""
+    if request.user.role == 'admin':
+        admissions = AdmissionSheet.objects.all()
+    else:
+        admissions = AdmissionSheet.objects.filter(counselor=request.user)
+
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        admissions = admissions.filter(
+            Q(student_name__icontains=q) | Q(mobile_number__icontains=q) | Q(admission_number__icontains=q)
+        )
+
+    # Filters
+    status = request.GET.get('status', '').strip()
+    if status:
+        admissions = admissions.filter(admission_status=status)
+
+    counselor_id = request.GET.get('counselor', '').strip()
+    if counselor_id and request.user.role == 'admin':
+        admissions = admissions.filter(counselor_id=counselor_id)
+
+    date_from = request.GET.get('date_from', '').strip()
+    if date_from:
+        admissions = admissions.filter(admission_date__gte=date_from)
+
+    date_to = request.GET.get('date_to', '').strip()
+    if date_to:
+        admissions = admissions.filter(admission_date__lte=date_to)
+
+    # Counselor choices for filter (admin only)
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    counselor_choices = User.objects.filter(role='counselor').order_by('username')
+
+    paginator = Paginator(admissions, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'management/admission_list.html', {
+        'page_obj': page_obj,
+        'q': q,
+        'status': status,
+        'counselor_id': counselor_id,
+        'date_from': date_from,
+        'date_to': date_to,
+        'status_choices': AdmissionSheet.ADMISSION_STATUS_CHOICES,
+        'counselor_choices': counselor_choices,
+    })
+
+
+@login_required
+@counselor_required
+def admission_create(request, lead_pk):
+    """Create admission from a lead. Auto-populates student info."""
+    lead = get_object_or_404(Lead, pk=lead_pk)
+    if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this lead.")
+
+    # Check duplicate
+    if AdmissionSheet.objects.filter(lead=lead).exists():
+        messages.error(request, "Admission Sheet already exists for this lead.")
+        return redirect('counselor_lead_detail', pk=lead.pk)
+
+    if request.method == 'POST':
+        form = AdmissionSheetForm(request.POST)
+        if form.is_valid():
+            admission = form.save(commit=False)
+            admission.lead = lead
+            admission.created_by = request.user
+            if not admission.counselor:
+                admission.counselor = lead.assigned_counselor or request.user
+            admission.save()
+
+            # Update lead status to Admission Done
+            lead.status = 'Admission Done'
+            lead.counselor_status = 'CONVERTED'
+            lead.counselor_status_updated_at = timezone.now()
+            lead.save()
+
+            log_lead_activity(
+                lead,
+                'STATUS_CHANGED',
+                f"Admission Sheet created: {admission.admission_number}.",
+                request.user
+            )
+
+            messages.success(request, f"Admission {admission.admission_number} created successfully.")
+            return redirect('admission_detail', pk=admission.pk)
+    else:
+        # Auto-populate from lead
+        inquiry = lead.inquiry
+        initial = {
+            'student_name': inquiry.full_name,
+            'mobile_number': inquiry.mobile_number,
+            'email_id': inquiry.email or '',
+            'college_name': '',
+            'department': '',
+            'course_name': inquiry.course_interest or '',
+            'admission_date': datetime.date.today(),
+        }
+        form = AdmissionSheetForm(initial=initial)
+
+    return render(request, 'management/admission_form.html', {
+        'form': form,
+        'lead': lead,
+        'title': 'Create Admission',
+    })
+
+
+@login_required
+@counselor_required
+def admission_edit(request, pk):
+    """Edit an existing admission."""
+    admission = get_object_or_404(AdmissionSheet, pk=pk)
+    if request.user.role != 'admin' and admission.counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this admission record.")
+
+    if request.method == 'POST':
+        form = AdmissionSheetForm(request.POST, instance=admission)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Admission {admission.admission_number} updated successfully.")
+            return redirect('admission_detail', pk=admission.pk)
+    else:
+        form = AdmissionSheetForm(instance=admission)
+
+    return render(request, 'management/admission_form.html', {
+        'form': form,
+        'lead': admission.lead,
+        'admission': admission,
+        'title': 'Edit Admission',
+    })
+
+
+@login_required
+@counselor_required
+def admission_detail(request, pk):
+    """View admission details."""
+    admission = get_object_or_404(AdmissionSheet, pk=pk)
+    if request.user.role != 'admin' and admission.counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this admission record.")
+
+    return render(request, 'management/admission_detail.html', {
+        'admission': admission,
+    })
+
+
+@login_required
+@counselor_required
+def admission_report(request):
+    """Simple admission report with tabular data."""
+    if request.user.role == 'admin':
+        admissions = AdmissionSheet.objects.all()
+    else:
+        admissions = AdmissionSheet.objects.filter(counselor=request.user)
+
+    # Aggregate metrics
+    from django.db.models import Sum, Count
+    total_admissions = admissions.count()
+    total_revenue = admissions.aggregate(total=Sum('fees_paid'))['total'] or 0
+    total_outstanding = admissions.aggregate(total=Sum('remaining_fees'))['total'] or 0
+
+    # By counselor
+    by_counselor = admissions.values(
+        'counselor__username'
+    ).annotate(
+        count=Count('id'),
+        revenue=Sum('fees_paid'),
+        outstanding=Sum('remaining_fees')
+    ).order_by('-count')
+
+    # By course
+    by_course = admissions.values(
+        'course_name'
+    ).annotate(
+        count=Count('id'),
+        revenue=Sum('fees_paid'),
+        outstanding=Sum('remaining_fees')
+    ).order_by('-count')
+
+    return render(request, 'management/admission_report.html', {
+        'total_admissions': total_admissions,
+        'total_revenue': total_revenue,
+        'total_outstanding': total_outstanding,
+        'by_counselor': by_counselor,
+        'by_course': by_course,
     })

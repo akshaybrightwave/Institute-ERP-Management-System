@@ -372,6 +372,46 @@
   </div>
 </div>
 
+<!-- Admission Metrics Row -->
+<div class="row g-3 row-cols-2 row-cols-md-4 mb-4">
+  <div class="col">
+    <a href="{% url 'admission_list' %}" class="stat-card bg-blue d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Total Admissions</div>
+        <div class="stat-card-value">{{ admission_metrics.total }}</div>
+        <div class="stat-card-icon"><i class="bi bi-journal-check"></i></div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'admission_list' %}?status=CONFIRMED" class="stat-card bg-green d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Confirmed</div>
+        <div class="stat-card-value">{{ admission_metrics.confirmed }}</div>
+        <div class="stat-card-icon"><i class="bi bi-check-circle"></i></div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'admission_list' %}?status=PENDING_PAYMENT" class="stat-card bg-yellow d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Pending Payment</div>
+        <div class="stat-card-value">{{ admission_metrics.pending_payment }}</div>
+        <div class="stat-card-icon"><i class="bi bi-clock"></i></div>
+      </div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'admission_list' %}?status=CANCELLED" class="stat-card bg-red d-block">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Cancelled</div>
+        <div class="stat-card-value">{{ admission_metrics.cancelled }}</div>
+        <div class="stat-card-icon"><i class="bi bi-x-circle"></i></div>
+      </div>
+    </a>
+  </div>
+</div>
+
 <!-- Content Grid -->
 <div class="content-grid row g-3">
   <!-- Left Side: Data Tables -->

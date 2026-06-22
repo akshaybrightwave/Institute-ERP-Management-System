@@ -988,6 +988,119 @@ NOT_INTERESTED → Candidate not interested
 
 ---
 
+## Phase 11.5 — Admission Sheet Management
+
+### Purpose
+Admission conversion tracking. The Admission Sheet represents the final conversion stage of a qualified lead, capturing student details, course enrollment, fee information, payment status, and seat confirmation — all within the Management Portal.
+
+### Workflow
+```text
+Inquiry
+→ Lead
+→ Assigned Counselor
+→ Counseling Session
+→ Follow-Up
+→ Visit Sheet (Optional)
+→ Admission Sheet
+```
+
+Lead Detail
+↓
+Create Admission (button)
+↓
+Admission Form (auto-populated from Lead)
+↓
+Save
+↓
+Admission History visible in Lead Detail
+
+### Database Design
+
+**AdmissionSheet Model** (`apps/management/models.py`)
+
+| Field | Type | Notes |
+|---|---|---|
+| admission_number | CharField(20), unique, indexed | Auto-generated: ADM-YYYY-NNNN |
+| admission_date | DateField, indexed | Default: today |
+| admission_status | CharField(20), indexed | CONFIRMED, PENDING_PAYMENT, CANCELLED |
+| student_name | CharField(200) | Auto-populated from Lead |
+| mobile_number | CharField(15) | Auto-populated from Lead |
+| email_id | EmailField | Auto-populated from Lead |
+| parent_name | CharField(200) | Optional |
+| parent_mobile | CharField(15) | Optional |
+| college_name | CharField(300) | Auto-populated from Lead |
+| university_name | CharField(300) | Optional |
+| department | CharField(200) | Auto-populated from Lead |
+| academic_year | CharField(20) | Optional |
+| course_name | CharField(200) | Auto-populated from Lead |
+| counselor | ForeignKey(User) | Auto-populated, SET_NULL |
+| admission_source | CharField(100) | Optional |
+| course_fees | DecimalField(12,2) | Default: 0 |
+| discount_amount | DecimalField(12,2) | Default: 0 |
+| final_fees | DecimalField(12,2) | Default: 0 |
+| fees_paid | DecimalField(12,2) | Default: 0 |
+| remaining_fees | DecimalField(12,2) | Read-only, auto-calculated |
+| payment_mode | CharField(20) | CASH, UPI, CARD, BANK_TRANSFER, CHEQUE |
+| transaction_reference | CharField(100) | Optional |
+| seat_status | CharField(20), indexed | BOOKED, CONFIRMED, CANCELLED |
+| remarks | TextField | Optional |
+| lead | OneToOneField(Lead) | Duplicate prevention |
+| created_by | ForeignKey(User) | SET_NULL |
+| created_at | DateTimeField | auto_now_add |
+| updated_at | DateTimeField | auto_now |
+
+### Business Rules
+- One Lead = One Admission Sheet (enforced by OneToOneField).
+- Duplicate creation blocked with validation message.
+- `remaining_fees = final_fees - fees_paid` (auto-calculated in model `save()`).
+- `fees_paid` cannot exceed `final_fees` (form validation).
+- On admission creation, Lead status updated to 'Admission Done', counselor_status to 'CONVERTED'.
+
+### Permissions
+
+| Role | Access |
+|---|---|
+| Super Admin | View all, create, edit, reports |
+| Counselor | Own admissions only (create, view, edit) |
+| Tele Caller | No access |
+
+Counselor queryset filtering enforced via `@counselor_required` decorator and role-based queryset scoping.
+
+### Dashboard Metrics
+Both Super Admin Dashboard and Counselor Dashboard display:
+- Total Admissions
+- Confirmed Admissions
+- Pending Payments
+- Cancelled Admissions
+
+### Reports
+Simple tabular Admission Report with:
+- Total Admissions
+- Total Revenue Collected (sum of fees_paid)
+- Total Outstanding Fees (sum of remaining_fees)
+- Admissions By Counselor breakdown
+- Admissions By Course breakdown
+
+No charts, no BI, no exports.
+
+### Files Modified / Created
+- `apps/management/models.py`: Added `AdmissionSheet` model.
+- `apps/management/migrations/0009_admissionsheet.py`: Database migration.
+- `apps/management/forms.py`: Added `AdmissionSheetForm` with fee validation.
+- `apps/management/views.py`: Added 5 admission views (list, create, edit, detail, report). Updated dashboards and lead detail views with admission data.
+- `apps/management/urls.py`: Added 5 admission URL routes.
+- `apps/management/templates/management/admission_list.html`: List page with search, filters, pagination.
+- `apps/management/templates/management/admission_form.html`: Create/edit form with live fee calculation.
+- `apps/management/templates/management/admission_detail.html`: Read-only detail view.
+- `apps/management/templates/management/admission_report.html`: Tabular report.
+- `apps/management/templates/management/super_admin_dashboard.html`: Added admission metrics card.
+- `apps/management/templates/management/counselor_dashboard.html`: Added admission metrics row.
+- `apps/management/templates/management/counselor_lead_detail.html`: Added Create Admission button and admission history section.
+- `apps/management/templates/management/lead_detail.html`: Added admission history section.
+- `apps/management/templates/management/base.html`: Added Admissions and Admission Report sidebar links.
+
+---
+
 ## Completion Status
 
 Module Status: Completed

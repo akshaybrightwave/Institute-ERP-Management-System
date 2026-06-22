@@ -339,3 +339,109 @@ class VisitSheet(models.Model):
     def __str__(self):
         return f"Visit for {self.lead.inquiry.full_name} on {self.visit_date} at {self.visit_time}"
 
+
+class AdmissionSheet(models.Model):
+    ADMISSION_STATUS_CHOICES = (
+        ('CONFIRMED', 'Confirmed'),
+        ('PENDING_PAYMENT', 'Pending Payment'),
+        ('CANCELLED', 'Cancelled'),
+    )
+    SEAT_STATUS_CHOICES = (
+        ('BOOKED', 'Booked'),
+        ('CONFIRMED', 'Confirmed'),
+        ('CANCELLED', 'Cancelled'),
+    )
+    PAYMENT_MODE_CHOICES = (
+        ('CASH', 'Cash'),
+        ('UPI', 'UPI'),
+        ('CARD', 'Card'),
+        ('BANK_TRANSFER', 'Bank Transfer'),
+        ('CHEQUE', 'Cheque'),
+    )
+
+    # Admission Information
+    admission_number = models.CharField(max_length=20, unique=True, db_index=True)
+    admission_date = models.DateField(default=datetime.date.today, db_index=True)
+    admission_status = models.CharField(
+        max_length=20, choices=ADMISSION_STATUS_CHOICES, default='CONFIRMED', db_index=True
+    )
+
+    # Student Information
+    student_name = models.CharField(max_length=200)
+    mobile_number = models.CharField(max_length=15)
+    email_id = models.EmailField(blank=True, null=True)
+    parent_name = models.CharField(max_length=200, blank=True)
+    parent_mobile = models.CharField(max_length=15, blank=True)
+
+    # Education Information
+    college_name = models.CharField(max_length=300, blank=True)
+    university_name = models.CharField(max_length=300, blank=True)
+    department = models.CharField(max_length=200, blank=True)
+    academic_year = models.CharField(max_length=20, blank=True)
+
+    # Course Information
+    course_name = models.CharField(max_length=200, blank=True)
+    counselor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='counselor_admissions'
+    )
+    admission_source = models.CharField(max_length=100, blank=True)
+
+    # Fee Information
+    course_fees = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    final_fees = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    fees_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    remaining_fees = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    # Payment Information
+    payment_mode = models.CharField(
+        max_length=20, choices=PAYMENT_MODE_CHOICES, default='CASH', blank=True
+    )
+    transaction_reference = models.CharField(max_length=100, blank=True)
+
+    # Seat Information
+    seat_status = models.CharField(
+        max_length=20, choices=SEAT_STATUS_CHOICES, default='BOOKED', db_index=True
+    )
+
+    # Remarks
+    remarks = models.TextField(blank=True)
+
+    # System Fields
+    lead = models.OneToOneField(Lead, on_delete=models.CASCADE, related_name='admission_sheet')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_admissions'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-admission_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.admission_number} - {self.student_name}"
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate remaining_fees
+        self.remaining_fees = self.final_fees - self.fees_paid
+        # Auto-generate admission_number if not set
+        if not self.admission_number:
+            year = datetime.date.today().year
+            # Get the last admission number for this year
+            last = AdmissionSheet.objects.filter(
+                admission_number__startswith=f'ADM-{year}-'
+            ).order_by('-admission_number').first()
+            if last:
+                last_num = int(last.admission_number.split('-')[-1])
+                next_num = last_num + 1
+            else:
+                next_num = 1
+            self.admission_number = f'ADM-{year}-{next_num:04d}'
+        super().save(*args, **kwargs)
+

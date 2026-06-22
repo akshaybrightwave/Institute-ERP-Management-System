@@ -72,8 +72,7 @@
   }
 
   .inquiry-table {
-    min-width: 920px;
-    table-layout: fixed;
+    min-width: 1050px;
   }
 
   .inquiry-table th {
@@ -89,6 +88,7 @@
   .inquiry-table td {
     padding: 10px 8px !important;
     vertical-align: middle;
+<<<<<<< HEAD
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -110,27 +110,41 @@
   .inquiry-table td:nth-child(6) { width: 12%; overflow: visible; }
   .inquiry-table th:nth-child(7),
   .inquiry-table td:nth-child(7) { width: 26%; }
+=======
+  }
+>>>>>>> 7421d9b (admision form done)
 
   .candidate-name {
     font-weight: 800;
     color: #0f172a;
+<<<<<<< HEAD
     font-size: 13px;
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+=======
+    margin-bottom: 7px;
+>>>>>>> 7421d9b (admision form done)
   }
 
   .candidate-contact,
   .candidate-context,
   .inquiry-date {
     display: flex;
+<<<<<<< HEAD
     flex-wrap: nowrap;
     justify-content: center;
     gap: 6px 10px;
     color: #64748b;
     font-size: 11px;
     white-space: nowrap;
+=======
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    color: #64748b;
+    font-size: 13px;
+>>>>>>> 7421d9b (admision form done)
   }
 
   .candidate-contact span,
@@ -138,9 +152,13 @@
   .inquiry-date span {
     display: inline-flex;
     align-items: center;
+<<<<<<< HEAD
     gap: 4px;
     white-space: nowrap;
     flex-shrink: 0;
+=======
+    gap: 5px;
+>>>>>>> 7421d9b (admision form done)
   }
 
   .course-pill,
@@ -199,53 +217,20 @@
     line-height: 1;
     white-space: nowrap;
   }
-
-  .cs-NEW {
-    background: #f3e8ff;
-    color: #7c3aed;
-  }
-
-  .cs-ACCEPTED {
-    background: #dcfce7;
-    color: #15803d;
-  }
-
-  .cs-INTERESTED {
-    background: #dcfce7;
-    color: #15803d;
-  }
-
-  .cs-BUSY {
-    background: #fff7ed;
-    color: #c2410c;
-  }
-
-  .cs-CALL_BACK {
-    background: #dbeafe;
-    color: #1d4ed8;
-  }
-
-  .cs-NO_ANSWER {
-    background: #f1f5f9;
-    color: #475569;
-  }
-
-  .cs-WRONG_NUMBER {
-    background: #fee2e2;
-    color: #b91c1c;
-  }
-
-  .cs-NOT_INTERESTED {
-    background: #fecdd3;
-    color: #9f1239;
-  }
+  .cs-NEW        { background: #f3e8ff; color: #7c3aed; }
+  .cs-ACCEPTED   { background: #dcfce7; color: #15803d; }
+  .cs-INTERESTED { background: #dcfce7; color: #15803d; }
+  .cs-BUSY       { background: #fff7ed; color: #c2410c; }
+  .cs-CALL_BACK  { background: #dbeafe; color: #1d4ed8; }
+  .cs-NO_ANSWER  { background: #f1f5f9; color: #475569; }
+  .cs-WRONG_NUMBER   { background: #fee2e2; color: #b91c1c; }
+  .cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; }
 
   /* Inline Call Status Dropdown */
   .call-status-wrapper {
     position: relative;
     display: inline-block;
   }
-
   .call-status-select {
     appearance: none;
     -webkit-appearance: none;
@@ -262,17 +247,16 @@
     min-width: 110px;
     width: 100%;
   }
-
   .call-status-select:focus {
     outline: none;
     border-color: #06b6d4;
-    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+    box-shadow: 0 0 0 2px rgba(6,182,212,0.2);
   }
-
   .call-status-select.saving {
     opacity: 0.6;
     pointer-events: none;
   }
+<<<<<<< HEAD
 
   /* Color-coded select classes */
   .call-status-select.cs-NEW { background: #f3e8ff; color: #7c3aed; border-color: #c4b5fd; }
@@ -284,6 +268,8 @@
   .call-status-select.cs-WRONG_NUMBER { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
   .call-status-select.cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; border-color: #fda4af; }
 
+=======
+>>>>>>> 7421d9b (admision form done)
   .call-status-wrapper::after {
     content: '\25BC';
     position: absolute;
@@ -308,17 +294,15 @@
     font-weight: 700;
     font-size: 14px;
     z-index: 9999;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.3s;
   }
-
   .cs-toast.show {
     opacity: 1;
     transform: translateY(0);
   }
-
   .cs-toast.error {
     background: #b91c1c;
   }
@@ -327,9 +311,14 @@
     display: flex;
     justify-content: center;
     align-items: center;
+<<<<<<< HEAD
     gap: 5px;
     flex-wrap: nowrap;
     white-space: nowrap;
+=======
+    gap: 8px;
+    flex-wrap: wrap;
+>>>>>>> 7421d9b (admision form done)
   }
 
   .inquiry-icon-btn,
@@ -347,9 +336,13 @@
   }
 
   .inquiry-icon-btn {
+<<<<<<< HEAD
     width: 30px;
     min-width: 30px;
     flex-shrink: 0;
+=======
+    width: 38px;
+>>>>>>> 7421d9b (admision form done)
     border: 1px solid #dbe3ee;
     color: #475569;
     background: #fff;
@@ -371,6 +364,7 @@
   }
 
   .inquiry-convert-btn {
+<<<<<<< HEAD
     padding: 0 10px;
     flex-shrink: 0;
     background: #4f46e5;
@@ -386,6 +380,19 @@
     background: #f0fdf4;
     color: #15803d !important;
     font-size: 11px;
+=======
+    padding: 0 14px;
+    background: #4f46e5;
+    color: #fff !important;
+    box-shadow: 0 10px 22px rgba(79, 70, 229, .22);
+  }
+
+  .inquiry-lead-btn {
+    padding: 0 12px;
+    border: 1px solid #bbf7d0;
+    background: #f0fdf4;
+    color: #15803d !important;
+>>>>>>> 7421d9b (admision form done)
   }
 
   .inquiry-pagination .page-link {
@@ -421,21 +428,53 @@
     }
   }
 
-  @media (max-width: 1199.98px) {
-    .inquiry-table {
-      min-width: 860px;
-    }
-  }
-
   @media (max-width: 767.98px) {
-    .inquiry-actions {
-      gap: 5px;
+    .inquiry-table {
+      min-width: 0;
     }
 
-    .inquiry-convert-btn,
-    .inquiry-lead-btn {
-      font-size: 11px;
-      padding: 0 8px;
+    .inquiry-table thead {
+      display: none;
+    }
+
+    .inquiry-table,
+    .inquiry-table tbody,
+    .inquiry-table tr,
+    .inquiry-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .inquiry-table tr {
+      border: 1px solid var(--mg-line);
+      border-radius: 8px;
+      margin-bottom: 14px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .inquiry-table td {
+      border: 0 !important;
+      padding: 8px 0 !important;
+    }
+
+    .inquiry-table td::before {
+      content: attr(data-label);
+      display: block;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .inquiry-actions {
+      justify-content: flex-start;
+    }
+
+    .inquiry-actions .inquiry-convert-btn,
+    .inquiry-actions .inquiry-lead-btn {
+      flex: 1 1 100%;
     }
   }
 </style>
@@ -446,8 +485,7 @@
   <div class="inquiry-page-header">
     <div>
       <h2 class="fw-bold text-white mb-2">Inquiry Directory</h2>
-      <p class="text-muted mb-0">Find each inquiry quickly, check the status, and convert qualified students into leads.
-      </p>
+      <p class="text-muted mb-0">Find each inquiry quickly, check the status, and convert qualified students into leads.</p>
     </div>
     <a href="{% url 'inquiry_add' %}" class="btn inquiry-primary-action fw-bold">
       <i class="bi bi-person-plus"></i> Add Inquiry
@@ -460,7 +498,7 @@
         <label class="form-label">Search inquiries</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Name, mobile number, or city">
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Name, mobile, or city">
         </div>
       </div>
 
@@ -469,7 +507,11 @@
         <select name="status" class="form-select">
           <option value="">All Statuses</option>
           {% for code, name in status_choices %}
+<<<<<<< HEAD
           <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+=======
+            <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+>>>>>>> 7421d9b (admision form done)
           {% endfor %}
         </select>
       </div>
@@ -479,7 +521,11 @@
         <select name="source" class="form-select">
           <option value="">All Sources</option>
           {% for code, name in source_choices %}
+<<<<<<< HEAD
           <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
+=======
+            <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
+>>>>>>> 7421d9b (admision form done)
           {% endfor %}
         </select>
       </div>
@@ -489,39 +535,135 @@
         <select name="call_status" class="form-select">
           <option value="">All Call Statuses</option>
           {% for code, name in call_status_choices %}
+<<<<<<< HEAD
           <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
+=======
+            <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
+>>>>>>> 7421d9b (admision form done)
           {% endfor %}
         </select>
       </div>
 
       <div class="col-lg-1 inquiry-filter-actions">
         <button type="submit" class="btn btn-info text-white fw-bold" title="Apply filters">
-          <i class="bi bi-funnel me-lg-0 me-1"></i><span class="d-lg-none">Apply Filters</span>
+          <i class="bi bi-funnel me-lg-0 me-1"></i><span class="d-lg-none">Filter</span>
         </button>
       </div>
 
       {% if q or status or source or call_status %}
-      <div class="col-12">
-        <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
-          <i class="bi bi-x-circle me-1"></i> Clear filters
-        </a>
-      </div>
+        <div class="col-12">
+          <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i> Clear filters
+          </a>
+        </div>
       {% endif %}
     </form>
   </div>
 
   <div class="m-card">
     {% if page_obj.object_list %}
-    <div class="inquiry-result-meta">
-      <div>
-        <strong>{{ page_obj.paginator.count }}</strong>
-        inquiry{{ page_obj.paginator.count|pluralize }} found
+      <div class="inquiry-result-meta">
+        <div>
+          <strong>{{ page_obj.paginator.count }}</strong>
+          inquiry{{ page_obj.paginator.count|pluralize }} found
+        </div>
+        <div class="text-muted small">
+          Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+        </div>
       </div>
-      <div class="text-muted small">
-        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
-      </div>
-    </div>
 
+      <div class="table-responsive">
+        <table class="table m-table inquiry-table align-middle">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Interest</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Added</th>
+              <th>Call Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for inquiry in page_obj %}
+              <tr>
+                <td data-label="Student">
+                  <div class="candidate-name">{{ inquiry.full_name }}</div>
+                  <div class="candidate-contact">
+                    <span><i class="bi bi-telephone"></i>{{ inquiry.mobile_number }}</span>
+                    <span><i class="bi bi-envelope"></i>{{ inquiry.email|default:"No email" }}</span>
+                  </div>
+                </td>
+                <td data-label="Interest">
+                  <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
+                  <div class="candidate-context mt-2">
+                    <span><i class="bi bi-geo-alt"></i>{{ inquiry.city|default:"No city" }}</span>
+                  </div>
+                </td>
+                <td data-label="Source">
+                  <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
+                </td>
+                <td data-label="Status">
+                  {% if inquiry.status == 'New' %}
+                    <span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>
+                  {% elif inquiry.status == 'Contacted' %}
+                    <span class="status-pill status-contacted"><i class="bi bi-telephone-outbound"></i>Contacted</span>
+                  {% elif inquiry.status == 'Qualified' %}
+                    <span class="status-pill status-qualified"><i class="bi bi-check-circle"></i>Qualified</span>
+                  {% else %}
+                    <span class="status-pill status-rejected"><i class="bi bi-x-circle"></i>Rejected</span>
+                  {% endif %}
+                </td>
+                <td data-label="Added">
+                  <div class="inquiry-date">
+                    <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
+                  </div>
+                </td>
+                <td data-label="Call Status">
+                  <div class="call-status-wrapper">
+                    <select class="call-status-select" data-inquiry-id="{{ inquiry.pk }}" onchange="updateCallStatus(this)">
+                      {% for code, name in call_status_choices %}
+                        <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="mt-1">
+                    <span class="call-status-badge cs-{{ inquiry.call_status }}" id="badge-{{ inquiry.pk }}">
+                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% endif %}
+                      {{ inquiry.get_call_status_display }}
+                    </span>
+                  </div>
+                </td>
+                <td data-label="Actions">
+                  <div class="inquiry-actions">
+                    <a href="{% url 'inquiry_detail' inquiry.pk %}" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'inquiry_edit' inquiry.pk %}" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    {% if not inquiry.lead %}
+                      <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                        <i class="bi bi-arrow-right-circle"></i> Convert to Lead
+                      </a>
+                    {% else %}
+                      <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
+                        <i class="bi bi-check2-circle"></i> View Lead
+                      </a>
+                    {% endif %}
+                    <a href="{% url 'inquiry_delete' inquiry.pk %}" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}">
+                      <i class="bi bi-trash"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+<<<<<<< HEAD
     <div class="table-responsive">
       <table class="table m-table inquiry-table align-middle">
         <thead>
@@ -631,22 +773,46 @@
       </ul>
     </nav>
     {% endif %}
+=======
+      {% if page_obj.has_other_pages %}
+        <nav class="mt-4 inquiry-pagination" aria-label="Inquiry pagination">
+          <ul class="pagination justify-content-center flex-wrap gap-1">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Previous page">&laquo;</a>
+              </li>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == i %}active{% endif %}">
+                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}">{{ i }}</a>
+              </li>
+            {% endfor %}
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Next page">&raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+>>>>>>> 7421d9b (admision form done)
     {% else %}
-    <div class="empty-state">
-      <i class="bi bi-search"></i>
-      <h4>No Inquiries Found</h4>
-      <p class="text-muted">No records match your search or filters.</p>
-      <div class="d-flex justify-content-center gap-2 flex-wrap">
-        {% if q or status or source or call_status %}
-        <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
-        {% endif %}
-        <a href="{% url 'inquiry_add' %}" class="btn btn-info text-white fw-bold">Add Inquiry</a>
+      <div class="empty-state">
+        <i class="bi bi-search"></i>
+        <h4>No Inquiries Found</h4>
+        <p class="text-muted">No records match your search or filters.</p>
+        <div class="d-flex justify-content-center gap-2 flex-wrap">
+          {% if q or status or source or call_status %}
+            <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
+          {% endif %}
+          <a href="{% url 'inquiry_add' %}" class="btn btn-info text-white fw-bold">Add Inquiry</a>
+        </div>
       </div>
-    </div>
     {% endif %}
   </div>
 </div>
 
+<<<<<<< HEAD
 {# ---- Inquiry Detail Modals ---- #}
 {% for inquiry in page_obj %}
 <div class="modal fade" id="inquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="inquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
@@ -755,3 +921,83 @@
 })();
 </script>
 {% endblock %}
+=======
+<!-- Toast Notification -->
+<div class="cs-toast" id="csToast"></div>
+
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function showToast(message, isError) {
+  const toast = document.getElementById('csToast');
+  toast.textContent = message;
+  toast.className = 'cs-toast' + (isError ? ' error' : '');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+const badgeIcons = {
+  'NEW': '<i class="bi bi-stars"></i>',
+  'ACCEPTED': '<i class="bi bi-check-circle"></i>',
+  'INTERESTED': '<i class="bi bi-heart-fill"></i>',
+  'BUSY': '<i class="bi bi-clock"></i>',
+  'CALL_BACK': '<i class="bi bi-arrow-repeat"></i>',
+  'NO_ANSWER': '<i class="bi bi-telephone-x"></i>',
+  'WRONG_NUMBER': '<i class="bi bi-x-circle"></i>',
+  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>'
+};
+
+function updateCallStatus(selectEl) {
+  const inquiryId = selectEl.dataset.inquiryId;
+  const newStatus = selectEl.value;
+  selectEl.classList.add('saving');
+
+  fetch(`/management/inquiries/${inquiryId}/update-call-status/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ call_status: newStatus })
+  })
+  .then(resp => {
+    if (!resp.ok && resp.status === 403) {
+      throw new Error('Access Denied');
+    }
+    return resp.json();
+  })
+  .then(data => {
+    selectEl.classList.remove('saving');
+    if (data.success) {
+      showToast(data.message, false);
+      const badge = document.getElementById('badge-' + inquiryId);
+      if (badge) {
+        const icon = badgeIcons[newStatus] || '';
+        badge.className = 'call-status-badge cs-' + newStatus;
+        badge.innerHTML = icon + ' ' + data.call_status_display;
+      }
+    } else {
+      showToast(data.message || 'Error updating status.', true);
+    }
+  })
+  .catch(err => {
+    selectEl.classList.remove('saving');
+    showToast(err.message || 'Network error.', true);
+  });
+}
+</script>
+{% endblock %}
+>>>>>>> 7421d9b (admision form done)

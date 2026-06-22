@@ -1,0 +1,97 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Admission Report | Examly{% endblock %}
+
+{% block management_content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+  <div>
+    <h2 class="fw-bold text-white mb-1">Admission Report</h2>
+    <p class="text-muted small">Overview of admission conversions, revenue, and outstanding fees</p>
+  </div>
+  <a href="{% url 'admission_list' %}" class="btn btn-outline-secondary fw-bold"><i class="bi bi-arrow-left me-1"></i> Back to List</a>
+</div>
+
+<!-- Summary Metrics -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="m-card text-center">
+      <span class="text-muted small d-block mb-1">Total Admissions</span>
+      <span class="text-white fw-bold fs-3">{{ total_admissions }}</span>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="m-card text-center">
+      <span class="text-muted small d-block mb-1">Total Revenue Collected</span>
+      <span class="text-success fw-bold fs-3">&#8377;{{ total_revenue|floatformat:0 }}</span>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="m-card text-center">
+      <span class="text-muted small d-block mb-1">Total Outstanding Fees</span>
+      <span class="text-warning fw-bold fs-3">&#8377;{{ total_outstanding|floatformat:0 }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- By Counselor -->
+<div class="m-card mb-4">
+  <h5 class="fw-bold text-white mb-3"><i class="bi bi-people-fill text-info me-2"></i>Admissions By Counselor</h5>
+  {% if by_counselor %}
+  <div class="table-responsive">
+    <table class="table m-table align-middle">
+      <thead>
+        <tr>
+          <th>Counselor</th>
+          <th>Admissions</th>
+          <th>Revenue</th>
+          <th>Outstanding</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_counselor %}
+        <tr>
+          <td class="fw-bold text-white">{{ row.counselor__username|default:"Unassigned" }}</td>
+          <td><span class="badge bg-info">{{ row.count }}</span></td>
+          <td class="text-success">&#8377;{{ row.revenue|floatformat:0|default:"0" }}</td>
+          <td class="text-warning">&#8377;{{ row.outstanding|floatformat:0|default:"0" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted mb-0">No admission data available.</p>
+  {% endif %}
+</div>
+
+<!-- By Course -->
+<div class="m-card">
+  <h5 class="fw-bold text-white mb-3"><i class="bi bi-book-fill text-info me-2"></i>Admissions By Course</h5>
+  {% if by_course %}
+  <div class="table-responsive">
+    <table class="table m-table align-middle">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Admissions</th>
+          <th>Revenue</th>
+          <th>Outstanding</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in by_course %}
+        <tr>
+          <td class="fw-bold text-white">{{ row.course_name|default:"Not Specified" }}</td>
+          <td><span class="badge bg-info">{{ row.count }}</span></td>
+          <td class="text-success">&#8377;{{ row.revenue|floatformat:0|default:"0" }}</td>
+          <td class="text-warning">&#8377;{{ row.outstanding|floatformat:0|default:"0" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted mb-0">No admission data available.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -67,4 +67,11 @@ urlpatterns = [
     path('counselor/visits/', views.counselor_visit_list, name='counselor_visit_list'),
     path('counselor/visits/add/', views.counselor_visit_add, name='counselor_visit_add'),
     path('counselor/visits/<int:pk>/edit/', views.counselor_visit_edit, name='counselor_visit_edit'),
+
+    # Phase 11.5 — Admission Sheet Management
+    path('admissions/', views.admission_list, name='admission_list'),
+    path('admissions/create/<int:lead_pk>/', views.admission_create, name='admission_create'),
+    path('admissions/<int:pk>/', views.admission_detail, name='admission_detail'),
+    path('admissions/<int:pk>/edit/', views.admission_edit, name='admission_edit'),
+    path('admissions/report/', views.admission_report, name='admission_report'),
 ]
