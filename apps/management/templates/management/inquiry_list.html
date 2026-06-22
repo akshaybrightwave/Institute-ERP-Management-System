@@ -663,117 +663,6 @@
         </table>
       </div>
 
-<<<<<<< HEAD
-    <div class="table-responsive">
-      <table class="table m-table inquiry-table align-middle">
-        <thead>
-          <tr>
-            <th>Student</th>
-            <th>Interest</th>
-            <th>Source</th>
-            <th>Status</th>
-            <th>Added</th>
-            <th>Call Status</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for inquiry in page_obj %}
-          <tr>
-            <td data-label="Student">
-              <div class="candidate-name">{{ inquiry.full_name }}</div>
-            </td>
-            <td data-label="Interest">
-              <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
-            </td>
-            <td data-label="Source">
-              <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
-            </td>
-            <td data-label="Status">
-              {% if inquiry.status == 'New' %}
-              <span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>
-              {% elif inquiry.status == 'Contacted' %}
-              <span class="status-pill status-contacted"><i class="bi bi-telephone-outbound"></i>Contacted</span>
-              {% elif inquiry.status == 'Qualified' %}
-              <span class="status-pill status-qualified"><i class="bi bi-check-circle"></i>Qualified</span>
-              {% else %}
-              <span class="status-pill status-rejected"><i class="bi bi-x-circle"></i>Rejected</span>
-              {% endif %}
-            </td>
-            <td data-label="Added">
-              <div class="inquiry-date">
-                <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
-              </div>
-            </td>
-            <td data-label="Call Status">
-              <div class="call-status-wrapper">
-                <select class="call-status-select" data-inquiry-pk="{{ inquiry.pk }}" data-current="{{ inquiry.call_status }}">
-                  {% for code, name in call_status_choices %}
-                  <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </td>
-            <td data-label="Actions">
-              <div class="inquiry-actions">
-                <button type="button" class="inquiry-icon-btn" title="View details"
-                  aria-label="View {{ inquiry.full_name }}"
-                  data-bs-toggle="modal" data-bs-target="#inquiryModal{{ inquiry.pk }}">
-                  <i class="bi bi-eye"></i>
-                </button>
-                <a href="{% url 'inquiry_edit' inquiry.pk %}" class="inquiry-icon-btn edit" title="Edit inquiry"
-                  aria-label="Edit {{ inquiry.full_name }}">
-                  <i class="bi bi-pencil"></i>
-                </a>
-                {% if not inquiry.lead %}
-                <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
-                  <i class="bi bi-arrow-right-circle"></i> Convert to Lead
-                </a>
-                {% else %}
-                <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
-                  <i class="bi bi-check2-circle"></i> View Lead
-                </a>
-                {% endif %}
-                <a href="{% url 'inquiry_delete' inquiry.pk %}" class="inquiry-icon-btn delete" title="Delete inquiry"
-                  aria-label="Delete {{ inquiry.full_name }}">
-                  <i class="bi bi-trash"></i>
-                </a>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    {% if page_obj.has_other_pages %}
-    <nav class="mt-4 inquiry-pagination" aria-label="Inquiry pagination">
-      <ul class="pagination justify-content-center flex-wrap gap-1">
-        {% if page_obj.has_previous %}
-        <li class="page-item">
-          <a class="page-link"
-            href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}"
-            aria-label="Previous page">&laquo;</a>
-        </li>
-        {% endif %}
-        {% for i in page_obj.paginator.page_range %}
-        <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-          <a class="page-link"
-            href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}">{{
-            i }}</a>
-        </li>
-        {% endfor %}
-        {% if page_obj.has_next %}
-        <li class="page-item">
-          <a class="page-link"
-            href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}"
-            aria-label="Next page">&raquo;</a>
-        </li>
-        {% endif %}
-      </ul>
-    </nav>
-    {% endif %}
-=======
       {% if page_obj.has_other_pages %}
         <nav class="mt-4 inquiry-pagination" aria-label="Inquiry pagination">
           <ul class="pagination justify-content-center flex-wrap gap-1">
@@ -794,9 +683,7 @@
             {% endif %}
           </ul>
         </nav>
-      {% endif %}
->>>>>>> 7421d9b (admision form done)
-    {% else %}
+      {% endif %}    {% else %}
       <div class="empty-state">
         <i class="bi bi-search"></i>
         <h4>No Inquiries Found</h4>
@@ -812,7 +699,6 @@
   </div>
 </div>
 
-<<<<<<< HEAD
 {# ---- Inquiry Detail Modals ---- #}
 {% for inquiry in page_obj %}
 <div class="modal fade" id="inquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="inquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
@@ -863,65 +749,6 @@
 </div>
 {% endfor %}
 
-{# ---- Toast ---- #}
-<div class="cs-toast" id="csToast"></div>
-
-<script>
-(function(){
-  /* Color coding for select elements */
-  function applySelectColor(el){
-    var val=el.value;
-    var all=['cs-NEW','cs-ACCEPTED','cs-INTERESTED','cs-BUSY','cs-CALL_BACK','cs-NO_ANSWER','cs-WRONG_NUMBER','cs-NOT_INTERESTED'];
-    all.forEach(function(c){el.classList.remove(c);});
-    if(val) el.classList.add('cs-'+val);
-  }
-
-  var selects=document.querySelectorAll('.call-status-select');
-  selects.forEach(function(sel){
-    applySelectColor(sel);
-    sel.addEventListener('change',function(){
-      var el=this;
-      var pk=el.dataset.inquiryPk;
-      var newVal=el.value;
-      var oldVal=el.dataset.current;
-      el.classList.add('saving');
-      fetch('{% url "update_call_status" 0 %}'.replace('0',pk),{
-        method:'POST',
-        headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},
-        body:JSON.stringify({call_status:newVal})
-      })
-      .then(function(r){return r.json();})
-      .then(function(data){
-        el.classList.remove('saving');
-        if(data.success){
-          el.dataset.current=newVal;
-          applySelectColor(el);
-          showToast(data.message,false);
-        }else{
-          el.value=oldVal;
-          applySelectColor(el);
-          showToast(data.message,true);
-        }
-      })
-      .catch(function(){
-        el.classList.remove('saving');
-        el.value=oldVal;
-        applySelectColor(el);
-        showToast('Network error',true);
-      });
-    });
-  });
-
-  function showToast(msg,isError){
-    var t=document.getElementById('csToast');
-    t.textContent=msg;
-    t.className='cs-toast show'+(isError?' error':'');
-    setTimeout(function(){t.className='cs-toast';},3000);
-  }
-})();
-</script>
-{% endblock %}
-=======
 <!-- Toast Notification -->
 <div class="cs-toast" id="csToast"></div>
 
@@ -1000,4 +827,3 @@ function updateCallStatus(selectEl) {
 }
 </script>
 {% endblock %}
->>>>>>> 7421d9b (admision form done)
