@@ -62,6 +62,11 @@
           <th>Rejected Leads</th>
           <th>Pending Follow-Ups</th>
           <th>Conversion %</th>
+          <th>Accepted</th>
+          <th>Busy</th>
+          <th>Call Back</th>
+          <th>Interested</th>
+          <th>Not Interested</th>
         </tr>
       </thead>
       <tbody>
@@ -76,6 +81,11 @@
           <td class="text-danger">{{ row.rejected_leads }}</td>
           <td class="text-warning">{{ row.pending_followups }}</td>
           <td class="fw-bold text-warning">{{ row.conversion_pct }}%</td>
+          <td><span class="badge" style="background:#dcfce7;color:#15803d;">{{ row.cs_accepted }}</span></td>
+          <td><span class="badge" style="background:#fff7ed;color:#c2410c;">{{ row.cs_busy }}</span></td>
+          <td><span class="badge" style="background:#dbeafe;color:#1d4ed8;">{{ row.cs_call_back }}</span></td>
+          <td><span class="badge" style="background:#dcfce7;color:#15803d;">{{ row.cs_interested }}</span></td>
+          <td><span class="badge" style="background:#fecdd3;color:#9f1239;">{{ row.cs_not_interested }}</span></td>
         </tr>
         {% endfor %}
       </tbody>

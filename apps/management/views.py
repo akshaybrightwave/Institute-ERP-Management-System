@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 import datetime
+import json
 from django.utils import timezone
 
 from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet
@@ -36,6 +37,15 @@ def management_dashboard(request):
     pending_followups = followups_qs.filter(status='Pending').count()
     overdue_followups = followups_qs.filter(status='Pending', followup_date__lt=today).count()
 
+    # Call Outcomes
+    call_outcomes = {
+        'accepted': inquiries_qs.filter(call_status='ACCEPTED').count(),
+        'busy': inquiries_qs.filter(call_status='BUSY').count(),
+        'call_back': inquiries_qs.filter(call_status='CALL_BACK').count(),
+        'interested': inquiries_qs.filter(call_status='INTERESTED').count(),
+        'not_interested': inquiries_qs.filter(call_status='NOT_INTERESTED').count(),
+    }
+
     # Tables
     recent_leads = leads_qs.order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.filter(lead__assigned_telecaller=request.user).order_by('-created_at')[:5]
@@ -52,6 +62,7 @@ def management_dashboard(request):
         'today_calls': today_calls,
         'pending_followups': pending_followups,
         'overdue_followups': overdue_followups,
+        'call_outcomes': call_outcomes,
         'recent_leads': recent_leads,
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
@@ -80,6 +91,15 @@ def management_super_admin_dashboard(request):
     pending_followups = FollowUp.objects.filter(status='Pending').count()
     overdue_followups = FollowUp.objects.filter(status='Pending', followup_date__lt=today).count()
 
+    # Call Outcomes
+    call_outcomes = {
+        'accepted': Inquiry.objects.filter(call_status='ACCEPTED').count(),
+        'busy': Inquiry.objects.filter(call_status='BUSY').count(),
+        'call_back': Inquiry.objects.filter(call_status='CALL_BACK').count(),
+        'interested': Inquiry.objects.filter(call_status='INTERESTED').count(),
+        'not_interested': Inquiry.objects.filter(call_status='NOT_INTERESTED').count(),
+    }
+
     # Tables
     recent_leads = Lead.objects.order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.all().order_by('-created_at')[:5]
@@ -96,6 +116,7 @@ def management_super_admin_dashboard(request):
         'today_calls': today_calls,
         'pending_followups': pending_followups,
         'overdue_followups': overdue_followups,
+        'call_outcomes': call_outcomes,
         'recent_leads': recent_leads,
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
@@ -132,6 +153,10 @@ def inquiry_list(request):
     if source:
         inquiries = inquiries.filter(source=source)
 
+    call_status = request.GET.get('call_status', '').strip()
+    if call_status:
+        inquiries = inquiries.filter(call_status=call_status)
+
     paginator = Paginator(inquiries, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -141,8 +166,10 @@ def inquiry_list(request):
         'q': q,
         'status': status,
         'source': source,
+        'call_status': call_status,
         'status_choices': Inquiry.STATUS_CHOICES,
         'source_choices': Inquiry.SOURCE_CHOICES,
+        'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
     })
 
 
@@ -243,6 +270,40 @@ def inquiry_convert(request, pk):
         return redirect('lead_detail', pk=lead.pk)
 
     return render(request, 'management/inquiry_convert.html', {'inquiry': inquiry})
+
+
+@login_required
+@telecaller_required
+def update_call_status(request, pk):
+    """AJAX endpoint to update call status inline from Inquiry Directory."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+    inquiry = get_object_or_404(Inquiry, pk=pk)
+
+    # Access control: Tele Caller can update own inquiries, Super Admin can update any
+    if request.user.role != 'admin' and inquiry.created_by != request.user:
+        return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('call_status', '').strip()
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'success': False, 'message': 'Invalid data.'}, status=400)
+
+    valid_statuses = [choice[0] for choice in Inquiry.CALL_STATUS_CHOICES]
+    if new_status not in valid_statuses:
+        return JsonResponse({'success': False, 'message': f'Invalid call status: {new_status}'}, status=400)
+
+    inquiry.call_status = new_status
+    inquiry.save(update_fields=['call_status', 'updated_at'])
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Call status updated successfully.',
+        'call_status': new_status,
+        'call_status_display': dict(Inquiry.CALL_STATUS_CHOICES).get(new_status, new_status),
+    })
 
 
 # ==================================================
@@ -1273,6 +1334,13 @@ def telecaller_report(request):
         rejected_leads = leads_qs.filter(status='Rejected').count()
         pending_followups = followups_qs.filter(status='Pending').count()
 
+        # Call Status Metrics
+        cs_accepted = inquiries_qs.filter(call_status='ACCEPTED').count()
+        cs_busy = inquiries_qs.filter(call_status='BUSY').count()
+        cs_call_back = inquiries_qs.filter(call_status='CALL_BACK').count()
+        cs_interested = inquiries_qs.filter(call_status='INTERESTED').count()
+        cs_not_interested = inquiries_qs.filter(call_status='NOT_INTERESTED').count()
+
         conversion_pct = 0.0
         if total_leads > 0:
             conversion_pct = round((qualified_leads / total_leads) * 100, 2)
@@ -1287,6 +1355,11 @@ def telecaller_report(request):
             'rejected_leads': rejected_leads,
             'pending_followups': pending_followups,
             'conversion_pct': conversion_pct,
+            'cs_accepted': cs_accepted,
+            'cs_busy': cs_busy,
+            'cs_call_back': cs_call_back,
+            'cs_interested': cs_interested,
+            'cs_not_interested': cs_not_interested,
         })
 
     export_format = request.GET.get('export', '').strip()
@@ -1296,12 +1369,14 @@ def telecaller_report(request):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="telecaller_performance_report.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %'])
+        writer.writerow(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %', 'Accepted', 'Busy', 'Call Back', 'Interested', 'Not Interested'])
         for row in report_data:
             writer.writerow([
                 row['telecaller'], row['total_inquiries'], row['total_leads'], row['calls_made'],
                 row['followups_completed'], row['qualified_leads'], row['rejected_leads'],
-                row['pending_followups'], row['conversion_pct']
+                row['pending_followups'], row['conversion_pct'],
+                row['cs_accepted'], row['cs_busy'], row['cs_call_back'],
+                row['cs_interested'], row['cs_not_interested']
             ])
         return response
 
@@ -1313,12 +1388,14 @@ def telecaller_report(request):
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Performance Report"
-        ws.append(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %'])
+        ws.append(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %', 'Accepted', 'Busy', 'Call Back', 'Interested', 'Not Interested'])
         for row in report_data:
             ws.append([
                 row['telecaller'], row['total_inquiries'], row['total_leads'], row['calls_made'],
                 row['followups_completed'], row['qualified_leads'], row['rejected_leads'],
-                row['pending_followups'], row['conversion_pct']
+                row['pending_followups'], row['conversion_pct'],
+                row['cs_accepted'], row['cs_busy'], row['cs_call_back'],
+                row['cs_interested'], row['cs_not_interested']
             ])
         wb.save(response)
         return response

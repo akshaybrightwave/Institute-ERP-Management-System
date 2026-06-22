@@ -19,6 +19,16 @@ class Inquiry(models.Model):
         ('Qualified', 'Qualified'),
         ('Rejected', 'Rejected'),
     )
+    CALL_STATUS_CHOICES = (
+        ('NEW', 'New'),
+        ('ACCEPTED', 'Accepted'),
+        ('BUSY', 'Busy'),
+        ('NO_ANSWER', 'No Answer'),
+        ('CALL_BACK', 'Call Back'),
+        ('WRONG_NUMBER', 'Wrong Number'),
+        ('INTERESTED', 'Interested'),
+        ('NOT_INTERESTED', 'Not Interested'),
+    )
 
     full_name = models.CharField(max_length=100, db_index=True)
     mobile_number = models.CharField(max_length=15, db_index=True)
@@ -28,6 +38,7 @@ class Inquiry(models.Model):
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='Website')
     remarks = models.TextField(blank=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='New', db_index=True)
+    call_status = models.CharField(max_length=25, choices=CALL_STATUS_CHOICES, default='NEW', db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

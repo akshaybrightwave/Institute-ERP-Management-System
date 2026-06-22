@@ -13,6 +13,7 @@ urlpatterns = [
     path('inquiries/<int:pk>/edit/', views.inquiry_edit, name='inquiry_edit'),
     path('inquiries/<int:pk>/delete/', views.inquiry_delete, name='inquiry_delete'),
     path('inquiries/<int:pk>/convert/', views.inquiry_convert, name='inquiry_convert'),
+    path('inquiries/<int:pk>/update-call-status/', views.update_call_status, name='update_call_status'),
 
     # Lead CRUD
     path('leads/', views.lead_list, name='lead_list'),

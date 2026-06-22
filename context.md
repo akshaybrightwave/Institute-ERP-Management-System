@@ -916,6 +916,78 @@ Implement a visit-sheet candidate tracking system within the Counselor Module of
 
 ---
 
+## Phase 11.x — Tele Caller Call Status Tracking
+
+### Purpose
+Provides a dedicated Call Status Tracking System for Tele Callers, enabling fast inline call outcome updates directly from the Inquiry Directory without opening edit pages. This separates the concept of call outcome (what happened on the phone) from the inquiry business lifecycle status.
+
+### Workflow
+```text
+Create Inquiry
+↓
+Call Status = NEW (default)
+↓
+Tele Caller Calls Candidate
+↓
+Update Call Status via inline dropdown
+```
+
+### Call Status Choices
+```text
+NEW          → Default, not yet called
+ACCEPTED     → Call answered
+BUSY         → Line busy
+NO_ANSWER    → No answer
+CALL_BACK    → Call back requested
+WRONG_NUMBER → Incorrect number
+INTERESTED   → Candidate expressed interest
+NOT_INTERESTED → Candidate not interested
+```
+
+### Database Changes
+- **Inquiry Model**: Added `call_status` CharField (max_length=25, db_index=True, default='NEW') with `CALL_STATUS_CHOICES`.
+- **Migration**: `0008_inquiry_call_status.py` adds the field to the Inquiry table.
+
+### Inline Update Functionality
+- **Inquiry Directory Column**: New "Call Status" column between "Added" and "Actions".
+- **Inline Dropdown**: Each row displays a styled dropdown selector that saves immediately on change via AJAX.
+- **AJAX Endpoint**: `POST /management/inquiries/<id>/update-call-status/` accepts `{"call_status": "BUSY"}` and returns `{"success": true, "message": "..."}`.
+- **No page reload**: Updates happen via JavaScript fetch with CSRF protection.
+- **Toast Notification**: Success/error feedback shown after each update.
+- **Badge Display**: Color-coded badges below each dropdown (Purple=New, Green=Accepted/Interested, Orange=Busy, Blue=Call Back, Gray=No Answer, Red=Wrong Number, Dark Red=Not Interested).
+
+### Filtering
+- Added Call Status filter dropdown in the Inquiry Directory filter bar.
+- Works alongside existing Search, Source, and Status filters.
+- Pagination preserves all active filters including Call Status.
+
+### Dashboard Integration
+- Both Super Admin Dashboard and Telecaller Dashboard display a compact "Call Outcomes" card.
+- Shows counts for: Accepted, Busy, Call Back, Interested, Not Interested.
+- No additional stat cards added; keeps dashboard clean.
+
+### Report Integration
+- Extended existing Tele Caller Performance Reports with 5 new columns: Accepted, Busy, Call Back, Interested, Not Interested.
+- Updated HTML report table, CSV export, and Excel export with call status metrics.
+- No new reporting module created.
+
+### Access Control
+- **Super Admin**: View all inquiries, update any call status.
+- **Tele Caller**: View own inquiries, update call status on assigned records.
+- **Counselor / ERP Roles**: No access (403 Forbidden).
+
+### Files Modified
+- `apps/management/models.py`: Added `CALL_STATUS_CHOICES` and `call_status` field to Inquiry.
+- `apps/management/views.py`: Added `update_call_status` AJAX view, updated `inquiry_list` filtering, updated both dashboards with call outcome data, updated `telecaller_report` with call status metrics.
+- `apps/management/urls.py`: Added `update_call_status` URL route.
+- `apps/management/templates/management/inquiry_list.html`: Added call status column, inline dropdown, badges, filter, AJAX JavaScript.
+- `apps/management/templates/management/dashboard.html`: Added Call Outcomes card.
+- `apps/management/templates/management/super_admin_dashboard.html`: Added Call Outcomes card.
+- `apps/management/templates/management/telecaller_report.html`: Added call status columns.
+- `apps/management/migrations/0008_inquiry_call_status.py`: Database migration.
+
+---
+
 ## Completion Status
 
 Module Status: Completed

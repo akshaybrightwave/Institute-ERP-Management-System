@@ -151,6 +151,91 @@
     color: var(--inquiry-red);
   }
 
+  /* Call Status Badges */
+  .call-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .cs-NEW        { background: #f3e8ff; color: #7c3aed; }
+  .cs-ACCEPTED   { background: #dcfce7; color: #15803d; }
+  .cs-INTERESTED { background: #dcfce7; color: #15803d; }
+  .cs-BUSY       { background: #fff7ed; color: #c2410c; }
+  .cs-CALL_BACK  { background: #dbeafe; color: #1d4ed8; }
+  .cs-NO_ANSWER  { background: #f1f5f9; color: #475569; }
+  .cs-WRONG_NUMBER   { background: #fee2e2; color: #b91c1c; }
+  .cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; }
+
+  /* Inline Call Status Dropdown */
+  .call-status-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .call-status-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #1a1a2e;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 28px 6px 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-width: 130px;
+  }
+  .call-status-select:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 2px rgba(6,182,212,0.2);
+  }
+  .call-status-select.saving {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .call-status-wrapper::after {
+    content: '\25BC';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 9px;
+    color: #94a3b8;
+    pointer-events: none;
+  }
+
+  /* Call Status Toast */
+  .cs-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #15803d;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    z-index: 9999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+  }
+  .cs-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .cs-toast.error {
+    background: #b91c1c;
+  }
+
   .inquiry-actions {
     display: flex;
     justify-content: flex-end;
@@ -335,13 +420,23 @@
         </select>
       </div>
 
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Call Status</label>
+        <select name="call_status" class="form-select">
+          <option value="">All Call Statuses</option>
+          {% for code, name in call_status_choices %}
+            <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
       <div class="col-lg-1 inquiry-filter-actions">
         <button type="submit" class="btn btn-info text-white fw-bold" title="Apply filters">
           <i class="bi bi-funnel me-lg-0 me-1"></i><span class="d-lg-none">Apply Filters</span>
         </button>
       </div>
 
-      {% if q or status or source %}
+      {% if q or status or source or call_status %}
         <div class="col-12">
           <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-x-circle me-1"></i> Clear filters
@@ -372,6 +467,7 @@
               <th>Source</th>
               <th>Status</th>
               <th>Added</th>
+              <th>Call Status</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
@@ -410,6 +506,21 @@
                     <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
                   </div>
                 </td>
+                <td data-label="Call Status">
+                  <div class="call-status-wrapper">
+                    <select class="call-status-select" data-inquiry-id="{{ inquiry.pk }}" onchange="updateCallStatus(this)">
+                      {% for code, name in call_status_choices %}
+                        <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="mt-1">
+                    <span class="call-status-badge cs-{{ inquiry.call_status }}" id="badge-{{ inquiry.pk }}">
+                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% endif %}
+                      {{ inquiry.get_call_status_display }}
+                    </span>
+                  </div>
+                </td>
                 <td data-label="Actions">
                   <div class="inquiry-actions">
                     <a href="{% url 'inquiry_detail' inquiry.pk %}" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}">
@@ -443,17 +554,17 @@
           <ul class="pagination justify-content-center flex-wrap gap-1">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}" aria-label="Previous page">&laquo;</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Previous page">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}">{{ i }}</a>
+                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}" aria-label="Next page">&raquo;</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Next page">&raquo;</a>
               </li>
             {% endif %}
           </ul>
@@ -465,7 +576,7 @@
         <h4>No Inquiries Found</h4>
         <p class="text-muted">No records match your search or filters.</p>
         <div class="d-flex justify-content-center gap-2 flex-wrap">
-          {% if q or status or source %}
+          {% if q or status or source or call_status %}
             <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
           {% endif %}
           <a href="{% url 'inquiry_add' %}" class="btn btn-info text-white fw-bold">Add Inquiry</a>
@@ -474,4 +585,83 @@
     {% endif %}
   </div>
 </div>
+
+<!-- Toast Notification -->
+<div class="cs-toast" id="csToast"></div>
+
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function showToast(message, isError) {
+  const toast = document.getElementById('csToast');
+  toast.textContent = message;
+  toast.className = 'cs-toast' + (isError ? ' error' : '');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+const badgeIcons = {
+  'NEW': '<i class="bi bi-stars"></i>',
+  'ACCEPTED': '<i class="bi bi-check-circle"></i>',
+  'INTERESTED': '<i class="bi bi-heart-fill"></i>',
+  'BUSY': '<i class="bi bi-clock"></i>',
+  'CALL_BACK': '<i class="bi bi-arrow-repeat"></i>',
+  'NO_ANSWER': '<i class="bi bi-telephone-x"></i>',
+  'WRONG_NUMBER': '<i class="bi bi-x-circle"></i>',
+  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>'
+};
+
+function updateCallStatus(selectEl) {
+  const inquiryId = selectEl.dataset.inquiryId;
+  const newStatus = selectEl.value;
+  selectEl.classList.add('saving');
+
+  fetch(`/management/inquiries/${inquiryId}/update-call-status/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ call_status: newStatus })
+  })
+  .then(resp => {
+    if (!resp.ok && resp.status === 403) {
+      throw new Error('Access Denied');
+    }
+    return resp.json();
+  })
+  .then(data => {
+    selectEl.classList.remove('saving');
+    if (data.success) {
+      showToast(data.message, false);
+      // Update badge
+      const badge = document.getElementById('badge-' + inquiryId);
+      if (badge) {
+        const icon = badgeIcons[newStatus] || '';
+        badge.className = 'call-status-badge cs-' + newStatus;
+        badge.innerHTML = icon + ' ' + data.call_status_display;
+      }
+    } else {
+      showToast(data.message || 'Error updating status.', true);
+    }
+  })
+  .catch(err => {
+    selectEl.classList.remove('saving');
+    showToast(err.message || 'Network error.', true);
+  });
+}
+</script>
 {% endblock %}
