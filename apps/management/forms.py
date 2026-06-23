@@ -153,9 +153,7 @@ class AdmissionSheetForm(forms.ModelForm):
             'admission_date', 'admission_status',
             'student_name', 'mobile_number', 'email_id', 'parent_name', 'parent_mobile',
             'college_name', 'university_name', 'department', 'academic_year',
-            'course_name', 'admission_source',
-            'course_fees', 'discount_amount', 'final_fees', 'fees_paid',
-            'payment_mode', 'transaction_reference',
+            'course_name', 'batch_name', 'admission_source',
             'seat_status', 'remarks',
         ]
         widgets = {
@@ -171,22 +169,9 @@ class AdmissionSheetForm(forms.ModelForm):
             'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Department'}),
             'academic_year': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 2026-2027'}),
             'course_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Course Name'}),
+            'batch_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Batch Name'}),
             'admission_source': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Source'}),
-            'course_fees': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'discount_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'final_fees': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'fees_paid': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'payment_mode': forms.Select(attrs={'class': 'form-select'}),
-            'transaction_reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Transaction Reference'}),
             'seat_status': forms.Select(attrs={'class': 'form-select'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Remarks...'}),
         }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        final_fees = cleaned_data.get('final_fees') or 0
-        fees_paid = cleaned_data.get('fees_paid') or 0
-        if fees_paid > final_fees:
-            raise forms.ValidationError("Fees paid cannot exceed final fees.")
-        return cleaned_data
 

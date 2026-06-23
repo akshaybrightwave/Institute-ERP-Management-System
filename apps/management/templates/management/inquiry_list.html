@@ -794,12 +794,11 @@
 {# ---- Add Inquiry Modal ---- #}
 <div class="modal fade inquiry-modal" id="addInquiryModal" tabindex="-1" aria-labelledby="addInquiryModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <div class="modal-content">
-      <form method="POST" action="{% url 'inquiry_add' %}">
+    <form method="POST" action="{% url 'inquiry_add' %}" class="modal-content">
         {% csrf_token %}
         <div class="modal-header">
           <div>
-            <h5 class="modal-title fw-bold" id="addInquiryModalLabel">
+            <h5 class="modal-title fw-bold text-white" id="addInquiryModalLabel">
               <i class="bi bi-person-plus me-2"></i>Add Inquiry
             </h5>
             <p class="mb-0 small text-white-50">Fill student inquiry details and save the record.</p>
@@ -847,7 +846,6 @@
           <button type="submit" class="btn btn-info text-white fw-bold">Save Inquiry</button>
         </div>
       </form>
-    </div>
   </div>
 </div>
 
@@ -905,12 +903,11 @@
 {% for inquiry in page_obj %}
 <div class="modal fade inquiry-modal" id="editInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="editInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <div class="modal-content">
-      <form method="POST" action="{% url 'inquiry_edit' inquiry.pk %}">
+    <form method="POST" action="{% url 'inquiry_edit' inquiry.pk %}" class="modal-content">
         {% csrf_token %}
         <div class="modal-header">
           <div>
-            <h5 class="modal-title fw-bold" id="editInquiryModalLabel{{ inquiry.pk }}">
+            <h5 class="modal-title fw-bold text-white" id="editInquiryModalLabel{{ inquiry.pk }}">
               <i class="bi bi-pencil-square me-2"></i>Edit Inquiry
             </h5>
             <p class="mb-0 small text-white-50">Update inquiry details for {{ inquiry.full_name }}.</p>
@@ -966,18 +963,16 @@
           <button type="submit" class="btn btn-info text-white fw-bold">Update Inquiry</button>
         </div>
       </form>
-    </div>
   </div>
 </div>
 
 <div class="modal fade inquiry-modal" id="deleteInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="deleteInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
   <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" action="{% url 'inquiry_delete' inquiry.pk %}">
+    <form method="POST" action="{% url 'inquiry_delete' inquiry.pk %}" class="modal-content">
         {% csrf_token %}
         <div class="modal-header">
           <div>
-            <h5 class="modal-title fw-bold" id="deleteInquiryModalLabel{{ inquiry.pk }}">
+            <h5 class="modal-title fw-bold text-white" id="deleteInquiryModalLabel{{ inquiry.pk }}">
               <i class="bi bi-trash me-2"></i>Delete Inquiry
             </h5>
             <p class="mb-0 small text-white-50">Please confirm before removing this record.</p>
@@ -996,7 +991,6 @@
           <button type="submit" class="btn btn-danger fw-bold">Delete Inquiry</button>
         </div>
       </form>
-    </div>
   </div>
 </div>
 {% endfor %}

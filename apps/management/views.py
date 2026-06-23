@@ -104,7 +104,7 @@ def management_super_admin_dashboard(request):
     admission_metrics = {
         'total': AdmissionSheet.objects.count(),
         'confirmed': AdmissionSheet.objects.filter(admission_status='CONFIRMED').count(),
-        'pending_payment': AdmissionSheet.objects.filter(admission_status='PENDING_PAYMENT').count(),
+        'pending': AdmissionSheet.objects.filter(admission_status='PENDING').count(),
         'cancelled': AdmissionSheet.objects.filter(admission_status='CANCELLED').count(),
     }
 
@@ -1508,7 +1508,7 @@ def counselor_dashboard(request):
     admission_metrics = {
         'total': admissions_qs.count(),
         'confirmed': admissions_qs.filter(admission_status='CONFIRMED').count(),
-        'pending_payment': admissions_qs.filter(admission_status='PENDING_PAYMENT').count(),
+        'pending': admissions_qs.filter(admission_status='PENDING').count(),
         'cancelled': admissions_qs.filter(admission_status='CANCELLED').count(),
     }
     
@@ -2412,8 +2412,7 @@ def admission_create(request, lead_pk):
                 admission.counselor = lead.assigned_counselor or request.user
             admission.save()
 
-            # Update lead status to Admission Done
-            lead.status = 'Admission Done'
+            # Update counselor status to Converted
             lead.counselor_status = 'CONVERTED'
             lead.counselor_status_updated_at = timezone.now()
             lead.save()
@@ -2496,33 +2495,25 @@ def admission_report(request):
         admissions = AdmissionSheet.objects.filter(counselor=request.user)
 
     # Aggregate metrics
-    from django.db.models import Sum, Count
+    from django.db.models import Count
     total_admissions = admissions.count()
-    total_revenue = admissions.aggregate(total=Sum('fees_paid'))['total'] or 0
-    total_outstanding = admissions.aggregate(total=Sum('remaining_fees'))['total'] or 0
 
     # By counselor
     by_counselor = admissions.values(
         'counselor__username'
     ).annotate(
-        count=Count('id'),
-        revenue=Sum('fees_paid'),
-        outstanding=Sum('remaining_fees')
+        count=Count('id')
     ).order_by('-count')
 
     # By course
     by_course = admissions.values(
         'course_name'
     ).annotate(
-        count=Count('id'),
-        revenue=Sum('fees_paid'),
-        outstanding=Sum('remaining_fees')
+        count=Count('id')
     ).order_by('-count')
 
     return render(request, 'management/admission_report.html', {
         'total_admissions': total_admissions,
-        'total_revenue': total_revenue,
-        'total_outstanding': total_outstanding,
         'by_counselor': by_counselor,
         'by_course': by_course,
     })

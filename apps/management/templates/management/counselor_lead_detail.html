@@ -339,29 +339,7 @@
       {% endif %}
     </div>
 
-    <!-- Lead Activity Timeline (Quick View) -->
-    <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-activity text-info me-2"></i>Activity History</h5>
-      
-      {% if activities %}
-        <div class="list-group list-group-flush bg-transparent">
-          {% for act in activities|slice:":5" %}
-            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="fw-bold text-info small">{{ act.get_activity_type_display }}</span>
-                <span class="text-muted small ms-auto" style="font-size: 0.7rem;">{{ act.created_at|date:"d M H:i" }}</span>
-              </div>
-              <p class="small mb-0 text-muted" style="line-height: 1.4;">{{ act.description }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty-state py-3 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-          <p class="small text-muted mb-0"><i class="bi bi-activity me-2"></i>No activities logged yet.</p>
-        </div>
-      {% endif %}
-    </div>
- 
+
     <!-- Inquiry Origin Details -->
     <div class="m-card">
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-info-circle text-info me-2"></i>Inquiry Background</h5>
@@ -400,23 +378,10 @@
       <span class="text-muted small d-block">Status</span>
       {% if admission.admission_status == 'CONFIRMED' %}
         <span class="badge bg-success">Confirmed</span>
-      {% elif admission.admission_status == 'PENDING_PAYMENT' %}
+      {% elif admission.admission_status == 'PENDING' %}
         <span class="badge bg-warning text-dark">Pending</span>
-      {% else %}
         <span class="badge bg-danger">Cancelled</span>
       {% endif %}
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Final Fees</span>
-      <span class="text-white fw-bold">&#8377;{{ admission.final_fees|floatformat:0 }}</span>
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Paid</span>
-      <span class="text-success fw-bold">&#8377;{{ admission.fees_paid|floatformat:0 }}</span>
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Remaining</span>
-      <span class="fw-bold {% if admission.remaining_fees > 0 %}text-warning{% else %}text-success{% endif %}">&#8377;{{ admission.remaining_fees|floatformat:0 }}</span>
     </div>
     <div class="col-md-3">
       <span class="text-muted small d-block">Seat</span>

@@ -4,76 +4,305 @@
 
 {% block extra_style %}
 <style>
-  /* Premium Dashboard Styling */
-  .stat-card {
-    display: block !important;
-    border-radius: 12px;
-    border: none;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.45);
-    color: #fff !important;
-    text-decoration: none !important;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
+  /* ── Premium CRM Design System Overrides ── */
+  html body.management-shell,
+  html body.management-shell .management-content {
+    background-color: #0b0f19 !important;
+    color: #e2e8f0 !important;
   }
-  .stat-card:hover {
-    color: #fff !important;
-    text-decoration: none !important;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  
+  html body.management-shell .management-content h1,
+  html body.management-shell .management-content h2,
+  html body.management-shell .management-content h5,
+  html body.management-shell .management-content h6,
+  html body.management-shell .management-content .text-white {
+    color: #f8fafc !important;
   }
-  .stat-card-body {
-    padding: 1.15rem;
-    position: relative;
-  }
-  .stat-card-title {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    opacity: 0.85;
-    margin-bottom: 0.4rem;
-  }
-  .stat-card-value {
-    font-size: 2rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-  .stat-card-icon {
-    position: absolute;
-    right: 0.8rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 3rem;
-    opacity: 0.15;
-  }
-  .stat-card-footer {
-    padding: 0.4rem 1.15rem;
-    background: rgba(0,0,0,0.2);
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.85);
-  }
-  .stat-card:hover .stat-card-footer {
-    background: rgba(0,0,0,0.3);
-    color: #fff;
+  
+  html body.management-shell .management-content .text-muted {
+    color: #94a3b8 !important;
   }
 
-  /* Distinct Gradient Styles */
-  .bg-blue     { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
-  .bg-teal     { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); }
-  .bg-indigo   { background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%); }
-  .bg-orange   { background: linear-gradient(135deg, #7c2d12 0%, #ea580c 100%); }
-  .bg-red      { background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%); }
-  .bg-green    { background: linear-gradient(135deg, #065f46 0%, #10b981 100%); }
-  .bg-purple   { background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%); }
-  .bg-pink     { background: linear-gradient(135deg, #9d174d 0%, #ec4899 100%); }
-  .bg-cyan     { background: linear-gradient(135deg, #155e75 0%, #06b6d4 100%); }
-  .bg-violet   { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%); }
+  .management-topbar {
+    background: #111827 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  }
+  
+  .management-sidebar {
+    background: #111827 !important;
+    border-right: 1px solid rgba(255,255,255,0.05) !important;
+  }
+  
+  .management-sidebar .nav-link,
+  .management-sidebar .sidebar-heading,
+  .management-sidebar .sidebar-item {
+    color: #94a3b8 !important;
+  }
+  
+  .management-sidebar .nav-link:hover, 
+  .management-sidebar .nav-link.active,
+  .management-sidebar .sidebar-item:hover,
+  .management-sidebar .sidebar-item.active {
+    color: #f8fafc !important;
+    background-color: #1e293b !important;
+  }
+
+  /* ── Premium Content Cards (`m-card`) ── */
+  /* Using ultra-high specificity to beat base.html styles */
+  html body.management-shell .management-content .m-card,
+  html body.management-shell .management-content .stat-card {
+    background: #111827 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+    color: #e2e8f0 !important;
+    padding: 24px !important;
+  }
+
+  /* ── Table Design System ── */
+  html body.management-shell table.table {
+    color: #e2e8f0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  html body.management-shell table.table thead th {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+  }
+  html body.management-shell table.table tbody td {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    padding: 16px;
+    vertical-align: middle;
+  }
+  html body.management-shell table.table tbody tr {
+    transition: background-color 0.2s;
+  }
+  html body.management-shell table.table tbody tr:hover td {
+    background: rgba(255,255,255,0.02) !important;
+  }
+
+  /* ── Transparent Badges ── */
+  .badge-premium {
+    padding: 6px 12px;
+    font-weight: 600;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.025em;
+  }
+  .badge-premium.bg-primary { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; }
+  .badge-premium.bg-success { background: rgba(16, 185, 129, 0.15) !important; color: #34d399 !important; }
+  .badge-premium.bg-danger { background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; }
+  .badge-premium.bg-warning { background: rgba(245, 158, 11, 0.15) !important; color: #fbbf24 !important; }
+  .badge-premium.bg-info { background: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; }
+  .badge-premium.bg-violet { background: rgba(139, 92, 246, 0.15) !important; color: #a78bfa !important; }
+  .badge-premium.bg-secondary { background: rgba(148, 163, 184, 0.15) !important; color: #94a3b8 !important; }
+  .badge-premium.bg-dark { background: rgba(255, 255, 255, 0.1) !important; color: #f8fafc !important; }
+
+  /* ── Quick Action Panels ── */
+  html body.management-shell .management-content .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: #1e293b !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    color: #e2e8f0 !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+  }
+  html body.management-shell .management-content .action-btn:hover {
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    background: #233147 !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+  }
+  html body.management-shell .management-content .action-icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #0f172a !important;
+    border-radius: 8px !important;
+    color: #38bdf8 !important;
+    font-size: 1.1rem !important;
+    transition: all 0.2s ease !important;
+  }
+  html body.management-shell .management-content .action-btn:hover .action-icon-box {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .action-btn i {
+    color: inherit !important;
+  }
+
+  /* ── Empty States ── */
+  html body.management-shell .management-content .empty-state-premium {
+    text-align: center;
+    padding: 40px 20px;
+    background: rgba(15, 23, 42, 0.5) !important;
+    border-radius: 12px !important;
+    border: 1px dashed rgba(255,255,255,0.1) !important;
+  }
+  html body.management-shell .management-content .empty-state-premium i {
+    font-size: 3rem !important;
+    color: #475569 !important;
+    margin-bottom: 16px !important;
+    display: block !important;
+  }
+  html body.management-shell .management-content .empty-state-premium p {
+    color: #94a3b8 !important;
+    font-size: 0.95rem !important;
+    margin: 0 !important;
+  }
+
+  /* ── Button Overrides ── */
+  html body.management-shell .management-content .btn-outline-info {
+    background: rgba(56, 189, 248, 0.1) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    color: #38bdf8 !important;
+  }
+  html body.management-shell .management-content .btn-outline-info:hover {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .btn-outline-success {
+    background: rgba(52, 211, 153, 0.1) !important;
+    border-color: rgba(52, 211, 153, 0.5) !important;
+    color: #34d399 !important;
+  }
+  html body.management-shell .management-content .btn-outline-success:hover {
+    background: #34d399 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .btn-outline-danger {
+    background: rgba(248, 113, 113, 0.1) !important;
+    border-color: rgba(248, 113, 113, 0.5) !important;
+    color: #f87171 !important;
+  }
+  html body.management-shell .management-content .btn-outline-danger:hover {
+    background: #f87171 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .btn-outline-light {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #e2e8f0 !important;
+  }
+  html body.management-shell .management-content .btn-outline-light:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+  table.table thead th {
+    background: #1a1a32 !important;
+    color: #c0c0e0 !important;
+    border-bottom: 1px solid #252550 !important;
+  }
+  table.table tbody td {
+    border-bottom: 1px solid #252550 !important;
+    background: transparent !important;
+    color: #e0e0e0 !important;
+  }
+
+  /* ══════════════════════════════════════
+     ERP STAT CARDS
+  ══════════════════════════════════════ */
+  .erp-card {
+    border-radius: 14px;
+    overflow: hidden;
+    color: #fff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(135, 135, 220, 0.18);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.28);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    text-decoration: none !important;
+  }
+  .erp-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(140, 140, 255, 0.38);
+    box-shadow: 0 18px 36px rgba(0,0,0,0.34);
+    color: #fff !important;
+  }
+  .erp-card-body {
+    padding: 1.15rem 1.25rem 1rem;
+    position: relative;
+    flex: 1;
+  }
+  .erp-card-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 0.5rem;
+  }
+  .erp-card-number {
+    font-size: 2.3rem;
+    font-weight: 800;
+    line-height: 1;
+    text-shadow: 0 3px 10px rgba(0,0,0,0.38);
+  }
+  .erp-card-number.sm { font-size: 1.65rem; }
+  .erp-card-bg-icon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 4rem;
+    opacity: 0.16;
+    pointer-events: none;
+    line-height: 1;
+  }
+  .erp-card-footer {
+    display: flex;
+    align-items: center;
+    padding: 0.52rem 1.2rem;
+    background: rgba(5,5,18,0.34);
+    text-decoration: none;
+    color: rgba(255,255,255,0.88);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    transition: background 0.2s, color 0.2s;
+    gap: 6px;
+  }
+  .erp-card-footer:hover { background: rgba(5,5,18,0.52); color: #fff; }
+
+  /* ── Gradients ── */
+  .bg-g-purple  { background: linear-gradient(145deg, #27185f 0%, #4a32a1 100%); }
+  .bg-g-teal    { background: linear-gradient(145deg, #075766 0%, #1592a4 100%); }
+  .bg-g-green   { background: linear-gradient(145deg, #0d5a33 0%, #1b8f53 100%); }
+  .bg-g-pink    { background: linear-gradient(145deg, #89105d 0%, #c31782 100%); }
+  .bg-g-blue    { background: linear-gradient(145deg, #123a82 0%, #2459bd 100%); }
+  .bg-g-orange  { background: linear-gradient(145deg, #7b3f00 0%, #b86708 100%); }
+  .bg-g-red     { background: linear-gradient(145deg, #7a0e1d 0%, #b0152e 100%); }
+  .bg-g-violet  { background: linear-gradient(145deg, #54106a 0%, #80209a 100%); }
+  .bg-g-crimson { background: linear-gradient(145deg, #880b23 0%, #b71634 100%); }
+  .bg-g-amber   { background: linear-gradient(145deg, #623000 0%, #884300 100%); }
+  .bg-g-olive   { background: linear-gradient(145deg, #364d00 0%, #537200 100%); }
+  .bg-g-slate   { background: linear-gradient(145deg, #171729 0%, #252640 100%); }
+  .bg-g-dteal   { background: linear-gradient(145deg, #003c3d 0%, #006465 100%); }
+  .bg-g-dgreen  { background: linear-gradient(145deg, #163b19 0%, #245b27 100%); }
+  .bg-g-dred    { background: linear-gradient(145deg, #6b0000 0%, #9a0505 100%); }
+  .bg-g-navy    { background: linear-gradient(145deg, #071348 0%, #11277f 100%); }
 
   /* Quick Actions */
   .action-btn {
@@ -132,128 +361,128 @@
 <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
   <!-- Total Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}" class="stat-card bg-blue d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Total Leads</div>
-        <div class="stat-card-value">{{ total_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-person-lines-fill"></i></div>
+    <div class="erp-card bg-g-purple">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Total Leads</div>
+        <div class="erp-card-number">{{ total_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-lines-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-eye"></i> View all
-      </div>
-    </a>
+      <a href="{% url 'lead_list' %}" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View all
+      </a>
+    </div>
   </div>
 
   <!-- Assigned Leads -->
-  <!-- <div class="col">
-    <a href="{% url 'lead_list' %}" class="stat-card bg-teal d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Assigned Leads</div>
-        <div class="stat-card-value">{{ assigned_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-person-check-fill"></i></div>
+  <div class="col">
+    <div class="erp-card bg-g-blue">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Assigned Leads</div>
+        <div class="erp-card-number">{{ assigned_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-eye"></i> View assigned
-      </div>
-    </a>
-  </div> -->
+      <a href="{% url 'lead_list' %}" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View assigned
+      </a>
+    </div>
+  </div>
 
   <!-- Contacted Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Contacted" class="stat-card bg-cyan d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Contacted Leads</div>
-        <div class="stat-card-value">{{ contacted_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-telephone-fill"></i></div>
+    <div class="erp-card bg-g-green">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Contacted Leads</div>
+        <div class="erp-card-number">{{ contacted_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-telephone-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-funnel"></i> View contacted
-      </div>
-    </a>
+      <a href="{% url 'lead_list' %}?status=Contacted" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View contacted
+      </a>
+    </div>
   </div>
 
   <!-- Interested Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Interested" class="stat-card bg-violet d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Interested Leads</div>
-        <div class="stat-card-value">{{ interested_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-heart-fill"></i></div>
+    <div class="erp-card bg-g-pink">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Interested Leads</div>
+        <div class="erp-card-number">{{ interested_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-funnel"></i> View interested
-      </div>
-    </a>
+      <a href="{% url 'lead_list' %}?status=Interested" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View interested
+      </a>
+    </div>
   </div>
 
   <!-- Qualified Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Qualified" class="stat-card bg-green d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Qualified Leads</div>
-        <div class="stat-card-value">{{ qualified_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-award-fill"></i></div>
+    <div class="erp-card bg-g-teal">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Qualified Leads</div>
+        <div class="erp-card-number">{{ qualified_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-award-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-funnel"></i> View qualified
-      </div>
-    </a>
+      <a href="{% url 'lead_list' %}?status=Qualified" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View qualified
+      </a>
+    </div>
   </div>
 
   <!-- Rejected Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Rejected" class="stat-card bg-red d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Rejected Leads</div>
-        <div class="stat-card-value">{{ rejected_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-x-circle-fill"></i></div>
+    <div class="erp-card bg-g-red">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Rejected Leads</div>
+        <div class="erp-card-number">{{ rejected_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-x-circle-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-funnel"></i> View rejected
-      </div>
-    </a>
+      <a href="{% url 'lead_list' %}?status=Rejected" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View rejected
+      </a>
+    </div>
   </div>
 
   <!-- Today's Calls -->
   <div class="col">
-    <a href="{% url 'call_log_list' %}" class="stat-card bg-orange d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Today's Calls</div>
-        <div class="stat-card-value">{{ today_calls }}</div>
-        <div class="stat-card-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+    <div class="erp-card bg-g-orange">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Today's Calls</div>
+        <div class="erp-card-number">{{ today_calls }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-clock-history"></i> Call logs
-      </div>
-    </a>
+      <a href="{% url 'call_log_list' %}" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> Call logs
+      </a>
+    </div>
   </div>
 
   <!-- Pending Follow-ups -->
   <div class="col">
-    <a href="{% url 'followup_list' %}?status=Pending" class="stat-card bg-pink d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Pending Follow-ups</div>
-        <div class="stat-card-value">{{ pending_followups }}</div>
-        <div class="stat-card-icon"><i class="bi bi-calendar-event-fill"></i></div>
+    <div class="erp-card bg-g-violet">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Pending Follow-ups</div>
+        <div class="erp-card-number">{{ pending_followups }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-eye"></i> View pending
-      </div>
-    </a>
+      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View pending
+      </a>
+    </div>
   </div>
 
   <!-- Overdue Follow-ups -->
   <div class="col">
-    <a href="{% url 'followup_list' %}?status=Pending" class="stat-card bg-red d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Overdue Follow-ups</div>
-        <div class="stat-card-value">{{ overdue_followups }}</div>
-        <div class="stat-card-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <div class="erp-card bg-g-crimson">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Overdue Follow-ups</div>
+        <div class="erp-card-number">{{ overdue_followups }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
-        <i class="bi bi-exclamation-circle"></i> Handle overdue
-      </div>
-    </a>
+      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> Handle overdue
+      </a>
+    </div>
   </div>
 </div>
 
@@ -285,12 +514,12 @@
                 <tr>
                   <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
                   <td>
-                    <span class="badge {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info text-white{% elif lead.status == 'Interested' %}bg-warning text-dark{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% elif lead.status == 'Admission Done' %}bg-success{% else %}bg-dark{% endif %}" style="{% if lead.status == 'Follow Up' %}background-color: #6f42c1;{% elif lead.status == 'Admission Done' %}background-color: #198754;{% endif %}">
+                    <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
                       {{ lead.status }}
                     </span>
                   </td>
                   <td>
-                    <span class="badge {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    <span class="badge-premium {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">
                       {{ lead.priority }}
                     </span>
                   </td>
@@ -312,7 +541,7 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state py-4">
+          <div class="empty-state-premium">
             <i class="bi bi-funnel"></i>
             <p>No leads assigned or converted yet.</p>
           </div>
@@ -342,7 +571,7 @@
               {% for fp in today_followups_list %}
                 <tr>
                   <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
-                  <td><span class="badge bg-success">Today</span></td>
+                  <td><span class="badge-premium bg-success">Today</span></td>
                   <td class="small">{{ fp.response|default:"-" }}</td>
                   <td>
                     <div class="d-flex gap-1">
@@ -355,9 +584,9 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state py-3">
-            <i class="bi bi-calendar2-check text-muted"></i>
-            <p class="small text-muted mb-0">No follow-ups due today.</p>
+          <div class="empty-state-premium">
+            <i class="bi bi-calendar2-check"></i>
+            <p>No follow-ups due today.</p>
           </div>
         {% endif %}
       </div>
@@ -387,7 +616,7 @@
                   <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
                   <td>
                     {{ fp.followup_date|date:"d M Y" }}
-                    <span class="badge-overdue ms-1">⚠ Overdue Follow-Up</span>
+                    <span class="badge-premium bg-danger ms-1">⚠ Overdue</span>
                   </td>
                   <td class="text-danger fw-bold">{{ fp.days_overdue }} days</td>
                   <td>
@@ -401,8 +630,8 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state">
-            <i class="bi bg-transparent bi-clipboard-check"></i>
+          <div class="empty-state-premium">
+            <i class="bi bi-clipboard-check"></i>
             <p>You have no overdue follow-ups.</p>
           </div>
         {% endif %}
@@ -417,19 +646,19 @@
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
       <div class="d-flex flex-column gap-2">
         <a href="{% url 'inquiry_add' %}" class="action-btn">
-          <i class="bi bi-person-plus"></i> Add New Inquiry
+          <div class="action-icon-box"><i class="bi bi-person-plus"></i></div> Add New Inquiry
         </a>
         <a href="{% url 'inquiry_import' %}" class="action-btn">
-          <i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import Inquiries
+          <div class="action-icon-box"><i class="bi bi-file-earmark-spreadsheet"></i></div> Bulk Import Inquiries
         </a>
         <a href="{% url 'import_history' %}" class="action-btn">
-          <i class="bi bi-journal-text"></i> View Import History
+          <div class="action-icon-box"><i class="bi bi-journal-text"></i></div> View Import History
         </a>
         <a href="{% url 'call_log_add' %}" class="action-btn">
-          <i class="bi bi-telephone-outbound"></i> Add Call Log
+          <div class="action-icon-box"><i class="bi bi-telephone-outbound"></i></div> Add Call Log
         </a>
         <a href="{% url 'followup_add' %}" class="action-btn">
-          <i class="bi bi-calendar-event"></i> Schedule Follow-Up
+          <div class="action-icon-box"><i class="bi bi-calendar-event"></i></div> Schedule Follow-Up
         </a>
       </div>
     </div>
@@ -438,39 +667,15 @@
     <div class="m-card mb-4">
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-telephone-outbound-fill me-2 text-info"></i>Call Outcomes</h5>
       <div class="d-flex flex-wrap gap-2">
-        <span class="badge rounded-pill px-3 py-2" style="background:#dcfce7;color:#15803d;font-size:0.85rem;"><i class="bi bi-check-circle me-1"></i>Accepted: {{ call_outcomes.accepted }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#fff7ed;color:#c2410c;font-size:0.85rem;"><i class="bi bi-clock me-1"></i>Busy: {{ call_outcomes.busy }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#dbeafe;color:#1d4ed8;font-size:0.85rem;"><i class="bi bi-arrow-repeat me-1"></i>Call Back: {{ call_outcomes.call_back }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#dcfce7;color:#15803d;font-size:0.85rem;"><i class="bi bi-heart-fill me-1"></i>Interested: {{ call_outcomes.interested }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#fecdd3;color:#9f1239;font-size:0.85rem;"><i class="bi bi-hand-thumbs-down me-1"></i>Not Interested: {{ call_outcomes.not_interested }}</span>
+        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Accepted: {{ call_outcomes.accepted }}</span>
+        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Busy: {{ call_outcomes.busy }}</span>
+        <span class="badge-premium bg-info"><i class="bi bi-arrow-repeat me-1"></i>Call Back: {{ call_outcomes.call_back }}</span>
+        <span class="badge-premium bg-primary"><i class="bi bi-heart-fill me-1"></i>Interested: {{ call_outcomes.interested }}</span>
+        <span class="badge-premium bg-danger"><i class="bi bi-hand-thumbs-down me-1"></i>Not Interested: {{ call_outcomes.not_interested }}</span>
       </div>
     </div>
 
-    <!-- Recent Activities Timeline -->
-    <div class="m-card">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold text-white mb-0"><i class="bi bi-activity text-info me-2"></i>Recent Activities</h5>
-        <a href="{% url 'activities_list' %}" class="btn btn-sm btn-outline-info">View All</a>
-      </div>
-      
-      {% if recent_activities %}
-        <div class="list-group list-group-flush bg-transparent">
-          {% for act in recent_activities %}
-            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-2">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="fw-bold text-info small">{{ act.get_activity_type_display }}</span>
-                <span class="text-muted small" style="font-size: 0.7rem;">{{ act.created_at|date:"d M, H:i" }}</span>
-              </div>
-              <p class="small mb-0 text-muted">{{ act.description }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty-state py-3">
-          <p class="small text-muted mb-0">No activities logged yet.</p>
-        </div>
-      {% endif %}
-    </div>
+
   </div>
 </div>
 {% endblock %}

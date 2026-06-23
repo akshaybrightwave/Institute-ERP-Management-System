@@ -115,51 +115,16 @@
       </div>
     </div>
 
-    <!-- Fee Info -->
-    <div class="col-lg-6">
-      <div class="m-card">
-        <h5 class="fw-bold text-white mb-4"><i class="bi bi-currency-rupee text-info me-2"></i>Fee Information</h5>
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label text-muted small fw-bold">Course Fees</label>
-            {{ form.course_fees }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted small fw-bold">Discount Amount</label>
-            {{ form.discount_amount }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted small fw-bold">Final Fees</label>
-            {{ form.final_fees }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted small fw-bold">Fees Paid</label>
-            {{ form.fees_paid }}
-          </div>
-          <div class="col-12">
-            <div class="p-3 rounded" style="background:#1a1a2e;">
-              <span class="text-muted small">Remaining Fees (Auto-calculated)</span>
-              <div class="fw-bold text-warning fs-5" id="remaining-fees-display">
-                {% if admission %}&#8377;{{ admission.remaining_fees|floatformat:2 }}{% else %}&#8377;0.00{% endif %}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Payment & Seat -->
+
+    <!-- Seat & Remarks -->
     <div class="col-lg-6">
       <div class="m-card">
-        <h5 class="fw-bold text-white mb-4"><i class="bi bi-credit-card-fill text-info me-2"></i>Payment & Seat</h5>
+        <h5 class="fw-bold text-white mb-4"><i class="bi bi-person-check-fill text-info me-2"></i>Seat & Remarks</h5>
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label text-muted small fw-bold">Payment Mode</label>
-            {{ form.payment_mode }}
-          </div>
-          <div class="col-md-6">
-            <label class="form-label text-muted small fw-bold">Transaction Reference</label>
-            {{ form.transaction_reference }}
+            <label class="form-label text-muted small fw-bold">Batch Name</label>
+            {{ form.batch_name }}
           </div>
           <div class="col-md-6">
             <label class="form-label text-muted small fw-bold">Seat Status</label>
@@ -180,23 +145,5 @@
   </div>
 </form>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const finalFeesEl = document.getElementById('id_final_fees');
-  const feesPaidEl = document.getElementById('id_fees_paid');
-  const remainingEl = document.getElementById('remaining-fees-display');
 
-  function updateRemaining() {
-    const final_fees = parseFloat(finalFeesEl.value) || 0;
-    const fees_paid = parseFloat(feesPaidEl.value) || 0;
-    const remaining = final_fees - fees_paid;
-    remainingEl.textContent = '\u20B9' + remaining.toFixed(2);
-  }
-
-  if (finalFeesEl && feesPaidEl && remainingEl) {
-    finalFeesEl.addEventListener('input', updateRemaining);
-    feesPaidEl.addEventListener('input', updateRemaining);
-  }
-});
-</script>
 {% endblock %}

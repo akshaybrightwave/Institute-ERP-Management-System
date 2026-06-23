@@ -66,8 +66,7 @@ class Lead(SoftDeleteModel):
         ('Qualified', 'Qualified'),
         ('Rejected', 'Rejected'),
         ('Invalid Number', 'Invalid Number'),
-        ('Admission Done', 'Admission Done'),
-        ('Closed', 'Closed'),
+
     )
     COUNSELOR_STATUS_CHOICES = (
         ('NEW', 'New'),
@@ -344,7 +343,7 @@ class VisitSheet(SoftDeleteModel):
 class AdmissionSheet(SoftDeleteModel):
     ADMISSION_STATUS_CHOICES = (
         ('CONFIRMED', 'Confirmed'),
-        ('PENDING_PAYMENT', 'Pending Payment'),
+        ('PENDING', 'Pending'),
         ('CANCELLED', 'Cancelled'),
     )
     SEAT_STATUS_CHOICES = (
@@ -352,13 +351,7 @@ class AdmissionSheet(SoftDeleteModel):
         ('CONFIRMED', 'Confirmed'),
         ('CANCELLED', 'Cancelled'),
     )
-    PAYMENT_MODE_CHOICES = (
-        ('CASH', 'Cash'),
-        ('UPI', 'UPI'),
-        ('CARD', 'Card'),
-        ('BANK_TRANSFER', 'Bank Transfer'),
-        ('CHEQUE', 'Cheque'),
-    )
+
 
     # Admission Information
     admission_number = models.CharField(max_length=20, unique=True, db_index=True)
@@ -390,18 +383,7 @@ class AdmissionSheet(SoftDeleteModel):
     )
     admission_source = models.CharField(max_length=100, blank=True)
 
-    # Fee Information
-    course_fees = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    final_fees = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    fees_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    remaining_fees = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-
-    # Payment Information
-    payment_mode = models.CharField(
-        max_length=20, choices=PAYMENT_MODE_CHOICES, default='CASH', blank=True
-    )
-    transaction_reference = models.CharField(max_length=100, blank=True)
+    batch_name = models.CharField(max_length=100, blank=True)
 
     # Seat Information
     seat_status = models.CharField(
@@ -429,8 +411,6 @@ class AdmissionSheet(SoftDeleteModel):
         return f"{self.admission_number} - {self.student_name}"
 
     def save(self, *args, **kwargs):
-        # Auto-calculate remaining_fees
-        self.remaining_fees = self.final_fees - self.fees_paid
         # Auto-generate admission_number if not set
         if not self.admission_number:
             year = datetime.date.today().year

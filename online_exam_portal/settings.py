@@ -195,3 +195,6 @@ MESSAGE_TAGS = {
 
 # For development: This prints the password reset email directly into your terminal!
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Allow iframe loading from same origin for management action modals
+X_FRAME_OPTIONS = 'SAMEORIGIN'

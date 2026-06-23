@@ -99,7 +99,7 @@
         <div class="col-md-5 d-flex flex-row flex-wrap align-items-center gap-4 ps-md-4 lead-info-right">
           <div class="text-md-end">
             <div class="text-muted small mb-1">Lead Status</div>
-            <span class="badge px-3 py-2 fs-7 {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info text-white{% elif lead.status == 'Interested' %}bg-warning text-dark{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% elif lead.status == 'Admission Done' %}bg-success{% else %}bg-dark{% endif %}" style="{% if lead.status == 'Follow Up' %}background-color: #6f42c1;{% elif lead.status == 'Admission Done' %}background-color: #198754;{% endif %}">
+            <span class="badge px-3 py-2 fs-7 {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info text-white{% elif lead.status == 'Interested' %}bg-warning text-dark{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}" style="{% if lead.status == 'Follow Up' %}background-color: #6f42c1;{% endif %}">
               {{ lead.status }}
             </span>
           </div>
@@ -252,67 +252,14 @@
         <a href="{% url 'followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-outline-warning w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
           <i class="bi bi-calendar-plus"></i> Schedule Follow-up
         </a>
-        <a href="{% url 'lead_notes_list' lead.pk %}" class="btn btn-outline-success w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
-          <i class="bi bi-chat-left-text"></i> View Notes Timeline
-        </a>
+
         <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-outline-light w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
           <i class="bi bi-pencil"></i> Update Lead Details
         </a>
       </div>
     </div>
 
-    <!-- Notes History Timeline (Quick View) -->
-    <div class="m-card mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold text-white mb-0"><i class="bi bi-chat-left-text text-success me-2"></i>Recent Notes</h5>
-        <a href="{% url 'lead_notes_list' lead.pk %}" class="btn btn-sm btn-outline-success">Manage All</a>
-      </div>
-      
-      {% if lead.notes_timeline.all %}
-        <div class="list-group list-group-flush bg-transparent">
-          {% for note in lead.notes_timeline.all|slice:":3" %}
-            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="fw-bold text-info small">{{ note.created_by.username|default:"System" }}</span>
-                <span class="text-muted small" style="font-size: 0.7rem;">{{ note.created_at|date:"d M Y, H:i" }}</span>
-              </div>
-              <p class="small mb-0 text-muted" style="line-height: 1.4;">{{ note.note }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty-state py-3 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-          <p class="small text-muted mb-0"><i class="bi bi-chat-left-text me-2"></i>No timeline notes logged yet.</p>
-        </div>
-      {% endif %}
-    </div>
 
-    <!-- Lead Activity Timeline (Quick View) -->
-    <div class="m-card mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold text-white mb-0"><i class="bi bi-activity text-info me-2"></i>Activity History</h5>
-        <a href="{% url 'activities_list' %}?q={{ lead.inquiry.full_name }}" class="btn btn-sm btn-outline-info">View All</a>
-      </div>
-      
-      {% if lead.activities.all %}
-        <div class="list-group list-group-flush bg-transparent">
-          {% for act in lead.activities.all|slice:":5" %}
-            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="fw-bold text-info small">{{ act.get_activity_type_display }}</span>
-                <span class="text-muted small ms-auto" style="font-size: 0.7rem;">{{ act.created_at|date:"d M H:i" }}</span>
-              </div>
-              <p class="small mb-0 text-muted" style="line-height: 1.4;">{{ act.description }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty-state py-3 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-          <p class="small text-muted mb-0"><i class="bi bi-activity me-2"></i>No lead activities logged yet.</p>
-        </div>
-      {% endif %}
-    </div>
- 
     <!-- Details Timeline -->
     <div class="m-card">
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-info-circle text-info me-2"></i>Inquiry Background</h5>
@@ -355,23 +302,10 @@
       <span class="text-muted small d-block">Status</span>
       {% if admission.admission_status == 'CONFIRMED' %}
         <span class="badge bg-success">Confirmed</span>
-      {% elif admission.admission_status == 'PENDING_PAYMENT' %}
+      {% elif admission.admission_status == 'PENDING' %}
         <span class="badge bg-warning text-dark">Pending</span>
-      {% else %}
         <span class="badge bg-danger">Cancelled</span>
       {% endif %}
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Final Fees</span>
-      <span class="text-white fw-bold">&#8377;{{ admission.final_fees|floatformat:0 }}</span>
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Paid</span>
-      <span class="text-success fw-bold">&#8377;{{ admission.fees_paid|floatformat:0 }}</span>
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Remaining</span>
-      <span class="fw-bold {% if admission.remaining_fees > 0 %}text-warning{% else %}text-success{% endif %}">&#8377;{{ admission.remaining_fees|floatformat:0 }}</span>
     </div>
     <div class="col-md-3">
       <span class="text-muted small d-block">Actions</span>

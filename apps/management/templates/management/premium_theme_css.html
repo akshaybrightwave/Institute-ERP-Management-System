@@ -1,0 +1,206 @@
+<style>
+  /* ── Premium CRM Design System Overrides ── */
+  html body.management-shell,
+  html body.management-shell .management-content {
+    background-color: #0b0f19 !important;
+    color: #e2e8f0 !important;
+  }
+  
+  html body.management-shell .management-content h1,
+  html body.management-shell .management-content h2,
+  html body.management-shell .management-content h5,
+  html body.management-shell .management-content h6,
+  html body.management-shell .management-content .text-white {
+    color: #f8fafc !important;
+  }
+  
+  html body.management-shell .management-content .text-muted {
+    color: #94a3b8 !important;
+  }
+
+  .management-topbar {
+    background: #111827 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  }
+  
+  .management-sidebar {
+    background: #111827 !important;
+    border-right: 1px solid rgba(255,255,255,0.05) !important;
+  }
+  
+  .management-sidebar .nav-link,
+  .management-sidebar .sidebar-heading,
+  .management-sidebar .sidebar-item {
+    color: #94a3b8 !important;
+  }
+  
+  .management-sidebar .nav-link:hover, 
+  .management-sidebar .nav-link.active,
+  .management-sidebar .sidebar-item:hover,
+  .management-sidebar .sidebar-item.active {
+    color: #f8fafc !important;
+    background-color: #1e293b !important;
+  }
+
+  /* ── Premium Content Cards (`m-card`) ── */
+  /* Using ultra-high specificity to beat base.html styles */
+  html body.management-shell .management-content .m-card,
+  html body.management-shell .management-content .stat-card {
+    background: #111827 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+    color: #e2e8f0 !important;
+    padding: 24px !important;
+  }
+
+  /* ── Table Design System ── */
+  html body.management-shell table.table {
+    color: #e2e8f0 !important;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  html body.management-shell table.table thead th {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+  }
+  html body.management-shell table.table tbody td {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    padding: 16px;
+    vertical-align: middle;
+  }
+  html body.management-shell table.table tbody tr {
+    transition: background-color 0.2s;
+  }
+  html body.management-shell table.table tbody tr:hover td {
+    background: rgba(255,255,255,0.02) !important;
+  }
+
+  /* ── Transparent Badges ── */
+  .badge-premium {
+    padding: 6px 12px;
+    font-weight: 600;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.025em;
+  }
+  .badge-premium.bg-primary { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; }
+  .badge-premium.bg-success { background: rgba(16, 185, 129, 0.15) !important; color: #34d399 !important; }
+  .badge-premium.bg-danger { background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; }
+  .badge-premium.bg-warning { background: rgba(245, 158, 11, 0.15) !important; color: #fbbf24 !important; }
+  .badge-premium.bg-info { background: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; }
+  .badge-premium.bg-violet { background: rgba(139, 92, 246, 0.15) !important; color: #a78bfa !important; }
+  .badge-premium.bg-secondary { background: rgba(148, 163, 184, 0.15) !important; color: #94a3b8 !important; }
+  .badge-premium.bg-dark { background: rgba(255, 255, 255, 0.1) !important; color: #f8fafc !important; }
+
+  /* ── Quick Action Panels ── */
+  html body.management-shell .management-content .action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: #1e293b !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    color: #e2e8f0 !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+  }
+  html body.management-shell .management-content .action-btn:hover {
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    background: #233147 !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+  }
+  html body.management-shell .management-content .action-icon-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: #0f172a !important;
+    border-radius: 8px !important;
+    color: #38bdf8 !important;
+    font-size: 1.1rem !important;
+    transition: all 0.2s ease !important;
+  }
+  html body.management-shell .management-content .action-btn:hover .action-icon-box {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .action-btn i {
+    color: inherit !important;
+  }
+
+  /* ── Empty States ── */
+  html body.management-shell .management-content .empty-state-premium {
+    text-align: center;
+    padding: 40px 20px;
+    background: rgba(15, 23, 42, 0.5) !important;
+    border-radius: 12px !important;
+    border: 1px dashed rgba(255,255,255,0.1) !important;
+  }
+  html body.management-shell .management-content .empty-state-premium i {
+    font-size: 3rem !important;
+    color: #475569 !important;
+    margin-bottom: 16px !important;
+    display: block !important;
+  }
+  html body.management-shell .management-content .empty-state-premium p {
+    color: #94a3b8 !important;
+    font-size: 0.95rem !important;
+    margin: 0 !important;
+  }
+
+  /* ── Button Overrides ── */
+  html body.management-shell .management-content .btn-outline-info {
+    background: rgba(56, 189, 248, 0.1) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    color: #38bdf8 !important;
+  }
+  html body.management-shell .management-content .btn-outline-info:hover {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .btn-outline-success {
+    background: rgba(52, 211, 153, 0.1) !important;
+    border-color: rgba(52, 211, 153, 0.5) !important;
+    color: #34d399 !important;
+  }
+  html body.management-shell .management-content .btn-outline-success:hover {
+    background: #34d399 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .btn-outline-danger {
+    background: rgba(248, 113, 113, 0.1) !important;
+    border-color: rgba(248, 113, 113, 0.5) !important;
+    color: #f87171 !important;
+  }
+  html body.management-shell .management-content .btn-outline-danger:hover {
+    background: #f87171 !important;
+    color: #0f172a !important;
+  }
+  html body.management-shell .management-content .btn-outline-light {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #e2e8f0 !important;
+  }
+  html body.management-shell .management-content .btn-outline-light:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+</style>

@@ -141,6 +141,15 @@
     display: none !important;
   }
 
+  @media (min-width: 992px) {
+    .management-sidebar {
+      left: 0;
+    }
+    #sidebarClose {
+      display: none !important;
+    }
+  }
+
   body.management-shell.modal-embedded .management-layout {
     display: block !important;
     min-height: auto !important;
@@ -288,25 +297,25 @@
   }
 
   .sidebar-section {
-    color: rgba(255, 255, 255, .58);
-    font-size: 12px;
+    color: rgba(255, 255, 255, .65);
+    font-size: 11px;
     letter-spacing: .08em;
     text-transform: uppercase;
-    margin: 22px 8px 9px;
+    margin: 22px 12px 6px;
     padding: 0;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .sidebar-item {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: 12px;
     color: rgba(255, 255, 255, .88);
-    padding: 12px 13px;
-    border-radius: 8px;
-    margin-bottom: 5px;
-    font-size: 16px;
-    font-weight: 400;
+    padding: 10px 14px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    font-size: 14px;
+    font-weight: 500;
     text-decoration: none;
     transition: background .16s ease, color .16s ease, transform .16s ease;
   }
@@ -982,19 +991,20 @@
       <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
       MANAGEMENT
     </a>
+    <div class="sidebar-section">Admin Portal</div>
     {% elif request.user.role == 'telecaller' %}
     <a class="management-brand" href="{% url 'management_dashboard' %}">
       <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
-      MANAGEMENT
+      TELECALLER
     </a>
+    <div class="sidebar-section">Telecaller Portal</div>
     {% elif request.user.role == 'counselor' %}
     <a class="management-brand" href="{% url 'counselor_dashboard' %}">
       <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
-      MANAGEMENT
+      COUNSELOR
     </a>
+    <div class="sidebar-section">Counselor Portal</div>
     {% endif %}
-
-    <div class="sidebar-section">Management Portal</div>
     {% if request.user.role == 'admin' %}
     <a href="{% url 'management_super_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
@@ -1037,9 +1047,7 @@
     <a href="{% url 'import_errors' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_errors' %}active{% endif %}">
       <i class="bi bi-exclamation-triangle"></i> Import Errors
     </a>
-    <a href="{% url 'activities_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'activities_list' %}active{% endif %}">
-      <i class="bi bi-activity"></i> Lead Activities
-    </a>
+
     <div class="sidebar-section">Reports & Analytics</div>
     <a href="{% url 'reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
       <i class="bi bi-bar-chart-line"></i> Source Analytics
@@ -1060,22 +1068,23 @@
     </a>
     {% endif %}
     <a href="{% url 'counselor_session_list' %}" class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-journal-check"></i> Counseling Sessions
+      <i class="bi bi-chat-dots"></i> Counseling Sessions
     </a>
     <a href="{% url 'counselor_followup_list' %}" class="sidebar-item {% if 'counselor_followup' in request.resolver_match.url_name and 'counselor_followup_list' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-calendar-event"></i> Follow-Ups
+      <i class="bi bi-clock-history"></i> Follow-Ups
     </a>
     <a href="{% url 'counselor_visit_list' %}" class="sidebar-item {% if 'counselor_visit' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-geo-alt"></i> Visit Sheets
     </a>
     <a href="{% url 'admission_list' %}" class="sidebar-item {% if 'admission' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-journal-check"></i> Admissions
+      <i class="bi bi-mortarboard"></i> Admissions
     </a>
+    <div class="sidebar-section">Reports & Analytics</div>
     <a href="{% url 'admission_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admission_report' %}active{% endif %}">
-      <i class="bi bi-bar-chart"></i> Admission Report
+      <i class="bi bi-file-earmark-bar-graph"></i> Admission Report
     </a>
     <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
-      <i class="bi bi-bar-chart-steps"></i> Counselor Reports
+      <i class="bi bi-graph-up-arrow"></i> Counselor Reports
     </a>
     {% endif %}
   </aside>
@@ -1167,6 +1176,9 @@
           <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
           <span>Loading form...</span>
         </div>
+        <div id="managementActionError" class="alert alert-danger d-none m-3">
+          <strong>Error:</strong> Failed to load the form. Please check the connection or your permissions.
+        </div>
         <iframe id="managementActionFrame" class="management-action-frame" title="Management action"></iframe>
       </div>
     </div>
@@ -1201,7 +1213,7 @@
       if (url.origin !== window.location.origin || url.pathname.indexOf('/management/') === -1) return;
 
       var path = url.pathname;
-      var isFormAction = /\/(add|edit|delete)\/?$/.test(path);
+      var isFormAction = /\/(add|edit|delete|status|convert|complete|miss|update-call-status)\/?$/.test(path);
       var isNumericDetail = /\/\d+\/?$/.test(path);
       var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
 
@@ -1255,6 +1267,7 @@
   var modalEl = document.getElementById('managementActionModal');
   var frame = document.getElementById('managementActionFrame');
   var titleEl = document.getElementById('managementActionModalLabel');
+  var errorEl = document.getElementById('managementActionError');
   if (!modalEl || !frame || !window.bootstrap) return;
 
   var modal = new bootstrap.Modal(modalEl);
@@ -1281,7 +1294,7 @@
     }
 
     var path = url.pathname;
-    var isFormAction = /\/(add|edit|delete)\/?$/.test(path);
+    var isFormAction = /\/(add|edit|delete|status|convert|complete|miss|update-call-status)\/?$/.test(path);
     var isNumericDetail = /\/\d+\/?$/.test(path);
     var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
 
@@ -1298,6 +1311,7 @@
     if (href.indexOf('/add') !== -1) return 'Add Record';
     if (href.indexOf('/edit') !== -1) return 'Edit Record';
     if (href.indexOf('/delete') !== -1) return 'Delete Record';
+    if (href.indexOf('/status') !== -1) return 'Update Status';
     return 'View Details';
   }
 
@@ -1310,6 +1324,8 @@
     hasLoadedInitialPage = false;
     titleEl.textContent = getActionTitle(link);
     modalEl.classList.add('is-loading');
+    if (errorEl) errorEl.classList.add('d-none');
+    frame.style.display = 'block';
     frame.src = link.href;
     modal.show();
   });
@@ -1330,6 +1346,8 @@
     hasLoadedInitialPage = false;
     titleEl.textContent = event.data.title || 'Management Action';
     modalEl.classList.add('is-loading');
+    if (errorEl) errorEl.classList.add('d-none');
+    frame.style.display = 'block';
     frame.src = url.href;
     modal.show();
   });
@@ -1340,6 +1358,20 @@
     if (!hasLoadedInitialPage) {
       hasLoadedInitialPage = true;
       modalEl.classList.remove('is-loading');
+      
+      try {
+        var frameDoc = frame.contentDocument || frame.contentWindow.document;
+        var title = (frameDoc.title || '').toLowerCase();
+        if (title.includes('error') || title.includes('server error') || title.includes('not found')) {
+            console.error("Management Action Modal Error: Loaded page returned an error (" + frameDoc.title + "). URL: " + frame.src);
+        }
+      } catch (e) {
+        console.error("Management Action Modal Error: Failed to access iframe document. Likely a cross-origin or X-Frame-Options restriction. URL: " + frame.src);
+        if (errorEl) {
+          errorEl.classList.remove('d-none');
+          frame.style.display = 'none';
+        }
+      }
       return;
     }
 

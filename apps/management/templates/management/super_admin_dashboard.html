@@ -112,6 +112,7 @@
     text-transform: uppercase;
   }
 </style>
+{% include 'management/premium_theme_css.html' %}
 {% endblock %}
 
 {% block management_content %}
@@ -122,7 +123,7 @@
     <p class="text-muted small mb-0">Overview of all system statistics, telecaller performance, and operations.</p>
   </div>
   <div>
-    <span class="badge bg-dark border border-secondary py-2 px-3">
+    <span class="badge-premium bg-dark border border-secondary py-2 px-3">
       <i class="bi bi-calendar3 me-1"></i> Today: {% now "d M Y" %}
     </span>
   </div>
@@ -285,12 +286,12 @@
                 <tr>
                   <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
                   <td>
-                    <span class="badge {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info text-white{% elif lead.status == 'Interested' %}bg-warning text-dark{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% elif lead.status == 'Admission Done' %}bg-success{% else %}bg-dark{% endif %}" style="{% if lead.status == 'Follow Up' %}background-color: #6f42c1;{% elif lead.status == 'Admission Done' %}background-color: #198754;{% endif %}">
+                    <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
                       {{ lead.status }}
                     </span>
                   </td>
                   <td>
-                    <span class="badge {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    <span class="badge-premium {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">
                       {{ lead.priority }}
                     </span>
                   </td>
@@ -337,7 +338,7 @@
               {% for fp in today_followups_list %}
                 <tr>
                   <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
-                  <td><span class="badge bg-success">Today</span></td>
+                  <td><span class="badge-premium bg-success">Today</span></td>
                   <td class="small">{{ fp.response|default:"-" }}</td>
                   <td class="small text-muted">{{ fp.created_by.username }}</td>
                 </tr>
@@ -386,7 +387,7 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state">
+          <div class="empty-state-premium">
             <i class="bi bg-transparent bi-clipboard-check"></i>
             <p>You have no overdue follow-ups.</p>
           </div>
@@ -402,19 +403,19 @@
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
       <div class="d-flex flex-column gap-2">
         <a href="{% url 'inquiry_list' %}" class="action-btn">
-          <i class="bi bi-person-lines-fill"></i> View All Inquiries
+          <div class="action-icon-box"><i class="bi bi-person-lines-fill"></i></div> View All Inquiries
         </a>
         <a href="{% url 'lead_list' %}" class="action-btn">
-          <i class="bi bi-funnel"></i> View All Leads
+          <div class="action-icon-box"><i class="bi bi-funnel"></i></div> View All Leads
         </a>
         <a href="{% url 'lead_assign' %}" class="action-btn">
-          <i class="bi bi-person-check"></i> Manage Lead Assignments
+          <div class="action-icon-box"><i class="bi bi-person-check"></i></div> Manage Lead Assignments
         </a>
         <a href="{% url 'reports_dashboard' %}" class="action-btn">
-          <i class="bi bi-bar-chart-line"></i> View Marketing Analytics
+          <div class="action-icon-box"><i class="bi bi-bar-chart-line"></i></div> View Marketing Analytics
         </a>
         <a href="{% url 'telecaller_report' %}" class="action-btn">
-          <i class="bi bi-file-earmark-bar-graph"></i> View Performance Reports
+          <div class="action-icon-box"><i class="bi bi-file-earmark-bar-graph"></i></div> View Performance Reports
         </a>
       </div>
     </div>
@@ -423,11 +424,11 @@
     <div class="m-card mb-4">
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-telephone-outbound-fill me-2 text-info"></i>Call Outcomes</h5>
       <div class="d-flex flex-wrap gap-2">
-        <span class="badge rounded-pill px-3 py-2" style="background:#dcfce7;color:#15803d;font-size:0.85rem;"><i class="bi bi-check-circle me-1"></i>Accepted: {{ call_outcomes.accepted }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#fff7ed;color:#c2410c;font-size:0.85rem;"><i class="bi bi-clock me-1"></i>Busy: {{ call_outcomes.busy }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#dbeafe;color:#1d4ed8;font-size:0.85rem;"><i class="bi bi-arrow-repeat me-1"></i>Call Back: {{ call_outcomes.call_back }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#dcfce7;color:#15803d;font-size:0.85rem;"><i class="bi bi-heart-fill me-1"></i>Interested: {{ call_outcomes.interested }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#fecdd3;color:#9f1239;font-size:0.85rem;"><i class="bi bi-hand-thumbs-down me-1"></i>Not Interested: {{ call_outcomes.not_interested }}</span>
+        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Accepted: {{ call_outcomes.accepted }}</span>
+        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Busy: {{ call_outcomes.busy }}</span>
+        <span class="badge-premium bg-primary"><i class="bi bi-arrow-repeat me-1"></i>Call Back: {{ call_outcomes.call_back }}</span>
+        <span class="badge-premium bg-info"><i class="bi bi-heart-fill me-1"></i>Interested: {{ call_outcomes.interested }}</span>
+        <span class="badge-premium bg-danger"><i class="bi bi-hand-thumbs-down me-1"></i>Not Interested: {{ call_outcomes.not_interested }}</span>
       </div>
     </div>
 
@@ -435,10 +436,10 @@
     <div class="m-card mb-4">
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-journal-check me-2 text-success"></i>Admissions</h5>
       <div class="d-flex flex-wrap gap-2">
-        <span class="badge rounded-pill px-3 py-2" style="background:#dbeafe;color:#1d4ed8;font-size:0.85rem;"><i class="bi bi-journal me-1"></i>Total: {{ admission_metrics.total }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#dcfce7;color:#15803d;font-size:0.85rem;"><i class="bi bi-check-circle me-1"></i>Confirmed: {{ admission_metrics.confirmed }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#fef3c7;color:#a16207;font-size:0.85rem;"><i class="bi bi-clock me-1"></i>Pending: {{ admission_metrics.pending_payment }}</span>
-        <span class="badge rounded-pill px-3 py-2" style="background:#fee2e2;color:#b91c1c;font-size:0.85rem;"><i class="bi bi-x-circle me-1"></i>Cancelled: {{ admission_metrics.cancelled }}</span>
+        <span class="badge-premium bg-primary"><i class="bi bi-journal me-1"></i>Total: {{ admission_metrics.total }}</span>
+        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Confirmed: {{ admission_metrics.confirmed }}</span>
+        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Pending: {{ admission_metrics.pending }}</span>
+        <span class="badge-premium bg-danger"><i class="bi bi-x-circle me-1"></i>Cancelled: {{ admission_metrics.cancelled }}</span>
       </div>
     </div>
 

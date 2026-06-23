@@ -78,10 +78,7 @@
           <th>Student Name</th>
           <th>Mobile</th>
           <th>Course</th>
-          <th>Counselor</th>
-          <th>Final Fees</th>
-          <th>Paid</th>
-          <th>Remaining</th>
+          <th>Batch Name</th>
           <th>Status</th>
           <th class="text-end">Actions</th>
         </tr>
@@ -94,14 +91,11 @@
           <td class="fw-bold text-white">{{ adm.student_name }}</td>
           <td>{{ adm.mobile_number }}</td>
           <td>{{ adm.course_name|default:"-" }}</td>
-          <td>{{ adm.counselor.username|default:"-" }}</td>
-          <td>&#8377;{{ adm.final_fees|floatformat:0 }}</td>
-          <td class="text-success">&#8377;{{ adm.fees_paid|floatformat:0 }}</td>
-          <td class="{% if adm.remaining_fees > 0 %}text-warning{% else %}text-success{% endif %}">&#8377;{{ adm.remaining_fees|floatformat:0 }}</td>
+          <td>{{ adm.batch_name|default:"-" }}</td>
           <td>
             {% if adm.admission_status == 'CONFIRMED' %}
               <span class="badge bg-success">Confirmed</span>
-            {% elif adm.admission_status == 'PENDING_PAYMENT' %}
+            {% elif adm.admission_status == 'PENDING' %}
               <span class="badge bg-warning text-dark">Pending</span>
             {% else %}
               <span class="badge bg-danger">Cancelled</span>

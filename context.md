@@ -1022,7 +1022,7 @@ Admission History visible in Lead Detail
 |---|---|---|
 | admission_number | CharField(20), unique, indexed | Auto-generated: ADM-YYYY-NNNN |
 | admission_date | DateField, indexed | Default: today |
-| admission_status | CharField(20), indexed | CONFIRMED, PENDING_PAYMENT, CANCELLED |
+| admission_status | CharField(20), indexed | CONFIRMED, PENDING, CANCELLED |
 | student_name | CharField(200) | Auto-populated from Lead |
 | mobile_number | CharField(15) | Auto-populated from Lead |
 | email_id | EmailField | Auto-populated from Lead |
@@ -1035,13 +1035,7 @@ Admission History visible in Lead Detail
 | course_name | CharField(200) | Auto-populated from Lead |
 | counselor | ForeignKey(User) | Auto-populated, SET_NULL |
 | admission_source | CharField(100) | Optional |
-| course_fees | DecimalField(12,2) | Default: 0 |
-| discount_amount | DecimalField(12,2) | Default: 0 |
-| final_fees | DecimalField(12,2) | Default: 0 |
-| fees_paid | DecimalField(12,2) | Default: 0 |
-| remaining_fees | DecimalField(12,2) | Read-only, auto-calculated |
-| payment_mode | CharField(20) | CASH, UPI, CARD, BANK_TRANSFER, CHEQUE |
-| transaction_reference | CharField(100) | Optional |
+| batch_name | CharField(200) | Auto-populated from Lead |
 | seat_status | CharField(20), indexed | BOOKED, CONFIRMED, CANCELLED |
 | remarks | TextField | Optional |
 | lead | OneToOneField(Lead) | Duplicate prevention |
@@ -1052,9 +1046,7 @@ Admission History visible in Lead Detail
 ### Business Rules
 - One Lead = One Admission Sheet (enforced by OneToOneField).
 - Duplicate creation blocked with validation message.
-- `remaining_fees = final_fees - fees_paid` (auto-calculated in model `save()`).
-- `fees_paid` cannot exceed `final_fees` (form validation).
-- On admission creation, Lead status updated to 'Admission Done', counselor_status to 'CONVERTED'.
+- On admission creation, counselor_status updated to 'CONVERTED'.
 
 ### Permissions
 
@@ -1070,14 +1062,12 @@ Counselor queryset filtering enforced via `@counselor_required` decorator and ro
 Both Super Admin Dashboard and Counselor Dashboard display:
 - Total Admissions
 - Confirmed Admissions
-- Pending Payments
+- Pending Admissions
 - Cancelled Admissions
 
 ### Reports
 Simple tabular Admission Report with:
 - Total Admissions
-- Total Revenue Collected (sum of fees_paid)
-- Total Outstanding Fees (sum of remaining_fees)
 - Admissions By Counselor breakdown
 - Admissions By Course breakdown
 
@@ -1086,11 +1076,13 @@ No charts, no BI, no exports.
 ### Files Modified / Created
 - `apps/management/models.py`: Added `AdmissionSheet` model.
 - `apps/management/migrations/0009_admissionsheet.py`: Database migration.
-- `apps/management/forms.py`: Added `AdmissionSheetForm` with fee validation.
+- `apps/management/migrations/0011_migrate_pending_payment.py`: Migrated PENDING_PAYMENT to PENDING.
+- `apps/management/migrations/0012_remove_admissionsheet_course_fees_and_more.py`: Database migration to remove fees and add batch_name.
+- `apps/management/forms.py`: Added `AdmissionSheetForm`.
 - `apps/management/views.py`: Added 5 admission views (list, create, edit, detail, report). Updated dashboards and lead detail views with admission data.
 - `apps/management/urls.py`: Added 5 admission URL routes.
 - `apps/management/templates/management/admission_list.html`: List page with search, filters, pagination.
-- `apps/management/templates/management/admission_form.html`: Create/edit form with live fee calculation.
+- `apps/management/templates/management/admission_form.html`: Create/edit form.
 - `apps/management/templates/management/admission_detail.html`: Read-only detail view.
 - `apps/management/templates/management/admission_report.html`: Tabular report.
 - `apps/management/templates/management/super_admin_dashboard.html`: Added admission metrics card.
@@ -1114,3 +1106,6 @@ Completion Percentage: 100%
 ## Notes
 
 This module forms the business workflow inside the Counselor Module of the Management Portal and serves as the follow-up physical visit log layer before admission conversion and ERP student onboarding.
+
+**UI Optimization Note:** 
+The Counselor Dashboard (`counselor_dashboard.html`) was comprehensively refactored to reduce visual clutter and improve usability. The layout was structured into logical summary widgets (Lead Pipeline, Follow-up Overview, Visit Overview, Admission Overview) with a top row for Hero Metrics, significantly enhancing the professional presentation without modifying backend business logic, queries, or calculations.
