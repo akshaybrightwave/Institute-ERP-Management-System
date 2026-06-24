@@ -12,7 +12,7 @@
       
       <form method="POST" class="d-flex justify-content-center gap-2">
         {% csrf_token %}
-        <a href="{% url 'inquiry_detail' inquiry.pk %}" class="btn btn-outline-secondary">Cancel</a>
+        <a href="{% url 'inquiry_detail' inquiry.pk %}" class="btn btn-outline-secondary js-skip-action-modal">Cancel</a>
         <button type="submit" class="btn btn-danger">Confirm Delete</button>
       </form>
     </div>

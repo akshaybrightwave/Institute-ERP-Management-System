@@ -122,8 +122,8 @@ def center_dashboard(request):
     # 1. Overview Metrics (Feature 1)
     total_courses = Course.objects.filter(center=center).count()
     total_batches = Batch.objects.filter(course__center=center).count()
-    total_teachers = User.objects.filter(role='teacher', teacherprofile__batch__course__center=center).distinct().count()
-    total_students = User.objects.filter(role='student', studentprofile__batch__course__center=center).distinct().count()
+    total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__course__center=center).distinct().count()
+    total_students = User.objects.filter(role='student', is_deleted=False, studentprofile__batch__course__center=center).distinct().count()
     total_exams = Exam.objects.filter(batches__course__center=center).distinct().count()
     total_certificates = Certificate.objects.filter(course__center=center).count()
 

@@ -1,8 +1,9 @@
 from django.db import models
+from apps.soft_delete import SoftDeleteModel
 from apps.centers.models import Center
 
 
-class Course(models.Model):
+class Course(SoftDeleteModel):
     center = models.ForeignKey(
         Center,
         on_delete=models.CASCADE

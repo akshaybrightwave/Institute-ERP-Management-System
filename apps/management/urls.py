@@ -13,6 +13,7 @@ urlpatterns = [
     path('inquiries/<int:pk>/edit/', views.inquiry_edit, name='inquiry_edit'),
     path('inquiries/<int:pk>/delete/', views.inquiry_delete, name='inquiry_delete'),
     path('inquiries/<int:pk>/convert/', views.inquiry_convert, name='inquiry_convert'),
+    path('inquiries/<int:pk>/update-call-status/', views.update_call_status, name='update_call_status'),
 
     # Lead CRUD
     path('leads/', views.lead_list, name='lead_list'),
@@ -66,4 +67,11 @@ urlpatterns = [
     path('counselor/visits/', views.counselor_visit_list, name='counselor_visit_list'),
     path('counselor/visits/add/', views.counselor_visit_add, name='counselor_visit_add'),
     path('counselor/visits/<int:pk>/edit/', views.counselor_visit_edit, name='counselor_visit_edit'),
+
+    # Phase 11.5 — Admission Sheet Management
+    path('admissions/', views.admission_list, name='admission_list'),
+    path('admissions/create/<int:lead_pk>/', views.admission_create, name='admission_create'),
+    path('admissions/<int:pk>/', views.admission_detail, name='admission_detail'),
+    path('admissions/<int:pk>/edit/', views.admission_edit, name='admission_edit'),
+    path('admissions/report/', views.admission_report, name='admission_report'),
 ]

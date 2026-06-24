@@ -1,7 +1,8 @@
 from django.db import models
+from apps.soft_delete import SoftDeleteModel
 
 
-class Center(models.Model):
+class Center(SoftDeleteModel):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, unique=True)
     address = models.TextField()

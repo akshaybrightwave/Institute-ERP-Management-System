@@ -1,8 +1,9 @@
 from django.db import models
+from apps.soft_delete import SoftDeleteModel
 from apps.students.models import StudentProfile
 
 
-class FeePayment(models.Model):
+class FeePayment(SoftDeleteModel):
     METHOD_CHOICES = [
         ('cash', 'Cash'),
         ('upi', 'UPI'),

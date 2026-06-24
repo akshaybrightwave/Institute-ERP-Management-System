@@ -2,281 +2,425 @@
 
 {% block title %}Counselor Performance & Conversion Reports | Examly{% endblock %}
 
-{% block management_content %}
-<div class="mb-4">
-  <h2 class="fw-bold text-white mb-1">Counselor Reports & Analytics</h2>
-  <p class="text-muted small">Evaluate counselor productivity, coaching sessions, follow-up outcomes, and conversion statistics.</p>
-</div>
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+<style>
+  .counselor-reports-page {
+    color: #334155;
+  }
+  .page-title {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 16px;
+  }
+  .page-title h2 {
+    color: #0f172a !important;
+  }
+  .m-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  
+  /* Modern Tabs */
+  .modern-tabs {
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 24px;
+    gap: 8px;
+  }
+  .modern-tabs .nav-item {
+    margin-bottom: -2px;
+  }
+  .modern-tabs .nav-link {
+    color: #64748b;
+    font-weight: 600;
+    padding: 12px 20px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    transition: all 0.2s ease;
+  }
+  .modern-tabs .nav-link:hover {
+    color: #4f46e5;
+    border-bottom-color: #cbd5e1;
+  }
+  .modern-tabs .nav-link.active {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+    background: transparent;
+  }
+  
+  /* Tables */
+  .m-table th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 16px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .m-table td {
+    padding: 16px;
+    color: #334155;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  .m-table tbody tr:hover {
+    background-color: #f8fafc;
+  }
 
-<!-- Report Type Tabs -->
-<div class="mb-4">
-  <ul class="nav nav-tabs border-secondary">
+  /* Form Elements */
+  .form-label {
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+  }
+  .form-select, .form-control {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+    border-radius: 6px;
+  }
+  .form-select:focus, .form-control:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+  }
+  
+  /* Metric Cards */
+  .metric-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: transform 0.2s ease;
+  }
+  .metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  }
+  .metric-label {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .metric-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  /* Badges */
+  .badge {
+    padding: 6px 10px;
+    font-weight: 600;
+    border-radius: 6px;
+  }
+  .bg-soft-primary { background-color: #e0e7ff; color: #4f46e5; }
+  .bg-soft-indigo { background-color: #e0e7ff; color: #4338ca; }
+  .bg-soft-violet { background-color: #ede9fe; color: #7c3aed; }
+  .bg-soft-success { background-color: #dcfce7; color: #16a34a; }
+  .bg-soft-warning { background-color: #fef3c7; color: #d97706; }
+  .bg-soft-danger { background-color: #fee2e2; color: #dc2626; }
+  .bg-soft-info { background-color: #e0f2fe; color: #0284c7; }
+  .bg-soft-secondary { background-color: #f1f5f9; color: #475569; }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="counselor-reports-page">
+  <div class="page-title">
+    <h2 class="fw-bold mb-1">Counselor Reports & Analytics</h2>
+    <p class="text-muted small mb-0">Evaluate counselor productivity, coaching sessions, follow-up outcomes, and conversion statistics.</p>
+  </div>
+
+  <!-- Report Type Tabs -->
+  <ul class="nav nav-tabs modern-tabs">
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'performance' %}active bg-dark text-white border-secondary{% else %}text-info{% endif %}" href="?report_type=performance&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'performance' %}active{% endif %}" href="?report_type=performance&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
         <i class="bi bi-bar-chart-steps me-1"></i> Performance Summary
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'conversion' %}active bg-dark text-white border-secondary{% else %}text-info{% endif %}" href="?report_type=conversion&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'conversion' %}active{% endif %}" href="?report_type=conversion&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
         <i class="bi bi-person-check-fill me-1"></i> Conversion Details
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'followup' %}active bg-dark text-white border-secondary{% else %}text-info{% endif %}" href="?report_type=followup&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'followup' %}active{% endif %}" href="?report_type=followup&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
         <i class="bi bi-calendar-check me-1"></i> Follow-up Outcomes
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'lost' %}active bg-dark text-white border-secondary{% else %}text-info{% endif %}" href="?report_type=lost&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'lost' %}active{% endif %}" href="?report_type=lost&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
         <i class="bi bi-x-octagon-fill me-1"></i> Lost Candidates
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'visit' %}active bg-dark text-white border-secondary{% else %}text-info{% endif %}" href="?report_type=visit&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'visit' %}active{% endif %}" href="?report_type=visit&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
         <i class="bi bi-geo-alt me-1"></i> Visit Sheets
       </a>
     </li>
   </ul>
-</div>
 
-<!-- Filters & Exports -->
-<div class="m-card mb-4">
-  <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
-    <!-- Keep report type -->
-    <input type="hidden" name="report_type" value="{{ report_type }}">
+  <!-- Filters & Exports -->
+  <div class="m-card mb-4">
+    <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
+      <input type="hidden" name="report_type" value="{{ report_type }}">
 
-    <!-- Preset Filter -->
-    <div class="col-md-3">
-      <label class="form-label text-muted small fw-bold">Date Preset</label>
-      <select name="date_filter" id="date-filter-select" class="form-select bg-dark border-secondary text-white form-select-sm">
-        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
-        <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
-        <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
-        <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
-      </select>
-    </div>
-
-    <!-- Custom Start Date -->
-    <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">From Date</label>
-      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
-    </div>
-
-    <!-- Custom End Date -->
-    <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">To Date</label>
-      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
-    </div>
-
-    <!-- Submit Button -->
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-info text-white w-100 fw-bold btn-sm"><i class="bi bi-funnel"></i> Apply Filter</button>
-    </div>
-
-    <!-- Export Options -->
-    <div class="col-md-3 d-flex gap-2" {% if report_type == 'visit' %}style="display: none !important;"{% endif %}>
-      <button type="submit" name="export" value="csv" class="btn btn-outline-info w-50 fw-bold btn-sm"><i class="bi bi-filetype-csv me-1"></i> Export CSV</button>
-      <button type="submit" name="export" value="excel" class="btn btn-outline-success w-50 fw-bold btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel</button>
-    </div>
-  </form>
-</div>
-
-<!-- Performance Report Data -->
-<div class="m-card">
-  <div class="table-responsive">
-    {% if report_type == 'performance' %}
-      <table class="table m-table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Counselor Username</th>
-            <th>Total Leads Assigned</th>
-            <th>Sessions Conducted</th>
-            <th>Follow-ups Completed</th>
-            <th>Converted Leads</th>
-            <th>Lost Leads</th>
-            <th>Conversion %</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in report_data %}
-          <tr>
-            <td class="fw-bold text-info"><i class="bi bi-person-badge-fill me-1"></i>{{ row.counselor }}</td>
-            <td>{{ row.total_leads }}</td>
-            <td>{{ row.sessions_conducted }}</td>
-            <td class="text-success">{{ row.followups_completed }}</td>
-            <td class="text-success fw-bold">{{ row.converted }}</td>
-            <td class="text-danger">{{ row.lost }}</td>
-            <td class="fw-bold text-warning">{{ row.conversion_pct }}%</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="7" class="text-center py-4 text-muted">No performance data found for the selected period.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      
-    {% elif report_type == 'conversion' %}
-      <table class="table m-table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Candidate Name</th>
-            <th>Assigned Counselor</th>
-            <th>Status Stage</th>
-            <th>Priority</th>
-            <th>Assigned Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in report_data %}
-          <tr>
-            <td class="fw-bold text-white">{{ row.candidate }}</td>
-            <td>{{ row.counselor }}</td>
-            <td>
-              <span class="badge {% if row.status == 'NEW' %}bg-primary{% elif row.status == 'CONTACTED' %}bg-info text-white{% elif row.status == 'COUNSELING_DONE' %}bg-indigo{% elif row.status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif row.status == 'INTERESTED' %}bg-violet{% elif row.status == 'CONVERTED' %}bg-success{% elif row.status == 'NOT_INTERESTED' %}bg-secondary{% elif row.status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if row.status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif row.status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
-                {{ row.status }}
-              </span>
-            </td>
-            <td>
-              <span class="badge {% if row.priority == 'High' %}bg-danger{% elif row.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                {{ row.priority }}
-              </span>
-            </td>
-            <td>{{ row.date }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="text-center py-4 text-muted">No conversion data found for the selected period.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-    {% elif report_type == 'followup' %}
-      <table class="table m-table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Candidate Name</th>
-            <th>Follow-up Date</th>
-            <th>Status</th>
-            <th>Outcome</th>
-            <th>Response Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in report_data %}
-          <tr>
-            <td class="fw-bold text-white">{{ row.candidate }}</td>
-            <td>{{ row.followup_date }}</td>
-            <td>
-              <span class="badge {% if row.status == 'Completed' %}bg-success{% elif row.status == 'Missed' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                {{ row.status }}
-              </span>
-            </td>
-            <td>{{ row.outcome }}</td>
-            <td class="small">{{ row.notes }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="text-center py-4 text-muted">No follow-up outcomes found for the selected period.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-    {% elif report_type == 'lost' %}
-      <table class="table m-table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Candidate Name</th>
-            <th>Assigned Counselor</th>
-            <th>Lost Date</th>
-            <th>Reason / Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in report_data %}
-          <tr>
-            <td class="fw-bold text-white">{{ row.candidate }}</td>
-            <td>{{ row.counselor }}</td>
-            <td>{{ row.date }}</td>
-            <td class="small text-danger">{{ row.reason }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="4" class="text-center py-4 text-muted">No lost candidates recorded for the selected period.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-    {% elif report_type == 'visit' %}
-      <!-- Visit Metrics Summary -->
-      <div class="row g-3 mb-4">
-        <div class="col-md-3">
-          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Total Scheduled</div>
-            <h3 class="fw-bold text-warning mb-0">{{ total_scheduled }}</h3>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Total Visited</div>
-            <h3 class="fw-bold text-success mb-0">{{ total_completed }}</h3>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Total No Shows</div>
-            <h3 class="fw-bold text-danger mb-0">{{ total_no_shows }}</h3>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="p-3 rounded border border-secondary text-center" style="background-color: #16162a; border-color: #242448 !important;">
-            <div class="text-muted small fw-bold text-uppercase tracking-wider mb-1" style="font-size: 0.7rem;">Admissions Done</div>
-            <h3 class="fw-bold text-info mb-0">{{ total_admissions_visit }}</h3>
-          </div>
-        </div>
+      <div class="col-md-3">
+        <label class="form-label">Date Preset</label>
+        <select name="date_filter" id="date-filter-select" class="form-select form-select-sm">
+          <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+          <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
+          <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
+          <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
+        </select>
       </div>
 
-      <!-- Visit Logs Table -->
-      <table class="table m-table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>Candidate Name</th>
-            <th>Mobile Number</th>
-            <th>Course</th>
-            <th>Visit Date</th>
-            <th>Visit Time</th>
-            <th>Status</th>
-            <th>Counselor</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in report_data %}
-          <tr>
-            <td class="fw-bold text-white">{{ row.candidate }}</td>
-            <td>{{ row.mobile_number }}</td>
-            <td>{{ row.course }}</td>
-            <td>{{ row.visit_date }}</td>
-            <td>{{ row.visit_time }}</td>
-            <td>
-              <span class="badge {% if row.status == 'Visited' or row.status == 'Admission Done' %}bg-success{% elif row.status == 'Cancelled' or row.status == 'No Show' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
-                {{ row.status }}
-              </span>
-            </td>
-            <td>{{ row.counselor }}</td>
-            <td class="small">{{ row.remarks }}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="8" class="text-center py-4 text-muted">No candidate visits scheduled/recorded for the selected period.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% endif %}
+      <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+        <label class="form-label">From Date</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
+      </div>
+
+      <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+        <label class="form-label">To Date</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
+      </div>
+
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100 fw-bold btn-sm"><i class="bi bi-funnel me-1"></i> Apply Filter</button>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2" {% if report_type == 'visit' %}style="display: none !important;"{% endif %}>
+        <button type="submit" name="export" value="csv" class="btn btn-outline-secondary w-50 fw-bold btn-sm"><i class="bi bi-filetype-csv me-1"></i> Export CSV</button>
+        <button type="submit" name="export" value="excel" class="btn btn-outline-success w-50 fw-bold btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Performance Report Data -->
+  <div class="m-card">
+    <div class="table-responsive">
+      {% if report_type == 'performance' %}
+        <table class="table m-table table-borderless align-middle">
+          <thead>
+            <tr>
+              <th>Counselor Username</th>
+              <th>Total Leads Assigned</th>
+              <th>Sessions Conducted</th>
+              <th>Follow-ups Completed</th>
+              <th>Converted Leads</th>
+              <th>Lost Leads</th>
+              <th>Conversion %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report_data %}
+            <tr>
+              <td class="fw-bold text-primary"><i class="bi bi-person-badge-fill me-1 text-muted"></i>{{ row.counselor }}</td>
+              <td class="fw-bold">{{ row.total_leads }}</td>
+              <td>{{ row.sessions_conducted }}</td>
+              <td class="text-success fw-bold">{{ row.followups_completed }}</td>
+              <td class="text-success fw-bold">{{ row.converted }}</td>
+              <td class="text-danger fw-bold">{{ row.lost }}</td>
+              <td>
+                <span class="badge bg-soft-primary px-3 py-2">{{ row.conversion_pct }}%</span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 text-black-50"></i>
+                No performance data found for the selected period.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+      {% elif report_type == 'conversion' %}
+        <table class="table m-table table-borderless align-middle">
+          <thead>
+            <tr>
+              <th>Candidate Name</th>
+              <th>Assigned Counselor</th>
+              <th>Status Stage</th>
+              <th>Priority</th>
+              <th>Assigned Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report_data %}
+            <tr>
+              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="text-muted">{{ row.counselor }}</td>
+              <td>
+                <span class="badge {% if row.status == 'NEW' %}bg-soft-primary{% elif row.status == 'CONTACTED' %}bg-soft-info{% elif row.status == 'COUNSELING_DONE' %}bg-soft-indigo{% elif row.status == 'FOLLOW_UP_REQUIRED' %}bg-soft-warning{% elif row.status == 'INTERESTED' %}bg-soft-violet{% elif row.status == 'CONVERTED' %}bg-soft-success{% elif row.status == 'NOT_INTERESTED' %}bg-soft-secondary{% elif row.status == 'LOST' %}bg-soft-danger{% else %}bg-soft-secondary{% endif %}">
+                  {{ row.status }}
+                </span>
+              </td>
+              <td>
+                <span class="badge {% if row.priority == 'High' %}bg-soft-danger{% elif row.priority == 'Medium' %}bg-soft-warning{% else %}bg-soft-secondary{% endif %}">
+                  {{ row.priority }}
+                </span>
+              </td>
+              <td class="text-muted">{{ row.date }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 text-black-50"></i>
+                No conversion data found for the selected period.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% elif report_type == 'followup' %}
+        <table class="table m-table table-borderless align-middle">
+          <thead>
+            <tr>
+              <th>Candidate Name</th>
+              <th>Follow-up Date</th>
+              <th>Status</th>
+              <th>Outcome</th>
+              <th>Response Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report_data %}
+            <tr>
+              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="text-muted">{{ row.followup_date }}</td>
+              <td>
+                <span class="badge {% if row.status == 'Completed' %}bg-soft-success{% elif row.status == 'Missed' %}bg-soft-danger{% else %}bg-soft-warning{% endif %}">
+                  {{ row.status }}
+                </span>
+              </td>
+              <td class="text-dark">{{ row.outcome }}</td>
+              <td class="small text-muted">{{ row.notes }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 text-black-50"></i>
+                No follow-up outcomes found for the selected period.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% elif report_type == 'lost' %}
+        <table class="table m-table table-borderless align-middle">
+          <thead>
+            <tr>
+              <th>Candidate Name</th>
+              <th>Assigned Counselor</th>
+              <th>Lost Date</th>
+              <th>Reason / Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report_data %}
+            <tr>
+              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="text-muted">{{ row.counselor }}</td>
+              <td class="text-muted">{{ row.date }}</td>
+              <td class="small text-danger fw-medium">{{ row.reason }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 text-black-50"></i>
+                No lost candidates recorded for the selected period.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% elif report_type == 'visit' %}
+        <!-- Visit Metrics Summary -->
+        <div class="row g-4 mb-4">
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-label">Total Scheduled</div>
+              <h3 class="metric-value text-primary">{{ total_scheduled }}</h3>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-label">Total Visited</div>
+              <h3 class="metric-value text-success">{{ total_completed }}</h3>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-label">Total No Shows</div>
+              <h3 class="metric-value text-danger">{{ total_no_shows }}</h3>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="metric-card">
+              <div class="metric-label">Admissions Done</div>
+              <h3 class="metric-value text-indigo">{{ total_admissions_visit }}</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visit Logs Table -->
+        <table class="table m-table table-borderless align-middle">
+          <thead>
+            <tr>
+              <th>Candidate Name</th>
+              <th>Mobile Number</th>
+              <th>Course</th>
+              <th>Visit Date & Time</th>
+              <th>Status</th>
+              <th>Counselor</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report_data %}
+            <tr>
+              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="text-muted">{{ row.mobile_number }}</td>
+              <td class="text-muted">{{ row.course }}</td>
+              <td class="text-muted">{{ row.visit_date }} <span class="badge bg-light text-dark ms-1">{{ row.visit_time }}</span></td>
+              <td>
+                <span class="badge {% if row.status == 'Visited' or row.status == 'Admission Done' %}bg-soft-success{% elif row.status == 'Cancelled' or row.status == 'No Show' %}bg-soft-danger{% else %}bg-soft-warning{% endif %}">
+                  {{ row.status }}
+                </span>
+              </td>
+              <td class="text-muted">{{ row.counselor }}</td>
+              <td class="small text-muted">{{ row.remarks }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 text-black-50"></i>
+                No candidate visits scheduled/recorded for the selected period.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
   </div>
 </div>
 

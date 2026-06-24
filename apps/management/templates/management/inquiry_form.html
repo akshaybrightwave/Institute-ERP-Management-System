@@ -1,5 +1,15 @@
 {% extends 'management/base.html' %}
 
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+<style>
+  /* ── Form card border separator ── */
+  .inquiry-form-footer { border-color: rgba(255,255,255,0.08) !important; }
+  .btn-outline-secondary { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.15) !important; color: #94a3b8 !important; }
+  .btn-info { background: #0284c7 !important; border-color: #0284c7 !important; color: #fff !important; }
+</style>
+{% endblock %}
+
 {% block management_content %}
 <div class="mb-4">
   <h2 class="fw-bold text-white mb-1">{{ title }}</h2>
@@ -94,8 +104,8 @@
           </div>
         </div>
 
-        <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top border-secondary">
-          <a href="{% if inquiry %}{% url 'inquiry_detail' inquiry.pk %}{% else %}{% url 'inquiry_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+        <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 inquiry-form-footer border-top">
+          <a href="{% if inquiry %}{% url 'inquiry_detail' inquiry.pk %}{% else %}{% url 'inquiry_list' %}{% endif %}" class="btn btn-outline-secondary js-skip-action-modal">Cancel</a>
           <button type="submit" class="btn btn-info text-white fw-bold">Save Inquiry</button>
         </div>
       </form>

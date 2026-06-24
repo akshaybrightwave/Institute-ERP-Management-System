@@ -1,55 +1,145 @@
 {% extends 'management/base.html' %}
 
 {% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
 <style>
+  .inquiry-convert-page .convert-icon-wrap {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(22, 163, 74, 0.12);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .inquiry-convert-page .convert-icon-wrap i {
+    font-size: 2.4rem;
+    color: #4ade80;
+  }
+
   .inquiry-convert-page .conversion-checklist {
-    max-width: 440px;
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    color: #475569;
+    max-width: 460px;
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: #94a3b8;
+    text-align: left;
+    padding: 16px 20px;
+    margin: 0 auto 24px;
   }
-
   .inquiry-convert-page .conversion-checklist li {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
+  .inquiry-convert-page .conversion-checklist li::before {
+    content: '\F633';
+    font-family: "bootstrap-icons";
+    color: #4ade80;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .inquiry-convert-page .conversion-checklist li:last-child { margin-bottom: 0; }
+  .inquiry-convert-page .conversion-checklist strong { color: #e2e8f0; }
 
-  .inquiry-convert-page .conversion-checklist li:last-child {
-    margin-bottom: 0;
+  .inquiry-convert-page .btn-outline-secondary {
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.15) !important;
+    color: #94a3b8 !important;
+    min-width: 110px;
+  }
+  .inquiry-convert-page .btn-outline-secondary:hover {
+    background: rgba(255,255,255,0.1) !important;
+    color: #e2e8f0 !important;
+  }
+  .inquiry-convert-page .btn-success {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+    min-width: 150px;
+    box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+  }
+  .inquiry-convert-page .btn-success:hover {
+    background: #15803d !important;
+    box-shadow: 0 6px 18px rgba(22,163,74,0.4) !important;
   }
 </style>
 {% endblock %}
 
 {% block management_content %}
 <div class="inquiry-convert-page">
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="m-card text-center py-4">
-      <div class="text-success mb-3">
-        <i class="bi bi-person-check" style="font-size: 4rem;"></i>
-      </div>
-      <h3 class="fw-bold text-white mb-2">Convert Inquiry to Lead</h3>
-      <p class="text-muted mb-4">
-        You are converting the inquiry of <strong>{{ inquiry.full_name }}</strong> into an active lead. 
-        This will:
-      </p>
-      
-      <div class="conversion-checklist text-start p-3 mb-4 small mx-auto">
-        <ul class="mb-0">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="m-card text-center" style="padding: 36px 32px !important;">
+
+        <!-- Icon -->
+        <div class="convert-icon-wrap">
+          <i class="bi bi-person-check-fill"></i>
+        </div>
+
+        <h3 class="fw-bold mb-2" style="color:#f1f5f9;">Convert Inquiry to Lead</h3>
+        <p class="text-muted mb-4" style="font-size:0.9rem;">
+          You are converting the inquiry of
+          <strong style="color:#e2e8f0;">{{ inquiry.full_name }}</strong>
+          into an active lead. This will:
+        </p>
+
+        <!-- Checklist (list-style removed — custom ::before icons) -->
+        <ul class="conversion-checklist list-unstyled">
           <li>Create a corresponding Lead record.</li>
           <li>Assign the Lead to you ({{ request.user.username }}).</li>
           <li>Set the initial status of the Lead to "New".</li>
           <li>Update this Inquiry status to <strong>Qualified</strong>.</li>
         </ul>
-      </div>
 
-      <form method="POST" class="d-flex justify-content-center gap-2">
-        {% csrf_token %}
-        <a href="{% url 'inquiry_detail' inquiry.pk %}" class="btn btn-outline-secondary">Cancel</a>
-        <button type="submit" class="btn btn-success fw-bold text-white">Convert to Lead</button>
-      </form>
+        <!-- Actions -->
+        <form method="POST" class="d-flex justify-content-center gap-3 mt-2">
+          {% csrf_token %}
+          {# js-skip-action-modal prevents the iframe JS from intercepting this link #}
+          <a href="{% url 'inquiry_detail' inquiry.pk %}"
+             class="btn btn-outline-secondary fw-semibold js-skip-action-modal"
+             id="convertCancelBtn">
+            <i class="bi bi-x-lg me-1"></i> Cancel
+          </a>
+          <button type="submit" class="btn btn-success fw-bold">
+            <i class="bi bi-check-lg me-1"></i> Convert to Lead
+          </button>
+        </form>
+
+      </div>
     </div>
   </div>
 </div>
-</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var cancelBtn = document.getElementById('convertCancelBtn');
+  if (!cancelBtn) return;
+
+  if (window.self !== window.top) {
+    /* ── Inside the management action modal (iframe) ──
+       Close the parent modal by reloading the parent page.
+       This dismisses the modal and returns the user to the
+       inquiry list they were viewing.                        */
+    cancelBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      try {
+        window.parent.location.reload();
+      } catch (err) {
+        /* Fallback: navigate so the frame-load handler in
+           base.html detects the path change and reloads.    */
+        window.location.href = cancelBtn.href;
+      }
+    });
+  }
+})();
+</script>
 {% endblock %}

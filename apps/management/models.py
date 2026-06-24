@@ -2,8 +2,9 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 import datetime
+from apps.soft_delete import SoftDeleteModel
 
-class Inquiry(models.Model):
+class Inquiry(SoftDeleteModel):
     SOURCE_CHOICES = (
         ('Website', 'Website'),
         ('Walk-In', 'Walk-In'),
@@ -19,6 +20,16 @@ class Inquiry(models.Model):
         ('Qualified', 'Qualified'),
         ('Rejected', 'Rejected'),
     )
+    CALL_STATUS_CHOICES = (
+        ('NEW', 'New'),
+        ('ACCEPTED', 'Accepted'),
+        ('BUSY', 'Busy'),
+        ('NO_ANSWER', 'No Answer'),
+        ('CALL_BACK', 'Call Back'),
+        ('WRONG_NUMBER', 'Wrong Number'),
+        ('INTERESTED', 'Interested'),
+        ('NOT_INTERESTED', 'Not Interested'),
+    )
 
     full_name = models.CharField(max_length=100, db_index=True)
     mobile_number = models.CharField(max_length=15, db_index=True)
@@ -28,6 +39,7 @@ class Inquiry(models.Model):
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='Website')
     remarks = models.TextField(blank=True)
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='New', db_index=True)
+    call_status = models.CharField(max_length=25, choices=CALL_STATUS_CHOICES, default='NEW', db_index=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -45,7 +57,7 @@ class Inquiry(models.Model):
         return f"{self.full_name} ({self.status})"
 
 
-class Lead(models.Model):
+class Lead(SoftDeleteModel):
     STATUS_CHOICES = (
         ('New', 'New'),
         ('Contacted', 'Contacted'),
@@ -54,8 +66,7 @@ class Lead(models.Model):
         ('Qualified', 'Qualified'),
         ('Rejected', 'Rejected'),
         ('Invalid Number', 'Invalid Number'),
-        ('Admission Done', 'Admission Done'),
-        ('Closed', 'Closed'),
+
     )
     COUNSELOR_STATUS_CHOICES = (
         ('NEW', 'New'),
@@ -119,7 +130,7 @@ class Lead(models.Model):
         return f"Lead: {self.inquiry.full_name} ({self.status})"
 
 
-class CallLog(models.Model):
+class CallLog(SoftDeleteModel):
     STATUS_CHOICES = (
         ('Connected', 'Connected'),
         ('Not Answered', 'Not Answered'),
@@ -149,7 +160,7 @@ class CallLog(models.Model):
         return f"Call to {self.lead.inquiry.full_name} - {self.call_status}"
 
 
-class FollowUp(models.Model):
+class FollowUp(SoftDeleteModel):
     STATUS_CHOICES = (
         ('Pending', 'Pending'),
         ('Completed', 'Completed'),
@@ -189,7 +200,7 @@ class FollowUp(models.Model):
         return f"FollowUp for {self.lead.inquiry.full_name} on {self.followup_date} ({self.status})"
 
 
-class LeadImport(models.Model):
+class LeadImport(SoftDeleteModel):
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -211,7 +222,7 @@ class LeadImport(models.Model):
         return f"Import by {self.uploaded_by} on {self.created_at}"
 
 
-class LeadNote(models.Model):
+class LeadNote(SoftDeleteModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='notes_timeline')
     note = models.TextField()
     created_by = models.ForeignKey(
@@ -230,7 +241,7 @@ class LeadNote(models.Model):
         return f"Note on {self.lead.inquiry.full_name} by {self.created_by} at {self.created_at}"
 
 
-class LeadActivity(models.Model):
+class LeadActivity(SoftDeleteModel):
     ACTIVITY_TYPE_CHOICES = (
         ('LEAD_CREATED', 'Lead Created'),
         ('STATUS_CHANGED', 'Status Changed'),
@@ -259,7 +270,7 @@ class LeadActivity(models.Model):
         return f"{self.activity_type} for {self.lead.inquiry.full_name} at {self.created_at}"
 
 
-class ImportErrorLog(models.Model):
+class ImportErrorLog(SoftDeleteModel):
     lead_import = models.ForeignKey(LeadImport, on_delete=models.CASCADE, related_name='error_logs')
     row_number = models.PositiveIntegerField()
     error_message = models.TextField()
@@ -272,7 +283,7 @@ class ImportErrorLog(models.Model):
         return f"ImportError in {self.lead_import} at row {self.row_number}: {self.error_message}"
 
 
-class CounselingSession(models.Model):
+class CounselingSession(SoftDeleteModel):
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='counseling_sessions')
     counselor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -292,7 +303,7 @@ class CounselingSession(models.Model):
         return f"Session with {self.lead.inquiry.full_name} on {self.session_date}"
 
 
-class VisitSheet(models.Model):
+class VisitSheet(SoftDeleteModel):
     STATUS_CHOICES = (
         ('Scheduled', 'Scheduled'),
         ('Visited', 'Visited'),
@@ -327,4 +338,91 @@ class VisitSheet(models.Model):
 
     def __str__(self):
         return f"Visit for {self.lead.inquiry.full_name} on {self.visit_date} at {self.visit_time}"
+
+
+class AdmissionSheet(SoftDeleteModel):
+    ADMISSION_STATUS_CHOICES = (
+        ('CONFIRMED', 'Confirmed'),
+        ('PENDING', 'Pending'),
+        ('CANCELLED', 'Cancelled'),
+    )
+    SEAT_STATUS_CHOICES = (
+        ('BOOKED', 'Booked'),
+        ('CONFIRMED', 'Confirmed'),
+        ('CANCELLED', 'Cancelled'),
+    )
+
+
+    # Admission Information
+    admission_number = models.CharField(max_length=20, unique=True, db_index=True)
+    admission_date = models.DateField(default=datetime.date.today, db_index=True)
+    admission_status = models.CharField(
+        max_length=20, choices=ADMISSION_STATUS_CHOICES, default='CONFIRMED', db_index=True
+    )
+
+    # Student Information
+    student_name = models.CharField(max_length=200)
+    mobile_number = models.CharField(max_length=15)
+    email_id = models.EmailField(blank=True, null=True)
+    parent_name = models.CharField(max_length=200, blank=True)
+    parent_mobile = models.CharField(max_length=15, blank=True)
+
+    # Education Information
+    college_name = models.CharField(max_length=300, blank=True)
+    university_name = models.CharField(max_length=300, blank=True)
+    department = models.CharField(max_length=200, blank=True)
+    academic_year = models.CharField(max_length=20, blank=True)
+
+    # Course Information
+    course_name = models.CharField(max_length=200, blank=True)
+    counselor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='counselor_admissions'
+    )
+    admission_source = models.CharField(max_length=100, blank=True)
+
+    batch_name = models.CharField(max_length=100, blank=True)
+
+    # Seat Information
+    seat_status = models.CharField(
+        max_length=20, choices=SEAT_STATUS_CHOICES, default='BOOKED', db_index=True
+    )
+
+    # Remarks
+    remarks = models.TextField(blank=True)
+
+    # System Fields
+    lead = models.OneToOneField(Lead, on_delete=models.CASCADE, related_name='admission_sheet')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_admissions'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-admission_date', '-created_at']
+
+    def __str__(self):
+        return f"{self.admission_number} - {self.student_name}"
+
+    def save(self, *args, **kwargs):
+        # Auto-generate admission_number if not set
+        if not self.admission_number:
+            year = datetime.date.today().year
+            # Get the last admission number for this year
+            last = AdmissionSheet.objects.filter(
+                admission_number__startswith=f'ADM-{year}-'
+            ).order_by('-admission_number').first()
+            if last:
+                last_num = int(last.admission_number.split('-')[-1])
+                next_num = last_num + 1
+            else:
+                next_num = 1
+            self.admission_number = f'ADM-{year}-{next_num:04d}'
+        super().save(*args, **kwargs)
 

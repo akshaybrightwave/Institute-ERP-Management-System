@@ -1,5 +1,9 @@
 {% extends 'management/base.html' %}
 
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+{% endblock %}
+
 {% block management_content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div>
@@ -19,13 +23,13 @@
     <!-- Filter by Date -->
     <div class="col-md-5">
       <label class="form-label text-muted small fw-bold">Call Date</label>
-      <input type="date" name="date" value="{{ date_str }}" class="form-control bg-dark border-secondary text-white">
+      <input type="date" name="date" value="{{ date_str }}" class="form-control">
     </div>
 
     <!-- Filter by Lead -->
     <div class="col-md-5">
       <label class="form-label text-muted small fw-bold">Lead ID (Optional)</label>
-      <input type="text" name="lead_id" value="{{ lead_id }}" class="form-control bg-dark border-secondary text-white" placeholder="Filter by Lead ID...">
+      <input type="text" name="lead_id" value="{{ lead_id }}" class="form-control" placeholder="Filter by Lead ID...">
     </div>
 
     <!-- Submit -->

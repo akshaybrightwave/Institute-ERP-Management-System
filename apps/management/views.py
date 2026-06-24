@@ -1,14 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 import datetime
+import json
 from django.utils import timezone
 
-from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet
-from .forms import InquiryForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm
+from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
+from .forms import InquiryForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm
 from .decorators import telecaller_required, counselor_required
 
 @login_required
@@ -36,8 +37,17 @@ def management_dashboard(request):
     pending_followups = followups_qs.filter(status='Pending').count()
     overdue_followups = followups_qs.filter(status='Pending', followup_date__lt=today).count()
 
+    # Call Outcomes
+    call_outcomes = {
+        'accepted': inquiries_qs.filter(call_status='ACCEPTED').count(),
+        'busy': inquiries_qs.filter(call_status='BUSY').count(),
+        'call_back': inquiries_qs.filter(call_status='CALL_BACK').count(),
+        'interested': inquiries_qs.filter(call_status='INTERESTED').count(),
+        'not_interested': inquiries_qs.filter(call_status='NOT_INTERESTED').count(),
+    }
+
     # Tables
-    recent_leads = leads_qs.order_by('-created_at')[:5]
+    recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.filter(lead__assigned_telecaller=request.user).order_by('-created_at')[:5]
     today_followups_list = followups_qs.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
     overdue_followups_list = followups_qs.filter(status='Pending', followup_date__lt=today).order_by('followup_date')[:5]
@@ -52,6 +62,7 @@ def management_dashboard(request):
         'today_calls': today_calls,
         'pending_followups': pending_followups,
         'overdue_followups': overdue_followups,
+        'call_outcomes': call_outcomes,
         'recent_leads': recent_leads,
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
@@ -80,8 +91,25 @@ def management_super_admin_dashboard(request):
     pending_followups = FollowUp.objects.filter(status='Pending').count()
     overdue_followups = FollowUp.objects.filter(status='Pending', followup_date__lt=today).count()
 
+    # Call Outcomes
+    call_outcomes = {
+        'accepted': Inquiry.objects.filter(call_status='ACCEPTED').count(),
+        'busy': Inquiry.objects.filter(call_status='BUSY').count(),
+        'call_back': Inquiry.objects.filter(call_status='CALL_BACK').count(),
+        'interested': Inquiry.objects.filter(call_status='INTERESTED').count(),
+        'not_interested': Inquiry.objects.filter(call_status='NOT_INTERESTED').count(),
+    }
+
+    # Admission Metrics
+    admission_metrics = {
+        'total': AdmissionSheet.objects.count(),
+        'confirmed': AdmissionSheet.objects.filter(admission_status='CONFIRMED').count(),
+        'pending': AdmissionSheet.objects.filter(admission_status='PENDING').count(),
+        'cancelled': AdmissionSheet.objects.filter(admission_status='CANCELLED').count(),
+    }
+
     # Tables
-    recent_leads = Lead.objects.order_by('-created_at')[:5]
+    recent_leads = Lead.objects.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.all().order_by('-created_at')[:5]
     today_followups_list = FollowUp.objects.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
     overdue_followups_list = FollowUp.objects.filter(status='Pending', followup_date__lt=today).order_by('followup_date')[:5]
@@ -96,6 +124,8 @@ def management_super_admin_dashboard(request):
         'today_calls': today_calls,
         'pending_followups': pending_followups,
         'overdue_followups': overdue_followups,
+        'call_outcomes': call_outcomes,
+        'admission_metrics': admission_metrics,
         'recent_leads': recent_leads,
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
@@ -132,17 +162,24 @@ def inquiry_list(request):
     if source:
         inquiries = inquiries.filter(source=source)
 
+    call_status = request.GET.get('call_status', '').strip()
+    if call_status:
+        inquiries = inquiries.filter(call_status=call_status)
+
     paginator = Paginator(inquiries, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'management/inquiry_list.html', {
         'page_obj': page_obj,
+        'inquiry_form': InquiryForm(),
         'q': q,
         'status': status,
         'source': source,
+        'call_status': call_status,
         'status_choices': Inquiry.STATUS_CHOICES,
         'source_choices': Inquiry.SOURCE_CHOICES,
+        'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
     })
 
 
@@ -245,6 +282,40 @@ def inquiry_convert(request, pk):
     return render(request, 'management/inquiry_convert.html', {'inquiry': inquiry})
 
 
+@login_required
+@telecaller_required
+def update_call_status(request, pk):
+    """AJAX endpoint to update call status inline from Inquiry Directory."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=405)
+
+    inquiry = get_object_or_404(Inquiry, pk=pk)
+
+    # Access control: Tele Caller can update own inquiries, Super Admin can update any
+    if request.user.role != 'admin' and inquiry.created_by != request.user:
+        return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('call_status', '').strip()
+    except (json.JSONDecodeError, AttributeError):
+        return JsonResponse({'success': False, 'message': 'Invalid data.'}, status=400)
+
+    valid_statuses = [choice[0] for choice in Inquiry.CALL_STATUS_CHOICES]
+    if new_status not in valid_statuses:
+        return JsonResponse({'success': False, 'message': f'Invalid call status: {new_status}'}, status=400)
+
+    inquiry.call_status = new_status
+    inquiry.save(update_fields=['call_status', 'updated_at'])
+
+    return JsonResponse({
+        'success': True,
+        'message': 'Call status updated successfully.',
+        'call_status': new_status,
+        'call_status_display': dict(Inquiry.CALL_STATUS_CHOICES).get(new_status, new_status),
+    })
+
+
 # ==================================================
 # LEAD CRUD
 # ==================================================
@@ -298,10 +369,17 @@ def lead_detail(request, pk):
     call_logs = lead.call_logs.all().order_by('-call_date')
     followups = lead.followups.all().order_by('-followup_date')
 
+    # Check admission sheet
+    try:
+        admission = lead.admission_sheet
+    except AdmissionSheet.DoesNotExist:
+        admission = None
+
     return render(request, 'management/lead_detail.html', {
         'lead': lead,
         'call_logs': call_logs,
         'followups': followups,
+        'admission': admission,
     })
 
 
@@ -1051,7 +1129,7 @@ def lead_assign(request):
 
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    telecallers = User.objects.filter(role='telecaller')
+    telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
 
     if request.method == 'POST':
         telecaller_id = request.POST.get('telecaller')
@@ -1067,7 +1145,7 @@ def lead_assign(request):
         elif not lead_ids:
             messages.error(request, "Please select at least one lead.")
         else:
-            telecaller = get_object_or_404(User, pk=telecaller_id)
+            telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
             updated_count = 0
             for lid in lead_ids:
                 lead = get_object_or_404(Lead, pk=lid)
@@ -1175,12 +1253,21 @@ def lead_bulk_action(request):
 @telecaller_required
 def reports_dashboard(request):
     sources = [choice[0] for choice in Inquiry.SOURCE_CHOICES]
+    if request.user.role == 'admin':
+        leads_qs = Lead.objects.select_related('inquiry')
+    else:
+        leads_qs = Lead.objects.filter(assigned_telecaller=request.user).select_related('inquiry')
+
     source_stats = []
+    total_leads_all = leads_qs.count()
+    total_qualified_all = leads_qs.filter(status='Qualified').count()
+    total_rejected_all = leads_qs.filter(status='Rejected').count()
 
     for src in sources:
-        total_leads = Lead.objects.filter(inquiry__source=src).count()
-        qualified_leads = Lead.objects.filter(inquiry__source=src, status='Qualified').count()
-        rejected_leads = Lead.objects.filter(inquiry__source=src, status='Rejected').count()
+        source_leads = leads_qs.filter(inquiry__source=src)
+        total_leads = source_leads.count()
+        qualified_leads = source_leads.filter(status='Qualified').count()
+        rejected_leads = source_leads.filter(status='Rejected').count()
         
         conversion_rate = 0.0
         if total_leads > 0:
@@ -1192,22 +1279,24 @@ def reports_dashboard(request):
             'qualified_leads': qualified_leads,
             'rejected_leads': rejected_leads,
             'conversion_rate': conversion_rate,
+            'share_rate': round((total_leads / total_leads_all) * 100, 2) if total_leads_all > 0 else 0.0,
         })
 
     chart_labels = sources
-    source_distribution_data = [Lead.objects.filter(inquiry__source=src).count() for src in sources]
-    conversion_by_source_data = []
-    for src in sources:
-        total = Lead.objects.filter(inquiry__source=src).count()
-        qualified = Lead.objects.filter(inquiry__source=src, status='Qualified').count()
-        rate = round((qualified / total) * 100, 2) if total > 0 else 0.0
-        conversion_by_source_data.append(rate)
+    source_distribution_data = [stat['total_leads'] for stat in source_stats]
+    conversion_by_source_data = [stat['conversion_rate'] for stat in source_stats]
+    best_source = max(source_stats, key=lambda item: item['conversion_rate']) if total_leads_all > 0 else None
 
     return render(request, 'management/source_analytics.html', {
         'source_stats': source_stats,
         'chart_labels': chart_labels,
         'source_distribution_data': source_distribution_data,
         'conversion_by_source_data': conversion_by_source_data,
+        'total_leads_all': total_leads_all,
+        'total_qualified_all': total_qualified_all,
+        'total_rejected_all': total_rejected_all,
+        'overall_conversion_rate': round((total_qualified_all / total_leads_all) * 100, 2) if total_leads_all > 0 else 0.0,
+        'best_source': best_source,
     })
 
 
@@ -1218,9 +1307,9 @@ def telecaller_report(request):
     User = get_user_model()
     
     if request.user.role == 'admin':
-        telecallers = User.objects.filter(role='telecaller')
+        telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
     else:
-        telecallers = User.objects.filter(pk=request.user.pk)
+        telecallers = User.objects.filter(pk=request.user.pk, is_deleted=False, is_active=True)
 
     date_filter = request.GET.get('date_filter', 'this_month')
     start_date = None
@@ -1246,6 +1335,10 @@ def telecaller_report(request):
                 end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
         except ValueError:
             pass
+    else:
+        date_filter = 'this_month'
+        start_date = today.replace(day=1)
+        end_date = today
 
     report_data = []
     for tc in telecallers:
@@ -1273,6 +1366,13 @@ def telecaller_report(request):
         rejected_leads = leads_qs.filter(status='Rejected').count()
         pending_followups = followups_qs.filter(status='Pending').count()
 
+        # Call Status Metrics
+        cs_accepted = inquiries_qs.filter(call_status='ACCEPTED').count()
+        cs_busy = inquiries_qs.filter(call_status='BUSY').count()
+        cs_call_back = inquiries_qs.filter(call_status='CALL_BACK').count()
+        cs_interested = inquiries_qs.filter(call_status='INTERESTED').count()
+        cs_not_interested = inquiries_qs.filter(call_status='NOT_INTERESTED').count()
+
         conversion_pct = 0.0
         if total_leads > 0:
             conversion_pct = round((qualified_leads / total_leads) * 100, 2)
@@ -1287,7 +1387,24 @@ def telecaller_report(request):
             'rejected_leads': rejected_leads,
             'pending_followups': pending_followups,
             'conversion_pct': conversion_pct,
+            'cs_accepted': cs_accepted,
+            'cs_busy': cs_busy,
+            'cs_call_back': cs_call_back,
+            'cs_interested': cs_interested,
+            'cs_not_interested': cs_not_interested,
         })
+
+    totals = {
+        'telecallers': len(report_data),
+        'total_inquiries': sum(row['total_inquiries'] for row in report_data),
+        'total_leads': sum(row['total_leads'] for row in report_data),
+        'calls_made': sum(row['calls_made'] for row in report_data),
+        'followups_completed': sum(row['followups_completed'] for row in report_data),
+        'qualified_leads': sum(row['qualified_leads'] for row in report_data),
+        'rejected_leads': sum(row['rejected_leads'] for row in report_data),
+        'pending_followups': sum(row['pending_followups'] for row in report_data),
+    }
+    totals['conversion_pct'] = round((totals['qualified_leads'] / totals['total_leads']) * 100, 2) if totals['total_leads'] > 0 else 0.0
 
     export_format = request.GET.get('export', '').strip()
     if export_format == 'csv':
@@ -1296,12 +1413,14 @@ def telecaller_report(request):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="telecaller_performance_report.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %'])
+        writer.writerow(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %', 'Accepted', 'Busy', 'Call Back', 'Interested', 'Not Interested'])
         for row in report_data:
             writer.writerow([
                 row['telecaller'], row['total_inquiries'], row['total_leads'], row['calls_made'],
                 row['followups_completed'], row['qualified_leads'], row['rejected_leads'],
-                row['pending_followups'], row['conversion_pct']
+                row['pending_followups'], row['conversion_pct'],
+                row['cs_accepted'], row['cs_busy'], row['cs_call_back'],
+                row['cs_interested'], row['cs_not_interested']
             ])
         return response
 
@@ -1313,18 +1432,21 @@ def telecaller_report(request):
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Performance Report"
-        ws.append(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %'])
+        ws.append(['Telecaller', 'Total Inquiries', 'Total Leads', 'Calls Made', 'Follow-Ups Completed', 'Qualified Leads', 'Rejected Leads', 'Pending Follow-Ups', 'Conversion %', 'Accepted', 'Busy', 'Call Back', 'Interested', 'Not Interested'])
         for row in report_data:
             ws.append([
                 row['telecaller'], row['total_inquiries'], row['total_leads'], row['calls_made'],
                 row['followups_completed'], row['qualified_leads'], row['rejected_leads'],
-                row['pending_followups'], row['conversion_pct']
+                row['pending_followups'], row['conversion_pct'],
+                row['cs_accepted'], row['cs_busy'], row['cs_call_back'],
+                row['cs_interested'], row['cs_not_interested']
             ])
         wb.save(response)
         return response
 
     return render(request, 'management/telecaller_report.html', {
         'report_data': report_data,
+        'totals': totals,
         'date_filter': date_filter,
         'start_date': request.GET.get('start_date', ''),
         'end_date': request.GET.get('end_date', ''),
@@ -1377,9 +1499,21 @@ def counselor_dashboard(request):
     upcoming_visits = visits_qs.filter(visit_date__gt=today, status='Scheduled').count()
     completed_visits = visits_qs.filter(status__in=['Visited', 'Admission Done']).count()
     no_shows = visits_qs.filter(status='No Show').count()
+
+    # Admission statistics
+    if request.user.role == 'admin':
+        admissions_qs = AdmissionSheet.objects.all()
+    else:
+        admissions_qs = AdmissionSheet.objects.filter(counselor=request.user)
+    admission_metrics = {
+        'total': admissions_qs.count(),
+        'confirmed': admissions_qs.filter(admission_status='CONFIRMED').count(),
+        'pending': admissions_qs.filter(admission_status='PENDING').count(),
+        'cancelled': admissions_qs.filter(admission_status='CANCELLED').count(),
+    }
     
     # Table Contexts
-    recent_leads = leads_qs.order_by('-created_at')[:5]
+    recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').order_by('-created_at')[:5]
     today_followups_list = followups_qs.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
     overdue_followups_list = followups_qs.filter(status='Pending', followup_date__lt=today).order_by('followup_date')[:5]
     recent_activities = activities_qs.order_by('-created_at')[:5]
@@ -1404,6 +1538,7 @@ def counselor_dashboard(request):
         'upcoming_visits': upcoming_visits,
         'completed_visits': completed_visits,
         'no_shows': no_shows,
+        'admission_metrics': admission_metrics,
     }
     return render(request, 'management/counselor_dashboard.html', context)
 
@@ -1459,6 +1594,12 @@ def counselor_lead_detail(request, pk):
     activities = lead.activities.all().order_by('-created_at')
     visits = lead.visit_sheets.all().order_by('-visit_date', '-visit_time')
 
+    # Check admission sheet
+    try:
+        admission = lead.admission_sheet
+    except AdmissionSheet.DoesNotExist:
+        admission = None
+
     return render(request, 'management/counselor_lead_detail.html', {
         'lead': lead,
         'sessions': sessions,
@@ -1466,6 +1607,7 @@ def counselor_lead_detail(request, pk):
         'notes': notes,
         'activities': activities,
         'visits': visits,
+        'admission': admission,
     })
 
 
@@ -1756,9 +1898,9 @@ def counselor_reports_dashboard(request):
     User = get_user_model()
     
     if request.user.role == 'admin':
-        counselors = User.objects.filter(role='counselor')
+        counselors = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
     else:
-        counselors = User.objects.filter(pk=request.user.pk)
+        counselors = User.objects.filter(pk=request.user.pk, is_deleted=False, is_active=True)
 
     date_filter = request.GET.get('date_filter', 'this_month')
     start_date = None
@@ -1995,7 +2137,7 @@ def lead_assign_counselor(request):
 
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    counselors = User.objects.filter(role='counselor')
+    counselors = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
 
     if request.method == 'POST':
         counselor_id = request.POST.get('counselor')
@@ -2009,7 +2151,7 @@ def lead_assign_counselor(request):
         elif not lead_ids:
             messages.error(request, "Please select at least one lead.")
         else:
-            counselor = get_object_or_404(User, pk=counselor_id)
+            counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
             updated_count = 0
             for lid in lead_ids:
                 lead = get_object_or_404(Lead, pk=lid)
@@ -2186,4 +2328,192 @@ def counselor_visit_edit(request, pk):
         'visit': visit,
         'selected_lead': visit.lead,
         'title': 'Edit Visit Sheet',
+    })
+
+
+# ==================================================
+# PHASE 11.5 — ADMISSION SHEET MANAGEMENT
+# ==================================================
+
+@login_required
+@counselor_required
+def admission_list(request):
+    """List all admissions with search, filters, and pagination."""
+    if request.user.role == 'admin':
+        admissions = AdmissionSheet.objects.all()
+    else:
+        admissions = AdmissionSheet.objects.filter(counselor=request.user)
+
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        admissions = admissions.filter(
+            Q(student_name__icontains=q) | Q(mobile_number__icontains=q) | Q(admission_number__icontains=q)
+        )
+
+    # Filters
+    status = request.GET.get('status', '').strip()
+    if status:
+        admissions = admissions.filter(admission_status=status)
+
+    counselor_id = request.GET.get('counselor', '').strip()
+    if counselor_id and request.user.role == 'admin':
+        admissions = admissions.filter(counselor_id=counselor_id)
+
+    date_from = request.GET.get('date_from', '').strip()
+    if date_from:
+        admissions = admissions.filter(admission_date__gte=date_from)
+
+    date_to = request.GET.get('date_to', '').strip()
+    if date_to:
+        admissions = admissions.filter(admission_date__lte=date_to)
+
+    # Counselor choices for filter (admin only)
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    counselor_choices = User.objects.filter(role='counselor', is_deleted=False, is_active=True).order_by('username')
+
+    paginator = Paginator(admissions, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'management/admission_list.html', {
+        'page_obj': page_obj,
+        'q': q,
+        'status': status,
+        'counselor_id': counselor_id,
+        'date_from': date_from,
+        'date_to': date_to,
+        'status_choices': AdmissionSheet.ADMISSION_STATUS_CHOICES,
+        'counselor_choices': counselor_choices,
+    })
+
+
+@login_required
+@counselor_required
+def admission_create(request, lead_pk):
+    """Create admission from a lead. Auto-populates student info."""
+    lead = get_object_or_404(Lead, pk=lead_pk)
+    if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this lead.")
+
+    # Check duplicate
+    if AdmissionSheet.objects.filter(lead=lead).exists():
+        messages.error(request, "Admission Sheet already exists for this lead.")
+        return redirect('counselor_lead_detail', pk=lead.pk)
+
+    if request.method == 'POST':
+        form = AdmissionSheetForm(request.POST)
+        if form.is_valid():
+            admission = form.save(commit=False)
+            admission.lead = lead
+            admission.created_by = request.user
+            if not admission.counselor:
+                admission.counselor = lead.assigned_counselor or request.user
+            admission.save()
+
+            # Update counselor status to Converted
+            lead.counselor_status = 'CONVERTED'
+            lead.counselor_status_updated_at = timezone.now()
+            lead.save()
+
+            log_lead_activity(
+                lead,
+                'STATUS_CHANGED',
+                f"Admission Sheet created: {admission.admission_number}.",
+                request.user
+            )
+
+            messages.success(request, f"Admission {admission.admission_number} created successfully.")
+            return redirect('admission_detail', pk=admission.pk)
+    else:
+        # Auto-populate from lead
+        inquiry = lead.inquiry
+        initial = {
+            'student_name': inquiry.full_name,
+            'mobile_number': inquiry.mobile_number,
+            'email_id': inquiry.email or '',
+            'college_name': '',
+            'department': '',
+            'course_name': inquiry.course_interest or '',
+            'admission_date': datetime.date.today(),
+        }
+        form = AdmissionSheetForm(initial=initial)
+
+    return render(request, 'management/admission_form.html', {
+        'form': form,
+        'lead': lead,
+        'title': 'Create Admission',
+    })
+
+
+@login_required
+@counselor_required
+def admission_edit(request, pk):
+    """Edit an existing admission."""
+    admission = get_object_or_404(AdmissionSheet, pk=pk)
+    if request.user.role != 'admin' and admission.counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this admission record.")
+
+    if request.method == 'POST':
+        form = AdmissionSheetForm(request.POST, instance=admission)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Admission {admission.admission_number} updated successfully.")
+            return redirect('admission_detail', pk=admission.pk)
+    else:
+        form = AdmissionSheetForm(instance=admission)
+
+    return render(request, 'management/admission_form.html', {
+        'form': form,
+        'lead': admission.lead,
+        'admission': admission,
+        'title': 'Edit Admission',
+    })
+
+
+@login_required
+@counselor_required
+def admission_detail(request, pk):
+    """View admission details."""
+    admission = get_object_or_404(AdmissionSheet, pk=pk)
+    if request.user.role != 'admin' and admission.counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this admission record.")
+
+    return render(request, 'management/admission_detail.html', {
+        'admission': admission,
+    })
+
+
+@login_required
+@counselor_required
+def admission_report(request):
+    """Simple admission report with tabular data."""
+    if request.user.role == 'admin':
+        admissions = AdmissionSheet.objects.all()
+    else:
+        admissions = AdmissionSheet.objects.filter(counselor=request.user)
+
+    # Aggregate metrics
+    from django.db.models import Count
+    total_admissions = admissions.count()
+
+    # By counselor
+    by_counselor = admissions.values(
+        'counselor__username'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    # By course
+    by_course = admissions.values(
+        'course_name'
+    ).annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    return render(request, 'management/admission_report.html', {
+        'total_admissions': total_admissions,
+        'by_counselor': by_counselor,
+        'by_course': by_course,
     })

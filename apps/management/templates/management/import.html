@@ -2,10 +2,17 @@
 
 {% block title %}Bulk Inquiry Import | Examly{% endblock %}
 
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+{% endblock %}
+
 {% block management_content %}
 <div class="mb-4">
   <h2 class="fw-bold text-white mb-1">Bulk Inquiry Import</h2>
   <p class="text-muted small">Upload CSV or Excel spreadsheet files to bulk register inquiries.</p>
+   <a href="{% url 'import_history' %}" class="btn btn-outline-secondary fw-bold">
+      <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
 </div>
 
 <div class="row g-4">

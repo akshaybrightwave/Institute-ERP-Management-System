@@ -916,6 +916,183 @@ Implement a visit-sheet candidate tracking system within the Counselor Module of
 
 ---
 
+## Phase 11.x — Tele Caller Call Status Tracking
+
+### Purpose
+Provides a dedicated Call Status Tracking System for Tele Callers, enabling fast inline call outcome updates directly from the Inquiry Directory without opening edit pages. This separates the concept of call outcome (what happened on the phone) from the inquiry business lifecycle status.
+
+### Workflow
+```text
+Create Inquiry
+↓
+Call Status = NEW (default)
+↓
+Tele Caller Calls Candidate
+↓
+Update Call Status via inline dropdown
+```
+
+### Call Status Choices
+```text
+NEW          → Default, not yet called
+ACCEPTED     → Call answered
+BUSY         → Line busy
+NO_ANSWER    → No answer
+CALL_BACK    → Call back requested
+WRONG_NUMBER → Incorrect number
+INTERESTED   → Candidate expressed interest
+NOT_INTERESTED → Candidate not interested
+```
+
+### Database Changes
+- **Inquiry Model**: Added `call_status` CharField (max_length=25, db_index=True, default='NEW') with `CALL_STATUS_CHOICES`.
+- **Migration**: `0008_inquiry_call_status.py` adds the field to the Inquiry table.
+
+### Inline Update Functionality
+- **Inquiry Directory Column**: New "Call Status" column between "Added" and "Actions".
+- **Inline Dropdown**: Each row displays a styled dropdown selector that saves immediately on change via AJAX.
+- **AJAX Endpoint**: `POST /management/inquiries/<id>/update-call-status/` accepts `{"call_status": "BUSY"}` and returns `{"success": true, "message": "..."}`.
+- **No page reload**: Updates happen via JavaScript fetch with CSRF protection.
+- **Toast Notification**: Success/error feedback shown after each update.
+- **Badge Display**: Color-coded badges below each dropdown (Purple=New, Green=Accepted/Interested, Orange=Busy, Blue=Call Back, Gray=No Answer, Red=Wrong Number, Dark Red=Not Interested).
+
+### Filtering
+- Added Call Status filter dropdown in the Inquiry Directory filter bar.
+- Works alongside existing Search, Source, and Status filters.
+- Pagination preserves all active filters including Call Status.
+
+### Dashboard Integration
+- Both Super Admin Dashboard and Telecaller Dashboard display a compact "Call Outcomes" card.
+- Shows counts for: Accepted, Busy, Call Back, Interested, Not Interested.
+- No additional stat cards added; keeps dashboard clean.
+
+### Report Integration
+- Extended existing Tele Caller Performance Reports with 5 new columns: Accepted, Busy, Call Back, Interested, Not Interested.
+- Updated HTML report table, CSV export, and Excel export with call status metrics.
+- No new reporting module created.
+
+### Access Control
+- **Super Admin**: View all inquiries, update any call status.
+- **Tele Caller**: View own inquiries, update call status on assigned records.
+- **Counselor / ERP Roles**: No access (403 Forbidden).
+
+### Files Modified
+- `apps/management/models.py`: Added `CALL_STATUS_CHOICES` and `call_status` field to Inquiry.
+- `apps/management/views.py`: Added `update_call_status` AJAX view, updated `inquiry_list` filtering, updated both dashboards with call outcome data, updated `telecaller_report` with call status metrics.
+- `apps/management/urls.py`: Added `update_call_status` URL route.
+- `apps/management/templates/management/inquiry_list.html`: Added call status column, inline dropdown, badges, filter, AJAX JavaScript.
+- `apps/management/templates/management/dashboard.html`: Added Call Outcomes card.
+- `apps/management/templates/management/super_admin_dashboard.html`: Added Call Outcomes card.
+- `apps/management/templates/management/telecaller_report.html`: Added call status columns.
+- `apps/management/migrations/0008_inquiry_call_status.py`: Database migration.
+
+---
+
+## Phase 11.5 — Admission Sheet Management
+
+### Purpose
+Admission conversion tracking. The Admission Sheet represents the final conversion stage of a qualified lead, capturing student details, course enrollment, fee information, payment status, and seat confirmation — all within the Management Portal.
+
+### Workflow
+```text
+Inquiry
+→ Lead
+→ Assigned Counselor
+→ Counseling Session
+→ Follow-Up
+→ Visit Sheet (Optional)
+→ Admission Sheet
+```
+
+Lead Detail
+↓
+Create Admission (button)
+↓
+Admission Form (auto-populated from Lead)
+↓
+Save
+↓
+Admission History visible in Lead Detail
+
+### Database Design
+
+**AdmissionSheet Model** (`apps/management/models.py`)
+
+| Field | Type | Notes |
+|---|---|---|
+| admission_number | CharField(20), unique, indexed | Auto-generated: ADM-YYYY-NNNN |
+| admission_date | DateField, indexed | Default: today |
+| admission_status | CharField(20), indexed | CONFIRMED, PENDING, CANCELLED |
+| student_name | CharField(200) | Auto-populated from Lead |
+| mobile_number | CharField(15) | Auto-populated from Lead |
+| email_id | EmailField | Auto-populated from Lead |
+| parent_name | CharField(200) | Optional |
+| parent_mobile | CharField(15) | Optional |
+| college_name | CharField(300) | Auto-populated from Lead |
+| university_name | CharField(300) | Optional |
+| department | CharField(200) | Auto-populated from Lead |
+| academic_year | CharField(20) | Optional |
+| course_name | CharField(200) | Auto-populated from Lead |
+| counselor | ForeignKey(User) | Auto-populated, SET_NULL |
+| admission_source | CharField(100) | Optional |
+| batch_name | CharField(200) | Auto-populated from Lead |
+| seat_status | CharField(20), indexed | BOOKED, CONFIRMED, CANCELLED |
+| remarks | TextField | Optional |
+| lead | OneToOneField(Lead) | Duplicate prevention |
+| created_by | ForeignKey(User) | SET_NULL |
+| created_at | DateTimeField | auto_now_add |
+| updated_at | DateTimeField | auto_now |
+
+### Business Rules
+- One Lead = One Admission Sheet (enforced by OneToOneField).
+- Duplicate creation blocked with validation message.
+- On admission creation, counselor_status updated to 'CONVERTED'.
+
+### Permissions
+
+| Role | Access |
+|---|---|
+| Super Admin | View all, create, edit, reports |
+| Counselor | Own admissions only (create, view, edit) |
+| Tele Caller | No access |
+
+Counselor queryset filtering enforced via `@counselor_required` decorator and role-based queryset scoping.
+
+### Dashboard Metrics
+Both Super Admin Dashboard and Counselor Dashboard display:
+- Total Admissions
+- Confirmed Admissions
+- Pending Admissions
+- Cancelled Admissions
+
+### Reports
+Simple tabular Admission Report with:
+- Total Admissions
+- Admissions By Counselor breakdown
+- Admissions By Course breakdown
+
+No charts, no BI, no exports.
+
+### Files Modified / Created
+- `apps/management/models.py`: Added `AdmissionSheet` model.
+- `apps/management/migrations/0009_admissionsheet.py`: Database migration.
+- `apps/management/migrations/0011_migrate_pending_payment.py`: Migrated PENDING_PAYMENT to PENDING.
+- `apps/management/migrations/0012_remove_admissionsheet_course_fees_and_more.py`: Database migration to remove fees and add batch_name.
+- `apps/management/forms.py`: Added `AdmissionSheetForm`.
+- `apps/management/views.py`: Added 5 admission views (list, create, edit, detail, report). Updated dashboards and lead detail views with admission data.
+- `apps/management/urls.py`: Added 5 admission URL routes.
+- `apps/management/templates/management/admission_list.html`: List page with search, filters, pagination.
+- `apps/management/templates/management/admission_form.html`: Create/edit form.
+- `apps/management/templates/management/admission_detail.html`: Read-only detail view.
+- `apps/management/templates/management/admission_report.html`: Tabular report.
+- `apps/management/templates/management/super_admin_dashboard.html`: Added admission metrics card.
+- `apps/management/templates/management/counselor_dashboard.html`: Added admission metrics row.
+- `apps/management/templates/management/counselor_lead_detail.html`: Added Create Admission button and admission history section.
+- `apps/management/templates/management/lead_detail.html`: Added admission history section.
+- `apps/management/templates/management/base.html`: Added Admissions and Admission Report sidebar links.
+
+---
+
 ## Completion Status
 
 Module Status: Completed
@@ -929,3 +1106,6 @@ Completion Percentage: 100%
 ## Notes
 
 This module forms the business workflow inside the Counselor Module of the Management Portal and serves as the follow-up physical visit log layer before admission conversion and ERP student onboarding.
+
+**UI Optimization Note:** 
+The Counselor Dashboard (`counselor_dashboard.html`) was comprehensively refactored to reduce visual clutter and improve usability. The layout was structured into logical summary widgets (Lead Pipeline, Follow-up Overview, Visit Overview, Admission Overview) with a top row for Hero Metrics, significantly enhancing the professional presentation without modifying backend business logic, queries, or calculations.

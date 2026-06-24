@@ -1,0 +1,216 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Admission Report | Examly{% endblock %}
+
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+<style>
+  .report-page-title {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 16px;
+  }
+  .report-page-title h2 {
+    color: #0f172a;
+  }
+  .report-page-title p {
+    color: #64748b;
+  }
+  .m-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    height: 100%;
+  }
+  .m-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .hero-metric {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .hero-metric:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  .hero-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+  }
+  .hero-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+    color: #0f172a;
+  }
+  .hero-label {
+    font-size: 0.9rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .bg-icon-primary { background: #eff6ff; color: #3b82f6; }
+
+  .m-table {
+    margin-bottom: 0;
+  }
+  .m-table th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 12px 16px;
+  }
+  .m-table td {
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #334155;
+    padding: 14px 16px;
+  }
+  .m-table td.fw-bold {
+    color: #0f172a !important;
+  }
+  .stat-badge {
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+  }
+  .empty-state i {
+    font-size: 2.5rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block management_content %}
+<div class="report-page-title d-flex justify-content-between align-items-center flex-wrap gap-3">
+  <div>
+    <h2 class="fw-bold mb-1">Admission Report</h2>
+    <p class="mb-0">Overview of admission conversions and enrollment distributions</p>
+  </div>
+  <a href="{% url 'admission_list' %}" class="btn btn-outline-primary fw-bold">
+    <i class="bi bi-arrow-left me-1"></i> Back to Admissions
+  </a>
+</div>
+
+<!-- Summary Metrics -->
+<div class="row mb-4">
+  <div class="col-md-6 col-lg-4">
+    <div class="hero-metric">
+      <div class="hero-icon bg-icon-primary"><i class="bi bi-award-fill"></i></div>
+      <div>
+        <div class="hero-value">{{ total_admissions }}</div>
+        <div class="hero-label">Total Admissions</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- By Counselor -->
+  <div class="col-lg-6">
+    <div class="m-card">
+      <h5 class="m-card-title"><i class="bi bi-people-fill text-primary"></i> Admissions By Counselor</h5>
+      {% if by_counselor %}
+      <div class="table-responsive rounded border border-light">
+        <table class="table m-table align-middle">
+          <thead>
+            <tr>
+              <th>Counselor</th>
+              <th class="text-end">Admissions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in by_counselor %}
+            <tr>
+              <td class="fw-bold text-capitalize">
+                <i class="bi bi-person-circle text-muted me-2"></i>{{ row.counselor__username|default:"Unassigned" }}
+              </td>
+              <td class="text-end"><span class="stat-badge">{{ row.count }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-inbox text-muted"></i>
+        <p class="text-muted mb-0">No admission data available.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- By Course -->
+  <div class="col-lg-6">
+    <div class="m-card">
+      <h5 class="m-card-title"><i class="bi bi-book-half text-primary"></i> Admissions By Course</h5>
+      {% if by_course %}
+      <div class="table-responsive rounded border border-light">
+        <table class="table m-table align-middle">
+          <thead>
+            <tr>
+              <th>Course</th>
+              <th class="text-end">Admissions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in by_course %}
+            <tr>
+              <td class="fw-bold text-capitalize">
+                <i class="bi bi-journal-bookmark text-muted me-2"></i>{{ row.course_name|default:"Not Specified" }}
+              </td>
+              <td class="text-end"><span class="stat-badge">{{ row.count }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-inbox text-muted"></i>
+        <p class="text-muted mb-0">No admission data available.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

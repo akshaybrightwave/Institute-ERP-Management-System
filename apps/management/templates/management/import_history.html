@@ -2,14 +2,18 @@
 
 {% block title %}Import History Audit | Examly{% endblock %}
 
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+{% endblock %}
+
 {% block management_content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div>
     <h2 class="fw-bold text-white mb-1">Import History Log</h2>
     <p class="text-muted small mb-0">Audit history of bulk inquiry spreadsheets uploaded to the portal.</p>
   </div>
-  <div>
-    <a href="{% url 'inquiry_import' %}" class="btn btn-info text-white fw-bold"><i class="bi bi-plus-lg"></i> Import New File</a>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <a href="{% url 'inquiry_import' %}" class="btn btn-info text-white fw-bold"><i class="bi bi-plus-lg"></i> Bulk Inquiry Import</a>
   </div>
 </div>
 

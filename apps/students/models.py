@@ -1,8 +1,9 @@
 from django.db import models
 from django.conf import settings
+from apps.soft_delete import SoftDeleteModel
 
 
-class StudentProfile(models.Model):
+class StudentProfile(SoftDeleteModel):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15, blank=True)

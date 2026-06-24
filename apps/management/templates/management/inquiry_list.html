@@ -1,6 +1,8 @@
 {% extends 'management/base.html' %}
 
 {% block extra_style %}
+{# Dark base theme — topbar, sidebar, body bg, form controls, cards #}
+{% include 'management/premium_theme_css.html' %}
 <style>
   .inquiry-directory-page {
     --inquiry-blue: #0284c7;
@@ -11,6 +13,18 @@
     --inquiry-yellow-soft: #fef3c7;
     --inquiry-red: #b91c1c;
     --inquiry-red-soft: #fee2e2;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .inquiry-directory-page button,
+  .inquiry-directory-page input,
+  .inquiry-directory-page select,
+  .inquiry-directory-page textarea,
+  .inquiry-modal button,
+  .inquiry-modal input,
+  .inquiry-modal select,
+  .inquiry-modal textarea {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
 
   .inquiry-page-header {
@@ -33,18 +47,100 @@
     border: 0;
     border-radius: 8px;
     background: #06b6d4;
-    color: #06111f !important;
-    box-shadow: 0 12px 28px rgba(6, 182, 212, .24);
+    color: #fff !important;
+    box-shadow: 0 12px 28px rgba(6, 182, 212, .28);
+    transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
+  }
+
+  .inquiry-primary-action:hover,
+  .inquiry-primary-action:focus {
+    background: #0891b2 !important;
+    color: #fff !important;
+    box-shadow: 0 16px 32px rgba(6, 182, 212, .38) !important;
+    transform: translateY(-1px);
+  }
+
+  .inquiry-modal .modal-content {
+    border: 0;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .inquiry-modal .modal-header {
+    background: #0f172a;
+    border-bottom: 0;
+    color: #fff;
+  }
+
+  .inquiry-modal .modal-body {
+    background: #111827;
+  }
+
+  .inquiry-modal .form-label {
+    color: #475569;
+    font-size: 13px;
+    font-weight: 800;
   }
 
   .inquiry-filter-card {
-    padding: 20px !important;
+    padding: 18px !important;
+    border-color: var(--mg-line) !important;
   }
 
   .inquiry-filter-card .form-label {
-    color: #475569 !important;
+    color: var(--mg-muted) !important;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    margin-bottom: 7px;
+  }
+
+  .inquiry-filter-card .input-group-text {
+    border-color: var(--mg-line) !important;
+    border-right: 0 !important;
+    background: #fff !important;
+    color: var(--mg-primary) !important;
+    border-radius: 8px 0 0 8px !important;
+  }
+
+  .inquiry-filter-card .form-control,
+  .inquiry-filter-card .form-select {
+    min-height: 46px;
+    border: 1px solid var(--mg-line) !important;
+    background-color: #fff !important;
+    color: var(--mg-text) !important;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: none !important;
+  }
+
+  .inquiry-filter-card .input-group .form-control {
+    border-left: 0 !important;
+    border-radius: 0 8px 8px 0 !important;
+  }
+
+  .inquiry-filter-card .form-select {
+    cursor: pointer;
+    padding-right: 42px;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--mg-primary) 50%),
+      linear-gradient(135deg, var(--mg-primary) 50%, transparent 50%);
+    background-position:
+      calc(100% - 18px) 20px,
+      calc(100% - 13px) 20px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .inquiry-filter-card .form-control:focus,
+  .inquiry-filter-card .form-select:focus {
+    border-color: rgba(91, 95, 239, .55) !important;
+    box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
+  }
+
+  .inquiry-filter-card .input-group:focus-within .input-group-text {
+    border-color: rgba(91, 95, 239, .55) !important;
+    color: var(--mg-primary-dark) !important;
   }
 
   .inquiry-filter-actions {
@@ -54,7 +150,20 @@
   }
 
   .inquiry-filter-actions .btn {
-    min-height: 45px;
+    min-height: 46px;
+    width: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
+    background: var(--mg-primary) !important;
+    border-color: var(--mg-primary) !important;
+    box-shadow: 0 12px 24px rgba(91, 95, 239, .22);
+  }
+
+  .inquiry-filter-actions .btn i {
+    font-size: 20px;
+    line-height: 1;
   }
 
   .inquiry-result-meta {
@@ -62,41 +171,104 @@
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding-bottom: 14px;
+    padding: 2px 2px 18px;
     border-bottom: 1px solid var(--mg-line);
-    margin-bottom: 4px;
+    margin-bottom: 14px;
+    color: var(--mg-muted);
+    font-size: 13px;
   }
 
   .inquiry-result-meta strong {
-    color: #0f172a;
+    color: var(--mg-text);
+    font-size: 20px;
+    letter-spacing: -0.02em;
+  }
+
+  .inquiry-table-shell {
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #fff;
+    overflow: auto;
   }
 
   .inquiry-table {
-    min-width: 920px;
+    min-width: 1120px;
+    border-collapse: separate;
+    border-spacing: 0;
   }
 
   .inquiry-table th {
-    padding: 14px 12px !important;
+    padding: 14px 16px !important;
+    white-space: nowrap;
+    text-align: left !important;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--mg-muted);
+    background: #f8fafc !important;
+    border-bottom: 1px solid var(--mg-line) !important;
   }
 
   .inquiry-table td {
-    padding: 18px 12px !important;
+    padding: 16px !important;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    border-bottom: 1px solid var(--mg-line) !important;
+    background: #fff !important;
   }
+
+  .inquiry-table tbody tr {
+    transition: background-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .inquiry-table tbody tr:hover td {
+    background: #fbfdff !important;
+  }
+
+  .inquiry-table tbody tr:last-child td {
+    border-bottom: 0 !important;
+  }
+
+  /* Column widths (7 columns) */
+  .inquiry-table th:nth-child(1),
+  .inquiry-table td:nth-child(1) { width: 17%; }
+  .inquiry-table th:nth-child(2),
+  .inquiry-table td:nth-child(2) { width: 14%; }
+  .inquiry-table th:nth-child(3),
+  .inquiry-table td:nth-child(3) { width: 10%; }
+  .inquiry-table th:nth-child(4),
+  .inquiry-table td:nth-child(4) { width: 10%; }
+  .inquiry-table th:nth-child(5),
+  .inquiry-table td:nth-child(5) { width: 11%; overflow: visible; }
+  .inquiry-table th:nth-child(6),
+  .inquiry-table td:nth-child(6) { width: 12%; overflow: visible; }
+  .inquiry-table th:nth-child(7),
+  .inquiry-table td:nth-child(7) { width: 26%; }
 
   .candidate-name {
     font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 7px;
+    color: var(--mg-text);
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
   }
 
   .candidate-contact,
   .candidate-context,
   .inquiry-date {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px 14px;
-    color: #64748b;
-    font-size: 13px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px 12px;
+    color: var(--mg-muted);
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .candidate-contact span,
@@ -104,7 +276,9 @@
   .inquiry-date span {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .course-pill,
@@ -114,8 +288,8 @@
     align-items: center;
     gap: 6px;
     border-radius: 999px;
-    padding: 7px 11px;
-    font-size: 13px;
+    padding: 7px 10px;
+    font-size: 12px;
     font-weight: 800;
     line-height: 1;
     white-space: nowrap;
@@ -127,8 +301,9 @@
   }
 
   .source-pill {
-    background: #f1f5f9;
+    background: #f8fafc;
     color: #334155;
+    border: 1px solid var(--mg-line);
   }
 
   .status-new {
@@ -151,37 +326,148 @@
     color: var(--inquiry-red);
   }
 
+  /* Call Status Badges */
+  .call-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .cs-NEW        { background: #f3e8ff; color: #7c3aed; }
+  .cs-ACCEPTED   { background: #dcfce7; color: #15803d; }
+  .cs-INTERESTED { background: #dcfce7; color: #15803d; }
+  .cs-BUSY       { background: #fff7ed; color: #c2410c; }
+  .cs-CALL_BACK  { background: #dbeafe; color: #1d4ed8; }
+  .cs-NO_ANSWER  { background: #f1f5f9; color: #475569; }
+  .cs-WRONG_NUMBER   { background: #fee2e2; color: #b91c1c; }
+  .cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; }
+
+  /* Inline Call Status Dropdown */
+  .call-status-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .call-status-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 7px 26px 7px 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s, color 0.2s;
+    min-width: 128px;
+    width: 100%;
+  }
+  .call-status-select:focus {
+    outline: none;
+    border-color: #06b6d4;
+    box-shadow: 0 0 0 2px rgba(6,182,212,0.2);
+  }
+  .call-status-select.saving {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* Color-coded select classes */
+  .call-status-select.cs-NEW { background: #f3e8ff; color: #7c3aed; border-color: #c4b5fd; }
+  .call-status-select.cs-ACCEPTED { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .call-status-select.cs-INTERESTED { background: #d1fae5; color: #047857; border-color: #6ee7b7; }
+  .call-status-select.cs-BUSY { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
+  .call-status-select.cs-CALL_BACK { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+  .call-status-select.cs-NO_ANSWER { background: #f1f5f9; color: #475569; border-color: #94a3b8; }
+  .call-status-select.cs-WRONG_NUMBER { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+  .call-status-select.cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; border-color: #fda4af; }
+
+  .call-status-wrapper::after {
+    content: '\25BC';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 8px;
+    color: #64748b;
+    pointer-events: none;
+    transition: color 0.2s;
+  }
+
+  /* Call Status Toast */
+  .cs-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #15803d;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    z-index: 9999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+  }
+  .cs-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .cs-toast.error {
+    background: #b91c1c;
+  }
+
   .inquiry-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 7px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 
   .inquiry-icon-btn,
   .inquiry-convert-btn,
   .inquiry-lead-btn {
-    min-height: 38px;
+    min-height: 34px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
+    gap: 5px;
     border-radius: 8px;
     font-weight: 800;
     text-decoration: none;
+    font-size: 11px;
   }
 
   .inquiry-icon-btn {
-    width: 38px;
+    width: 34px;
+    min-width: 34px;
+    flex-shrink: 0;
+    padding: 0;
     border: 1px solid #dbe3ee;
     color: #475569;
     background: #fff;
+    cursor: pointer;
   }
 
   .inquiry-icon-btn:hover {
-    background: #f8fafc;
-    color: #0f172a;
+    background: #eef2ff;
+    color: var(--mg-primary);
+    border-color: rgba(91, 95, 239, .35);
+  }
+
+  .inquiry-icon-btn i {
+    font-size: 15px;
+    line-height: 1;
   }
 
   .inquiry-icon-btn.edit {
@@ -195,17 +481,21 @@
   }
 
   .inquiry-convert-btn {
-    padding: 0 14px;
+    padding: 0 12px;
+    flex-shrink: 0;
     background: #4f46e5;
     color: #fff !important;
     box-shadow: 0 10px 22px rgba(79, 70, 229, .22);
+    font-size: 11px;
   }
 
   .inquiry-lead-btn {
     padding: 0 12px;
+    flex-shrink: 0;
     border: 1px solid #bbf7d0;
     background: #f0fdf4;
     color: #15803d !important;
+    font-size: 11px;
   }
 
   .inquiry-pagination .page-link {
@@ -244,6 +534,13 @@
   @media (max-width: 767.98px) {
     .inquiry-table {
       min-width: 0;
+      border-spacing: 0;
+    }
+
+    .inquiry-table-shell {
+      border: 0;
+      background: transparent;
+      overflow: visible;
     }
 
     .inquiry-table thead {
@@ -264,21 +561,33 @@
       margin-bottom: 14px;
       padding: 12px;
       background: #fff;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, .06);
     }
 
     .inquiry-table td {
       border: 0 !important;
-      padding: 8px 0 !important;
+      padding: 9px 0 !important;
+      background: transparent !important;
+      text-align: left;
+      white-space: normal;
+      overflow: visible;
     }
 
     .inquiry-table td::before {
       content: attr(data-label);
       display: block;
       color: #64748b;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       text-transform: uppercase;
+      letter-spacing: 0.08em;
       margin-bottom: 6px;
+    }
+
+    .candidate-contact,
+    .candidate-context,
+    .inquiry-date {
+      flex-wrap: wrap;
     }
 
     .inquiry-actions {
@@ -290,6 +599,227 @@
       flex: 1 1 100%;
     }
   }
+
+  /* ═══════════════════════════════════════════════════
+     DARK THEME OVERRIDES — all inquiry-specific classes
+     (premium_theme_css.html handles body/topbar/sidebar/
+     form-controls inside .management-content)
+  ═══════════════════════════════════════════════════ */
+
+  /* Table shell & structure */
+  .inquiry-table-shell {
+    background: #111827 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  .inquiry-table th {
+    background: #0f172a !important;
+    color: #64748b !important;
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  .inquiry-table td {
+    background: #111827 !important;
+    border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+  }
+  .inquiry-table tbody tr:hover td { background: #1e293b !important; }
+  .inquiry-table tbody tr:last-child td { border-bottom: 0 !important; }
+
+  /* Candidate name & meta text */
+  .candidate-name { color: #f1f5f9 !important; }
+  .candidate-contact, .candidate-context, .inquiry-date { color: #64748b !important; }
+
+  /* Result meta bar */
+  .inquiry-result-meta {
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    color: #64748b !important;
+  }
+  .inquiry-result-meta strong { color: #f1f5f9 !important; }
+
+  /* Interest pill */
+  .course-pill {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #a5b4fc !important;
+  }
+
+  /* Source pill */
+  .source-pill {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #94a3b8 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+
+  /* Status pills */
+  .status-new       { background: rgba(2,132,199,0.15) !important;  color: #38bdf8 !important; }
+  .status-contacted { background: rgba(161,98,7,0.15) !important;   color: #fbbf24 !important; }
+  .status-qualified { background: rgba(21,128,61,0.15) !important;  color: #4ade80 !important; }
+  .status-rejected  { background: rgba(185,28,28,0.15) !important;  color: #f87171 !important; }
+
+  /* Call status badge (read-only) */
+  .call-status-badge.cs-NEW        { background: rgba(124,58,237,0.15) !important; color: #a78bfa !important; }
+  .call-status-badge.cs-ACCEPTED   { background: rgba(21,128,61,0.15) !important;  color: #4ade80 !important; }
+  .call-status-badge.cs-INTERESTED { background: rgba(4,120,87,0.15) !important;   color: #34d399 !important; }
+  .call-status-badge.cs-BUSY       { background: rgba(194,65,12,0.15) !important;  color: #fb923c !important; }
+  .call-status-badge.cs-CALL_BACK  { background: rgba(29,78,216,0.15) !important;  color: #60a5fa !important; }
+  .call-status-badge.cs-NO_ANSWER  { background: rgba(71,85,105,0.15) !important;  color: #94a3b8 !important; }
+  .call-status-badge.cs-WRONG_NUMBER   { background: rgba(185,28,28,0.15) !important; color: #f87171 !important; }
+  .call-status-badge.cs-NOT_INTERESTED { background: rgba(159,18,57,0.15) !important; color: #fb7185 !important; }
+
+  /* Inline call-status select (editable dropdown) */
+  .call-status-select {
+    background: #1e293b !important;
+    color: #94a3b8 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  .call-status-select:focus {
+    border-color: #5b5fef !important;
+    box-shadow: 0 0 0 2px rgba(91,95,239,0.2) !important;
+  }
+  .call-status-select.cs-NEW        { background: rgba(124,58,237,0.18) !important; color: #a78bfa !important; border-color: rgba(124,58,237,0.35) !important; }
+  .call-status-select.cs-ACCEPTED   { background: rgba(21,128,61,0.18) !important;  color: #4ade80 !important; border-color: rgba(21,128,61,0.35) !important; }
+  .call-status-select.cs-INTERESTED { background: rgba(4,120,87,0.18) !important;   color: #34d399 !important; border-color: rgba(4,120,87,0.35) !important; }
+  .call-status-select.cs-BUSY       { background: rgba(194,65,12,0.18) !important;  color: #fb923c !important; border-color: rgba(194,65,12,0.35) !important; }
+  .call-status-select.cs-CALL_BACK  { background: rgba(29,78,216,0.18) !important;  color: #60a5fa !important; border-color: rgba(29,78,216,0.35) !important; }
+  .call-status-select.cs-NO_ANSWER  { background: rgba(71,85,105,0.18) !important;  color: #94a3b8 !important; border-color: rgba(71,85,105,0.35) !important; }
+  .call-status-select.cs-WRONG_NUMBER   { background: rgba(185,28,28,0.18) !important; color: #f87171 !important; border-color: rgba(185,28,28,0.35) !important; }
+  .call-status-select.cs-NOT_INTERESTED { background: rgba(159,18,57,0.18) !important; color: #fb7185 !important; border-color: rgba(159,18,57,0.35) !important; }
+
+  .call-status-wrapper::after { color: #64748b !important; }
+
+  /* Action buttons */
+  .inquiry-icon-btn {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #64748b !important;
+  }
+  .inquiry-icon-btn:hover {
+    background: rgba(91, 95, 239, 0.15) !important;
+    border-color: #5b5fef !important;
+    color: #a5b4fc !important;
+  }
+  .inquiry-icon-btn.edit {
+    color: #fbbf24 !important;
+    border-color: rgba(251, 191, 36, 0.3) !important;
+    background: rgba(251, 191, 36, 0.08) !important;
+  }
+  .inquiry-icon-btn.edit:hover { background: rgba(251, 191, 36, 0.18) !important; }
+  .inquiry-icon-btn.delete {
+    color: #f87171 !important;
+    border-color: rgba(248, 113, 113, 0.3) !important;
+    background: rgba(248, 113, 113, 0.08) !important;
+  }
+  .inquiry-icon-btn.delete:hover { background: rgba(248, 113, 113, 0.18) !important; }
+
+  .inquiry-lead-btn {
+    background: rgba(21, 128, 61, 0.15) !important;
+    border-color: rgba(21, 128, 61, 0.35) !important;
+    color: #4ade80 !important;
+  }
+  .inquiry-lead-btn:hover { background: rgba(21, 128, 61, 0.25) !important; }
+
+  /* Filter card specifics (premium covers .form-control/.form-select;
+     override the remaining light elements) */
+  .inquiry-filter-card .input-group-text {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #818cf8 !important;
+  }
+  .inquiry-filter-card .form-control,
+  .inquiry-filter-card .form-select {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
+  }
+  .inquiry-filter-card .form-control::placeholder { color: #475569 !important; }
+  .inquiry-filter-card .form-control:focus,
+  .inquiry-filter-card .form-select:focus {
+    background: #0f172a !important;
+    border-color: #5b5fef !important;
+    box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.2) !important;
+  }
+  .inquiry-filter-card .input-group:focus-within .input-group-text {
+    border-color: #5b5fef !important;
+    color: #a5b4fc !important;
+  }
+  .inquiry-filter-card .form-label { color: #64748b !important; }
+
+  /* Pagination */
+  .inquiry-pagination .page-link {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #94a3b8 !important;
+  }
+  .inquiry-pagination .page-link:hover {
+    background: rgba(91, 95, 239, 0.15) !important;
+    color: #a5b4fc !important;
+  }
+  .inquiry-pagination .active .page-link {
+    background: #5b5fef !important;
+    border-color: #5b5fef !important;
+    color: #fff !important;
+  }
+
+  /* Mobile card dark */
+  @media (max-width: 767.98px) {
+    .inquiry-table tr {
+      background: #1e293b !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+    }
+    .inquiry-table td::before { color: #475569 !important; }
+  }
+
+  /* ── Inquiry detail modal ── */
+  .inquiry-modal .modal-content {
+    background: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 14px !important;
+  }
+  .inquiry-modal .modal-header {
+    background: #0f172a !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #f1f5f9 !important;
+  }
+  .inquiry-modal .modal-title { color: #f1f5f9 !important; }
+  .inquiry-modal .modal-body { background: #111827 !important; }
+
+  .inquiry-detail-panel {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 16px;
+    height: 100%;
+  }
+
+  .inquiry-detail-panel-title {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+  }
+
+  .inquiry-detail-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .inquiry-detail-field:last-child { border-bottom: 0; padding-bottom: 0; }
+
+  .inquiry-detail-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #475569;
+  }
+
+  .inquiry-detail-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #e2e8f0;
+  }
 </style>
 {% endblock %}
 
@@ -300,48 +830,58 @@
       <h2 class="fw-bold text-white mb-2">Inquiry Directory</h2>
       <p class="text-muted mb-0">Find each inquiry quickly, check the status, and convert qualified students into leads.</p>
     </div>
-    <a href="{% url 'inquiry_add' %}" class="btn inquiry-primary-action fw-bold">
+    <button type="button" class="btn inquiry-primary-action fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">
       <i class="bi bi-person-plus"></i> Add Inquiry
-    </a>
+    </button>
   </div>
 
   <div class="m-card inquiry-filter-card mb-4">
     <form method="GET" class="row g-3 align-items-end">
-      <div class="col-lg-5">
+      <div class="col-lg-4">
         <label class="form-label">Search inquiries</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-search"></i></span>
-          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Name, mobile number, or city">
+          <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Name, mobile, or city">
         </div>
       </div>
 
-      <div class="col-lg-3 col-md-6">
+      <div class="col-lg-2 col-md-6">
         <label class="form-label">Status</label>
         <select name="status" class="form-select">
           <option value="">All Statuses</option>
           {% for code, name in status_choices %}
-            <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+          <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-lg-2 col-md-6">
+        <label class="form-label">Source</label>
+        <select name="source" class="form-select">
+          <option value="">All Sources</option>
+          {% for code, name in source_choices %}
+          <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="col-lg-3 col-md-6">
-        <label class="form-label">Source</label>
-        <select name="source" class="form-select">
-          <option value="">All Sources</option>
-          {% for code, name in source_choices %}
-            <option value="{{ code }}" {% if source == code %}selected{% endif %}>{{ name }}</option>
+        <label class="form-label">Call Status</label>
+        <select name="call_status" class="form-select">
+          <option value="">All Call Statuses</option>
+          {% for code, name in call_status_choices %}
+          <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="col-lg-1 inquiry-filter-actions">
         <button type="submit" class="btn btn-info text-white fw-bold" title="Apply filters">
-          <i class="bi bi-funnel me-lg-0 me-1"></i><span class="d-lg-none">Apply Filters</span>
+          <i class="bi bi-funnel me-lg-0 me-1"></i><span class="d-lg-none">Filter</span>
         </button>
       </div>
 
-      {% if q or status or source %}
+      {% if q or status or source or call_status %}
         <div class="col-12">
           <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-x-circle me-1"></i> Clear filters
@@ -363,7 +903,7 @@
         </div>
       </div>
 
-      <div class="table-responsive">
+      <div class="table-responsive inquiry-table-shell">
         <table class="table m-table inquiry-table align-middle">
           <thead>
             <tr>
@@ -372,6 +912,7 @@
               <th>Source</th>
               <th>Status</th>
               <th>Added</th>
+              <th>Call Status</th>
               <th class="text-end">Actions</th>
             </tr>
           </thead>
@@ -380,16 +921,9 @@
               <tr>
                 <td data-label="Student">
                   <div class="candidate-name">{{ inquiry.full_name }}</div>
-                  <div class="candidate-contact">
-                    <span><i class="bi bi-telephone"></i>{{ inquiry.mobile_number }}</span>
-                    <span><i class="bi bi-envelope"></i>{{ inquiry.email|default:"No email" }}</span>
-                  </div>
                 </td>
                 <td data-label="Interest">
                   <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
-                  <div class="candidate-context mt-2">
-                    <span><i class="bi bi-geo-alt"></i>{{ inquiry.city|default:"No city" }}</span>
-                  </div>
                 </td>
                 <td data-label="Source">
                   <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
@@ -410,14 +944,29 @@
                     <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
                   </div>
                 </td>
+                <td data-label="Call Status">
+                  <div class="call-status-wrapper">
+                    <select class="call-status-select" data-inquiry-id="{{ inquiry.pk }}" onchange="updateCallStatus(this)">
+                      {% for code, name in call_status_choices %}
+                        <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="mt-1">
+                    <span class="call-status-badge cs-{{ inquiry.call_status }}" id="badge-{{ inquiry.pk }}">
+                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% endif %}
+                      {{ inquiry.get_call_status_display }}
+                    </span>
+                  </div>
+                </td>
                 <td data-label="Actions">
                   <div class="inquiry-actions">
-                    <a href="{% url 'inquiry_detail' inquiry.pk %}" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}">
+                    <button type="button" class="inquiry-icon-btn" title="View details" aria-label="View {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#inquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-eye"></i>
-                    </a>
-                    <a href="{% url 'inquiry_edit' inquiry.pk %}" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}">
+                    </button>
+                    <button type="button" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#editInquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-pencil"></i>
-                    </a>
+                    </button>
                     {% if not inquiry.lead %}
                       <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
                         <i class="bi bi-arrow-right-circle"></i> Convert to Lead
@@ -427,9 +976,9 @@
                         <i class="bi bi-check2-circle"></i> View Lead
                       </a>
                     {% endif %}
-                    <a href="{% url 'inquiry_delete' inquiry.pk %}" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}">
+                    <button type="button" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#deleteInquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-trash"></i>
-                    </a>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -443,35 +992,337 @@
           <ul class="pagination justify-content-center flex-wrap gap-1">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}" aria-label="Previous page">&laquo;</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Previous page">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}">{{ i }}</a>
+                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}" aria-label="Next page">&raquo;</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Next page">&raquo;</a>
               </li>
             {% endif %}
           </ul>
         </nav>
-      {% endif %}
-    {% else %}
+      {% endif %}    {% else %}
       <div class="empty-state">
         <i class="bi bi-search"></i>
         <h4>No Inquiries Found</h4>
         <p class="text-muted">No records match your search or filters.</p>
         <div class="d-flex justify-content-center gap-2 flex-wrap">
-          {% if q or status or source %}
+          {% if q or status or source or call_status %}
             <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
           {% endif %}
-          <a href="{% url 'inquiry_add' %}" class="btn btn-info text-white fw-bold">Add Inquiry</a>
+          <button type="button" class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">Add Inquiry</button>
         </div>
       </div>
     {% endif %}
   </div>
 </div>
+
+{# ---- Add Inquiry Modal ---- #}
+<div class="modal fade inquiry-modal" id="addInquiryModal" tabindex="-1" aria-labelledby="addInquiryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <form method="POST" action="{% url 'inquiry_add' %}" class="modal-content">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold text-white" id="addInquiryModalLabel">
+              <i class="bi bi-person-plus me-2"></i>Add Inquiry
+            </h5>
+            <p class="mb-0 small text-white-50">Fill student inquiry details and save the record.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Full Name <span class="text-danger">*</span></label>
+              {{ inquiry_form.full_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
+              {{ inquiry_form.mobile_number }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email Address</label>
+              {{ inquiry_form.email }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">City <span class="text-danger">*</span></label>
+              {{ inquiry_form.city }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Course of Interest <span class="text-danger">*</span></label>
+              {{ inquiry_form.course_interest }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Lead Source <span class="text-danger">*</span></label>
+              {{ inquiry_form.source }}
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">Inquiry Status <span class="text-danger">*</span></label>
+              {{ inquiry_form.status }}
+            </div>
+            <div class="col-12">
+              <label class="form-label">Remarks / Notes</label>
+              {{ inquiry_form.remarks }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info text-white fw-bold">Save Inquiry</button>
+        </div>
+      </form>
+  </div>
+</div>
+
+{# ---- Inquiry Detail Modals ---- #}
+{% for inquiry in page_obj %}
+<div class="modal fade inquiry-modal" id="inquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="inquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="inquiryModalLabel{{ inquiry.pk }}">
+          <i class="bi bi-person-circle text-primary me-2"></i>{{ inquiry.full_name }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <div class="inquiry-detail-panel">
+              <h6 class="inquiry-detail-panel-title"><i class="bi bi-telephone text-primary me-2"></i>Contact Information</h6>
+              <div class="row g-2">
+                <div class="col-6">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">Full Name</span><span class="inquiry-detail-value">{{ inquiry.full_name }}</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">Mobile</span><span class="inquiry-detail-value">{{ inquiry.mobile_number }}</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">Email</span><span class="inquiry-detail-value">{{ inquiry.email|default:"—" }}</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">City</span><span class="inquiry-detail-value">{{ inquiry.city|default:"—" }}</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">Course Interest</span><span class="inquiry-detail-value">{{ inquiry.course_interest|default:"—" }}</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">Source</span><span class="inquiry-detail-value">{{ inquiry.source }}</span></div>
+                </div>
+                <div class="col-12">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">Remarks</span><span class="inquiry-detail-value">{{ inquiry.remarks|default:"—" }}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="inquiry-detail-panel">
+              <h6 class="inquiry-detail-panel-title"><i class="bi bi-info-circle text-primary me-2"></i>Status</h6>
+              <div class="inquiry-detail-field">
+                <span class="inquiry-detail-label">Status</span>
+                <span>
+                  {% if inquiry.status == 'New' %}<span class="status-pill status-new">New</span>
+                  {% elif inquiry.status == 'Contacted' %}<span class="status-pill status-contacted">Contacted</span>
+                  {% elif inquiry.status == 'Qualified' %}<span class="status-pill status-qualified">Qualified</span>
+                  {% else %}<span class="status-pill status-rejected">Rejected</span>
+                  {% endif %}
+                </span>
+              </div>
+              <div class="inquiry-detail-field">
+                <span class="inquiry-detail-label">Call Status</span>
+                <span class="call-status-badge cs-{{ inquiry.call_status }}">{{ inquiry.get_call_status_display }}</span>
+              </div>
+              <div class="inquiry-detail-field">
+                <span class="inquiry-detail-label">Added</span>
+                <span class="inquiry-detail-value">{{ inquiry.created_at|date:"d M Y, h:i A" }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{# ---- Inquiry Edit and Delete Modals ---- #}
+{% for inquiry in page_obj %}
+<div class="modal fade inquiry-modal" id="editInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="editInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <form method="POST" action="{% url 'inquiry_edit' inquiry.pk %}" class="modal-content">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold text-white" id="editInquiryModalLabel{{ inquiry.pk }}">
+              <i class="bi bi-pencil-square me-2"></i>Edit Inquiry
+            </h5>
+            <p class="mb-0 small text-white-50">Update inquiry details for {{ inquiry.full_name }}.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="edit-full-name-{{ inquiry.pk }}">Full Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-full-name-{{ inquiry.pk }}" name="full_name" value="{{ inquiry.full_name }}" placeholder="Enter Full Name" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-mobile-{{ inquiry.pk }}">Mobile Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-mobile-{{ inquiry.pk }}" name="mobile_number" value="{{ inquiry.mobile_number }}" placeholder="Enter Mobile Number" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-email-{{ inquiry.pk }}">Email Address</label>
+              <input type="email" class="form-control" id="edit-email-{{ inquiry.pk }}" name="email" value="{{ inquiry.email }}" placeholder="Enter Email (Optional)">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-city-{{ inquiry.pk }}">City <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-city-{{ inquiry.pk }}" name="city" value="{{ inquiry.city }}" placeholder="Enter City" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-course-{{ inquiry.pk }}">Course of Interest <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit-course-{{ inquiry.pk }}" name="course_interest" value="{{ inquiry.course_interest }}" placeholder="Enter Course of Interest" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="edit-source-{{ inquiry.pk }}">Lead Source <span class="text-danger">*</span></label>
+              <select class="form-select" id="edit-source-{{ inquiry.pk }}" name="source" required>
+                {% for code, name in source_choices %}
+                  <option value="{{ code }}" {% if inquiry.source == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label" for="edit-status-{{ inquiry.pk }}">Inquiry Status <span class="text-danger">*</span></label>
+              <select class="form-select" id="edit-status-{{ inquiry.pk }}" name="status" required>
+                {% for code, name in status_choices %}
+                  <option value="{{ code }}" {% if inquiry.status == code %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="edit-remarks-{{ inquiry.pk }}">Remarks / Notes</label>
+              <textarea class="form-control" id="edit-remarks-{{ inquiry.pk }}" name="remarks" rows="3" placeholder="Remarks">{{ inquiry.remarks }}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info text-white fw-bold">Update Inquiry</button>
+        </div>
+      </form>
+  </div>
+</div>
+
+<div class="modal fade inquiry-modal" id="deleteInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="deleteInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{% url 'inquiry_delete' inquiry.pk %}" class="modal-content">
+        {% csrf_token %}
+        <div class="modal-header">
+          <div>
+            <h5 class="modal-title fw-bold text-white" id="deleteInquiryModalLabel{{ inquiry.pk }}">
+              <i class="bi bi-trash me-2"></i>Delete Inquiry
+            </h5>
+            <p class="mb-0 small text-white-50">Please confirm before removing this record.</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">Are you sure you want to delete this inquiry?</p>
+          <div class="p-3 rounded bg-white border">
+            <div class="fw-bold">{{ inquiry.full_name }}</div>
+            <div class="text-muted small">{{ inquiry.mobile_number }}{% if inquiry.course_interest %} - {{ inquiry.course_interest }}{% endif %}</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger fw-bold">Delete Inquiry</button>
+        </div>
+      </form>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Toast Notification -->
+<div class="cs-toast" id="csToast"></div>
+
+<script>
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function showToast(message, isError) {
+  const toast = document.getElementById('csToast');
+  toast.textContent = message;
+  toast.className = 'cs-toast' + (isError ? ' error' : '');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+const badgeIcons = {
+  'NEW': '<i class="bi bi-stars"></i>',
+  'ACCEPTED': '<i class="bi bi-check-circle"></i>',
+  'INTERESTED': '<i class="bi bi-heart-fill"></i>',
+  'BUSY': '<i class="bi bi-clock"></i>',
+  'CALL_BACK': '<i class="bi bi-arrow-repeat"></i>',
+  'NO_ANSWER': '<i class="bi bi-telephone-x"></i>',
+  'WRONG_NUMBER': '<i class="bi bi-x-circle"></i>',
+  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>'
+};
+
+function updateCallStatus(selectEl) {
+  const inquiryId = selectEl.dataset.inquiryId;
+  const newStatus = selectEl.value;
+  selectEl.classList.add('saving');
+
+  fetch(`/management/inquiries/${inquiryId}/update-call-status/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken')
+    },
+    body: JSON.stringify({ call_status: newStatus })
+  })
+  .then(resp => {
+    if (!resp.ok && resp.status === 403) {
+      throw new Error('Access Denied');
+    }
+    return resp.json();
+  })
+  .then(data => {
+    selectEl.classList.remove('saving');
+    if (data.success) {
+      showToast(data.message, false);
+      const badge = document.getElementById('badge-' + inquiryId);
+      if (badge) {
+        const icon = badgeIcons[newStatus] || '';
+        badge.className = 'call-status-badge cs-' + newStatus;
+        badge.innerHTML = icon + ' ' + data.call_status_display;
+      }
+    } else {
+      showToast(data.message || 'Error updating status.', true);
+    }
+  })
+  .catch(err => {
+    selectEl.classList.remove('saving');
+    showToast(err.message || 'Network error.', true);
+  });
+}
+</script>
 {% endblock %}

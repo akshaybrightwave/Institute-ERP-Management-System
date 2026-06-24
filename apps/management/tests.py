@@ -189,7 +189,7 @@ class TelecallerModuleTests(TestCase):
         lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
         
         # Edit lead with new status choices
-        for status in ['Rejected', 'Invalid Number', 'Admission Done']:
+        for status in ['Rejected', 'Invalid Number']:
             lead.status = status
             lead.save()
             lead.refresh_from_db()

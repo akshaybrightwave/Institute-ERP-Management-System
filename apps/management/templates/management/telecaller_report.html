@@ -2,95 +2,360 @@
 
 {% block title %}Telecaller Performance Reports | Examly{% endblock %}
 
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+<style>
+  .tele-report-page {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  .tele-report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .tele-filter-card {
+    padding: 18px !important;
+  }
+
+  /* ── Filter card ── */
+  .tele-filter-card .form-label { color: #64748b !important; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+
+  /* ── KPI cards ── */
+  .tele-kpi {
+    min-height: 126px;
+    padding: 18px !important;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .tele-kpi-label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .tele-kpi-value { color: #f1f5f9; font-size: 30px; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+  .tele-kpi-sub   { color: #64748b; font-size: 12px; margin-top: 8px; }
+  .tele-kpi-icon  {
+    width: 52px; height: 52px;
+    display: grid; place-items: center;
+    flex: 0 0 auto; border-radius: 10px;
+    background: rgba(91,95,239,.15);
+    color: #818cf8; font-size: 24px;
+  }
+
+  /* ── Table card ── */
+  .tele-table-card { padding: 0 !important; overflow: hidden; }
+  .tele-table-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; padding: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .tele-table-title { display: flex; align-items: center; gap: 10px; color: #f1f5f9 !important; font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .tele-table-title i { color: #818cf8; }
+  .tele-table-subtitle { color: #64748b; font-size: 13px; margin-bottom: 0; }
+
+  /* ── Table ── */
+  .tele-table { min-width: 1100px; margin-bottom: 0; }
+  .tele-table th {
+    padding: 12px 14px !important;
+    background: #0f172a !important;
+    color: #475569 !important;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    white-space: nowrap;
+  }
+  .tele-table td {
+    padding: 14px !important;
+    color: #94a3b8 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    background: transparent !important;
+    vertical-align: middle; white-space: nowrap;
+  }
+  .tele-table td.fw-bold { color: #e2e8f0 !important; }
+  .tele-table tbody tr:hover td { background: rgba(255,255,255,0.03) !important; }
+  .tele-table tbody tr:last-child td { border-bottom: 0 !important; }
+
+  /* ── Telecaller user chip ── */
+  .tele-user { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; color: #e2e8f0; }
+  .tele-user-icon {
+    width: 32px; height: 32px;
+    display: inline-grid; place-items: center;
+    border-radius: 8px;
+    background: rgba(91,95,239,.18);
+    color: #818cf8;
+    flex-shrink: 0;
+  }
+
+  /* ── Metric badges — dark translucent ── */
+  .tele-metric-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 32px; border-radius: 999px;
+    padding: 4px 10px; font-size: 12px; font-weight: 700;
+  }
+  /* Override inline light-pastel styles via class variants */
+  .tele-metric-badge.badge-green  { background: rgba(21,128,61,0.18) !important;  color: #4ade80 !important; }
+  .tele-metric-badge.badge-red    { background: rgba(185,28,28,0.18) !important;   color: #f87171 !important; }
+  .tele-metric-badge.badge-yellow { background: rgba(161,98,7,0.18) !important;    color: #fbbf24 !important; }
+  .tele-metric-badge.badge-blue   { background: rgba(29,78,216,0.18) !important;   color: #60a5fa !important; }
+  .tele-metric-badge.badge-teal   { background: rgba(4,120,87,0.18) !important;    color: #34d399 !important; }
+  .tele-metric-badge.badge-pink   { background: rgba(159,18,57,0.18) !important;   color: #fb7185 !important; }
+
+  /* ── Scroll wrapper + right-fade hint ── */
+  .tele-scroll-wrapper {
+    position: relative;
+  }
+  .tele-scroll-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 72px;
+    height: calc(100% - 10px);
+    background: linear-gradient(to right, transparent, #111827);
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 0.25s;
+    border-radius: 0 0 8px 0;
+  }
+  .tele-scroll-wrapper.scrolled-end::after { opacity: 0; }
+
+  /* ── Scroll hint bar ── */
+  .tele-scroll-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(91, 95, 239, 0.07);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: opacity 0.25s;
+  }
+  .tele-scroll-hint i { color: #818cf8; font-size: 13px; }
+  .tele-scroll-wrapper.scrolled-end .tele-scroll-hint { opacity: 0.3; }
+
+  /* ── Scrollbar ── */
+  .tele-scroll-wrapper .table-responsive {
+    scrollbar-width: auto;
+    scrollbar-color: rgba(91, 95, 239, 0.5) rgba(255,255,255,0.05);
+  }
+  .tele-scroll-wrapper .table-responsive::-webkit-scrollbar { height: 8px; }
+  .tele-scroll-wrapper .table-responsive::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 0 0 8px 8px;
+  }
+  .tele-scroll-wrapper .table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(91, 95, 239, 0.55);
+    border-radius: 999px;
+  }
+  .tele-scroll-wrapper .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 95, 239, 0.8);
+  }
+
+  /* ── Empty state ── */
+  .tele-empty { padding: 48px 18px; text-align: center; color: #475569; }
+  .tele-empty i { display: block; color: rgba(91,95,239,.4); font-size: 42px; margin-bottom: 10px; }
+  .tele-empty h5 { color: #64748b !important; }
+
+  @media (max-width: 991.98px) {
+    .tele-report-header, .tele-table-header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+{% endblock %}
+
 {% block management_content %}
-<div class="mb-4">
-  <h2 class="fw-bold text-white mb-1">Telecaller Performance Reports</h2>
-  <p class="text-muted small">Evaluate telecaller productivity, logs, and conversions.</p>
-</div>
+<div class="tele-report-page">
+  <div class="tele-report-header">
+    <div>
+      <h2 class="fw-bold text-white mb-1">Telecaller Performance Reports</h2>
+      <p class="text-muted small mb-0">Evaluate productivity, calling outcomes, follow-ups, and qualified lead conversion.</p>
+    </div>
+    <a href="{% url 'management_dashboard' %}" class="btn btn-outline-secondary fw-bold">
+      <i class="bi bi-arrow-left me-1"></i> Dashboard
+    </a>
+  </div>
 
-<!-- Filters & Exports -->
-<div class="m-card mb-4">
-  <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
-    <!-- Preset Filter -->
-    <div class="col-md-3">
-      <label class="form-label text-muted small fw-bold">Date Preset</label>
-      <select name="date_filter" id="date-filter-select" class="form-select bg-dark border-secondary text-white form-select-sm">
-        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
-        <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
-        <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
-        <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
-      </select>
+  <div class="m-card tele-filter-card mb-4">
+    <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
+      <div class="col-lg-3 col-md-6">
+        <label class="form-label">Date Preset</label>
+        <select name="date_filter" id="date-filter-select" class="form-select">
+          <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+          <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
+          <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
+          <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
+        </select>
+      </div>
+
+      <div class="col-lg-2 col-md-6 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+        <label class="form-label">From Date</label>
+        <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+      </div>
+
+      <div class="col-lg-2 col-md-6 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
+        <label class="form-label">To Date</label>
+        <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+      </div>
+
+      <div class="col-lg-2 col-md-6">
+        <button type="submit" class="btn btn-info text-white w-100 fw-bold">
+          <i class="bi bi-funnel me-1"></i> Apply
+        </button>
+      </div>
+
+      <div class="col-lg-3 col-md-12 d-flex gap-2 flex-wrap">
+        <button type="submit" name="export" value="csv" class="btn btn-outline-info flex-fill fw-bold">
+          <i class="bi bi-filetype-csv me-1"></i> CSV
+        </button>
+        <button type="submit" name="export" value="excel" class="btn btn-outline-success flex-fill fw-bold">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Telecallers</div>
+          <div class="tele-kpi-value">{{ totals.telecallers }}</div>
+          <div class="tele-kpi-sub">Included in this report</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-headset"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Calls Made</div>
+          <div class="tele-kpi-value">{{ totals.calls_made }}</div>
+          <div class="tele-kpi-sub">Logged call records</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-telephone-outbound"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Qualified Leads</div>
+          <div class="tele-kpi-value">{{ totals.qualified_leads }}</div>
+          <div class="tele-kpi-sub">{{ totals.conversion_pct }}% total conversion</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-check2-circle"></i></div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <div class="m-card tele-kpi">
+        <div>
+          <div class="tele-kpi-label">Pending Follow-Ups</div>
+          <div class="tele-kpi-value">{{ totals.pending_followups }}</div>
+          <div class="tele-kpi-sub">Need attention</div>
+        </div>
+        <div class="tele-kpi-icon"><i class="bi bi-clock-history"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-card tele-table-card">
+    <div class="tele-table-header">
+      <div>
+        <h5 class="tele-table-title"><i class="bi bi-bar-chart-line"></i>Performance Breakdown</h5>
+        <p class="tele-table-subtitle">Source workload, conversion, follow-up, and call outcome metrics by telecaller.</p>
+      </div>
     </div>
 
-    <!-- Custom Start Date -->
-    <div class="col-md-3 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">From Date</label>
-      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
+    <div class="tele-scroll-wrapper" id="teleScrollWrapper">
+    <div class="table-responsive" id="teleTableScroll">
+      {% if report_data %}
+        <table class="table tele-table">
+          <thead>
+            <tr>
+              <th>Telecaller</th>
+              <th>Inquiries</th>
+              <th>Leads</th>
+              <th>Calls</th>
+              <th>Completed Follow-Ups</th>
+              <th>Qualified</th>
+              <th>Rejected</th>
+              <th>Pending Follow-Ups</th>
+              <th>Conversion</th>
+              <th>Accepted</th>
+              <th>Busy</th>
+              <th>Call Back</th>
+              <th>Interested</th>
+              <th>Not Interested</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in report_data %}
+            <tr>
+              <td>
+                <span class="tele-user">
+                  <span class="tele-user-icon">{{ row.telecaller|slice:":1"|upper }}</span>
+                  {{ row.telecaller }}
+                </span>
+              </td>
+              <td class="fw-bold">{{ row.total_inquiries }}</td>
+              <td class="fw-bold">{{ row.total_leads }}</td>
+              <td class="fw-bold">{{ row.calls_made }}</td>
+              <td><span class="tele-metric-badge badge-green">{{ row.followups_completed }}</span></td>
+              <td><span class="tele-metric-badge badge-green">{{ row.qualified_leads }}</span></td>
+              <td><span class="tele-metric-badge badge-red">{{ row.rejected_leads }}</span></td>
+              <td><span class="tele-metric-badge badge-yellow">{{ row.pending_followups }}</span></td>
+              <td class="fw-bold" style="color:#a5b4fc;">{{ row.conversion_pct }}%</td>
+              <td><span class="tele-metric-badge badge-green">{{ row.cs_accepted }}</span></td>
+              <td><span class="tele-metric-badge badge-yellow">{{ row.cs_busy }}</span></td>
+              <td><span class="tele-metric-badge badge-blue">{{ row.cs_call_back }}</span></td>
+              <td><span class="tele-metric-badge badge-teal">{{ row.cs_interested }}</span></td>
+              <td><span class="tele-metric-badge badge-pink">{{ row.cs_not_interested }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="tele-empty">
+          <i class="bi bi-bar-chart"></i>
+          <h5>No report data</h5>
+          <p class="mb-0">No telecaller activity was found for the selected period.</p>
+        </div>
+      {% endif %}
     </div>
-
-    <!-- Custom End Date -->
-    <div class="col-md-3 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">To Date</label>
-      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white form-control-sm">
+    {% if report_data %}
+    <div class="tele-scroll-hint" id="teleScrollHint">
+      <i class="bi bi-arrow-left-right"></i> Scroll horizontally to view all columns
     </div>
-
-    <!-- Submit Button -->
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-info text-white w-100 fw-bold btn-sm"><i class="bi bi-funnel"></i> Apply Filter</button>
-    </div>
-
-    <!-- Export Options -->
-    <div class="col-md-4 d-flex gap-2">
-      <button type="submit" name="export" value="csv" class="btn btn-outline-info w-50 fw-bold btn-sm"><i class="bi bi-filetype-csv me-1"></i> Export CSV</button>
-      <button type="submit" name="export" value="excel" class="btn btn-outline-success w-50 fw-bold btn-sm"><i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel</button>
-    </div>
-  </form>
-</div>
-
-<!-- Performance Report Data -->
-<div class="m-card">
-  <div class="table-responsive">
-    <table class="table m-table table-hover">
-      <thead>
-        <tr>
-          <th>Telecaller Username</th>
-          <th>Total Inquiries</th>
-          <th>Total Leads</th>
-          <th>Calls Made</th>
-          <th>Follow-Ups Completed</th>
-          <th>Qualified Leads</th>
-          <th>Rejected Leads</th>
-          <th>Pending Follow-Ups</th>
-          <th>Conversion %</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in report_data %}
-        <tr>
-          <td class="fw-bold text-info"><i class="bi bi-person-fill me-1"></i>{{ row.telecaller }}</td>
-          <td>{{ row.total_inquiries }}</td>
-          <td>{{ row.total_leads }}</td>
-          <td>{{ row.calls_made }}</td>
-          <td class="text-success">{{ row.followups_completed }}</td>
-          <td class="text-success fw-bold">{{ row.qualified_leads }}</td>
-          <td class="text-danger">{{ row.rejected_leads }}</td>
-          <td class="text-warning">{{ row.pending_followups }}</td>
-          <td class="fw-bold text-warning">{{ row.conversion_pct }}%</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% endif %}
+    </div>{# end tele-scroll-wrapper #}
   </div>
 </div>
 
 <script>
   document.getElementById('date-filter-select').addEventListener('change', function() {
     const customGroups = document.querySelectorAll('.custom-date-group');
-    if (this.value === 'custom') {
-      customGroups.forEach(el => el.style.display = 'block');
-    } else {
-      customGroups.forEach(el => el.style.display = 'none');
-    }
+    const displayValue = this.value === 'custom' ? 'block' : 'none';
+    customGroups.forEach(el => el.style.display = displayValue);
   });
+
+  /* ── Scroll fade: hide right gradient + hint when fully scrolled ── */
+  (function() {
+    var wrapper = document.getElementById('teleScrollWrapper');
+    var scroller = document.getElementById('teleTableScroll');
+    if (!wrapper || !scroller) return;
+
+    function checkScroll() {
+      var atEnd = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 8;
+      wrapper.classList.toggle('scrolled-end', atEnd);
+    }
+
+    scroller.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    checkScroll();
+  })();
 </script>
 {% endblock %}

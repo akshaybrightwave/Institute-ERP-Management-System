@@ -1,5 +1,5 @@
 from django import forms
-from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet
+from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet, AdmissionSheet
 
 class InquiryForm(forms.ModelForm):
     class Meta:
@@ -144,4 +144,34 @@ class VisitSheetForm(forms.ModelForm):
                 self.fields['lead'].queryset = Lead.objects.all()
             else:
                 self.fields['lead'].queryset = Lead.objects.filter(assigned_counselor=user)
+
+
+class AdmissionSheetForm(forms.ModelForm):
+    class Meta:
+        model = AdmissionSheet
+        fields = [
+            'admission_date', 'admission_status',
+            'student_name', 'mobile_number', 'email_id', 'parent_name', 'parent_mobile',
+            'college_name', 'university_name', 'department', 'academic_year',
+            'course_name', 'batch_name', 'admission_source',
+            'seat_status', 'remarks',
+        ]
+        widgets = {
+            'admission_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'admission_status': forms.Select(attrs={'class': 'form-select'}),
+            'student_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Student Name'}),
+            'mobile_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Mobile Number'}),
+            'email_id': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email (Optional)'}),
+            'parent_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Parent Name'}),
+            'parent_mobile': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Parent Mobile'}),
+            'college_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'College Name'}),
+            'university_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'University Name'}),
+            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Department'}),
+            'academic_year': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 2026-2027'}),
+            'course_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Course Name'}),
+            'batch_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Batch Name'}),
+            'admission_source': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Source'}),
+            'seat_status': forms.Select(attrs={'class': 'form-select'}),
+            'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Remarks...'}),
+        }
 

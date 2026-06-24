@@ -1,0 +1,154 @@
+{% extends 'management/base.html' %}
+
+{% block title %}{{ title }} | Examly{% endblock %}
+
+
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+{% endblock %}
+
+{% block management_content %}
+<div class="mb-4">
+  <h2 class="fw-bold text-white mb-1">{{ title }}</h2>
+  <p class="text-muted small">Lead: <span class="text-info fw-bold">{{ lead.inquiry.full_name }}</span> &mdash; {{ lead.inquiry.mobile_number }}</p>
+</div>
+
+{% if form.errors %}
+<div class="alert alert-danger">
+  {% for field, errors in form.errors.items %}
+    {% for error in errors %}
+      <p class="mb-0"><strong>{{ field }}:</strong> {{ error }}</p>
+    {% endfor %}
+  {% endfor %}
+  {% if form.non_field_errors %}
+    {% for error in form.non_field_errors %}
+      <p class="mb-0">{{ error }}</p>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endif %}
+
+<form method="POST" novalidate>
+  {% csrf_token %}
+
+  <div class="row g-4">
+    <!-- Admission Info -->
+    <div class="col-lg-6">
+      <div class="m-card h-100">
+        <h5 class="fw-bold text-white mb-4"><i class="bi bi-journal-check text-info me-2"></i>Admission Information</h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Admission Date *</label>
+            {{ form.admission_date }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Admission Status *</label>
+            {{ form.admission_status }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Info -->
+    <div class="col-lg-6">
+      <div class="m-card h-100">
+        <h5 class="fw-bold text-white mb-4"><i class="bi bi-person-fill text-info me-2"></i>Student Information</h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Student Name *</label>
+            {{ form.student_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Mobile Number *</label>
+            {{ form.mobile_number }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Email</label>
+            {{ form.email_id }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Parent Name</label>
+            {{ form.parent_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Parent Mobile</label>
+            {{ form.parent_mobile }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Education Info -->
+    <div class="col-lg-6">
+      <div class="m-card">
+        <h5 class="fw-bold text-white mb-4"><i class="bi bi-mortarboard-fill text-info me-2"></i>Education Information</h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">College Name</label>
+            {{ form.college_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">University Name</label>
+            {{ form.university_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Department</label>
+            {{ form.department }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Academic Year</label>
+            {{ form.academic_year }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Course Info -->
+    <div class="col-lg-6">
+      <div class="m-card">
+        <h5 class="fw-bold text-white mb-4"><i class="bi bi-book-fill text-info me-2"></i>Course Information</h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Course Name</label>
+            {{ form.course_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Admission Source</label>
+            {{ form.admission_source }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Seat & Remarks -->
+    <div class="col-lg-6">
+      <div class="m-card">
+        <h5 class="fw-bold text-white mb-4"><i class="bi bi-person-check-fill text-info me-2"></i>Seat & Remarks</h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Batch Name</label>
+            {{ form.batch_name }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small fw-bold">Seat Status</label>
+            {{ form.seat_status }}
+          </div>
+          <div class="col-12">
+            <label class="form-label text-muted small fw-bold">Remarks</label>
+            {{ form.remarks }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4 d-flex gap-3">
+    <button type="submit" class="btn btn-info text-white fw-bold px-4"><i class="bi bi-check-circle me-1"></i> Save Admission</button>
+    <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-outline-secondary fw-bold js-skip-action-modal">Cancel</a>
+  </div>
+</form>
+
+
+{% endblock %}
