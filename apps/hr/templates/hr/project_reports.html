@@ -1,15 +1,15 @@
 {% extends 'hr/base.html' %}
 
-{% block title %}Placement Reports | HR Portal{% endblock %}
+{% block title %}Project Reports | HR Portal{% endblock %}
 
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Reports</div>
-    <h1 class="fw-bold mb-1">Placement Reports</h1>
-    <p class="hr-muted mb-0">Company-wise, employee-wise, selection and placement summary reports.</p>
+    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Reports</div>
+    <h1 class="fw-bold mb-1">Project Reports</h1>
+    <p class="hr-muted mb-0">Company-wise and employee-wise project allocation summary.</p>
   </div>
-  <a class="btn btn-soft" href="{% url 'hr:export_placement_report' %}"><i class="bi bi-download me-1"></i>Export Excel/CSV</a>
+  <a class="btn btn-soft" href="{% url 'hr:export_project_report' %}"><i class="bi bi-download me-1"></i>Export CSV</a>
 </div>
 
 <div class="row g-3 mb-4">
@@ -17,7 +17,7 @@
   <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Drives</div><div class="hr-stat-number">{{ summary.drives }}</div></div></div>
   <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Employees Sent</div><div class="hr-stat-number">{{ summary.sent }}</div></div></div>
   <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Selected</div><div class="hr-stat-number">{{ summary.selected }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Joined</div><div class="hr-stat-number">{{ summary.joined }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Allocated</div><div class="hr-stat-number">{{ summary.allocated }}</div></div></div>
 </div>
 
 <div class="hr-panel p-3 mb-4">
@@ -43,19 +43,21 @@
 <div class="hr-panel p-3">
   <div class="table-responsive">
     <table class="table hr-table">
-      <thead><tr><th>Employee</th><th>Designation</th><th>Company</th><th>Drive</th><th>Interview</th><th>Final</th></tr></thead>
+      <thead><tr><th>Employee</th><th>Employee ID</th><th>Department</th><th>Designation</th><th>Company</th><th>Project Drive</th><th>Interview</th><th>Final</th></tr></thead>
       <tbody>
         {% for item in assignments %}
         <tr>
           <td>{{ item.display_name }}</td>
-          <td>{{ item.display_course|default:"--" }}</td>
+          <td>{% if item.employee %}{{ item.employee.employee_id }}{% else %}{{ item.employee_code|default:"--" }}{% endif %}</td>
+          <td>{% if item.employee %}{{ item.employee.department }}{% else %}{{ item.department|default:"--" }}{% endif %}</td>
+          <td>{{ item.display_designation|default:"--" }}</td>
           <td>{{ item.company|default:"--" }}</td>
-          <td>{{ item.drive.job_role|default:"--" }}</td>
+          <td>{{ item.drive.project_name|default:"--" }}</td>
           <td>{{ item.get_interview_status_display }}</td>
           <td>{{ item.get_final_status_display }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center py-5 hr-muted">No report data found.</td></tr>
+        <tr><td colspan="8" class="text-center py-5 hr-muted">No report data found.</td></tr>
         {% endfor %}
       </tbody>
     </table>

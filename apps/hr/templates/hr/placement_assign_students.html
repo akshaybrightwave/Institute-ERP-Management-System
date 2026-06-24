@@ -1,20 +1,20 @@
 {% extends 'hr/base.html' %}
 
-{% block title %}Assign Students | HR Portal{% endblock %}
+{% block title %}Assign Employees | HR Portal{% endblock %}
 
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Assign Students</div>
+    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Assign Employees</div>
     <h1 class="fw-bold mb-1">{{ drive }}</h1>
-    <p class="hr-muted mb-0">Select students and assign them to this placement drive.</p>
+    <p class="hr-muted mb-0">Select employees and assign them to this placement drive.</p>
   </div>
 </div>
 
 <div class="hr-panel p-3 mb-4">
   <form method="get" class="row g-3 align-items-end">
     <div class="col-md-10">
-      <label class="form-label small fw-semibold">Search students</label>
+      <label class="form-label small fw-semibold">Search employees</label>
       <input class="form-control" name="q" value="{{ query }}" placeholder="Name, phone or email">
     </div>
     <div class="col-md-2"><button class="btn btn-hr-primary w-100">Search</button></div>
@@ -25,7 +25,7 @@
   {% csrf_token %}
   <div class="table-responsive">
     <table class="table hr-table">
-      <thead><tr><th></th><th>Student</th><th>Course</th><th>Phone</th><th>Email</th><th>Status</th></tr></thead>
+      <thead><tr><th></th><th>Employee</th><th>Designation</th><th>Phone</th><th>Email</th><th>Status</th></tr></thead>
       <tbody>
         {% for student in students %}
         <tr>
@@ -42,7 +42,7 @@
           <td><span class="status-badge">Eligible</span></td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center py-5 hr-muted">No available students found.</td></tr>
+        <tr><td colspan="6" class="text-center py-5 hr-muted">No available employees found.</td></tr>
         {% endfor %}
       </tbody>
     </table>

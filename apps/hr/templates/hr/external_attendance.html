@@ -1,0 +1,313 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Attendance | HR Portal{% endblock %}
+
+{% block content %}
+<div class="external-title-row">
+  <div>
+    <h1 class="fw-bold mb-2">Attendance</h1>
+    <p class="hr-muted mb-0">Track and manage employee attendance</p>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <a class="btn btn-soft text-primary border-primary" href="{% url 'hr:section' 'calendar' %}">
+      <i class="bi bi-calendar3 me-2"></i>View Calendar
+    </a>
+  </div>
+</div>
+
+<div class="external-kpi-grid">
+  {% for item in kpis %}
+  <div class="hr-panel external-kpi">
+    <div class="d-flex align-items-center gap-3 h-100">
+      <div class="hr-kpi-icon tone-{{ item.color }}"><i class="bi {{ item.icon }}"></i></div>
+      <div>
+        <div class="small hr-muted mb-1">{{ item.label }}</div>
+        <div class="hr-stat-number">{{ item.value }}</div>
+        {% if item.meta %}<div class="small fw-bold mt-2 {% if item.color == 'emerald' %}text-success{% elif item.color == 'red' %}text-danger{% elif item.color == 'amber' %}text-warning{% else %}hr-muted{% endif %}">{{ item.meta }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="hr-panel">
+<form class="external-toolbar" method="get">
+    <div class="external-toolbar-group">
+      <div class="d-flex align-items-center shadow-sm rounded-3">
+        <input class="form-control border-primary" type="date" name="date" value="{{ external_selected_date }}" onchange="this.form.submit()" style="width: 145px;">
+      </div>
+      <select class="form-select" name="department" style="width: 160px;" onchange="this.form.submit()">
+        <option value="">All Departments</option>
+        {% for department in filter_options.departments %}
+        <option value="{{ department }}" {% if selected_department == department %}selected{% endif %}>{{ department }}</option>
+        {% endfor %}
+      </select>
+      <select class="form-select" name="status" style="width: 140px;" onchange="this.form.submit()">
+        <option value="">All Status</option>
+        {% for key, label in attendance_statuses %}
+        {% if key != 'late' %}
+        <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ label }}</option>
+        {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+    <div class="external-toolbar-group">
+      <div class="hr-search" style="max-width: 250px;">
+        <i class="bi bi-search"></i>
+        <input type="search" name="q" value="{{ query }}" placeholder="Search by name or ID...">
+      </div>
+      <button class="btn btn-soft text-primary border-primary" type="submit"><i class="bi bi-funnel me-2"></i>Filter</button>
+      <button class="btn btn-hr-primary attendance-submit-btn" type="button" data-submit-attendance title="Submit attendance entries">
+        <i class="bi bi-check2-circle me-2"></i><span data-submit-label>Submit</span>
+      </button>
+      <div class="dropdown">
+        <button class="btn btn-soft text-primary border-primary" type="button" data-bs-toggle="dropdown">
+          <i class="bi bi-download me-2"></i>Export
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=csv">CSV</a></li>
+          <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=excel">Excel</a></li>
+          <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=pdf">PDF</a></li>
+        </ul>
+      </div>
+    </div>
+  </form>
+
+  {% if page_obj|length > 0 and not page_obj.0.is_db %}
+  <div class="alert alert-warning m-3 d-flex align-items-center">
+    <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+    <div>
+      <strong>Viewing Sample Data:</strong> The attendance records shown below are static sample data because no employees have been added to this branch yet. 
+      To enable date-wise attendance tracking and quick updates, please <strong>Add or Import Employees</strong>.
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="external-table-wrap">
+    <table class="table hr-table external-table mb-0" data-quick-attendance-url="{% url 'hr:external_attendance_quick_update' external_branch_slug %}" data-attendance-date="{{ external_selected_date }}">
+      <thead class="text-nowrap bg-light border-bottom border-2">
+        <tr>
+          <th class="py-3 ps-4" style="min-width: 240px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Employee</th>
+          <th class="py-3" style="min-width: 130px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 0.75rem;"></i></th>
+          <th class="py-3" style="min-width: 140px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Check In</th>
+          <th class="py-3" style="min-width: 140px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Check Out</th>
+          <th class="py-3" style="min-width: 140px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Status</th>
+          <th class="py-3" style="min-width: 200px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Remarks</th>
+          <th class="py-3 text-center" style="min-width: 80px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in page_obj %}
+        <tr data-attendance-row data-employee-id="{{ row.employee_pk }}" class="align-middle border-bottom">
+          <td class="py-3 ps-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold {% if forloop.counter0|divisibleby:3 %}bg-warning bg-opacity-10 text-warning{% elif forloop.counter0|divisibleby:2 %}bg-primary bg-opacity-10 text-primary{% else %}bg-info bg-opacity-10 text-info{% endif %}" style="width: 40px; height: 40px; font-size: 0.9rem; flex-shrink: 0;">
+                {{ row.initials }}
+              </div>
+              <div>
+                <div class="fw-semibold text-dark mb-1" style="font-size: 0.85rem;">
+                  <a class="text-decoration-none text-dark" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance">{{ row.full_name }}</a>
+                </div>
+                <div class="d-flex align-items-center mb-1">
+                  <span class="badge bg-light text-secondary border fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="bi bi-badge-id me-1"></i>{{ row.employee_id }}</span>
+                </div>
+                <div>
+                  <span class="badge rounded-pill px-2 py-1" style="font-size: 0.7rem; background-color: {% if row.department|lower == 'developing' or row.department|lower == 'development' %}#ede9fe; color: #6d28d9;{% else %}#e0f2fe; color: #0369a1;{% endif %}"><i class="bi bi-briefcase me-1"></i>{{ row.department|title }}</span>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td class="py-3">
+            <div class="text-dark fw-medium mb-1" style="font-size: 0.85rem;"><i class="bi bi-calendar3 text-muted me-2"></i>{{ row.date|date:"d M Y" }}</div>
+            <div class="text-muted ms-4" style="font-size: 0.75rem;">{{ row.date|date:"D" }}</div>
+          </td>
+          <td class="py-3">
+            <div class="d-inline-flex align-items-center badge {% if row.check_in != '--:--' %}bg-success bg-opacity-10 text-success border border-success border-opacity-25{% else %}bg-light text-secondary border{% endif %} px-2 py-1 mb-1 rounded" style="font-size: 0.75rem;">
+              <i class="bi {% if row.check_in != '--:--' %}bi-box-arrow-in-right{% else %}bi-box-arrow-in-right text-muted{% endif %} me-2"></i>{{ row.check_in }}
+            </div>
+            <div class="text-muted d-flex align-items-center fw-medium mt-1" style="font-size: 0.7rem;">
+              {% if row.check_in != '--:--' %}
+                {% if row.late_minutes > 0 %}
+                  <span class="bg-warning rounded-circle me-1" style="width: 5px; height: 5px;"></span>Late ({{ row.late_minutes }}m)
+                {% else %}
+                  <span class="bg-success rounded-circle me-1" style="width: 5px; height: 5px;"></span>On Time
+                {% endif %}
+              {% else %}
+                <span class="bg-secondary rounded-circle me-1" style="width: 5px; height: 5px;"></span>Not Checked In
+              {% endif %}
+            </div>
+          </td>
+          <td class="py-3">
+            <div class="d-inline-flex align-items-center badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 px-2 py-1 mb-1 rounded" style="font-size: 0.75rem;">
+              <i class="bi bi-box-arrow-right me-2"></i>{{ row.check_out }}
+            </div>
+            <div class="text-muted d-flex align-items-center fw-medium mt-1" style="font-size: 0.7rem;">
+              {% if row.check_out != '--:--' %}
+                <span class="bg-danger rounded-circle me-1" style="width: 5px; height: 5px;"></span>Checked Out
+              {% else %}
+                <span class="bg-danger rounded-circle me-1" style="width: 5px; height: 5px;"></span>Not Checked Out
+              {% endif %}
+            </div>
+          </td>
+          <td class="py-3">
+            <select class="form-select attendance-status-select status-{{ row.attendance_status }} fw-medium py-1 rounded" data-employee-id="{{ row.employee_pk }}" {% if not row.employee_pk %}disabled{% endif %} style="max-width: 130px; box-shadow: none; font-size: 0.8rem; min-height: 32px;">
+              {% for key, label in attendance_statuses %}
+              <option value="{{ key }}" {% if row.attendance_status == key %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="py-3">
+            <input class="form-control attendance-remarks-input border py-1 bg-white" style="border-radius: 6px; font-size: 0.8rem; color: #475569; border-color: #e2e8f0; min-height: 32px;" data-employee-id="{{ row.employee_pk }}" value="{{ row.remarks }}" placeholder="Add note..." {% if not row.employee_pk %}disabled{% endif %}>
+          </td>
+          <td class="py-3 text-center">
+            <div class="d-flex justify-content-center">
+              <a class="btn bg-white rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-sm" style="width: 28px; height: 28px; border: 1px solid #e2e8f0; color: #4f46e5; font-size: 0.8rem;" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance" title="View Profile"><i class="bi bi-eye"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-5">
+            <div class="text-muted mb-2"><i class="bi bi-journal-x fs-1"></i></div>
+            <div class="fw-bold" style="font-size: 0.9rem;">No attendance records found</div>
+            <div class="text-muted mt-1" style="font-size: 0.8rem;">Adjust filters or select a different date to see records.</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="d-flex align-items-center justify-content-between p-3 border-top flex-wrap gap-2">
+    <div class="small hr-muted">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_rows }} entries</div>
+    <div class="d-flex gap-2 align-items-center">
+      {% if page_obj.has_previous %}
+      <a class="btn btn-soft btn-sm icon-btn-square" href="?page={{ page_obj.previous_page_number }}&date={{ external_selected_date }}&q={{ query }}"><i class="bi bi-chevron-left"></i></a>
+      {% else %}
+      <span class="btn btn-soft btn-sm icon-btn-square disabled"><i class="bi bi-chevron-left"></i></span>
+      {% endif %}
+      <span class="btn btn-sm btn-hr-primary icon-btn-square">1</span>
+      <span class="small px-2">2</span>
+      <span class="small px-2">3</span>
+      <span class="small px-2">...</span>
+      <span class="small px-2">12</span>
+      {% if page_obj.has_next %}
+      <a class="btn btn-soft btn-sm icon-btn-square" href="?page={{ page_obj.next_page_number }}&date={{ external_selected_date }}&q={{ query }}"><i class="bi bi-chevron-right"></i></a>
+      {% else %}
+      <span class="btn btn-soft btn-sm icon-btn-square disabled"><i class="bi bi-chevron-right"></i></span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const table = document.querySelector('[data-quick-attendance-url]');
+    if (!table) return;
+
+    const csrfToken = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('csrftoken='))
+      ?.split('=')[1] || '';
+
+    const buildAttendanceBody = (row) => {
+      const employeeId = row.dataset.employeeId;
+      if (!employeeId) return;
+
+      const status = row.querySelector('.attendance-status-select').value;
+      const remarks = row.querySelector('.attendance-remarks-input').value;
+      return new URLSearchParams({
+        employee_id: employeeId,
+        date: table.dataset.attendanceDate,
+        status,
+        remarks,
+      });
+    };
+
+    const saveAttendanceRow = (row) => {
+      const body = buildAttendanceBody(row);
+      if (!body) return Promise.resolve({ ok: false });
+
+      row.classList.add('opacity-75');
+      return fetch(table.dataset.quickAttendanceUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (!data.ok) return;
+          const statusSelect = row.querySelector('.attendance-status-select');
+          statusSelect.className = 'form-select form-select-sm attendance-status-select status-' + data.status;
+          const workingHours = row.querySelector('[data-working-hours]');
+          if (workingHours) workingHours.textContent = data.working_hours;
+          return data;
+        })
+        .finally(() => row.classList.remove('opacity-75'));
+    };
+
+    const saveAttendance = (control) => {
+      saveAttendanceRow(control.closest('[data-attendance-row]'));
+    };
+
+    const submitButton = document.querySelector('[data-submit-attendance]');
+    if (submitButton) {
+      const submitLabel = submitButton.querySelector('[data-submit-label]');
+      const originalLabel = submitLabel ? submitLabel.textContent : 'Submit';
+
+      submitButton.addEventListener('click', () => {
+        const rows = Array.from(table.querySelectorAll('[data-attendance-row]'))
+          .filter((row) => row.dataset.employeeId);
+        if (!rows.length) return;
+
+        submitButton.disabled = true;
+        submitButton.classList.add('opacity-75');
+        if (submitLabel) submitLabel.textContent = 'Submitting';
+
+        Promise.all(rows.map((row) => saveAttendanceRow(row)))
+          .then(() => {
+            if (submitLabel) submitLabel.textContent = 'Saved';
+            setTimeout(() => {
+              if (submitLabel) submitLabel.textContent = originalLabel;
+            }, 1200);
+          })
+          .catch(() => {
+            if (submitLabel) submitLabel.textContent = 'Failed';
+            setTimeout(() => {
+              if (submitLabel) submitLabel.textContent = originalLabel;
+            }, 1600);
+          })
+          .finally(() => {
+            submitButton.disabled = false;
+            submitButton.classList.remove('opacity-75');
+          });
+      });
+    }
+
+    table.querySelectorAll('.attendance-status-select').forEach((select) => {
+      select.addEventListener('change', () => saveAttendance(select));
+    });
+
+    table.querySelectorAll('.attendance-remarks-input').forEach((input) => {
+      let timer;
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => saveAttendance(input), 500);
+      });
+    });
+
+    document.querySelectorAll('.external-toolbar input[type="search"]').forEach((input) => {
+      let timer;
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => input.form.submit(), 350);
+      });
+    });
+  })();
+</script>
+{% endblock %}

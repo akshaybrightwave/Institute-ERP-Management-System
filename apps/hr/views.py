@@ -5,12 +5,21 @@ from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import get_template
 from django.urls import reverse
 from django.utils import timezone
 from django.core.paginator import Paginator
+import base64
+from io import BytesIO
+from PIL import Image
+try:
+    from xhtml2pdf import pisa
+except ImportError:
+    pisa = None
 
 from apps.accounts.models import User
 from .forms import (
@@ -21,6 +30,8 @@ from .forms import (
     CandidateQuickForm,
     CandidateRecruitmentForm,
     CandidateStatusForm,
+    ExternalAttendanceForm,
+    ExternalEmployeeForm,
     FollowUpForm,
     HRSignupForm,
     InterviewFeedbackForm,
@@ -30,11 +41,18 @@ from .forms import (
     PlacementDriveForm,
     PlacementInterviewForm,
     PlacementOfferForm,
+    ProjectAllocationForm,
+    ProjectAssignmentForm,
+    ProjectCompanyForm,
+    ProjectDriveForm,
+    ProjectInterviewForm,
 )
 from apps.students.models import StudentProfile
 from .models import (
     Candidate,
     CandidateActivity,
+    ExternalAttendanceLog,
+    ExternalEmployee,
     FollowUp,
     Interview,
     PlacementActivity,
@@ -43,7 +61,19 @@ from .models import (
     PlacementInterview,
     PlacementOffer,
     PlacementStudentAssignment,
+    ProjectActivity,
+    ProjectAllocation,
+    ProjectCompany,
+    ProjectDrive,
+    ProjectEmployeeAssignment,
+    ProjectInterview,
 )
+from .attendance_automation import employee_for_user
+
+EXTERNAL_BRANCHES = {
+    'thane': {'slug': 'thane', 'name': 'Dcodetech Thane'},
+    'nashik': {'slug': 'nashik', 'name': 'Dcodetech Nashik'},
+}
 
 
 def hr_required(view_func):
@@ -60,9 +90,13 @@ def signup_hr(request):
     if request.method == 'POST':
         form = HRSignupForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'HR account created successfully. Please log in.')
-            return redirect('login')
+            try:
+                form.save()
+            except ValidationError:
+                messages.error(request, 'Please correct the highlighted signup details.')
+            else:
+                messages.success(request, 'HR account created successfully. Please log in.')
+                return redirect('login')
     else:
         form = HRSignupForm()
 
@@ -93,7 +127,23 @@ def add_placement_activity(activity_type, title, request=None, description='', c
 def hr_scope(queryset, request):
     if request.user.is_superuser:
         return queryset
-    return queryset.filter(Q(assigned_hr=request.user) | Q(assigned_hr__isnull=True))
+    
+    model = queryset.model
+    field_names = [f.name for f in model._meta.get_fields()]
+    
+    q_objects = Q()
+    owner_fields = ['assigned_hr', 'created_by', 'handled_by', 'scheduled_by', 'assigned_by', 'marked_by']
+    
+    added = False
+    for field in owner_fields:
+        if field in field_names:
+            q_objects |= Q(**{field: request.user})
+            added = True
+            
+    if added:
+        return queryset.filter(q_objects).distinct()
+    
+    return queryset
 
 
 def trend_label(current, previous):
@@ -111,9 +161,9 @@ def dashboard_metrics(request):
     prev_month_start = prev_month_end.replace(day=1)
 
     candidates = hr_scope(Candidate.objects.all(), request)
-    activities = CandidateActivity.objects.filter(candidate__in=candidates)
-    followups = FollowUp.objects.filter(candidate__in=candidates)
-    interviews = Interview.objects.filter(candidate__in=candidates)
+    activities = hr_scope(CandidateActivity.objects.filter(candidate__in=candidates), request)
+    followups = hr_scope(FollowUp.objects.filter(candidate__in=candidates), request)
+    interviews = hr_scope(Interview.objects.filter(candidate__in=candidates), request)
 
     def metric(label, icon, color, value, current_filter, previous_filter):
         current = candidates.filter(current_filter).count() if current_filter else value
@@ -181,9 +231,9 @@ def dashboard(request):
     hr_performance = [
         {
             'name': user.get_full_name() or user.username,
-            'calls': CandidateActivity.objects.filter(candidate__assigned_hr=user, activity_type='call').count(),
-            'selected': Candidate.objects.filter(assigned_hr=user, status__in=['selected', 'joined']).count(),
-            'handled': Candidate.objects.filter(assigned_hr=user).count(),
+            'calls': hr_scope(CandidateActivity.objects.filter(candidate__assigned_hr=user, activity_type='call'), request).count(),
+            'selected': hr_scope(Candidate.objects.filter(assigned_hr=user, status__in=['selected', 'joined']), request).count(),
+            'handled': hr_scope(Candidate.objects.filter(assigned_hr=user), request).count(),
         }
         for user in hr_users
     ]
@@ -195,9 +245,12 @@ def dashboard(request):
         'status_counts': status_counts,
         'status_total': max(sum(status_counts.values()), 1),
         'hr_performance': hr_performance,
-        'todays_followups': FollowUp.objects.filter(candidate__in=candidates, completed=False, follow_up_date=today).count(),
-        'pending_followups': FollowUp.objects.filter(candidate__in=candidates, completed=False).count(),
+        'todays_followups': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False, follow_up_date=today), request).count(),
+        'pending_followups': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False), request).count(),
         'status_choices': Candidate.STATUS_CHOICES,
+        'today_interviews_count': hr_scope(Interview.objects.filter(candidate__in=candidates, date=today), request).count(),
+        'today_calls_pending': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False, follow_up_date=today, follow_up_type='call'), request).count(),
+        'today_offer_discussions': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False, follow_up_date=today, follow_up_type='meeting'), request).count(),
     }
     return render(request, 'hr/dashboard.html', context)
 
@@ -263,11 +316,13 @@ def candidate_detail(request, candidate_id):
     candidate = get_object_or_404(hr_scope(Candidate.objects.select_related('assigned_hr'), request), id=candidate_id)
     note_form = CandidateNoteForm()
     status_form = CandidateStatusForm(instance=candidate)
+    document_form = CandidateDocumentsForm(instance=candidate)
     tab = request.GET.get('tab', 'overview')
     return render(request, 'hr/candidate_detail.html', {
         'candidate': candidate,
         'note_form': note_form,
         'status_form': status_form,
+        'document_form': document_form,
         'tab': tab,
     })
 
@@ -314,6 +369,71 @@ def change_candidate_status(request, candidate_id):
 
 @login_required
 @hr_required
+def candidate_document_update(request, candidate_id):
+    candidate = get_object_or_404(hr_scope(Candidate.objects.all(), request), id=candidate_id)
+    if request.method == 'POST':
+        form = CandidateDocumentsForm(request.POST, request.FILES, instance=candidate)
+        if form.is_valid():
+            form.save()
+            add_activity(candidate, 'update', 'Documents updated', request)
+            messages.success(request, 'Documents updated successfully.')
+        else:
+            messages.error(request, 'Failed to update documents. Please check your files.')
+    return redirect(reverse('hr:candidate_detail', args=[candidate.id]) + '?tab=documents')
+
+
+@login_required
+@hr_required
+def candidate_download_pdf(request, candidate_id):
+    candidate = get_object_or_404(hr_scope(Candidate.objects.select_related('assigned_hr'), request), id=candidate_id)
+    
+    def get_image_base64(file_field, max_size=(800, 800), quality=70):
+        if not file_field:
+            return None
+        try:
+            if not file_field.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                return None
+                
+            img = Image.open(file_field.path)
+            
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+                
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=quality, optimize=True)
+            img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            return f"data:image/jpeg;base64,{img_str}"
+        except Exception:
+            return None
+            
+    context = {
+        'candidate': candidate, 
+        'request': request,
+        'resume_b64': get_image_base64(candidate.resume),
+        'photo_b64': get_image_base64(candidate.photo, max_size=(300, 300)),
+        'certificates_b64': get_image_base64(candidate.certificates),
+    }
+    
+    template = get_template('hr/candidate_pdf.html')
+    html = template.render(context)
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="candidate_{candidate.id}_{candidate.full_name}.pdf"'
+    
+    if pisa:
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        if pisa_status.err:
+            return HttpResponse('We had some errors generating the PDF.')
+    else:
+        return HttpResponse('PDF generation library not installed.')
+        
+    return response
+
+
+@login_required
+@hr_required
 def add_note(request, candidate_id):
     candidate = get_object_or_404(hr_scope(Candidate.objects.all(), request), id=candidate_id)
     form = CandidateNoteForm(request.POST)
@@ -332,7 +452,7 @@ def add_note(request, candidate_id):
 def followup_list(request):
     candidates = candidate_queryset(request)
     today = timezone.localdate()
-    base = FollowUp.objects.select_related('candidate', 'handled_by').filter(candidate__in=candidates)
+    base = hr_scope(FollowUp.objects.select_related('candidate', 'handled_by'), request).filter(candidate__in=candidates)
     bucket = request.GET.get('bucket', 'today')
     if bucket == 'upcoming':
         followups = base.filter(completed=False, follow_up_date__gt=today)
@@ -393,7 +513,7 @@ def followup_edit(request, followup_id):
 @hr_required
 def interview_list(request):
     candidates = candidate_queryset(request)
-    interviews = Interview.objects.select_related('candidate', 'scheduled_by').filter(candidate__in=candidates)
+    interviews = hr_scope(Interview.objects.select_related('candidate', 'scheduled_by'), request).filter(candidate__in=candidates)
     return render(request, 'hr/interview_list.html', {
         'interviews': interviews,
         'weekly_interviews': interviews.filter(date__gte=timezone.localdate(), date__lte=timezone.localdate() + timedelta(days=7)),
@@ -454,8 +574,8 @@ def reports(request):
         'source_counts': source_counts,
         'status_counts': status_counts,
         'total': total,
-        'interview_count': Interview.objects.filter(candidate__in=candidates).count(),
-        'followup_count': FollowUp.objects.filter(candidate__in=candidates).count(),
+        'interview_count': hr_scope(Interview.objects.filter(candidate__in=candidates), request).count(),
+        'followup_count': hr_scope(FollowUp.objects.filter(candidate__in=candidates), request).count(),
         'selection_ratio': round((candidates.filter(status__in=['selected', 'joined']).count() / total) * 100, 1),
     })
 
@@ -466,11 +586,11 @@ def performance(request):
     users = User.objects.filter(role='hr').order_by('username')
     rows = []
     for user in users:
-        handled = Candidate.objects.filter(assigned_hr=user).count()
-        selected = Candidate.objects.filter(assigned_hr=user, status__in=['selected', 'joined']).count()
-        rejected = Candidate.objects.filter(assigned_hr=user, status='rejected').count()
-        calls = CandidateActivity.objects.filter(candidate__assigned_hr=user, activity_type='call').count()
-        interviews = Interview.objects.filter(candidate__assigned_hr=user).count()
+        handled = hr_scope(Candidate.objects.filter(assigned_hr=user), request).count()
+        selected = hr_scope(Candidate.objects.filter(assigned_hr=user, status__in=['selected', 'joined']), request).count()
+        rejected = hr_scope(Candidate.objects.filter(assigned_hr=user, status='rejected'), request).count()
+        calls = hr_scope(CandidateActivity.objects.filter(candidate__assigned_hr=user, activity_type='call'), request).count()
+        interviews = hr_scope(Interview.objects.filter(candidate__assigned_hr=user), request).count()
         rows.append({
             'user': user,
             'handled': handled,
@@ -506,20 +626,20 @@ def export_candidates(request):
     return response
 
 
-def placement_metrics():
-    total_sent = PlacementStudentAssignment.objects.count()
-    selected = PlacementStudentAssignment.objects.filter(final_status__in=['selected', 'joined']).count()
-    rejected = PlacementStudentAssignment.objects.filter(final_status='rejected').count()
-    placed = PlacementStudentAssignment.objects.filter(final_status='joined').count()
+def placement_metrics(request):
+    total_sent = hr_scope(PlacementStudentAssignment.objects.all(), request).count()
+    selected = hr_scope(PlacementStudentAssignment.objects.filter(final_status__in=['selected', 'joined']), request).count()
+    rejected = hr_scope(PlacementStudentAssignment.objects.filter(final_status='rejected'), request).count()
+    placed = hr_scope(PlacementStudentAssignment.objects.filter(final_status='joined'), request).count()
     rate = round((placed / total_sent) * 100, 2) if total_sent else 0
     return [
-        {'label': 'Total Companies', 'icon': 'bi-buildings-fill', 'color': 'violet', 'value': PlacementCompany.objects.count(), 'trend': '+8 this month', 'spark': [22, 55, 70]},
-        {'label': 'Total Drives', 'icon': 'bi-megaphone-fill', 'color': 'emerald', 'value': PlacementDrive.objects.count(), 'trend': '+3 this month', 'spark': [30, 45, 68]},
-        {'label': 'Students Eligible', 'icon': 'bi-mortarboard-fill', 'color': 'blue', 'value': StudentProfile.objects.count(), 'trend': '+24 this month', 'spark': [18, 55, 86]},
-        {'label': 'Students Sent', 'icon': 'bi-send-fill', 'color': 'orange', 'value': total_sent, 'trend': '+15 this month', 'spark': [28, 62, 73]},
-        {'label': 'Students Selected', 'icon': 'bi-person-check-fill', 'color': 'teal', 'value': selected, 'trend': '+10 this month', 'spark': [18, 42, 64]},
-        {'label': 'Students Rejected', 'icon': 'bi-person-x-fill', 'color': 'red', 'value': rejected, 'trend': '+4 this month', 'spark': [12, 35, 40]},
-        {'label': 'Students Placed', 'icon': 'bi-award-fill', 'color': 'indigo', 'value': placed, 'trend': '+5 this month', 'spark': [12, 44, 66]},
+        {'label': 'Total Companies', 'icon': 'bi-buildings-fill', 'color': 'violet', 'value': hr_scope(PlacementCompany.objects.all(), request).count(), 'trend': '+8 this month', 'spark': [22, 55, 70]},
+        {'label': 'Total Drives', 'icon': 'bi-megaphone-fill', 'color': 'emerald', 'value': hr_scope(PlacementDrive.objects.all(), request).count(), 'trend': '+3 this month', 'spark': [30, 45, 68]},
+        {'label': 'Employees Eligible', 'icon': 'bi-mortarboard-fill', 'color': 'blue', 'value': StudentProfile.objects.count(), 'trend': '+24 this month', 'spark': [18, 55, 86]},
+        {'label': 'Employees Sent', 'icon': 'bi-send-fill', 'color': 'orange', 'value': total_sent, 'trend': '+15 this month', 'spark': [28, 62, 73]},
+        {'label': 'Employees Selected', 'icon': 'bi-person-check-fill', 'color': 'teal', 'value': selected, 'trend': '+10 this month', 'spark': [18, 42, 64]},
+        {'label': 'Employees Rejected', 'icon': 'bi-person-x-fill', 'color': 'red', 'value': rejected, 'trend': '+4 this month', 'spark': [12, 35, 40]},
+        {'label': 'Employees Placed', 'icon': 'bi-award-fill', 'color': 'indigo', 'value': placed, 'trend': '+5 this month', 'spark': [12, 44, 66]},
         {'label': 'Placement Rate', 'icon': 'bi-graph-up-arrow', 'color': 'amber', 'value': f'{rate}%', 'trend': '+3.45% this month', 'spark': [20, 58, 78]},
     ]
 
@@ -527,24 +647,24 @@ def placement_metrics():
 @login_required
 @hr_required
 def placement_dashboard(request):
-    drives = PlacementDrive.objects.select_related('company')[:6]
-    status_counts = OrderedDict((key, PlacementDrive.objects.filter(status=key).count()) for key, _ in PlacementDrive.STATUS_CHOICES)
+    drives = hr_scope(PlacementDrive.objects.select_related('company'), request)[:6]
+    status_counts = OrderedDict((key, hr_scope(PlacementDrive.objects.filter(status=key), request).count()) for key, _ in PlacementDrive.STATUS_CHOICES)
     total_drives = max(sum(status_counts.values()), 1)
-    top_companies = sorted(PlacementCompany.objects.all(), key=lambda company: company.joined_count, reverse=True)[:5]
+    top_companies = sorted(hr_scope(PlacementCompany.objects.all(), request), key=lambda company: company.joined_count, reverse=True)[:5]
     context = {
-        'metrics': placement_metrics(),
+        'metrics': placement_metrics(request),
         'recent_drives': drives,
         'top_companies': top_companies,
         'status_counts': status_counts,
         'total_drives': total_drives,
-        'activities': PlacementActivity.objects.select_related('company', 'drive', 'created_by')[:6],
-        'upcoming_interviews': PlacementInterview.objects.select_related('company', 'drive', 'assignment')[:5],
+        'activities': hr_scope(PlacementActivity.objects.select_related('company', 'drive', 'created_by'), request)[:6],
+        'upcoming_interviews': hr_scope(PlacementInterview.objects.select_related('company', 'drive', 'assignment'), request)[:5],
         'pipeline': {
-            'scheduled': PlacementDrive.objects.exclude(status='cancelled').count(),
-            'shortlisted': PlacementStudentAssignment.objects.count(),
-            'appeared': PlacementStudentAssignment.objects.filter(interview_status__in=['appeared', 'selected', 'rejected']).count(),
-            'offers': PlacementOffer.objects.exclude(offer_status='pending').count(),
-            'placed': PlacementStudentAssignment.objects.filter(final_status='joined').count(),
+            'scheduled': hr_scope(PlacementDrive.objects.exclude(status='cancelled'), request).count(),
+            'shortlisted': hr_scope(PlacementStudentAssignment.objects.all(), request).count(),
+            'appeared': hr_scope(PlacementStudentAssignment.objects.filter(interview_status__in=['appeared', 'selected', 'rejected']), request).count(),
+            'offers': hr_scope(PlacementOffer.objects.exclude(offer_status='pending'), request).count(),
+            'placed': hr_scope(PlacementStudentAssignment.objects.filter(final_status='joined'), request).count(),
         },
     }
     return render(request, 'hr/placement_dashboard.html', context)
@@ -553,7 +673,7 @@ def placement_dashboard(request):
 @login_required
 @hr_required
 def placement_company_list(request):
-    companies = PlacementCompany.objects.all()
+    companies = hr_scope(PlacementCompany.objects.all(), request)
     query = request.GET.get('q', '').strip()
     if query:
         companies = companies.filter(
@@ -583,7 +703,7 @@ def placement_company_create(request):
 @login_required
 @hr_required
 def placement_company_edit(request, company_id):
-    company = get_object_or_404(PlacementCompany, id=company_id)
+    company = get_object_or_404(hr_scope(PlacementCompany.objects.all(), request), id=company_id)
     form = PlacementCompanyForm(request.POST or None, request.FILES or None, instance=company)
     if request.method == 'POST' and form.is_valid():
         company = form.save()
@@ -596,7 +716,7 @@ def placement_company_edit(request, company_id):
 @login_required
 @hr_required
 def placement_company_detail(request, company_id):
-    company = get_object_or_404(PlacementCompany, id=company_id)
+    company = get_object_or_404(hr_scope(PlacementCompany.objects.all(), request), id=company_id)
     assignments = company.placement_assignments.select_related('student', 'drive')[:20]
     return render(request, 'hr/placement_company_detail.html', {'company': company, 'assignments': assignments})
 
@@ -604,7 +724,7 @@ def placement_company_detail(request, company_id):
 @login_required
 @hr_required
 def placement_company_delete(request, company_id):
-    company = get_object_or_404(PlacementCompany, id=company_id)
+    company = get_object_or_404(hr_scope(PlacementCompany.objects.all(), request), id=company_id)
     if request.method == 'POST':
         company.delete()
         messages.success(request, 'Company deleted successfully.')
@@ -615,7 +735,7 @@ def placement_company_delete(request, company_id):
 @login_required
 @hr_required
 def placement_drive_list(request):
-    drives = PlacementDrive.objects.select_related('company')
+    drives = hr_scope(PlacementDrive.objects.select_related('company'), request)
     status = request.GET.get('status', '').strip()
     query = request.GET.get('q', '').strip()
     if status:
@@ -634,7 +754,7 @@ def placement_drive_list(request):
 @login_required
 @hr_required
 def placement_drive_create(request, company_id=None):
-    company = get_object_or_404(PlacementCompany, id=company_id) if company_id else None
+    company = get_object_or_404(hr_scope(PlacementCompany.objects.all(), request), id=company_id) if company_id else None
     form = PlacementDriveForm(request.POST or None, company=company)
     if request.method == 'POST' and form.is_valid():
         drive = form.save(commit=False)
@@ -651,7 +771,7 @@ def placement_drive_create(request, company_id=None):
 @login_required
 @hr_required
 def placement_drive_edit(request, drive_id):
-    drive = get_object_or_404(PlacementDrive, id=drive_id)
+    drive = get_object_or_404(hr_scope(PlacementDrive.objects.all(), request), id=drive_id)
     form = PlacementDriveForm(request.POST or None, instance=drive)
     if request.method == 'POST' and form.is_valid():
         drive = form.save()
@@ -664,7 +784,7 @@ def placement_drive_edit(request, drive_id):
 @login_required
 @hr_required
 def placement_drive_detail(request, drive_id):
-    drive = get_object_or_404(PlacementDrive.objects.select_related('company'), id=drive_id)
+    drive = get_object_or_404(hr_scope(PlacementDrive.objects.select_related('company'), request), id=drive_id)
     assignments = drive.assignments.select_related('student', 'company')[:30]
     return render(request, 'hr/placement_drive_detail.html', {'drive': drive, 'assignments': assignments})
 
@@ -672,7 +792,7 @@ def placement_drive_detail(request, drive_id):
 @login_required
 @hr_required
 def placement_assign_students(request, drive_id):
-    drive = get_object_or_404(PlacementDrive.objects.select_related('company'), id=drive_id)
+    drive = get_object_or_404(hr_scope(PlacementDrive.objects.select_related('company'), request), id=drive_id)
     assigned_ids = list(drive.assignments.filter(student__isnull=False).values_list('student_id', flat=True))
     students = StudentProfile.objects.select_related('batch', 'batch__course').exclude(id__in=assigned_ids).order_by('full_name')
     query = request.GET.get('q', '').strip()
@@ -694,8 +814,8 @@ def placement_assign_students(request, drive_id):
             )
             created += 1
         if created:
-            add_placement_activity('assignment', f'{created} students assigned to {drive.company or drive}', request, drive=drive, company=drive.company)
-        messages.success(request, f'{created} students assigned successfully.')
+            add_placement_activity('assignment', f'{created} employees assigned to {drive.company or drive}', request, drive=drive, company=drive.company)
+        messages.success(request, f'{created} employees assigned successfully.')
         return redirect('hr:placement_drive_detail', drive_id=drive.id)
     return render(request, 'hr/placement_assign_students.html', {'drive': drive, 'students': students[:100], 'query': query})
 
@@ -703,13 +823,18 @@ def placement_assign_students(request, drive_id):
 @login_required
 @hr_required
 def placement_student_list(request):
-    assignments = PlacementStudentAssignment.objects.select_related('student', 'company', 'drive')
+    assignments = hr_scope(PlacementStudentAssignment.objects.select_related('student', 'company', 'drive'), request)
     status = request.GET.get('status', '').strip()
     query = request.GET.get('q', '').strip()
     if status:
         assignments = assignments.filter(final_status=status)
     if query:
-        assignments = assignments.filter(Q(student_name__icontains=query) | Q(student__full_name__icontains=query) | Q(company__name__icontains=query))
+        assignments = assignments.filter(
+            Q(student_name__icontains=query)
+            | Q(student__full_name__icontains=query)
+            | Q(student__user__username__icontains=query)
+            | Q(company__name__icontains=query)
+        )
     page_obj = Paginator(assignments, 14).get_page(request.GET.get('page'))
     return render(request, 'hr/placement_student_list.html', {
         'page_obj': page_obj,
@@ -722,8 +847,8 @@ def placement_student_list(request):
 @login_required
 @hr_required
 def placement_assignment_create(request, drive_id=None, company_id=None):
-    drive = get_object_or_404(PlacementDrive, id=drive_id) if drive_id else None
-    company = get_object_or_404(PlacementCompany, id=company_id) if company_id else None
+    drive = get_object_or_404(hr_scope(PlacementDrive.objects.all(), request), id=drive_id) if drive_id else None
+    company = get_object_or_404(hr_scope(PlacementCompany.objects.all(), request), id=company_id) if company_id else None
     form = PlacementAssignmentForm(request.POST or None, drive=drive, company=company)
     if request.method == 'POST' and form.is_valid():
         assignment = form.save(commit=False)
@@ -739,27 +864,27 @@ def placement_assignment_create(request, drive_id=None, company_id=None):
         assignment.assigned_by = request.user
         assignment.save()
         add_placement_activity('assignment', f'{assignment.display_name} assigned to {assignment.company or "company"}', request, company=assignment.company, drive=assignment.drive)
-        messages.success(request, 'Student assignment saved successfully.')
-        return redirect('hr:placement_student_list')
+        messages.success(request, 'Employee assignment saved successfully.')
+        return redirect('hr:placement_employee_list')
     return render(request, 'hr/placement_assignment_form.html', {'form': form, 'drive': drive, 'company': company})
 
 
 @login_required
 @hr_required
 def placement_assignment_edit(request, assignment_id):
-    assignment = get_object_or_404(PlacementStudentAssignment, id=assignment_id)
+    assignment = get_object_or_404(hr_scope(PlacementStudentAssignment.objects.all(), request), id=assignment_id)
     form = PlacementAssignmentForm(request.POST or None, instance=assignment)
     if request.method == 'POST' and form.is_valid():
         assignment = form.save()
-        messages.success(request, 'Student placement updated successfully.')
-        return redirect('hr:placement_student_list')
+        messages.success(request, 'Employee placement updated successfully.')
+        return redirect('hr:placement_employee_list')
     return render(request, 'hr/placement_assignment_form.html', {'form': form, 'assignment': assignment})
 
 
 @login_required
 @hr_required
 def placement_interview_list(request):
-    interviews = PlacementInterview.objects.select_related('company', 'drive', 'assignment')
+    interviews = hr_scope(PlacementInterview.objects.select_related('company', 'drive', 'assignment'), request)
     page_obj = Paginator(interviews, 14).get_page(request.GET.get('page'))
     return render(request, 'hr/placement_interview_list.html', {'page_obj': page_obj})
 
@@ -767,8 +892,8 @@ def placement_interview_list(request):
 @login_required
 @hr_required
 def placement_interview_create(request, drive_id=None, assignment_id=None):
-    drive = get_object_or_404(PlacementDrive, id=drive_id) if drive_id else None
-    assignment = get_object_or_404(PlacementStudentAssignment, id=assignment_id) if assignment_id else None
+    drive = get_object_or_404(hr_scope(PlacementDrive.objects.all(), request), id=drive_id) if drive_id else None
+    assignment = get_object_or_404(hr_scope(PlacementStudentAssignment.objects.all(), request), id=assignment_id) if assignment_id else None
     form = PlacementInterviewForm(request.POST or None, drive=drive, assignment=assignment)
     if request.method == 'POST' and form.is_valid():
         interview = form.save(commit=False)
@@ -784,7 +909,7 @@ def placement_interview_create(request, drive_id=None, assignment_id=None):
         if interview.assignment:
             interview.assignment.interview_status = interview.status
             interview.assignment.save(update_fields=['interview_status', 'updated_at'])
-        add_placement_activity('interview', f'Interview scheduled for {interview.assignment or interview.company or "student"}', request, company=interview.company, drive=interview.drive)
+        add_placement_activity('interview', f'Interview scheduled for {interview.assignment or interview.company or "employee"}', request, company=interview.company, drive=interview.drive)
         messages.success(request, 'Placement interview saved successfully.')
         return redirect('hr:placement_interview_list')
     return render(request, 'hr/placement_interview_form.html', {'form': form, 'drive': drive, 'assignment': assignment})
@@ -793,7 +918,7 @@ def placement_interview_create(request, drive_id=None, assignment_id=None):
 @login_required
 @hr_required
 def placement_interview_edit(request, interview_id):
-    interview = get_object_or_404(PlacementInterview, id=interview_id)
+    interview = get_object_or_404(hr_scope(PlacementInterview.objects.all(), request), id=interview_id)
     form = PlacementInterviewForm(request.POST or None, instance=interview)
     if request.method == 'POST' and form.is_valid():
         interview = form.save()
@@ -812,7 +937,7 @@ def placement_interview_edit(request, interview_id):
 @login_required
 @hr_required
 def placement_offer_list(request):
-    offers = PlacementOffer.objects.select_related('assignment', 'assignment__student', 'company')
+    offers = hr_scope(PlacementOffer.objects.select_related('assignment', 'assignment__student', 'company'), request)
     page_obj = Paginator(offers, 14).get_page(request.GET.get('page'))
     return render(request, 'hr/placement_offer_list.html', {'page_obj': page_obj})
 
@@ -820,8 +945,8 @@ def placement_offer_list(request):
 @login_required
 @hr_required
 def placement_offer_create(request, assignment_id=None):
-    assignment = get_object_or_404(PlacementStudentAssignment, id=assignment_id) if assignment_id else None
-    instance = PlacementOffer.objects.filter(assignment=assignment).first() if assignment else None
+    assignment = get_object_or_404(hr_scope(PlacementStudentAssignment.objects.all(), request), id=assignment_id) if assignment_id else None
+    instance = hr_scope(PlacementOffer.objects.filter(assignment=assignment), request).first() if assignment else None
     form = PlacementOfferForm(request.POST or None, assignment=assignment, instance=instance)
     if request.method == 'POST' and form.is_valid():
         offer = form.save(commit=False)
@@ -847,7 +972,7 @@ def placement_offer_create(request, assignment_id=None):
 @login_required
 @hr_required
 def placement_offer_edit(request, offer_id):
-    offer = get_object_or_404(PlacementOffer, id=offer_id)
+    offer = get_object_or_404(hr_scope(PlacementOffer.objects.all(), request), id=offer_id)
     form = PlacementOfferForm(request.POST or None, instance=offer)
     if request.method == 'POST' and form.is_valid():
         offer = form.save()
@@ -859,8 +984,8 @@ def placement_offer_edit(request, offer_id):
 @login_required
 @hr_required
 def placement_reports(request):
-    companies = PlacementCompany.objects.all()
-    assignments = PlacementStudentAssignment.objects.select_related('company', 'drive', 'student')
+    companies = hr_scope(PlacementCompany.objects.all(), request)
+    assignments = hr_scope(PlacementStudentAssignment.objects.select_related('company', 'drive', 'student'), request)
     company_id = request.GET.get('company', '').strip()
     status = request.GET.get('status', '').strip()
     if company_id:
@@ -875,10 +1000,10 @@ def placement_reports(request):
         'status_choices': PlacementStudentAssignment.FINAL_STATUS_CHOICES,
         'summary': {
             'companies': companies.count(),
-            'drives': PlacementDrive.objects.count(),
-            'sent': PlacementStudentAssignment.objects.count(),
-            'selected': PlacementStudentAssignment.objects.filter(final_status__in=['selected', 'joined']).count(),
-            'joined': PlacementStudentAssignment.objects.filter(final_status='joined').count(),
+            'drives': hr_scope(PlacementDrive.objects.all(), request).count(),
+            'sent': hr_scope(PlacementStudentAssignment.objects.all(), request).count(),
+            'selected': hr_scope(PlacementStudentAssignment.objects.filter(final_status__in=['selected', 'joined']), request).count(),
+            'joined': hr_scope(PlacementStudentAssignment.objects.filter(final_status='joined'), request).count(),
         },
     })
 
@@ -889,8 +1014,8 @@ def export_placement_report(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="placement-report.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Student', 'Course', 'Company', 'Drive', 'Interview Status', 'Final Status'])
-    for item in PlacementStudentAssignment.objects.select_related('student', 'company', 'drive'):
+    writer.writerow(['Employee', 'Designation', 'Company', 'Drive', 'Interview Status', 'Final Status'])
+    for item in hr_scope(PlacementStudentAssignment.objects.select_related('student', 'company', 'drive'), request):
         writer.writerow([
             item.display_name,
             item.display_course,
@@ -901,6 +1026,807 @@ def export_placement_report(request):
         ])
     return response
 
+
+# ──────────────────────────────── PLACEMENT ASSIGNMENT DETAIL ────────────────────────────────
+
+@login_required
+@hr_required
+def placement_assignment_detail(request, assignment_id):
+    assignment = get_object_or_404(hr_scope(PlacementStudentAssignment.objects.all(), request), id=assignment_id)
+    return render(request, 'hr/placement_assignment_detail.html', {'assignment': assignment})
+
+
+# ──────────────────────────────── PROJECT VIEWS ────────────────────────────────
+
+def add_project_activity(activity_type, title, request=None, description='', company=None, drive=None):
+    ProjectActivity.objects.create(
+        activity_type=activity_type,
+        title=title,
+        description=description,
+        company=company,
+        drive=drive,
+        created_by=request.user if request and request.user.is_authenticated else None,
+    )
+
+
+@login_required
+@hr_required
+def project_dashboard(request):
+    companies = hr_scope(ProjectCompany.objects.all(), request)
+    drives = hr_scope(ProjectDrive.objects.select_related('company'), request)[:6]
+    assignments = hr_scope(ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive'), request)
+    status_counts = {key: hr_scope(ProjectDrive.objects.filter(status=key), request).count() for key, _ in ProjectDrive.STATUS_CHOICES}
+    total_drives = max(sum(status_counts.values()), 1)
+    top_companies = sorted(companies, key=lambda c: c.allocated_count, reverse=True)[:5]
+    context = {
+        'recent_drives': drives,
+        'top_companies': top_companies,
+        'status_counts': status_counts,
+        'total_drives': total_drives,
+        'activities': hr_scope(ProjectActivity.objects.all(), request)[:6],
+        'upcoming_interviews': hr_scope(ProjectInterview.objects.select_related('company', 'drive', 'assignment'), request)[:5],
+        'metrics': [
+            {'label': 'Total Companies', 'icon': 'bi-buildings-fill', 'color': 'violet', 'value': companies.count(), 'trend': '+2 this month', 'spark': [22, 55, 70]},
+            {'label': 'Total Drives', 'icon': 'bi-megaphone-fill', 'color': 'emerald', 'value': hr_scope(ProjectDrive.objects.all(), request).count(), 'trend': '+1 this month', 'spark': [30, 45, 68]},
+            {'label': 'Employees Assigned', 'icon': 'bi-people-fill', 'color': 'blue', 'value': assignments.count(), 'trend': '+8 this month', 'spark': [18, 55, 86]},
+            {'label': 'Employees Allocated', 'icon': 'bi-person-check-fill', 'color': 'teal', 'value': assignments.filter(final_status='allocated').count(), 'trend': '+4 this month', 'spark': [18, 42, 64]},
+            {'label': 'Employees Released', 'icon': 'bi-person-x-fill', 'color': 'red', 'value': assignments.filter(final_status='released').count(), 'trend': '+1 this month', 'spark': [12, 35, 40]},
+            {'label': 'Pending', 'icon': 'bi-hourglass-split', 'color': 'amber', 'value': assignments.filter(final_status='pending').count(), 'trend': '+2 this month', 'spark': [20, 58, 78]},
+        ],
+        'pipeline': {
+            'scheduled': hr_scope(ProjectDrive.objects.exclude(status='cancelled'), request).count(),
+            'sent': hr_scope(ProjectEmployeeAssignment.objects.all(), request).count(),
+            'appeared': hr_scope(ProjectEmployeeAssignment.objects.filter(interview_status__in=['appeared', 'selected', 'rejected']), request).count(),
+            'allocations': hr_scope(ProjectAllocation.objects.all(), request).count(),
+            'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='allocated'), request).count(),
+        },
+    }
+    return render(request, 'hr/project_dashboard.html', context)
+
+
+@login_required
+@hr_required
+def project_company_list(request):
+    companies = hr_scope(ProjectCompany.objects.all(), request)
+    query = request.GET.get('q', '').strip()
+    if query:
+        companies = companies.filter(
+            Q(name__icontains=query) | Q(industry__icontains=query) | Q(contact_person__icontains=query) | Q(city__icontains=query)
+        )
+    page_obj = Paginator(companies, 12).get_page(request.GET.get('page'))
+    return render(request, 'hr/project_company_list.html', {'page_obj': page_obj, 'query': query})
+
+
+@login_required
+@hr_required
+def project_company_create(request):
+    form = ProjectCompanyForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST' and form.is_valid():
+        company = form.save(commit=False)
+        company.created_by = request.user
+        company.save()
+        add_project_activity('company', f'{company} added', request, 'Company profile saved.', company=company)
+        messages.success(request, 'Company saved successfully.')
+        return redirect('hr:project_company_detail', company_id=company.id)
+    return render(request, 'hr/project_company_form.html', {'form': form, 'title': 'Add Company'})
+
+
+@login_required
+@hr_required
+def project_company_edit(request, company_id):
+    company = get_object_or_404(hr_scope(ProjectCompany.objects.all(), request), id=company_id)
+    form = ProjectCompanyForm(request.POST or None, request.FILES or None, instance=company)
+    if request.method == 'POST' and form.is_valid():
+        company = form.save()
+        add_project_activity('company', f'{company} updated', request, 'Company profile updated.', company=company)
+        messages.success(request, 'Company updated successfully.')
+        return redirect('hr:project_company_detail', company_id=company.id)
+    return render(request, 'hr/project_company_form.html', {'form': form, 'title': 'Edit Company', 'company': company})
+
+
+@login_required
+@hr_required
+def project_company_detail(request, company_id):
+    company = get_object_or_404(hr_scope(ProjectCompany.objects.all(), request), id=company_id)
+    drives = company.drives.all()
+    assignments = company.project_assignments.select_related('employee', 'drive').all()
+    activities = company.activities.all()[:10]
+    return render(request, 'hr/project_company_detail.html', {
+        'company': company,
+        'drives': drives,
+        'assignments': assignments,
+        'activities': activities,
+    })
+
+
+@login_required
+@hr_required
+def project_drive_list(request):
+    drives = hr_scope(ProjectDrive.objects.select_related('company'), request)
+    status = request.GET.get('status', '').strip()
+    if status:
+        drives = drives.filter(status=status)
+    page_obj = Paginator(drives, 12).get_page(request.GET.get('page'))
+    return render(request, 'hr/project_drive_list.html', {
+        'page_obj': page_obj,
+        'status': status,
+        'status_choices': ProjectDrive.STATUS_CHOICES,
+    })
+
+
+@login_required
+@hr_required
+def project_drive_create(request, company_id=None):
+    company = get_object_or_404(hr_scope(ProjectCompany.objects.all(), request), id=company_id) if company_id else None
+    form = ProjectDriveForm(request.POST or None, company=company)
+    if request.method == 'POST' and form.is_valid():
+        drive = form.save(commit=False)
+        if company:
+            drive.company = company
+        drive.created_by = request.user
+        drive.save()
+        add_project_activity('drive', f'Project drive created for {drive.company or "company"}', request, company=drive.company, drive=drive)
+        messages.success(request, 'Project drive saved successfully.')
+        return redirect('hr:project_drive_detail', drive_id=drive.id)
+    return render(request, 'hr/project_drive_form.html', {'form': form, 'company': company})
+
+
+@login_required
+@hr_required
+def project_drive_edit(request, drive_id):
+    drive = get_object_or_404(hr_scope(ProjectDrive.objects.all(), request), id=drive_id)
+    form = ProjectDriveForm(request.POST or None, instance=drive)
+    if request.method == 'POST' and form.is_valid():
+        drive = form.save()
+        add_project_activity('drive', f'{drive} updated', request, company=drive.company, drive=drive)
+        messages.success(request, 'Project drive updated.')
+        return redirect('hr:project_drive_detail', drive_id=drive.id)
+    return render(request, 'hr/project_drive_form.html', {'form': form, 'drive': drive})
+
+
+@login_required
+@hr_required
+def project_drive_detail(request, drive_id):
+    drive = get_object_or_404(hr_scope(ProjectDrive.objects.all(), request), id=drive_id)
+    assignments = drive.assignments.select_related('employee').all()
+    interviews = drive.project_interviews.all()
+    activities = drive.activities.all()[:10]
+    return render(request, 'hr/project_drive_detail.html', {
+        'drive': drive,
+        'assignments': assignments,
+        'interviews': interviews,
+        'activities': activities,
+    })
+
+
+@login_required
+@hr_required
+def project_assign_employees(request, drive_id):
+    drive = get_object_or_404(hr_scope(ProjectDrive.objects.all(), request), id=drive_id)
+    query = request.GET.get('q', '').strip()
+    employees = hr_scope(ExternalEmployee.objects.filter(status='active'), request)
+    if query:
+        employees = employees.filter(Q(full_name__icontains=query) | Q(employee_id__icontains=query) | Q(department__icontains=query))
+    if request.method == 'POST':
+        employee_ids = request.POST.getlist('employee_ids')
+        created = 0
+        for eid in employee_ids:
+            emp = hr_scope(ExternalEmployee.objects.filter(id=eid), request).first()
+            if emp and not hr_scope(ProjectEmployeeAssignment.objects.filter(drive=drive, employee=emp), request).exists():
+                ProjectEmployeeAssignment.objects.create(
+                    drive=drive,
+                    company=drive.company,
+                    employee=emp,
+                    employee_name=emp.full_name,
+                    employee_code=emp.employee_id,
+                    department=emp.department,
+                    designation=emp.designation,
+                    assigned_by=request.user,
+                )
+                created += 1
+        if created:
+            add_project_activity('assignment', f'{created} employees assigned to {drive.company or drive}', request, company=drive.company, drive=drive)
+        messages.success(request, f'{created} employees assigned successfully.')
+        return redirect('hr:project_drive_detail', drive_id=drive.id)
+    return render(request, 'hr/project_assign_employees.html', {'drive': drive, 'employees': employees[:100], 'query': query})
+
+
+@login_required
+@hr_required
+def project_employee_list(request):
+    assignments = hr_scope(ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive'), request)
+    status = request.GET.get('status', '').strip()
+    query = request.GET.get('q', '').strip()
+    if status:
+        assignments = assignments.filter(final_status=status)
+    if query:
+        assignments = assignments.filter(
+            Q(employee_name__icontains=query) | Q(employee__full_name__icontains=query) | Q(company__name__icontains=query)
+        )
+    page_obj = Paginator(assignments, 14).get_page(request.GET.get('page'))
+    return render(request, 'hr/project_employee_list.html', {
+        'page_obj': page_obj,
+        'status_choices': ProjectEmployeeAssignment.FINAL_STATUS_CHOICES,
+        'status': status,
+        'query': query,
+    })
+
+
+@login_required
+@hr_required
+def project_assignment_create(request, drive_id=None, company_id=None):
+    drive = get_object_or_404(hr_scope(ProjectDrive.objects.all(), request), id=drive_id) if drive_id else None
+    company = get_object_or_404(hr_scope(ProjectCompany.objects.all(), request), id=company_id) if company_id else None
+    form = ProjectAssignmentForm(request.POST or None, drive=drive, company=company)
+    if request.method == 'POST' and form.is_valid():
+        assignment = form.save(commit=False)
+        if drive:
+            assignment.drive = drive
+            assignment.company = drive.company
+        elif company:
+            assignment.company = company
+        if assignment.employee:
+            assignment.employee_name = assignment.employee_name or assignment.employee.full_name
+            assignment.employee_code = assignment.employee_code or assignment.employee.employee_id
+            assignment.department = assignment.department or assignment.employee.department
+            assignment.designation = assignment.designation or assignment.employee.designation
+        assignment.assigned_by = request.user
+        assignment.save()
+        add_project_activity('assignment', f'{assignment.display_name} assigned to {assignment.company or "company"}', request, company=assignment.company, drive=assignment.drive)
+        messages.success(request, 'Employee assignment saved successfully.')
+        return redirect('hr:project_employee_list')
+    return render(request, 'hr/project_assignment_form.html', {'form': form, 'drive': drive, 'company': company})
+
+
+@login_required
+@hr_required
+def project_assignment_edit(request, assignment_id):
+    assignment = get_object_or_404(hr_scope(ProjectEmployeeAssignment.objects.all(), request), id=assignment_id)
+    form = ProjectAssignmentForm(request.POST or None, instance=assignment)
+    if request.method == 'POST' and form.is_valid():
+        assignment = form.save()
+        messages.success(request, 'Employee assignment updated successfully.')
+        return redirect('hr:project_employee_list')
+    return render(request, 'hr/project_assignment_form.html', {'form': form, 'assignment': assignment})
+
+
+@login_required
+@hr_required
+def project_assignment_detail(request, assignment_id):
+    assignment = get_object_or_404(hr_scope(ProjectEmployeeAssignment.objects.all(), request), id=assignment_id)
+    return render(request, 'hr/project_assignment_detail.html', {'assignment': assignment})
+
+
+@login_required
+@hr_required
+def project_interview_list(request):
+    interviews = hr_scope(ProjectInterview.objects.select_related('company', 'drive', 'assignment'), request)
+    page_obj = Paginator(interviews, 14).get_page(request.GET.get('page'))
+    return render(request, 'hr/project_interview_list.html', {'page_obj': page_obj})
+
+
+@login_required
+@hr_required
+def project_interview_create(request, drive_id=None, assignment_id=None):
+    drive = get_object_or_404(hr_scope(ProjectDrive.objects.all(), request), id=drive_id) if drive_id else None
+    assignment = get_object_or_404(hr_scope(ProjectEmployeeAssignment.objects.all(), request), id=assignment_id) if assignment_id else None
+    form = ProjectInterviewForm(request.POST or None, drive=drive, assignment=assignment)
+    if request.method == 'POST' and form.is_valid():
+        interview = form.save(commit=False)
+        if assignment:
+            interview.assignment = assignment
+            interview.company = assignment.company
+            interview.drive = assignment.drive
+        elif drive:
+            interview.drive = drive
+            interview.company = drive.company
+        interview.created_by = request.user
+        interview.save()
+        if interview.assignment:
+            interview.assignment.interview_status = interview.status
+            interview.assignment.save(update_fields=['interview_status', 'updated_at'])
+        add_project_activity('interview', f'Interview scheduled for {interview.assignment or interview.company}', request, company=interview.company, drive=interview.drive)
+        messages.success(request, 'Project interview saved successfully.')
+        return redirect('hr:project_interview_list')
+    return render(request, 'hr/project_interview_form.html', {'form': form, 'drive': drive, 'assignment': assignment})
+
+
+@login_required
+@hr_required
+def project_interview_edit(request, interview_id):
+    interview = get_object_or_404(hr_scope(ProjectInterview.objects.all(), request), id=interview_id)
+    form = ProjectInterviewForm(request.POST or None, instance=interview)
+    if request.method == 'POST' and form.is_valid():
+        interview = form.save()
+        if interview.assignment:
+            interview.assignment.interview_status = interview.status
+            if interview.status == 'selected':
+                interview.assignment.final_status = 'selected'
+            elif interview.status == 'rejected':
+                interview.assignment.final_status = 'rejected'
+            interview.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
+        messages.success(request, 'Project interview updated.')
+        return redirect('hr:project_interview_list')
+    return render(request, 'hr/project_interview_form.html', {'form': form, 'interview': interview})
+
+
+@login_required
+@hr_required
+def project_allocation_list(request):
+    allocations = hr_scope(ProjectAllocation.objects.select_related('assignment', 'assignment__employee', 'company'), request)
+    page_obj = Paginator(allocations, 14).get_page(request.GET.get('page'))
+    return render(request, 'hr/project_allocation_list.html', {'page_obj': page_obj})
+
+
+@login_required
+@hr_required
+def project_allocation_create(request, assignment_id=None):
+    assignment = get_object_or_404(hr_scope(ProjectEmployeeAssignment.objects.all(), request), id=assignment_id) if assignment_id else None
+    instance = hr_scope(ProjectAllocation.objects.filter(assignment=assignment), request).first() if assignment else None
+    form = ProjectAllocationForm(request.POST or None, assignment=assignment, instance=instance)
+    if request.method == 'POST' and form.is_valid():
+        allocation = form.save(commit=False)
+        if assignment:
+            allocation.assignment = assignment
+            allocation.company = assignment.company
+        allocation.created_by = allocation.created_by or request.user
+        allocation.save()
+        if allocation.assignment:
+            if allocation.allocation_status == 'allocated':
+                allocation.assignment.final_status = 'allocated'
+            elif allocation.allocation_status == 'released':
+                allocation.assignment.final_status = 'released'
+            allocation.assignment.save(update_fields=['final_status', 'updated_at'])
+        add_project_activity('allocation', f'Allocation updated for {allocation.assignment or allocation.company}', request, company=allocation.company)
+        messages.success(request, 'Allocation saved successfully.')
+        return redirect('hr:project_allocation_list')
+    return render(request, 'hr/project_allocation_form.html', {'form': form, 'assignment': assignment})
+
+
+@login_required
+@hr_required
+def project_allocation_edit(request, allocation_id):
+    allocation = get_object_or_404(hr_scope(ProjectAllocation.objects.all(), request), id=allocation_id)
+    form = ProjectAllocationForm(request.POST or None, instance=allocation)
+    if request.method == 'POST' and form.is_valid():
+        allocation = form.save()
+        messages.success(request, 'Allocation updated successfully.')
+        return redirect('hr:project_allocation_list')
+    return render(request, 'hr/project_allocation_form.html', {'form': form, 'allocation': allocation})
+
+
+@login_required
+@hr_required
+def project_reports(request):
+    companies = hr_scope(ProjectCompany.objects.all(), request)
+    assignments = hr_scope(ProjectEmployeeAssignment.objects.select_related('company', 'drive', 'employee'), request)
+    company_id = request.GET.get('company', '').strip()
+    status = request.GET.get('status', '').strip()
+    if company_id:
+        assignments = assignments.filter(company_id=company_id)
+    if status:
+        assignments = assignments.filter(final_status=status)
+    return render(request, 'hr/project_reports.html', {
+        'companies': companies,
+        'assignments': assignments[:100],
+        'company_id': company_id,
+        'status': status,
+        'status_choices': ProjectEmployeeAssignment.FINAL_STATUS_CHOICES,
+        'summary': {
+            'companies': companies.count(),
+            'drives': hr_scope(ProjectDrive.objects.all(), request).count(),
+            'assigned': hr_scope(ProjectEmployeeAssignment.objects.all(), request).count(),
+            'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='allocated'), request).count(),
+            'released': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='released'), request).count(),
+        },
+    })
+
+
+@login_required
+@hr_required
+def export_project_report(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="project-report.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Employee', 'Code', 'Department', 'Company', 'Drive', 'Interview Status', 'Final Status'])
+    for item in hr_scope(ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive'), request):
+        writer.writerow([
+            item.display_name,
+            item.employee_code,
+            item.department,
+            item.company.name if item.company else '',
+            item.drive.project_name if item.drive else '',
+            item.get_interview_status_display(),
+            item.get_final_status_display(),
+        ])
+    return response
+
+
+# ──────────────────────────────── EXTERNAL EMPLOYEE VIEWS ────────────────────────────────
+
+@login_required
+@hr_required
+def external_attendance_dashboard(request, branch_slug='thane'):
+    branch = EXTERNAL_BRANCHES.get(branch_slug, EXTERNAL_BRANCHES['thane'])
+    today = timezone.localdate()
+    
+    query = request.GET.get('q', '').strip()
+    selected_department = request.GET.get('department', '').strip()
+    selected_status = request.GET.get('status', '').strip()
+    
+    date_str = request.GET.get('date', '')
+    if date_str:
+        try:
+            from datetime import datetime
+            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = today
+    else:
+        selected_date = today
+
+    base_employees = hr_scope(ExternalEmployee.objects.filter(branch=branch_slug, status='active'), request)
+    
+    # KPIs Data
+    total_emp = base_employees.count()
+    today_logs = hr_scope(ExternalAttendanceLog.objects.filter(employee__branch=branch_slug, date=today), request)
+    present_today = today_logs.filter(status='present').count()
+    absent_today = today_logs.filter(status='absent').count()
+    late_today = today_logs.filter(status='present', late_minutes__gt=0).count()
+    
+    kpis = [
+        {'label': 'Total Employees', 'icon': 'bi-people', 'color': 'blue', 'value': total_emp, 'meta': f'Active in {branch}'},
+        {'label': 'Present Today', 'icon': 'bi-check-circle', 'color': 'emerald', 'value': present_today},
+        {'label': 'Absent Today', 'icon': 'bi-x-circle', 'color': 'red', 'value': absent_today},
+        {'label': 'Late Today', 'icon': 'bi-clock-history', 'color': 'amber', 'value': late_today},
+    ]
+
+    employees = base_employees
+    if selected_department:
+        employees = employees.filter(department=selected_department)
+    if query:
+        employees = employees.filter(Q(full_name__icontains=query) | Q(employee_id__icontains=query))
+
+    logs = hr_scope(ExternalAttendanceLog.objects.filter(employee__branch=branch_slug, date=selected_date), request)
+    log_dict = {log.employee_id: log for log in logs}
+
+    rows = []
+    for emp in employees:
+        log = log_dict.get(emp.id)
+        att_status = log.status if log else ''
+        
+        if selected_status and att_status != selected_status:
+            continue
+
+        # Calculate initials
+        names = emp.full_name.strip().split()
+        if len(names) >= 2:
+            initials = (names[0][0] + names[-1][0]).upper()
+        elif len(names) == 1:
+            initials = names[0][:2].upper()
+        else:
+            initials = 'NA'
+
+        rows.append({
+            'employee_pk': emp.pk,
+            'full_name': emp.full_name,
+            'initials': initials,
+            'employee_id': emp.employee_id,
+            'department': emp.department,
+            'attendance_status': att_status,
+            'date': log.date if log else selected_date,
+            'check_in': log.check_in.strftime('%I:%M %p') if log and log.check_in else '--:--',
+            'check_out': log.check_out.strftime('%I:%M %p') if log and log.check_out else '--:--',
+            'working_hours': log.working_hours_display if log and log.working_hours else '--',
+            'late_minutes': log.late_minutes if log else 0,
+            'remarks': log.notes if log else '',
+            'is_db': True,
+        })
+        
+    if not rows and not base_employees.exists():
+        rows = [{
+            'employee_pk': '',
+            'full_name': 'Sample Employee',
+            'employee_id': 'E-0000',
+            'department': 'Sample Department',
+            'attendance_status': 'present',
+            'remarks': 'Sample data only',
+            'is_db': False,
+        }]
+
+    departments = base_employees.values_list('department', flat=True).distinct()
+    
+    page_obj = Paginator(rows, 15).get_page(request.GET.get('page'))
+
+    context = {
+        'branch': branch,
+        'external_branch_slug': branch_slug,
+        'kpis': kpis,
+        'page_obj': page_obj,
+        'query': query,
+        'external_selected_date': selected_date.strftime('%Y-%m-%d'),
+        'selected_department': selected_department,
+        'selected_status': selected_status,
+        'attendance_statuses': ExternalAttendanceLog.STATUS_CHOICES,
+        'filter_options': {'departments': [d for d in departments if d]},
+        'total_rows': len(rows),
+        'branches': EXTERNAL_BRANCHES,
+        'external_primary_url': reverse('hr:external_employee_create', args=[branch_slug]),
+        'external_export_url': reverse('hr:external_attendance_export', args=[branch_slug]),
+    }
+    return render(request, 'hr/external_attendance.html', context)
+
+
+@login_required
+@hr_required
+def external_attendance_create(request, branch_slug):
+    branch = EXTERNAL_BRANCHES.get(branch_slug, EXTERNAL_BRANCHES['thane'])
+    form = ExternalAttendanceForm(request.POST or None, branch_slug=branch_slug)
+    if request.method == 'POST' and form.is_valid():
+        log = form.save(commit=False)
+        log.marked_by = request.user
+        log.save()
+        messages.success(request, 'Attendance logged.')
+        return redirect('hr:external_attendance', branch_slug=branch_slug)
+    return render(request, 'hr/external_attendance_form.html', {'form': form, 'branch': branch, 'external_branch_slug': branch_slug})
+
+
+@login_required
+@hr_required
+def external_attendance_quick_update(request, branch_slug):
+    from django.http import JsonResponse
+    if request.method == 'POST':
+        try:
+            emp_id = request.POST.get('employee_id')
+            date_str = request.POST.get('date')
+            status = request.POST.get('status')
+            remarks = request.POST.get('remarks')
+            
+            if emp_id and date_str:
+                emp = hr_scope(ExternalEmployee.objects.filter(id=emp_id, branch=branch_slug), request).first()
+                if emp:
+                    from datetime import datetime
+                    target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    log, _ = ExternalAttendanceLog.objects.get_or_create(
+                        employee=emp, date=target_date, defaults={'marked_by': request.user}
+                    )
+                    if status:
+                        log.status = status
+                    if remarks is not None:
+                        log.notes = remarks
+                    log.marked_by = request.user
+                    log.save(update_fields=['status', 'notes', 'marked_by', 'updated_at'])
+                    
+                    return JsonResponse({
+                        'ok': True, 
+                        'status': log.status, 
+                        'working_hours': log.working_hours_display
+                    })
+            return JsonResponse({'ok': False, 'error': 'Invalid parameters'})
+        except Exception as e:
+            return JsonResponse({'ok': False, 'error': str(e)})
+            
+    return JsonResponse({'ok': False, 'error': 'Invalid method'})
+
+
+@login_required
+@hr_required
+def export_external_attendance(request, branch_slug):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="attendance-{branch_slug}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Employee', 'ID', 'Date', 'Status', 'Check In', 'Check Out', 'Working Hours', 'Late Minutes'])
+    for log in hr_scope(ExternalAttendanceLog.objects.filter(employee__branch=branch_slug), request).select_related('employee').order_by('-date'):
+        writer.writerow([
+            log.employee.full_name,
+            log.employee.employee_id,
+            log.date,
+            log.get_status_display(),
+            log.check_in or '',
+            log.check_out or '',
+            log.working_hours or '',
+            log.late_minutes,
+        ])
+    return response
+
+
+@login_required
+@hr_required
+def external_employees(request, branch_slug):
+    branch = EXTERNAL_BRANCHES.get(branch_slug, EXTERNAL_BRANCHES['thane'])
+    query = request.GET.get('q', '').strip()
+    employees = hr_scope(ExternalEmployee.objects.filter(branch=branch_slug), request)
+    if query:
+        employees = employees.filter(
+            Q(full_name__icontains=query) | Q(employee_id__icontains=query) | Q(department__icontains=query) | Q(designation__icontains=query)
+        )
+    page_obj = Paginator(employees, 14).get_page(request.GET.get('page'))
+    return render(request, 'hr/external_employees.html', {
+        'branch': branch,
+        'external_branch_slug': branch_slug,
+        'page_obj': page_obj,
+        'query': query,
+        'total_rows': employees.count(),
+        'external_primary_url': reverse('hr:external_employee_create', args=[branch_slug]),
+        'external_export_url': reverse('hr:external_employee_export', args=[branch_slug]),
+    })
+
+
+@login_required
+@hr_required
+def external_employee_create(request, branch_slug):
+    branch = EXTERNAL_BRANCHES.get(branch_slug, EXTERNAL_BRANCHES['thane'])
+    form = ExternalEmployeeForm(request.POST or None, request.FILES or None)
+    if request.method == 'POST' and form.is_valid():
+        emp = form.save(commit=False)
+        emp.branch = branch_slug
+        emp.created_by = request.user
+        emp.save()
+        messages.success(request, 'Employee added successfully.')
+        return redirect('hr:external_employees', branch_slug=branch_slug)
+    return render(request, 'hr/external_employee_form.html', {'form': form, 'branch': branch, 'external_branch_slug': branch_slug, 'mode': 'add'})
+
+
+@login_required
+@hr_required
+def external_employee_edit(request, branch_slug, employee_code):
+    branch = EXTERNAL_BRANCHES.get(branch_slug, EXTERNAL_BRANCHES['thane'])
+    emp = get_object_or_404(hr_scope(ExternalEmployee.objects.all(), request), branch=branch_slug, employee_id=employee_code)
+    form = ExternalEmployeeForm(request.POST or None, request.FILES or None, instance=emp)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Employee updated successfully.')
+        return redirect('hr:external_employee_detail', branch_slug=branch_slug, employee_code=employee_code)
+    return render(request, 'hr/external_employee_form.html', {'form': form, 'branch': branch, 'external_branch_slug': branch_slug, 'emp': emp, 'mode': 'edit'})
+
+
+@login_required
+@hr_required
+def external_employee_detail(request, branch_slug, employee_code):
+    import calendar
+    from datetime import datetime, date
+    from django.db.models import Sum
+
+    branch = EXTERNAL_BRANCHES.get(branch_slug, EXTERNAL_BRANCHES['thane'])
+    employee = get_object_or_404(hr_scope(ExternalEmployee.objects.all(), request), branch=branch_slug, employee_id=employee_code)
+    
+    if request.method == 'POST':
+        if 'aadhaar' in request.FILES:
+            employee.aadhaar = request.FILES['aadhaar']
+        if 'pan' in request.FILES:
+            employee.pan = request.FILES['pan']
+        if 'resume' in request.FILES:
+            employee.resume = request.FILES['resume']
+        employee.save()
+        messages.success(request, 'Documents uploaded successfully.')
+        return redirect(f"{reverse('hr:external_employee_detail', args=[branch_slug, employee_code])}?tab=documents")
+
+    today = timezone.localdate()
+    selected_month = int(request.GET.get('month', today.month))
+    selected_year = int(request.GET.get('year', today.year))
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+
+    if start_date_str and end_date_str:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    else:
+        start_date = date(selected_year, selected_month, 1)
+        _, last_day = calendar.monthrange(selected_year, selected_month)
+        end_date = date(selected_year, selected_month, last_day)
+
+    logs = employee.attendance_logs.filter(date__gte=start_date, date__lte=end_date).order_by('-date')
+
+    present = logs.filter(status='present').count()
+    absent = logs.filter(status='absent').count()
+    leave = logs.filter(status='leave').count()
+    half_day = logs.filter(status='half_day').count()
+    late = logs.filter(late_minutes__gt=0).count()
+    working_days = present + half_day
+
+    total_hours_decimal = logs.aggregate(total=Sum('working_hours'))['total'] or 0
+    total_minutes = int(total_hours_decimal * 60)
+    total_hours_str = f'{total_minutes // 60:02d}h {total_minutes % 60:02d}m'
+
+    history_summary = {
+        'present': present,
+        'absent': absent,
+        'leave': leave,
+        'half_day': half_day,
+        'late': late,
+        'working_days': working_days,
+        'total_hours': total_hours_str,
+    }
+
+    cal = calendar.Calendar(firstweekday=0)
+    month_days = cal.monthdatescalendar(selected_year, selected_month)
+    log_dict = {log.date: log for log in logs}
+
+    calendar_weeks = []
+    for week in month_days:
+        week_data = []
+        for d in week:
+            if d.month == selected_month:
+                log = log_dict.get(d)
+                if log:
+                    status_code = log.get_status_display()[0].upper()
+                    status_class = log.status
+                else:
+                    if d > today:
+                        status_code = '-'
+                        status_class = 'none'
+                    else:
+                        status_code = 'A'
+                        status_class = 'absent'
+                week_data.append({'day': d.day, 'code': status_code, 'status': status_class})
+            else:
+                week_data.append({'day': '', 'code': '', 'status': 'empty'})
+        calendar_weeks.append(week_data)
+
+    return render(request, 'hr/external_employee_detail.html', {
+        'employee': employee,
+        'employee_object': employee,
+        'branch': branch,
+        'external_branch_slug': branch_slug,
+        'logs': logs,
+        'selected_month': selected_month,
+        'selected_year': selected_year,
+        'start_date': start_date_str or start_date.strftime('%Y-%m-%d'),
+        'end_date': end_date_str or end_date.strftime('%Y-%m-%d'),
+        'history_summary': history_summary,
+        'calendar_weeks': calendar_weeks,
+    })
+
+
+@login_required
+@hr_required
+def import_external_employees(request, branch_slug):
+    if request.method == 'POST' and request.FILES.get('employees_file'):
+        import io
+        file = request.FILES['employees_file']
+        decoded = file.read().decode('utf-8-sig')
+        reader = csv.DictReader(io.StringIO(decoded))
+        created = 0
+        for row in reader:
+            emp_id = row.get('employee_id', '').strip()
+            if emp_id and not hr_scope(ExternalEmployee.objects.filter(employee_id=emp_id), request).exists():
+                ExternalEmployee.objects.create(
+                    branch=branch_slug,
+                    employee_id=emp_id,
+                    full_name=row.get('full_name', '').strip(),
+                    email=row.get('email', '').strip(),
+                    mobile=row.get('mobile', '').strip(),
+                    department=row.get('department', '').strip(),
+                    designation=row.get('designation', '').strip(),
+                    created_by=request.user,
+                )
+                created += 1
+        messages.success(request, f'{created} employees imported.')
+    return redirect('hr:external_employees', branch_slug=branch_slug)
+
+
+@login_required
+@hr_required
+def export_external_employees(request, branch_slug):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="employees-{branch_slug}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['employee_id', 'full_name', 'email', 'mobile', 'department', 'designation', 'employment_type', 'status', 'joining_date'])
+    for emp in hr_scope(ExternalEmployee.objects.filter(branch=branch_slug), request):
+        writer.writerow([
+            emp.employee_id,
+            emp.full_name,
+            emp.email,
+            emp.mobile,
+            emp.department,
+            emp.designation,
+            emp.get_employment_type_display(),
+            emp.get_status_display(),
+            emp.joining_date or '',
+        ])
+    return response
+
+
+# ──────────────────────────────── SIMPLE SECTION ────────────────────────────────
 
 @login_required
 @hr_required
@@ -913,3 +1839,129 @@ def simple_section(request, section):
         'settings': 'Settings',
     }
     return render(request, 'hr/section.html', {'title': titles.get(section, 'HR Section')})
+
+# ──────────────────────────────── DELETE VIEWS ────────────────────────────────
+
+@login_required
+@hr_required
+def followup_delete(request, followup_id):
+    followup = get_object_or_404(hr_scope(FollowUp.objects.all(), request), id=followup_id)
+    if request.method == 'POST':
+        candidate_id = followup.candidate.id
+        followup.delete()
+        messages.success(request, 'Follow-up deleted successfully.')
+        return redirect('hr:candidate_detail', candidate_id=candidate_id)
+    return render(request, 'hr/confirm_delete.html', {'object': followup, 'cancel_url': reverse('hr:candidate_detail', args=[followup.candidate.id])})
+
+@login_required
+@hr_required
+def interview_delete(request, interview_id):
+    interview = get_object_or_404(hr_scope(Interview.objects.all(), request), id=interview_id)
+    if request.method == 'POST':
+        candidate_id = interview.candidate.id
+        interview.delete()
+        messages.success(request, 'Interview deleted successfully.')
+        return redirect('hr:candidate_detail', candidate_id=candidate_id)
+    return render(request, 'hr/confirm_delete.html', {'object': interview, 'cancel_url': reverse('hr:candidate_detail', args=[interview.candidate.id])})
+
+@login_required
+@hr_required
+def placement_drive_delete(request, drive_id):
+    drive = get_object_or_404(hr_scope(PlacementDrive.objects.all(), request), id=drive_id)
+    if request.method == 'POST':
+        drive.delete()
+        messages.success(request, 'Placement drive deleted successfully.')
+        return redirect('hr:placement_drive_list')
+    return render(request, 'hr/confirm_delete.html', {'object': drive, 'cancel_url': reverse('hr:placement_drive_list')})
+
+@login_required
+@hr_required
+def placement_assignment_delete(request, assignment_id):
+    assignment = get_object_or_404(hr_scope(PlacementStudentAssignment.objects.all(), request), id=assignment_id)
+    if request.method == 'POST':
+        assignment.delete()
+        messages.success(request, 'Assignment deleted successfully.')
+        return redirect('hr:placement_student_list')
+    return render(request, 'hr/confirm_delete.html', {'object': assignment, 'cancel_url': reverse('hr:placement_assignment_detail', args=[assignment.id])})
+
+@login_required
+@hr_required
+def placement_interview_delete(request, interview_id):
+    interview = get_object_or_404(hr_scope(PlacementInterview.objects.all(), request), id=interview_id)
+    if request.method == 'POST':
+        interview.delete()
+        messages.success(request, 'Placement interview deleted successfully.')
+        return redirect('hr:placement_interview_list')
+    return render(request, 'hr/confirm_delete.html', {'object': interview, 'cancel_url': reverse('hr:placement_interview_list')})
+
+@login_required
+@hr_required
+def placement_offer_delete(request, offer_id):
+    offer = get_object_or_404(hr_scope(PlacementOffer.objects.all(), request), id=offer_id)
+    if request.method == 'POST':
+        offer.delete()
+        messages.success(request, 'Offer deleted successfully.')
+        return redirect('hr:placement_offer_list')
+    return render(request, 'hr/confirm_delete.html', {'object': offer, 'cancel_url': reverse('hr:placement_offer_list')})
+
+@login_required
+@hr_required
+def external_employee_delete(request, branch_slug, employee_code):
+    employee = get_object_or_404(hr_scope(ExternalEmployee.objects.all(), request), branch=branch_slug, employee_id=employee_code)
+    if request.method == 'POST':
+        employee.delete()
+        messages.success(request, 'Employee deleted successfully.')
+        return redirect('hr:external_employees', branch_slug=branch_slug)
+    return render(request, 'hr/confirm_delete.html', {'object': employee, 'cancel_url': reverse('hr:external_employee_detail', args=[branch_slug, employee_code])})
+
+@login_required
+@hr_required
+def project_company_delete(request, company_id):
+    company = get_object_or_404(hr_scope(ProjectCompany.objects.all(), request), id=company_id)
+    if request.method == 'POST':
+        company.delete()
+        messages.success(request, 'Project company deleted successfully.')
+        return redirect('hr:project_company_list')
+    return render(request, 'hr/confirm_delete.html', {'object': company, 'cancel_url': reverse('hr:project_company_detail', args=[company.id])})
+
+@login_required
+@hr_required
+def project_drive_delete(request, drive_id):
+    drive = get_object_or_404(hr_scope(ProjectDrive.objects.all(), request), id=drive_id)
+    if request.method == 'POST':
+        drive.delete()
+        messages.success(request, 'Project drive deleted successfully.')
+        return redirect('hr:project_drive_list')
+    return render(request, 'hr/confirm_delete.html', {'object': drive, 'cancel_url': reverse('hr:project_drive_detail', args=[drive.id])})
+
+@login_required
+@hr_required
+def project_assignment_delete(request, assignment_id):
+    assignment = get_object_or_404(hr_scope(ProjectEmployeeAssignment.objects.all(), request), id=assignment_id)
+    if request.method == 'POST':
+        assignment.delete()
+        messages.success(request, 'Assignment deleted successfully.')
+        return redirect('hr:project_employee_list')
+    return render(request, 'hr/confirm_delete.html', {'object': assignment, 'cancel_url': reverse('hr:project_assignment_detail', args=[assignment.id])})
+
+@login_required
+@hr_required
+def project_interview_delete(request, interview_id):
+    interview = get_object_or_404(hr_scope(ProjectInterview.objects.all(), request), id=interview_id)
+    if request.method == 'POST':
+        interview.delete()
+        messages.success(request, 'Project interview deleted successfully.')
+        return redirect('hr:project_interview_list')
+    return render(request, 'hr/confirm_delete.html', {'object': interview, 'cancel_url': reverse('hr:project_interview_list')})
+
+@login_required
+@hr_required
+def project_allocation_delete(request, allocation_id):
+    allocation = get_object_or_404(hr_scope(ProjectAllocation.objects.all(), request), id=allocation_id)
+    if request.method == 'POST':
+        allocation.delete()
+        messages.success(request, 'Allocation deleted successfully.')
+        return redirect('hr:project_allocation_list')
+    return render(request, 'hr/confirm_delete.html', {'object': allocation, 'cancel_url': reverse('hr:project_allocation_list')})
+
+

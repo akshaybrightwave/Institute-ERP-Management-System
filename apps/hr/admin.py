@@ -4,6 +4,8 @@ from .models import (
     Candidate,
     CandidateActivity,
     CandidateNote,
+    ExternalAttendanceLog,
+    ExternalEmployee,
     FollowUp,
     Interview,
     PlacementActivity,
@@ -12,6 +14,12 @@ from .models import (
     PlacementInterview,
     PlacementOffer,
     PlacementStudentAssignment,
+    ProjectActivity,
+    ProjectAllocation,
+    ProjectCompany,
+    ProjectDrive,
+    ProjectEmployeeAssignment,
+    ProjectInterview,
 )
 
 
@@ -38,6 +46,20 @@ class InterviewAdmin(admin.ModelAdmin):
 
 admin.site.register(CandidateNote)
 admin.site.register(CandidateActivity)
+
+
+@admin.register(ExternalEmployee)
+class ExternalEmployeeAdmin(admin.ModelAdmin):
+    list_display = ('employee_id', 'full_name', 'branch', 'department', 'designation', 'user', 'status')
+    list_filter = ('branch', 'status', 'department')
+    search_fields = ('employee_id', 'full_name', 'email', 'mobile', 'user__username')
+
+
+@admin.register(ExternalAttendanceLog)
+class ExternalAttendanceLogAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'date', 'check_in', 'check_out', 'working_hours', 'late_minutes', 'status')
+    list_filter = ('date', 'status', 'employee__branch')
+    search_fields = ('employee__employee_id', 'employee__full_name', 'employee__email')
 
 
 @admin.register(PlacementCompany)
@@ -74,3 +96,39 @@ class PlacementOfferAdmin(admin.ModelAdmin):
 
 
 admin.site.register(PlacementActivity)
+
+
+@admin.register(ProjectCompany)
+class ProjectCompanyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'industry', 'contact_person', 'mobile', 'project_value')
+    search_fields = ('name', 'industry', 'contact_person', 'mobile')
+
+
+@admin.register(ProjectDrive)
+class ProjectDriveAdmin(admin.ModelAdmin):
+    list_display = ('company', 'project_name', 'role_required', 'drive_date', 'status')
+    list_filter = ('status',)
+    search_fields = ('company__name', 'project_name', 'role_required', 'venue')
+
+
+@admin.register(ProjectEmployeeAssignment)
+class ProjectEmployeeAssignmentAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'company', 'drive', 'interview_status', 'final_status')
+    list_filter = ('interview_status', 'final_status')
+    search_fields = ('employee_name', 'employee__full_name', 'employee_code', 'company__name')
+
+
+@admin.register(ProjectInterview)
+class ProjectInterviewAdmin(admin.ModelAdmin):
+    list_display = ('assignment', 'company', 'interview_round', 'date', 'time', 'status')
+    list_filter = ('status',)
+    search_fields = ('assignment__employee_name', 'assignment__employee__full_name', 'company__name')
+
+
+@admin.register(ProjectAllocation)
+class ProjectAllocationAdmin(admin.ModelAdmin):
+    list_display = ('assignment', 'company', 'billing_rate', 'allocation_status', 'allocation_date')
+    list_filter = ('allocation_status',)
+
+
+admin.site.register(ProjectActivity)

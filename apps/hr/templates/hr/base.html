@@ -68,35 +68,146 @@
       color: var(--hr-primary);
     }
 
-    .hr-nav-label {
-      color: rgba(255, 255, 255, .58);
-      font-size: 12px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      margin: 22px 8px 9px;
-    }
+    /* ── Sidebar: Sections ────────────────────────────────── */
+    .sb-section { margin-bottom: 2px; }
 
-    .hr-nav-link {
+    .sb-section-hdr {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,.44);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      text-align: left;
+      padding: 22px 10px 6px;
       display: flex;
       align-items: center;
-      gap: 11px;
-      color: rgba(255, 255, 255, .88);
-      padding: 12px 13px;
+      gap: 7px;
+      cursor: pointer;
+      transition: color .15s;
+      line-height: 1;
+    }
+    .sb-section-hdr:hover { color: rgba(255,255,255,.7); }
+    .sb-section--open > .sb-section-hdr { color: rgba(255,255,255,.7); }
+    .sb-section-hdr .sb-chevron {
+      margin-left: auto;
+      font-size: 9px;
+      opacity: .5;
+      transition: transform .26s cubic-bezier(.4,0,.2,1), opacity .2s;
+    }
+    .sb-section--open > .sb-section-hdr .sb-chevron { transform: rotate(180deg); opacity: 1; }
+
+    .sb-section-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height .32s cubic-bezier(.4,0,.2,1);
+    }
+    .sb-section--open > .sb-section-body { max-height: 1600px; }
+
+    /* ── Sidebar: Groups ──────────────────────────────────── */
+    .sb-group { margin-bottom: 1px; }
+
+    .sb-group-hdr {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: rgba(255,255,255,.82);
+      text-align: left;
+      padding: 9px 11px;
       border-radius: 8px;
-      margin-bottom: 5px;
-      transition: background .16s ease, color .16s ease, transform .16s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: background .15s, color .15s;
+    }
+    .sb-group-hdr:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .sb-group--open > .sb-group-hdr { background: rgba(255,255,255,.05); color: #fff; }
+    .sb-group-hdr .sb-chevron {
+      margin-left: auto;
+      font-size: 10px;
+      opacity: .45;
+      transition: transform .26s cubic-bezier(.4,0,.2,1), opacity .2s;
+    }
+    .sb-group--open > .sb-group-hdr .sb-chevron { transform: rotate(180deg); opacity: 1; }
+
+    .sb-group-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height .28s cubic-bezier(.4,0,.2,1);
+      padding-left: 14px;
+    }
+    .sb-group--open > .sb-group-body { max-height: 800px; }
+    .sb-group-body-inner {
+      border-left: 1px solid rgba(255,255,255,.13);
+      padding: 3px 0 3px 8px;
     }
 
-    .hr-nav-link:hover,
-    .hr-nav-link.active {
-      color: #fff;
-      background: rgba(91, 95, 239, .55);
-      transform: translateX(2px);
+    /* ── Sidebar: Leaf links ──────────────────────────────── */
+    .sb-leaf {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: rgba(255,255,255,.66);
+      padding: 7px 11px;
+      border-radius: 7px;
+      margin-bottom: 1px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background .14s, color .14s, transform .14s;
+      position: relative;
+    }
+    .sb-leaf:hover { background: rgba(255,255,255,.08); color: #fff; transform: translateX(2px); }
+    .sb-leaf--active {
+      background: rgba(91,95,239,.52) !important;
+      color: #fff !important;
+      box-shadow: 0 3px 12px rgba(91,95,239,.28);
+      font-weight: 600;
+      transform: translateX(0) !important;
+    }
+    .sb-leaf--active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 22%; height: 56%; width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: rgba(255,255,255,.88);
     }
 
-    .hr-main {
-      min-width: 0;
+    /* ── Direct Leaves (section-level, look like group headers) ── */
+    .sb-direct-leaf {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255,255,255,.82);
+      padding: 9px 11px;
+      border-radius: 8px;
+      margin-bottom: 1px;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: background .15s, color .15s, transform .15s;
+      position: relative;
     }
+    .sb-direct-leaf:hover { background: rgba(255,255,255,.08); color: #fff; transform: translateX(2px); }
+    .sb-direct-leaf.sb-leaf--active {
+      background: rgba(91,95,239,.52) !important;
+      color: #fff !important;
+      box-shadow: 0 3px 12px rgba(91,95,239,.28);
+      transform: translateX(0) !important;
+    }
+    .sb-direct-leaf.sb-leaf--active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 22%; height: 56%; width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: rgba(255,255,255,.88);
+    }
+
+    /* ── Main content area ────────────────────────────────── */
+    .hr-main { min-width: 0; }
 
     .hr-topbar {
       min-height: 76px;
@@ -134,6 +245,37 @@
       padding: 12px 14px 12px 42px;
       outline: none;
       box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+    }
+
+    .hr-topbar-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .hr-notification {
+      position: relative;
+    }
+
+    .hr-notification-badge {
+      position: absolute;
+      top: -7px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--hr-red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .hr-date-input {
+      min-width: 168px;
     }
 
     .hr-content {
@@ -287,6 +429,168 @@
       background: #f5f3ff;
     }
 
+    .external-title-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .external-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .external-kpi {
+      min-height: 112px;
+      padding: 18px;
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+
+    .external-kpi:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 48px rgba(15, 23, 42, .1);
+    }
+
+    .external-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px;
+      border-bottom: 1px solid var(--hr-line);
+      flex-wrap: wrap;
+    }
+
+    .external-toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .external-table-wrap {
+      max-width: 100%;
+      overflow: auto;
+    }
+
+    .external-table {
+      min-width: 1180px;
+    }
+
+    .external-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #f8fafc;
+      white-space: nowrap;
+    }
+
+    .external-table tbody tr {
+      content-visibility: auto;
+      contain-intrinsic-size: 58px;
+    }
+
+    .external-avatar {
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #ede9fe;
+      color: var(--hr-primary-dark);
+      font-weight: 800;
+      font-size: 12px;
+      object-fit: cover;
+      flex: 0 0 38px;
+    }
+
+    .status-present,
+    .status-active { background: #dcfce7; color: #15803d; }
+    .status-absent,
+    .status-inactive { background: #fee2e2; color: #dc2626; }
+    .status-leave,
+    .status-notice,
+    .status-notice_period { background: #ffedd5; color: #ea580c; }
+    .status-late,
+    .status-probation { background: #fef3c7; color: #b45309; }
+
+    .external-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .weekly-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+
+    .weekly-day {
+      min-height: 86px;
+      display: flex;
+      flex-direction: column;
+      justify-content: end;
+      gap: 8px;
+    }
+
+    .weekly-bar {
+      height: 38px;
+      display: flex;
+      align-items: end;
+      background: #f1f5f9;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .weekly-bar span {
+      width: 100%;
+      background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+      border-radius: 8px 8px 0 0;
+    }
+
+    .column-toggle-menu {
+      min-width: 220px;
+      padding: 10px;
+    }
+
+    .bulk-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #eef2ff;
+      border-bottom: 1px solid #c7d2fe;
+      color: #3730a3;
+      font-weight: 700;
+    }
+
+    .bulk-bar.show {
+      display: flex;
+    }
+
+    .external-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .external-detail-grid {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .grid-column-full {
+      grid-column: 1 / -1;
+    }
+
     .mini-bars {
       display: flex;
       align-items: end;
@@ -335,6 +639,238 @@
       height: 100%;
     }
 
+    .external-shell .hr-sidebar {
+      background: linear-gradient(180deg, #20145f 0%, #17155a 54%, #111245 100%);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .external-shell .hr-layout {
+      grid-template-columns: 256px minmax(0, 1fr);
+    }
+
+    .external-shell .hr-content {
+      padding: 22px 28px 28px;
+    }
+
+    .external-shell .hr-topbar {
+      min-height: 68px;
+    }
+
+    .external-shell .hr-search {
+      max-width: 345px;
+    }
+
+    .external-shell .hr-card,
+    .external-shell .hr-panel,
+    .external-shell .hr-kpi {
+      box-shadow: 0 14px 34px rgba(15, 23, 42, .06);
+    }
+
+    .external-shell .btn-hr-primary {
+      background: linear-gradient(135deg, #4F46E5 0%, #5B4DF0 100%);
+      border-color: transparent;
+    }
+
+    .external-shell .hr-kpi-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+    }
+
+    .external-shell .external-title-row {
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .external-shell .external-title-row h1 {
+      font-size: 40px;
+      line-height: 1.18;
+      letter-spacing: 0;
+      font-weight: 700;
+    }
+
+    .external-section-heading h2 {
+      font-size: 24px;
+      line-height: 1.25;
+      letter-spacing: 0;
+      font-weight: 600;
+    }
+
+    .external-shell .external-kpi-grid {
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+
+    .external-shell .external-kpi {
+      min-height: 104px;
+      padding: 24px;
+    }
+
+    .external-shell .hr-table th,
+    .external-shell .hr-table td {
+      height: 56px;
+      padding: 10px 16px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    .external-shell .hr-table thead {
+      color: #0F172A;
+      text-transform: none;
+      font-weight: 800;
+    }
+
+    .external-shell .external-table {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .external-shell .attendance-register {
+      table-layout: fixed;
+    }
+
+    .external-shell .attendance-register th,
+    .external-shell .attendance-register td {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .external-shell .attendance-register th:nth-child(1) { width: 48px; }
+    .external-shell .attendance-register th:nth-child(2) { width: 18%; }
+    .external-shell .attendance-register th:nth-child(3) { width: 94px; }
+    .external-shell .attendance-register th:nth-child(4) { width: 11%; }
+    .external-shell .attendance-register th:nth-child(5),
+    .external-shell .attendance-register th:nth-child(6) { width: 100px; }
+    .external-shell .attendance-register th:nth-child(7) { width: 128px; }
+    .external-shell .attendance-register th:nth-child(8) { width: 150px; }
+    .external-shell .attendance-register th:nth-child(9) { width: 96px; }
+
+    .external-shell .attendance-register td:nth-child(2) a,
+    .external-shell .attendance-register td:nth-child(4) {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .external-shell .attendance-time-input,
+    .external-shell .attendance-status-select,
+    .external-shell .attendance-remarks-input {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .external-shell .attendance-time-input {
+      padding-left: 8px;
+      padding-right: 6px;
+    }
+
+    .external-shell .external-avatar {
+      width: 34px;
+      height: 34px;
+      flex-basis: 34px;
+    }
+
+    .external-shell .hr-panel,
+    .external-shell .hr-card,
+    .external-shell .hr-kpi,
+    .external-shell .btn,
+    .external-shell .form-control,
+    .external-shell .form-select {
+      border-radius: 12px;
+    }
+
+    .external-shell .form-control,
+    .external-shell .form-select,
+    .external-shell .btn:not(.action-btn):not(.icon-btn-square) {
+      min-height: 44px;
+      font-size: 14px;
+    }
+
+    .external-shell .form-control-sm,
+    .external-shell .form-select-sm {
+      min-height: 36px;
+      font-size: 14px;
+      border-radius: 8px;
+    }
+
+    .external-shell .small,
+    .external-shell small {
+      font-size: 13px;
+    }
+
+    .external-shell .hr-kpi .small {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .external-shell .status-half_day,
+    .external-shell .status-wfh { background: #ffedd5; color: #ea580c; }
+    .external-shell .status-holiday,
+    .external-shell .status-weekend { background: #e0f2fe; color: #0369a1; }
+
+    .attendance-status-select.status-present { color: #15803d; background-color: #dcfce7; border-color: #bbf7d0; }
+    .attendance-status-select.status-absent { color: #dc2626; background-color: #fee2e2; border-color: #fecaca; }
+    .attendance-status-select.status-leave,
+    .attendance-status-select.status-half_day,
+    .attendance-status-select.status-wfh { color: #ea580c; background-color: #ffedd5; border-color: #fed7aa; }
+    .attendance-status-select.status-holiday,
+    .attendance-status-select.status-weekend { color: #0369a1; background-color: #e0f2fe; border-color: #bae6fd; }
+
+    .attendance-calendar {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .calendar-head,
+    .calendar-cell {
+      min-height: 44px;
+      border: 1px solid var(--hr-line);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .calendar-head {
+      min-height: 36px;
+      background: #f8fafc;
+      font-weight: 700;
+      color: var(--hr-muted);
+    }
+
+    .calendar-cell {
+      justify-content: space-between;
+      padding: 8px 10px;
+    }
+
+    .calendar-cell strong {
+      font-size: 12px;
+    }
+
+    .external-section-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 24px 0 14px;
+    }
+
+    .icon-btn-square {
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+    }
+
     @media (max-width: 991.98px) {
       .hr-layout { grid-template-columns: 1fr; }
       .hr-sidebar {
@@ -347,89 +883,197 @@
       }
       .hr-content { padding: 18px; }
       .hr-page-title { flex-direction: column; }
+      .external-title-row { align-items: flex-start; flex-direction: column; }
+      .external-kpi-grid,
+      .external-summary,
+      .external-detail-grid,
+      .external-form-grid { grid-template-columns: 1fr; }
+      .weekly-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 1199.98px) {
+      .external-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .external-summary { grid-template-columns: 1fr; }
     }
   </style>
   {% block style %}{% endblock %}
 </head>
 
-<body>
+<body class="{% if 'external' in request.resolver_match.url_name %}external-shell{% endif %}">
   <div class="hr-layout">
-    <aside class="hr-sidebar">
+    <aside class="hr-sidebar" id="hrSidebar">
       <a class="hr-brand" href="{% url 'hr:dashboard' %}">
         <span class="hr-brand-icon"><i class="bi bi-flower1"></i></span>
         HR PORTAL
       </a>
 
-      <div class="hr-nav-label">Internal</div>
-      <a class="hr-nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'hr:dashboard' %}">
-        <i class="bi bi-grid-1x2"></i> Dashboard
-      </a>
-      <a class="hr-nav-link {% if 'candidate' in request.resolver_match.url_name or 'followup' in request.resolver_match.url_name or 'interview' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'hr:candidate_list' %}">
-        <i class="bi bi-diagram-3"></i> Recruitment
-      </a>
-      <a class="hr-nav-link {% if 'placement' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'hr:placement_dashboard' %}">
-        <i class="bi bi-pin-map"></i> Placement
-      </a>
-      {% if 'placement' in request.resolver_match.url_name %}
-      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_dashboard' %}">
-        <i class="bi bi-speedometer2"></i> Dashboard
-      </a>
-      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_company_list' %}">
-        <i class="bi bi-buildings"></i> Companies
-      </a>
-      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_drive_list' %}">
-        <i class="bi bi-megaphone"></i> Placement Drives
-      </a>
-      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_student_list' %}">
-        <i class="bi bi-mortarboard"></i> Students
-      </a>
-      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_interview_list' %}">
-        <i class="bi bi-calendar-check"></i> Interviews
-      </a>
-      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_offer_list' %}">
-        <i class="bi bi-envelope-check"></i> Offers & Placements
-      </a>
-      {% endif %}
+      <!-- ── INTERNAL ───────────────────────────────────── -->
+      <div class="sb-section" id="sb-internal">
+        <button class="sb-section-hdr" type="button">
+          <i class="bi bi-building-gear"></i> Internal
+          <i class="bi bi-chevron-down sb-chevron"></i>
+        </button>
+        <div class="sb-section-body">
+          <!-- Recruitment -->
+          <div class="sb-group" id="sb-recruitment">
+            <button class="sb-group-hdr" type="button">
+              <i class="bi bi-diagram-3"></i> Recruitment
+              <i class="bi bi-chevron-down sb-chevron"></i>
+            </button>
+            <div class="sb-group-body">
+              <div class="sb-group-body-inner">
+                <a class="sb-leaf" href="{% url 'hr:dashboard' %}" data-href="{% url 'hr:dashboard' %}">
+                  <i class="bi bi-grid-1x2"></i> Dashboard
+                </a>
+                <a class="sb-leaf" href="{% url 'hr:candidate_list' %}" data-href="{% url 'hr:candidate_list' %}">
+                  <i class="bi bi-people"></i> Candidates
+                </a>
+              </div>
+            </div>
+          </div>
+          <!-- Placement -->
+          <div class="sb-group" id="sb-placement">
+            <button class="sb-group-hdr" type="button">
+              <i class="bi bi-pin-map"></i> Placement
+              <i class="bi bi-chevron-down sb-chevron"></i>
+            </button>
+            <div class="sb-group-body">
+              <div class="sb-group-body-inner">
+                <a class="sb-leaf" href="{% url 'hr:placement_dashboard' %}" data-href="{% url 'hr:placement_dashboard' %}">
+                  <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+                <a class="sb-leaf" href="{% url 'hr:placement_company_list' %}" data-href="{% url 'hr:placement_company_list' %}">
+                  <i class="bi bi-buildings"></i> Companies
+                </a>
+                <a class="sb-leaf" href="{% url 'hr:placement_employee_list' %}" data-href="{% url 'hr:placement_employee_list' %}">
+                  <i class="bi bi-people"></i> Employees
+                </a>
+                <a class="sb-leaf" href="{% url 'hr:placement_drive_list' %}" data-href="{% url 'hr:placement_drive_list' %}">
+                  <i class="bi bi-megaphone"></i> Drives
+                </a>
+                <a class="sb-leaf" href="{% url 'hr:placement_offer_list' %}" data-href="{% url 'hr:placement_offer_list' %}">
+                  <i class="bi bi-envelope-check"></i> Offers
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div class="hr-nav-label">External</div>
-      <a class="hr-nav-link" href="{% url 'hr:section' 'external-hiring' %}">
-        <i class="bi bi-briefcase"></i> External Hiring
-      </a>
+      <!-- ── EXTERNAL ───────────────────────────────────── -->
+      <div class="sb-section" id="sb-external">
+        <button class="sb-section-hdr" type="button">
+          <i class="bi bi-globe"></i> External
+          <i class="bi bi-chevron-down sb-chevron"></i>
+        </button>
+        <div class="sb-section-body">
+          <!-- Dcodetech Thane -->
+          <div class="sb-group" id="sb-thane">
+            <button class="sb-group-hdr" type="button">
+              <i class="bi bi-building"></i> Dcodetech Thane
+              <i class="bi bi-chevron-down sb-chevron"></i>
+            </button>
+            <div class="sb-group-body">
+              <div class="sb-group-body-inner">
+                <a class="sb-leaf" href="{% url 'hr:external_attendance' 'thane' %}" data-href="{% url 'hr:external_attendance' 'thane' %}">
+                  <i class="bi bi-calendar2-check"></i> Attendance
+                </a>
+                <a class="sb-leaf" href="{% url 'hr:external_employees' 'thane' %}" data-href="{% url 'hr:external_employees' 'thane' %}">
+                  <i class="bi bi-person-lines-fill"></i> Employees
+                </a>
+              </div>
+            </div>
+          </div>
+          <!-- Dcodetech Nashik -->
+          <div class="sb-group" id="sb-nashik">
+            <button class="sb-group-hdr" type="button">
+              <i class="bi bi-building"></i> Dcodetech Nashik
+              <i class="bi bi-chevron-down sb-chevron"></i>
+            </button>
+            <div class="sb-group-body">
+              <div class="sb-group-body-inner">
+                <a class="sb-leaf" href="{% url 'hr:external_attendance' 'nashik' %}" data-href="{% url 'hr:external_attendance' 'nashik' %}">
+                  <i class="bi bi-calendar2-check"></i> Attendance
+                </a>
+                <a class="sb-leaf" href="{% url 'hr:external_employees' 'nashik' %}" data-href="{% url 'hr:external_employees' 'nashik' %}">
+                  <i class="bi bi-person-lines-fill"></i> Employees
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div class="hr-nav-label">Projects</div>
-      <a class="hr-nav-link" href="{% url 'hr:section' 'projects' %}">
-        <i class="bi bi-clipboard-check"></i> Projects
-      </a>
+      <!-- ── PROJECTS ───────────────────────────────────── -->
+      <div class="sb-section" id="sb-projects">
+        <button class="sb-section-hdr" type="button">
+          <i class="bi bi-kanban"></i> Projects
+          <i class="bi bi-chevron-down sb-chevron"></i>
+        </button>
+        <div class="sb-section-body">
+          <a class="sb-direct-leaf sb-leaf" href="{% url 'hr:project_dashboard' %}" data-href="{% url 'hr:project_dashboard' %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+          <a class="sb-direct-leaf sb-leaf" href="{% url 'hr:project_company_list' %}" data-href="{% url 'hr:project_company_list' %}">
+            <i class="bi bi-buildings"></i> Companies
+          </a>
+          <a class="sb-direct-leaf sb-leaf" href="{% url 'hr:project_drive_list' %}" data-href="{% url 'hr:project_drive_list' %}">
+            <i class="bi bi-kanban"></i> Project Drives
+          </a>
+          <a class="sb-direct-leaf sb-leaf" href="{% url 'hr:project_employee_list' %}" data-href="{% url 'hr:project_employee_list' %}">
+            <i class="bi bi-people"></i> Employees
+          </a>
+          <a class="sb-direct-leaf sb-leaf" href="{% url 'hr:project_allocation_list' %}" data-href="{% url 'hr:project_allocation_list' %}">
+            <i class="bi bi-briefcase"></i> Allocations
+          </a>
+        </div>
+      </div>
 
-      <div class="hr-nav-label">Management</div>
-      <a class="hr-nav-link {% if request.resolver_match.url_name == 'reports' %}active{% endif %}" href="{% url 'hr:reports' %}">
-        <i class="bi bi-bar-chart"></i> Reports
-      </a>
-      {% if 'placement' in request.resolver_match.url_name %}
-      <a class="hr-nav-link ms-3" href="{% url 'hr:placement_reports' %}">
-        <i class="bi bi-file-earmark-bar-graph"></i> Placement Reports
-      </a>
-      {% endif %}
-      <a class="hr-nav-link {% if request.resolver_match.url_name == 'performance' %}active{% endif %}" href="{% url 'hr:performance' %}">
-        <i class="bi bi-trophy"></i> HR Performance
-      </a>
-      <a class="hr-nav-link" href="{% url 'hr:section' 'calendar' %}">
-        <i class="bi bi-calendar3"></i> Calendar
-      </a>
-
-      <div class="hr-nav-label">Settings</div>
-      <a class="hr-nav-link" href="{% url 'hr:section' 'settings' %}">
-        <i class="bi bi-gear"></i> Settings
-      </a>
     </aside>
 
     <div class="hr-main">
       <header class="hr-topbar">
+        {% if 'external' in request.resolver_match.url_name %}
+        <form class="hr-search" action="{{ external_search_action }}" method="get">
+          <i class="bi bi-search"></i>
+          {% if external_page == 'attendance' %}
+          <input type="hidden" name="date" value="{{ external_selected_date }}">
+          {% endif %}
+          <input type="search" name="q" value="{{ request.GET.q }}" placeholder="{{ external_search_placeholder }}">
+        </form>
+        <div class="hr-topbar-actions">
+          <a class="btn btn-soft hr-notification" href="{% url 'hr:followup_list' %}" title="Notifications">
+            <i class="bi bi-bell"></i>
+            <span class="hr-notification-badge">3</span>
+          </a>
+          <div class="dropdown">
+            <button class="btn btn-soft dropdown-toggle" data-bs-toggle="dropdown" type="button">
+              <i class="bi bi-building me-1"></i>{{ external_branch.name }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'hr:external_attendance' 'thane' %}">Dcodetech Thane</a></li>
+              <li><a class="dropdown-item" href="{% url 'hr:external_attendance' 'nashik' %}">Dcodetech Nashik</a></li>
+            </ul>
+          </div>
+          <a class="btn btn-hr-primary" href="{{ external_primary_url }}">
+            <i class="bi bi-plus-lg me-1"></i>Add Employee
+          </a>
+          <div class="dropdown">
+            <button class="btn btn-soft dropdown-toggle" data-bs-toggle="dropdown" type="button">
+              <i class="bi bi-person-circle me-1"></i>{{ request.user.username }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'hr:dashboard' %}">Dashboard</a></li>
+              <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+          </div>
+        </div>
+        {% else %}
         <form class="hr-search" action="{% url 'hr:candidate_list' %}" method="get">
           <i class="bi bi-search"></i>
           <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search companies, candidates, drives...">
         </form>
-        <div class="d-flex align-items-center gap-2">
+        <div class="hr-topbar-actions">
           <a class="btn btn-soft" href="{% url 'hr:followup_list' %}">
             <i class="bi bi-bell"></i>
           </a>
@@ -442,6 +1086,13 @@
           </a>
           <a class="btn btn-hr-primary" href="{% url 'hr:placement_drive_create' %}">
             <i class="bi bi-plus-lg me-1"></i>Schedule Drive
+          </a>
+          {% elif 'project' in request.resolver_match.url_name %}
+          <a class="btn btn-soft" href="{% url 'hr:project_company_create' %}">
+            <i class="bi bi-plus-lg me-1"></i>Add Company
+          </a>
+          <a class="btn btn-hr-primary" href="{% url 'hr:project_drive_create' %}">
+            <i class="bi bi-plus-lg me-1"></i>Add Project Drive
           </a>
           {% else %}
           <a class="btn btn-hr-primary" href="{% url 'hr:candidate_create' %}">
@@ -458,6 +1109,7 @@
             </ul>
           </div>
         </div>
+        {% endif %}
       </header>
 
       <main class="hr-content">
@@ -477,6 +1129,86 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   {% block scripts %}{% endblock %}
+  <script>
+  /* ── HR Portal Sidebar — Active Detection & Accordion ── */
+  (function () {
+    'use strict';
+    var STORE = 'hr_sb_v1';
+    var path  = window.location.pathname;
+
+    /* ── Open helpers (no save — used during init) ── */
+    function openSection(el) { el.classList.add('sb-section--open'); }
+    function openGroup(el)   { el.classList.add('sb-group--open'); }
+
+    /* ── Persist current open-state to sessionStorage ── */
+    function save() {
+      var s = {};
+      document.querySelectorAll('.sb-section--open, .sb-group--open').forEach(function (el) {
+        if (el.id) s[el.id] = 1;
+      });
+      try { sessionStorage.setItem(STORE, JSON.stringify(s)); } catch (e) {}
+    }
+
+    /* ── Click: section header toggles section ── */
+    document.querySelectorAll('.sb-section-hdr').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.closest('.sb-section').classList.toggle('sb-section--open');
+        save();
+      });
+    });
+
+    /* ── Click: group header toggles group ── */
+    document.querySelectorAll('.sb-group-hdr').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        btn.closest('.sb-group').classList.toggle('sb-group--open');
+        save();
+      });
+    });
+
+    /* ── Active-leaf detection: longest-prefix match wins ── */
+    var leaves  = Array.from(document.querySelectorAll('.sb-leaf[data-href]'));
+    var best    = null;
+    var bestLen = -1;
+
+    leaves.forEach(function (leaf) {
+      var href = leaf.getAttribute('data-href') || '';
+      if (!href) return;
+      /* Exact match scores highest; prefix match scores by length */
+      var score = (path === href)
+        ? href.length + 99999
+        : (path.startsWith(href) ? href.length : -1);
+      if (score > bestLen) { best = leaf; bestLen = score; }
+    });
+
+    /* ── Mark the active leaf and open all ancestor groups/sections ── */
+    if (best) {
+      best.classList.add('sb-leaf--active');
+      var el = best.parentElement;
+      while (el && el.id !== 'hrSidebar') {
+        if (el.classList.contains('sb-group'))   openGroup(el);
+        if (el.classList.contains('sb-section')) openSection(el);
+        el = el.parentElement;
+      }
+    }
+
+    /* ── Restore any additionally saved open-states ── */
+    var saved = {};
+    try { saved = JSON.parse(sessionStorage.getItem(STORE) || '{}'); } catch (e) {}
+    Object.keys(saved).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (el.classList.contains('sb-section')) openSection(el);
+      if (el.classList.contains('sb-group'))   openGroup(el);
+    });
+
+    /* ── Scroll the active leaf into view inside the sidebar ── */
+    if (best) {
+      requestAnimationFrame(function () {
+        best.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    }
+  }());
+  </script>
 </body>
 
 </html>

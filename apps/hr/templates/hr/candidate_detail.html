@@ -11,8 +11,8 @@
   </div>
   <div class="d-flex gap-2 flex-wrap">
     <a class="btn btn-soft" href="{% url 'hr:candidate_edit' candidate.id %}"><i class="bi bi-pencil me-1"></i>Edit</a>
-    <a class="btn btn-soft" href="{% url 'hr:candidate_followup_create' candidate.id %}"><i class="bi bi-clock me-1"></i>Add Follow-up</a>
-    <a class="btn btn-hr-primary" href="{% url 'hr:candidate_interview_create' candidate.id %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Interview</a>
+    <a class="btn btn-soft text-danger" href="{% url 'hr:candidate_delete' candidate.id  %}"><i class="bi bi-trash me-1"></i>Delete</a>
+    <a class="btn btn-soft" href="{% url 'hr:candidate_download_pdf' candidate.id %}"><i class="bi bi-file-earmark-pdf me-1"></i>Download PDF</a>
   </div>
 </div>
 
@@ -39,7 +39,6 @@
         <a class="btn btn-soft text-start" href="{% url 'hr:mark_call' candidate.id %}"><i class="bi bi-telephone me-2"></i>Call</a>
         <a class="btn btn-soft text-start" href="https://wa.me/{{ candidate.mobile }}" target="_blank"><i class="bi bi-whatsapp me-2"></i>WhatsApp</a>
         {% if candidate.email %}<a class="btn btn-soft text-start" href="mailto:{{ candidate.email }}"><i class="bi bi-envelope me-2"></i>Email</a>{% endif %}
-        <a class="btn btn-soft text-start" href="{% url 'hr:candidate_interview_create' candidate.id %}"><i class="bi bi-calendar-plus me-2"></i>Schedule Interview</a>
       </div>
     </div>
 
@@ -54,80 +53,63 @@
   <div class="col-xl-6">
     <div class="hr-panel p-3 mb-4">
       <ul class="nav nav-pills gap-2 mb-3">
-        <li class="nav-item"><a class="nav-link {% if tab == 'overview' %}active{% endif %}" href="?tab=overview">Overview</a></li>
-        <li class="nav-item"><a class="nav-link {% if tab == 'recruitment' %}active{% endif %}" href="?tab=recruitment">Recruitment Details</a></li>
-        <li class="nav-item"><a class="nav-link {% if tab == 'followups' %}active{% endif %}" href="?tab=followups">Follow-ups</a></li>
-        <li class="nav-item"><a class="nav-link {% if tab == 'interviews' %}active{% endif %}" href="?tab=interviews">Interviews</a></li>
+        <li class="nav-item"><a class="nav-link {% if tab == 'basic' or tab == 'overview' %}active{% endif %}" href="?tab=basic">Basic Information</a></li>
+        <li class="nav-item"><a class="nav-link {% if tab == 'professional' %}active{% endif %}" href="?tab=professional">Professional Information</a></li>
+        <li class="nav-item"><a class="nav-link {% if tab == 'recruitment' %}active{% endif %}" href="?tab=recruitment">Recruitment Information</a></li>
         <li class="nav-item"><a class="nav-link {% if tab == 'documents' %}active{% endif %}" href="?tab=documents">Documents</a></li>
-        <li class="nav-item"><a class="nav-link {% if tab == 'notes' %}active{% endif %}" href="?tab=notes">Notes</a></li>
       </ul>
 
-      {% if tab == 'overview' %}
+      {% if tab == 'basic' or tab == 'overview' %}
+      <div class="row g-3">
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Full Name</div><strong>{{ candidate.full_name|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Gender</div><strong>{{ candidate.get_gender_display|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Date of Birth</div><strong>{{ candidate.dob|date:"d M Y"|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Mobile Number</div><strong>{{ candidate.mobile|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Email Address</div><strong>{{ candidate.email|default:"--" }}</strong></div></div>
+        <div class="col-12"><div class="p-3 bg-light rounded"><div class="small hr-muted">Address</div><strong>{{ candidate.address|linebreaksbr|default:"--" }}</strong></div></div>
+      </div>
+      {% elif tab == 'professional' %}
       <div class="row g-3">
         <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Qualification</div><strong>{{ candidate.qualification|default:"--" }}</strong></div></div>
         <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Experience</div><strong>{{ candidate.experience|default:"--" }} years</strong></div></div>
         <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Current Company</div><strong>{{ candidate.current_company|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Current Salary</div><strong>{{ candidate.current_salary|default:"--" }}</strong></div></div>
         <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Expected Salary</div><strong>{{ candidate.expected_salary|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Source</div><strong>{{ candidate.get_source_display|default:"--" }}</strong></div></div>
         <div class="col-12"><div class="p-3 bg-light rounded"><div class="small hr-muted">Skills</div><strong>{{ candidate.skills|linebreaksbr|default:"--" }}</strong></div></div>
       </div>
       {% elif tab == 'recruitment' %}
-      <dl class="row mb-0">
-        <dt class="col-sm-4 hr-muted">Assigned HR</dt><dd class="col-sm-8">{{ candidate.assigned_hr.username|default:"Unassigned" }}</dd>
-        <dt class="col-sm-4 hr-muted">Date Added</dt><dd class="col-sm-8">{{ candidate.date_added|date:"d M Y" }}</dd>
-        <dt class="col-sm-4 hr-muted">Last Call Date</dt><dd class="col-sm-8">{{ candidate.last_call_at|date:"d M Y, h:i A"|default:"--" }}</dd>
-        <dt class="col-sm-4 hr-muted">Next Follow-up</dt><dd class="col-sm-8">{% with next=candidate.next_follow_up %}{% if next %}{{ next.follow_up_date|date:"d M Y" }} {{ next.follow_up_time|time:"h:i A" }}{% else %}--{% endif %}{% endwith %}</dd>
-        <dt class="col-sm-4 hr-muted">Latest Interview</dt><dd class="col-sm-8">{% with interview=candidate.interviews.last %}{% if interview %}{{ interview.date|date:"d M Y" }} {{ interview.time|time:"h:i A" }}{% else %}--{% endif %}{% endwith %}</dd>
-      </dl>
-      {% elif tab == 'followups' %}
-      <div class="d-flex justify-content-end mb-3"><a class="btn btn-hr-primary btn-sm" href="{% url 'hr:candidate_followup_create' candidate.id %}">Add Follow-up</a></div>
-      {% for followup in candidate.followups.all %}
-      <div class="border rounded p-3 mb-2">
-        <div class="d-flex justify-content-between">
-          <strong>{{ followup.get_follow_up_type_display }}</strong>
-          <span class="small hr-muted">{{ followup.follow_up_date|date:"d M Y" }} {{ followup.follow_up_time|time:"h:i A" }}</span>
-        </div>
-        <div class="small hr-muted">{{ followup.get_outcome_display|default:"No outcome" }}{% if followup.completed %} · Completed{% endif %}</div>
-        <p class="mb-0 mt-2">{{ followup.remarks|default:"--" }}</p>
+      <div class="row g-3">
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Applying Position</div><strong>{{ candidate.applying_position|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Department</div><strong>{{ candidate.department|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Source</div><strong>{{ candidate.get_source_display|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Assigned HR</div><strong>{{ candidate.assigned_hr.username|default:"Unassigned" }}</strong></div></div>
+        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Status</div><strong>{{ candidate.get_status_display|default:"--" }}</strong></div></div>
       </div>
-      {% empty %}
-      <p class="hr-muted">No follow-ups yet.</p>
-      {% endfor %}
-      {% elif tab == 'interviews' %}
-      <div class="d-flex justify-content-end mb-3"><a class="btn btn-hr-primary btn-sm" href="{% url 'hr:candidate_interview_create' candidate.id %}">Schedule Interview</a></div>
-      {% for interview in candidate.interviews.all %}
-      <div class="border rounded p-3 mb-2">
-        <div class="d-flex justify-content-between">
-          <strong>{{ interview.get_interview_type_display }}</strong>
-          <span class="small hr-muted">{{ interview.date|date:"d M Y" }} {{ interview.time|time:"h:i A" }}</span>
-        </div>
-        <div class="small hr-muted">Interviewer: {{ interview.interviewer }} · Decision: {{ interview.get_decision_display }}</div>
-        <a class="small" href="{% url 'hr:interview_feedback' interview.id %}">Feedback</a>
-      </div>
-      {% empty %}
-      <p class="hr-muted">No interviews scheduled.</p>
-      {% endfor %}
+
       {% elif tab == 'documents' %}
-      <div class="list-group">
+      <div class="list-group mb-4">
         {% if candidate.resume %}<a class="list-group-item list-group-item-action" href="{{ candidate.resume.url }}"><i class="bi bi-file-earmark-person me-2"></i>Resume</a>{% endif %}
         {% if candidate.photo %}<a class="list-group-item list-group-item-action" href="{{ candidate.photo.url }}"><i class="bi bi-image me-2"></i>Photo</a>{% endif %}
         {% if candidate.certificates %}<a class="list-group-item list-group-item-action" href="{{ candidate.certificates.url }}"><i class="bi bi-file-earmark-check me-2"></i>Certificates</a>{% endif %}
         {% if not candidate.resume and not candidate.photo and not candidate.certificates %}<div class="list-group-item hr-muted">No documents uploaded.</div>{% endif %}
       </div>
-      {% elif tab == 'notes' %}
-      <form method="post" action="{% url 'hr:add_note' candidate.id %}" class="mb-3">
-        {% csrf_token %}
-        {{ note_form.note }}
-        <button class="btn btn-hr-primary btn-sm mt-2" type="submit">Add Note</button>
-      </form>
-      {% for note in candidate.notes.all %}
-      <div class="border rounded p-3 mb-2">
-        <p class="mb-1">{{ note.note }}</p>
-        <div class="small hr-muted">{{ note.created_by.username|default:"HR" }} · {{ note.created_at|date:"d M Y, h:i A" }}</div>
+      
+      <div class="hr-panel p-3 border rounded bg-light">
+        <h6 class="fw-bold mb-3">Upload / Update Documents</h6>
+        <form method="post" enctype="multipart/form-data" action="{% url 'hr:candidate_document_update' candidate.id %}">
+          {% csrf_token %}
+          <div class="row g-3">
+            {% for field in document_form %}
+            <div class="col-md-12">
+              <label class="form-label small fw-semibold">{{ field.label }}</label>
+              {{ field }}
+              <div class="text-danger small">{{ field.errors }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          <button class="btn btn-hr-primary mt-3" type="submit"><i class="bi bi-upload me-1"></i>Save Documents</button>
+        </form>
       </div>
-      {% empty %}
-      <p class="hr-muted">No notes yet.</p>
-      {% endfor %}
       {% endif %}
     </div>
   </div>

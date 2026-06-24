@@ -228,7 +228,7 @@ class PlacementCompany(models.Model):
     website = models.URLField(blank=True)
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
-    package_offered = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    package_offered = models.CharField(max_length=100, blank=True)
     logo = models.ImageField(upload_to='hr/placement/companies/', blank=True)
     notes = models.TextField(blank=True)
     created_by = models.ForeignKey(
@@ -286,7 +286,7 @@ class PlacementDrive(models.Model):
     )
     job_role = models.CharField(max_length=160, blank=True)
     drive_date = models.DateField(null=True, blank=True)
-    package = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    package = models.CharField(max_length=100, blank=True)
     eligibility_criteria = models.TextField(blank=True)
     venue = models.CharField(max_length=220, blank=True)
     remarks = models.TextField(blank=True)
@@ -407,7 +407,7 @@ class PlacementOffer(models.Model):
 
     assignment = models.OneToOneField(PlacementStudentAssignment, on_delete=models.CASCADE, related_name='offer', null=True, blank=True)
     company = models.ForeignKey(PlacementCompany, on_delete=models.SET_NULL, related_name='offers', null=True, blank=True)
-    offered_package = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    offered_package = models.CharField(max_length=100, blank=True)
     offer_status = models.CharField(max_length=20, choices=OFFER_STATUS_CHOICES, default='pending')
     joining_status = models.CharField(max_length=20, choices=JOINING_STATUS_CHOICES, default='awaiting')
     joining_date = models.DateField(null=True, blank=True)
@@ -446,3 +446,332 @@ class PlacementActivity(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ProjectCompany(models.Model):
+    name = models.CharField(max_length=180, blank=True)
+    industry = models.CharField(max_length=140, blank=True)
+    contact_person = models.CharField(max_length=140, blank=True)
+    designation = models.CharField(max_length=140, blank=True)
+    mobile = models.CharField(max_length=20, blank=True)
+    email = models.EmailField(blank=True)
+    website = models.URLField(blank=True)
+    address = models.TextField(blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    project_value = models.CharField(max_length=100, blank=True)
+    logo = models.ImageField(upload_to='hr/projects/companies/', blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='project_companies',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name', '-updated_at']
+
+    def __str__(self):
+        return self.name or f"Project Company #{self.pk}"
+
+    @property
+    def employees_sent_count(self):
+        return self.project_assignments.count()
+
+    @property
+    def selected_count(self):
+        return self.project_assignments.filter(final_status__in=['selected', 'allocated']).count()
+
+    @property
+    def rejected_count(self):
+        return self.project_assignments.filter(final_status='rejected').count()
+
+    @property
+    def allocated_count(self):
+        return self.project_assignments.filter(final_status='allocated').count()
+
+    @property
+    def project_rate(self):
+        sent = self.employees_sent_count
+        return round((self.allocated_count / sent) * 100, 1) if sent else 0
+
+
+class ProjectDrive(models.Model):
+    STATUS_CHOICES = (
+        ('upcoming', 'Upcoming'),
+        ('scheduled', 'Scheduled'),
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    company = models.ForeignKey(
+        ProjectCompany,
+        on_delete=models.CASCADE,
+        related_name='drives',
+        null=True,
+        blank=True,
+    )
+    project_name = models.CharField(max_length=180, blank=True)
+    role_required = models.CharField(max_length=160, blank=True)
+    drive_date = models.DateField(null=True, blank=True)
+    project_value = models.CharField(max_length=100, blank=True)
+    eligibility_criteria = models.TextField(blank=True)
+    venue = models.CharField(max_length=220, blank=True)
+    remarks = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='upcoming')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='project_drives',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['drive_date', '-updated_at']
+
+    def __str__(self):
+        company = self.company.name if self.company and self.company.name else 'Project Drive'
+        return f"{company} - {self.project_name or self.role_required or 'Project'}"
+
+    @property
+    def assignments_count(self):
+        return self.assignments.count()
+
+    @property
+    def appeared_count(self):
+        return self.assignments.filter(interview_status__in=['appeared', 'selected', 'rejected']).count()
+
+    @property
+    def selected_count(self):
+        return self.assignments.filter(final_status__in=['selected', 'allocated']).count()
+
+
+class ProjectEmployeeAssignment(models.Model):
+    INTERVIEW_STATUS_CHOICES = (
+        ('scheduled', 'Scheduled'),
+        ('appeared', 'Appeared'),
+        ('absent', 'Absent'),
+        ('selected', 'Selected'),
+        ('rejected', 'Rejected'),
+    )
+    FINAL_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('selected', 'Selected'),
+        ('rejected', 'Rejected'),
+        ('allocated', 'Allocated'),
+        ('released', 'Released'),
+    )
+
+    company = models.ForeignKey(ProjectCompany, on_delete=models.CASCADE, related_name='project_assignments', null=True, blank=True)
+    drive = models.ForeignKey(ProjectDrive, on_delete=models.SET_NULL, related_name='assignments', null=True, blank=True)
+    employee = models.ForeignKey('ExternalEmployee', on_delete=models.SET_NULL, related_name='project_assignments', null=True, blank=True)
+    employee_name = models.CharField(max_length=160, blank=True)
+    employee_code = models.CharField(max_length=30, blank=True)
+    department = models.CharField(max_length=120, blank=True)
+    designation = models.CharField(max_length=140, blank=True)
+    skills = models.TextField(blank=True)
+    interview_status = models.CharField(max_length=20, choices=INTERVIEW_STATUS_CHOICES, default='scheduled')
+    final_status = models.CharField(max_length=20, choices=FINAL_STATUS_CHOICES, default='pending')
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='project_assignments_created')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-assigned_at']
+
+    def __str__(self):
+        return self.display_name
+
+    @property
+    def display_name(self):
+        if self.employee:
+            return self.employee.full_name
+        return self.employee_name or f"Employee #{self.pk}"
+
+    @property
+    def display_designation(self):
+        if self.employee and self.employee.designation:
+            return self.employee.designation
+        return self.designation
+
+
+class ProjectInterview(models.Model):
+    STATUS_CHOICES = ProjectEmployeeAssignment.INTERVIEW_STATUS_CHOICES
+
+    company = models.ForeignKey(ProjectCompany, on_delete=models.SET_NULL, related_name='project_interviews', null=True, blank=True)
+    drive = models.ForeignKey(ProjectDrive, on_delete=models.SET_NULL, related_name='project_interviews', null=True, blank=True)
+    assignment = models.ForeignKey(ProjectEmployeeAssignment, on_delete=models.CASCADE, related_name='interviews', null=True, blank=True)
+    interview_round = models.CharField(max_length=140, blank=True)
+    date = models.DateField(null=True, blank=True)
+    time = models.TimeField(null=True, blank=True)
+    venue = models.CharField(max_length=220, blank=True)
+    interviewer = models.CharField(max_length=160, blank=True)
+    remarks = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='project_interviews_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['date', 'time', '-updated_at']
+
+    def __str__(self):
+        return f"{self.assignment or 'Project Interview'} - {self.interview_round or self.get_status_display()}"
+
+
+class ProjectAllocation(models.Model):
+    ALLOCATION_STATUS_CHOICES = (
+        ('allocated', 'Allocated'),
+        ('not_allocated', 'Not Allocated'),
+        ('awaiting', 'Awaiting Allocation'),
+        ('released', 'Released'),
+    )
+
+    assignment = models.OneToOneField(ProjectEmployeeAssignment, on_delete=models.CASCADE, related_name='allocation', null=True, blank=True)
+    company = models.ForeignKey(ProjectCompany, on_delete=models.SET_NULL, related_name='allocations', null=True, blank=True)
+    billing_rate = models.CharField(max_length=100, blank=True)
+    allocation_status = models.CharField(max_length=20, choices=ALLOCATION_STATUS_CHOICES, default='awaiting')
+    allocation_date = models.DateField(null=True, blank=True)
+    release_date = models.DateField(null=True, blank=True)
+    remarks = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='project_allocations_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"Allocation - {self.assignment or self.company}"
+
+
+class ProjectActivity(models.Model):
+    ACTIVITY_CHOICES = (
+        ('company', 'Company Added'),
+        ('drive', 'Project Drive Created'),
+        ('assignment', 'Employees Assigned'),
+        ('interview', 'Interview Scheduled'),
+        ('allocation', 'Allocation Updated'),
+        ('result', 'Result Published'),
+    )
+
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_CHOICES)
+    title = models.CharField(max_length=180)
+    description = models.TextField(blank=True)
+    company = models.ForeignKey(ProjectCompany, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
+    drive = models.ForeignKey(ProjectDrive, on_delete=models.SET_NULL, null=True, blank=True, related_name='activities')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class ExternalEmployee(models.Model):
+    BRANCH_CHOICES = (
+        ('thane', 'Dcodetech Thane'),
+        ('nashik', 'Dcodetech Nashik'),
+    )
+    GENDER_CHOICES = (
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+    )
+    EMPLOYMENT_TYPE_CHOICES = (
+        ('full_time', 'Full Time'),
+        ('part_time', 'Part Time'),
+        ('contract', 'Contract'),
+        ('intern', 'Intern'),
+    )
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('probation', 'Probation'),
+        ('notice', 'Notice Period'),
+        ('inactive', 'Inactive'),
+    )
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='external_employee_profile')
+    branch = models.CharField(max_length=20, choices=BRANCH_CHOICES)
+    employee_id = models.CharField(max_length=30, unique=True)
+    full_name = models.CharField(max_length=160)
+    email = models.EmailField(blank=True)
+    mobile = models.CharField(max_length=20, blank=True)
+    photo = models.ImageField(upload_to='hr/external/employees/', blank=True)
+    department = models.CharField(max_length=120, blank=True)
+    designation = models.CharField(max_length=140, blank=True)
+    joining_date = models.DateField(null=True, blank=True)
+    employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPE_CHOICES, default='full_time')
+    reporting_manager = models.CharField(max_length=160, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    dob = models.DateField(null=True, blank=True)
+    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
+    address = models.TextField(blank=True)
+    emergency_contact = models.CharField(max_length=80, blank=True)
+    monthly_attendance = models.PositiveSmallIntegerField(default=0)
+    late_count = models.PositiveSmallIntegerField(default=0)
+    leave_balance = models.DecimalField(max_digits=5, decimal_places=1, default=0)
+    resume = models.FileField(upload_to='hr/external/documents/resumes/', blank=True)
+    offer_letter = models.FileField(upload_to='hr/external/documents/offers/', blank=True)
+    aadhaar = models.FileField(upload_to='hr/external/documents/aadhaar/', blank=True)
+    pan = models.FileField(upload_to='hr/external/documents/pan/', blank=True)
+    bank_details = models.FileField(upload_to='hr/external/documents/bank/', blank=True)
+    certificates = models.FileField(upload_to='hr/external/documents/certificates/', blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='external_employees_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['branch', 'full_name']
+
+    def __str__(self):
+        return f"{self.full_name} ({self.employee_id})"
+
+
+class ExternalAttendanceLog(models.Model):
+    STATUS_CHOICES = (
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('leave', 'Leave'),
+        ('half_day', 'Half Day'),
+        ('wfh', 'WFH'),
+        ('holiday', 'Holiday'),
+        ('weekend', 'Weekend'),
+    )
+
+    employee = models.ForeignKey(ExternalEmployee, on_delete=models.CASCADE, related_name='attendance_logs')
+    date = models.DateField(default=timezone.localdate)
+    check_in = models.TimeField(null=True, blank=True)
+    check_out = models.TimeField(null=True, blank=True)
+    working_hours = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    late_minutes = models.PositiveSmallIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='present')
+    location_ip = models.CharField(max_length=80, blank=True)
+    last_activity = models.DateTimeField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    marked_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='external_attendance_marked')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date', 'employee__full_name']
+        unique_together = (('employee', 'date'),)
+
+    def __str__(self):
+        return f"{self.employee} - {self.date} - {self.get_status_display()}"
+
+    @property
+    def working_hours_display(self):
+        if self.working_hours in (None, ''):
+            return '-'
+        total_minutes = int(self.working_hours * 60)
+        return f'{total_minutes // 60:02d}h {total_minutes % 60:02d}m'

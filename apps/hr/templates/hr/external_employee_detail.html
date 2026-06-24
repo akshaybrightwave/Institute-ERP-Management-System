@@ -1,0 +1,178 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ employee.full_name }} | HR Portal{% endblock %}
+
+{% block content %}
+<div class="external-title-row">
+  <div>
+    <h1 class="fw-bold mb-2">{{ employee.full_name }}</h1>
+    <p class="hr-muted mb-0">{{ employee.employee_id }} | {{ employee.department }} | {{ employee.designation }}</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-soft" href="{% url 'hr:external_employees' external_branch_slug %}"><i class="bi bi-arrow-left me-1"></i>Directory</a>
+    {% if employee.pk %}
+    <a class="btn btn-hr-primary" href="{% url 'hr:external_employee_edit' external_branch_slug employee.employee_id %}"><i class="bi bi-pencil me-1"></i>Edit Employee</a>
+    <a class="btn btn-hr-primary bg-danger border-danger" href="{% url 'hr:external_employee_delete' external_branch_slug employee.employee_id  %}"><i class="bi bi-trash me-1"></i>Delete</a>
+    {% else %}
+    <a class="btn btn-hr-primary" href="{{ external_primary_url }}"><i class="bi bi-person-plus me-1"></i>Add Stored Record</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="hr-panel p-3">
+  <div class="d-flex align-items-center justify-content-between gap-3 border-bottom pb-3 mb-3 flex-wrap">
+    <h2 class="h5 fw-bold mb-0">{{ employee.full_name }}</h2>
+    <span class="status-badge status-{{ employee.status_key }}">{{ employee.status }}</span>
+  </div>
+
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation"><button class="nav-link {% if request.GET.tab != 'attendance' and request.GET.tab != 'documents' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab">Personal Details</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#employment" type="button" role="tab">Employment Details</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link {% if request.GET.tab == 'attendance' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#attendance-history" type="button" role="tab">Attendance History</button></li>
+    <li class="nav-item" role="presentation"><button class="nav-link {% if request.GET.tab == 'documents' %}active{% endif %}" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">Documents</button></li>
+  </ul>
+
+  <div class="tab-content pt-4">
+    <section class="tab-pane fade {% if request.GET.tab != 'attendance' and request.GET.tab != 'documents' %}show active{% endif %}" id="personal" role="tabpanel">
+      <div class="row g-3">
+        <div class="col-md-4"><div class="small hr-muted">Full Name</div><div class="fw-semibold">{{ employee.full_name }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Mobile</div><div class="fw-semibold">{{ employee.mobile|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Email</div><div class="fw-semibold">{{ employee.email|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">DOB</div><div class="fw-semibold">{{ employee.dob }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Gender</div><div class="fw-semibold">{{ employee.gender }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Emergency Contact</div><div class="fw-semibold">{{ employee.emergency_contact|default:"--" }}</div></div>
+        <div class="col-12"><div class="small hr-muted">Address</div><div class="fw-semibold">{{ employee.address|default:"--" }}</div></div>
+      </div>
+    </section>
+
+    <section class="tab-pane fade" id="employment" role="tabpanel">
+      <div class="row g-3">
+        <div class="col-md-4"><div class="small hr-muted">Employee ID</div><div class="fw-semibold">{{ employee.employee_id }}</div></div>
+        {% if employee_object %}
+        <div class="col-md-4"><div class="small hr-muted">Login User</div><div class="fw-semibold">{{ employee_object.user.username|default:"Not linked" }}</div></div>
+        {% endif %}
+        <div class="col-md-4"><div class="small hr-muted">Branch</div><div class="fw-semibold">{{ employee.branch }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Department</div><div class="fw-semibold">{{ employee.department }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Designation</div><div class="fw-semibold">{{ employee.designation }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Joining Date</div><div class="fw-semibold">{{ employee.joining_date }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Employment Type</div><div class="fw-semibold">{{ employee.employment_type }}</div></div>
+        <div class="col-md-4"><div class="small hr-muted">Reporting Manager</div><div class="fw-semibold">{{ employee.reporting_manager|default:"--" }}</div></div>
+      </div>
+    </section>
+
+    <section class="tab-pane fade {% if request.GET.tab == 'attendance' %}show active{% endif %}" id="attendance-history" role="tabpanel">
+      <form class="external-toolbar px-0 pt-0" method="get">
+        <div class="external-toolbar-group">
+          <select class="form-select" name="month" style="width: 150px;">
+            <option value="1" {% if selected_month == 1 %}selected{% endif %}>January</option>
+            <option value="2" {% if selected_month == 2 %}selected{% endif %}>February</option>
+            <option value="3" {% if selected_month == 3 %}selected{% endif %}>March</option>
+            <option value="4" {% if selected_month == 4 %}selected{% endif %}>April</option>
+            <option value="5" {% if selected_month == 5 %}selected{% endif %}>May</option>
+            <option value="6" {% if selected_month == 6 %}selected{% endif %}>June</option>
+            <option value="7" {% if selected_month == 7 %}selected{% endif %}>July</option>
+            <option value="8" {% if selected_month == 8 %}selected{% endif %}>August</option>
+            <option value="9" {% if selected_month == 9 %}selected{% endif %}>September</option>
+            <option value="10" {% if selected_month == 10 %}selected{% endif %}>October</option>
+            <option value="11" {% if selected_month == 11 %}selected{% endif %}>November</option>
+            <option value="12" {% if selected_month == 12 %}selected{% endif %}>December</option>
+          </select>
+          <select class="form-select" name="year" style="width: 120px;">
+            <option value="2025" {% if selected_year == 2025 %}selected{% endif %}>2025</option>
+            <option value="2026" {% if selected_year == 2026 %}selected{% endif %}>2026</option>
+            <option value="2027" {% if selected_year == 2027 %}selected{% endif %}>2027</option>
+          </select>
+          <input class="form-control" type="date" name="start_date" value="{{ start_date }}" style="width: 160px;">
+          <input class="form-control" type="date" name="end_date" value="{{ end_date }}" style="width: 160px;">
+          <input type="hidden" name="tab" value="attendance">
+          <button class="btn btn-soft text-primary border-primary" type="submit"><i class="bi bi-funnel me-2"></i>Filter</button>
+        </div>
+      </form>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Present</div><div class="fw-bold">{{ history_summary.present|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Absent</div><div class="fw-bold">{{ history_summary.absent|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Leave</div><div class="fw-bold">{{ history_summary.leave|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Half Days</div><div class="fw-bold">{{ history_summary.half_day|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Late Count</div><div class="fw-bold">{{ history_summary.late|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Working Days</div><div class="fw-bold">{{ history_summary.working_days|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Total Hours</div><div class="fw-bold">{{ history_summary.total_hours|default:"00h 00m" }}</div></div></div>
+      </div>
+
+      <div class="external-table-wrap mb-4">
+        <table class="table hr-table mb-0">
+          <thead><tr><th>Date</th><th>Login Time</th><th>Logout Time</th><th>Working Hours</th><th>Late</th><th>Status</th><th>Remarks</th></tr></thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ log.date|date:"d M Y" }}</td>
+              <td>{{ log.check_in|time:"h:i A"|default:"-" }}</td>
+              <td>{{ log.check_out|time:"h:i A"|default:"-" }}</td>
+              <td>{{ log.working_hours_display }}</td>
+              <td>{{ log.late_minutes }} min</td>
+              <td><span class="status-badge status-{{ log.status }}">{{ log.get_status_display }}</span></td>
+              <td>{{ log.notes|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center py-4 hr-muted">No attendance records found for this period.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="hr-panel p-3 shadow-none">
+        <h5 class="fw-bold mb-3">Monthly Attendance Calendar</h5>
+        <div class="attendance-calendar">
+          <div class="calendar-head">Mon</div><div class="calendar-head">Tue</div><div class="calendar-head">Wed</div><div class="calendar-head">Thu</div><div class="calendar-head">Fri</div><div class="calendar-head">Sat</div><div class="calendar-head">Sun</div>
+          {% for week in calendar_weeks %}
+            {% for item in week %}
+            <div class="calendar-cell status-{{ item.status }}">
+              {% if item.day %}<span>{{ item.day }}</span><strong>{{ item.code }}</strong>{% endif %}
+            </div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-pane fade {% if request.GET.tab == 'documents' %}show active{% endif %}" id="documents" role="tabpanel">
+      {% if employee.pk %}
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Aadhaar</label>
+            <input class="form-control" type="file" name="aadhaar" accept=".pdf,.jpg,.jpeg,.png">
+            {% if employee.aadhaar %}
+            <a class="btn btn-soft btn-sm w-100 mt-2 text-start" href="{{ employee.aadhaar }}" target="_blank" rel="noopener"><i class="bi bi-eye me-2"></i>View Aadhaar</a>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">PAN</label>
+            <input class="form-control" type="file" name="pan" accept=".pdf,.jpg,.jpeg,.png">
+            {% if employee.pan %}
+            <a class="btn btn-soft btn-sm w-100 mt-2 text-start" href="{{ employee.pan }}" target="_blank" rel="noopener"><i class="bi bi-eye me-2"></i>View PAN</a>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Resume</label>
+            <input class="form-control" type="file" name="resume" accept=".pdf,.doc,.docx">
+            {% if employee.resume %}
+            <a class="btn btn-soft btn-sm w-100 mt-2 text-start" href="{{ employee.resume }}" target="_blank" rel="noopener"><i class="bi bi-eye me-2"></i>View Resume</a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="d-flex justify-content-end border-top mt-4 pt-3">
+          <button class="btn btn-hr-primary" type="submit"><i class="bi bi-upload me-2"></i>Upload Documents</button>
+        </div>
+      </form>
+      {% else %}
+      <div class="text-center py-4">
+        <div class="fw-bold mb-2">Documents can be uploaded after saving this employee.</div>
+        <a class="btn btn-hr-primary" href="{{ external_primary_url }}"><i class="bi bi-person-plus me-1"></i>Add Stored Record</a>
+      </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

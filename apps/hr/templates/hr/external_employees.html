@@ -1,0 +1,138 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Employee Directory | HR Portal{% endblock %}
+
+{% block content %}
+<div class="external-section-heading mt-0">
+  <div>
+    <h2>Employee Directory</h2>
+    <p class="hr-muted mb-0">View and manage employee details</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <form method="post" enctype="multipart/form-data" action="{% url 'hr:external_employee_import' external_branch_slug %}" class="d-inline">
+      {% csrf_token %}
+      <input class="d-none" type="file" name="employees_file" accept=".csv" data-import-file>
+      <button class="btn btn-soft text-primary border-primary" type="button" data-import-trigger><i class="bi bi-upload me-2"></i>Import Employees</button>
+    </form>
+    <div class="dropdown">
+      <button class="btn btn-soft text-primary border-primary" type="button" data-bs-toggle="dropdown">
+        <i class="bi bi-download me-2"></i>Export Employees
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=csv">CSV</a></li>
+        <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=excel">Excel</a></li>
+      </ul>
+    </div>
+    <a class="btn btn-hr-primary" href="{{ external_primary_url }}"><i class="bi bi-person-plus me-2"></i>Add Employee</a>
+  </div>
+</div>
+
+<div class="hr-panel">
+  <form class="external-toolbar" method="get">
+    <div class="external-toolbar-group">
+      <div class="hr-search" style="max-width: 242px;">
+        <i class="bi bi-search"></i>
+        <input type="search" name="q" value="{{ query }}" placeholder="Search employees...">
+      </div>
+      <select class="form-select" name="designation" style="width: 180px;">
+        <option value="">All Designations</option>
+        {% for designation in filter_options.designations %}
+        <option value="{{ designation }}" {% if selected_designation == designation %}selected{% endif %}>{{ designation }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-soft" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+  </form>
+
+  <div class="external-table-wrap">
+    <table class="table hr-table external-table mb-0">
+      <thead>
+        <tr>
+          <th>Employee ID</th>
+          <th>Full Name</th>
+          <th>Phone</th>
+          <th>Email</th>
+          <th>Designation</th>
+          <th>Joining Date</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in page_obj %}
+        <tr>
+          <td>{{ row.employee_id }}</td>
+          <td class="fw-semibold">{{ row.full_name }}</td>
+          <td>{{ row.mobile }}</td>
+          <td>{{ row.email }}</td>
+          <td>{{ row.designation }}</td>
+          <td>{{ row.joining_date }}</td>
+          <td><span class="status-badge status-{{ row.status_key }}">{{ row.status }}</span></td>
+          <td class="text-end">
+            <a class="action-btn" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}" title="View"><i class="bi bi-eye"></i></a>
+            {% if row.is_db %}
+            <a class="action-btn" href="{% url 'hr:external_employee_edit' external_branch_slug row.employee_id %}" title="Edit"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn text-danger" href="{% url 'hr:external_employee_delete' external_branch_slug row.employee_id  %}"><i class="bi bi-trash"></i></a>
+            <a class="action-btn text-danger" href="{% url 'hr:external_employee_delete' external_branch_slug row.employee_id  %}"><i class="bi bi-trash"></i></a>
+            {% else %}
+            <a class="action-btn" href="{{ external_primary_url }}" title="Add stored record"><i class="bi bi-pencil"></i></a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-5">
+            <div class="fw-bold">No employees found</div>
+            <a class="btn btn-hr-primary btn-sm mt-3" href="{{ external_primary_url }}">Add Employee</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="d-flex align-items-center justify-content-between p-3 border-top flex-wrap gap-2">
+    <div class="small hr-muted">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_rows }} entries</div>
+    <div class="d-flex gap-2 align-items-center">
+      {% if page_obj.has_previous %}
+      <a class="btn btn-soft btn-sm icon-btn-square" href="?page={{ page_obj.previous_page_number }}&q={{ query }}"><i class="bi bi-chevron-left"></i></a>
+      {% else %}
+      <span class="btn btn-soft btn-sm icon-btn-square disabled"><i class="bi bi-chevron-left"></i></span>
+      {% endif %}
+      <span class="btn btn-sm btn-hr-primary icon-btn-square">1</span>
+      <span class="small px-2">2</span>
+      <span class="small px-2">3</span>
+      <span class="small px-2">...</span>
+      <span class="small px-2">12</span>
+      {% if page_obj.has_next %}
+      <a class="btn btn-soft btn-sm icon-btn-square" href="?page={{ page_obj.next_page_number }}&q={{ query }}"><i class="bi bi-chevron-right"></i></a>
+      {% else %}
+      <span class="btn btn-soft btn-sm icon-btn-square disabled"><i class="bi bi-chevron-right"></i></span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    document.querySelectorAll('[data-import-trigger]').forEach((button) => {
+      const form = button.closest('form');
+      const input = form.querySelector('[data-import-file]');
+      button.addEventListener('click', () => input.click());
+      input.addEventListener('change', () => {
+        if (input.files.length) form.submit();
+      });
+    });
+
+    document.querySelectorAll('.external-toolbar input[type="search"]').forEach((input) => {
+      let timer;
+      input.addEventListener('input', () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => input.form.submit(), 350);
+      });
+    });
+  })();
+</script>
+{% endblock %}

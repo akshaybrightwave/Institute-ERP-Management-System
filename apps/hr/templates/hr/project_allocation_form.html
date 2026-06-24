@@ -1,0 +1,31 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Project Allocation | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Allocation</div>
+    <h1 class="fw-bold mb-1">Project Allocation</h1>
+    <p class="hr-muted mb-0">Update allocation and release status for project employees.</p>
+  </div>
+</div>
+
+<form method="post" class="hr-panel p-4">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="row g-3">
+    {% for field in form %}
+    <div class="col-md-{% if field.name == 'remarks' %}12{% else %}6{% endif %}">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      <div class="text-danger small">{{ field.errors }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <a class="btn btn-soft" href="{% url 'hr:project_allocation_list' %}">Cancel</a>
+    <button class="btn btn-hr-primary" type="submit">Save Allocation</button>
+  </div>
+</form>
+{% endblock %}

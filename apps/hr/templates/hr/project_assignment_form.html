@@ -1,18 +1,19 @@
 {% extends 'hr/base.html' %}
 
-{% block title %}Employee Assignment | HR Portal{% endblock %}
+{% block title %}Project Employee Assignment | HR Portal{% endblock %}
 
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Employee Assignment</div>
-    <h1 class="fw-bold mb-1">Add Employee</h1>
+    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Employee Assignment</div>
+    <h1 class="fw-bold mb-1">Assign Employee</h1>
     <p class="hr-muted mb-0">Choose an existing employee or enter basic employee details manually.</p>
   </div>
 </div>
 
 <form method="post" class="hr-panel p-4">
   {% csrf_token %}
+  {{ form.non_field_errors }}
   <div class="row g-3">
     {% for field in form %}
     <div class="col-md-{% if field.name == 'skills' %}12{% else %}6{% endif %}">
@@ -23,7 +24,7 @@
     {% endfor %}
   </div>
 
-  <div id="placementSchedulePanel" class="border rounded p-3 mt-4">
+  <div id="projectSchedulePanel" class="border rounded p-3 mt-4">
     <div class="d-flex align-items-center gap-2 mb-3">
       <span class="hr-kpi-icon tone-blue" style="width: 38px; height: 38px;"><i class="bi bi-calendar-event"></i></span>
       <div>
@@ -44,7 +45,7 @@
   </div>
 
   <div class="d-flex justify-content-end gap-2 mt-4">
-    <a class="btn btn-soft" href="{% url 'hr:placement_employee_list' %}">Cancel</a>
+    <a class="btn btn-soft" href="{% url 'hr:project_employee_list' %}">Cancel</a>
     <button class="btn btn-hr-primary" type="submit">Save Assignment</button>
   </div>
 </form>
@@ -54,7 +55,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const statusField = document.getElementById('id_interview_status');
-    const schedulePanel = document.getElementById('placementSchedulePanel');
+    const schedulePanel = document.getElementById('projectSchedulePanel');
     if (!statusField || !schedulePanel) return;
 
     function syncSchedulePanel() {

@@ -1,0 +1,36 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Log Attendance | HR Portal{% endblock %}
+
+{% block content %}
+<div class="external-title-row">
+  <div>
+    <div class="small hr-muted mb-2">External <i class="bi bi-chevron-right mx-1"></i>{{ external_branch.name }} <i class="bi bi-chevron-right mx-1"></i> Attendance</div>
+    <h1 class="fw-bold mb-1">Log Attendance</h1>
+    <p class="hr-muted mb-0">Create or update a daily attendance record for an external employee.</p>
+  </div>
+  <a class="btn btn-soft" href="{% url 'hr:external_attendance' external_branch_slug %}"><i class="bi bi-arrow-left me-1"></i>Back to Attendance</a>
+</div>
+
+<form method="post" class="hr-panel p-3">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+  <div class="external-form-grid">
+    <div><label class="form-label fw-semibold">Employee</label>{{ form.employee }}{{ form.employee.errors }}</div>
+    <div><label class="form-label fw-semibold">Date</label>{{ form.date }}{{ form.date.errors }}</div>
+    <div><label class="form-label fw-semibold">Check In</label>{{ form.check_in }}{{ form.check_in.errors }}</div>
+    <div><label class="form-label fw-semibold">Check Out</label>{{ form.check_out }}{{ form.check_out.errors }}</div>
+    <div><label class="form-label fw-semibold">Working Hours</label>{{ form.working_hours }}{{ form.working_hours.errors }}</div>
+    <div><label class="form-label fw-semibold">Attendance Status</label>{{ form.status }}{{ form.status.errors }}</div>
+    <div><label class="form-label fw-semibold">Location/IP</label>{{ form.location_ip }}{{ form.location_ip.errors }}</div>
+    <div><label class="form-label fw-semibold">Last Activity</label>{{ form.last_activity }}{{ form.last_activity.errors }}</div>
+    <div class="grid-column-full"><label class="form-label fw-semibold">Notes</label>{{ form.notes }}{{ form.notes.errors }}</div>
+  </div>
+  <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-4">
+    <a class="btn btn-soft" href="{% url 'hr:external_attendance' external_branch_slug %}">Cancel</a>
+    <button class="btn btn-hr-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Attendance</button>
+  </div>
+</form>
+{% endblock %}

@@ -5,15 +5,15 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Drive Profile</div>
-    <h1 class="fw-bold mb-1">{{ drive.company|default:"Placement Drive" }}</h1>
-    <p class="hr-muted mb-0">{{ drive.job_role|default:"Role not set" }} · {{ drive.drive_date|date:"d M Y"|default:"Date not set" }}</p>
+    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Drive Profile</div>
+    <h1 class="fw-bold mb-1">{{ drive.company|default:"Project Drive" }}</h1>
+    <p class="hr-muted mb-0">{{ drive.project_name|default:"Project not set" }} - {{ drive.drive_date|date:"d M Y"|default:"Date not set" }}</p>
   </div>
   <div class="d-flex gap-2 flex-wrap">
-    <a class="btn btn-soft" href="{% url 'hr:placement_drive_edit' drive.id %}"><i class="bi bi-pencil me-1"></i>Edit</a>
-    <a class="btn btn-soft text-danger" href="{% url 'hr:placement_drive_delete' drive.id  %}"><i class="bi bi-trash me-1"></i>Delete</a>
-    <a class="btn btn-hr-primary" href="{% url 'hr:placement_assign_students' drive.id %}"><i class="bi bi-people me-1"></i>Add Employees</a>
-    <a class="btn btn-soft" href="{% url 'hr:placement_drive_interview_create' drive.id %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Interviews</a>
+    <a class="btn btn-soft" href="{% url 'hr:project_drive_edit' drive.id %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+    <a class="btn btn-soft text-danger" href="{% url 'hr:project_drive_delete' drive.id  %}"><i class="bi bi-trash me-1"></i>Delete</a>
+    <a class="btn btn-hr-primary" href="{% url 'hr:project_assign_employees' drive.id %}"><i class="bi bi-people me-1"></i>Add Employees</a>
+    <a class="btn btn-soft" href="{% url 'hr:project_drive_interview_create' drive.id %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Interviews</a>
   </div>
 </div>
 
@@ -28,7 +28,9 @@
   <h5 class="fw-bold mb-3">Drive Details</h5>
   <dl class="row mb-0">
     <dt class="col-md-3 hr-muted">Company</dt><dd class="col-md-9">{{ drive.company|default:"--" }}</dd>
-    <dt class="col-md-3 hr-muted">Package</dt><dd class="col-md-9">{{ drive.package|default:"--" }}</dd>
+    <dt class="col-md-3 hr-muted">Project</dt><dd class="col-md-9">{{ drive.project_name|default:"--" }}</dd>
+    <dt class="col-md-3 hr-muted">Role</dt><dd class="col-md-9">{{ drive.role_required|default:"--" }}</dd>
+    <dt class="col-md-3 hr-muted">Project Value</dt><dd class="col-md-9">{{ drive.project_value|default:"--" }}</dd>
     <dt class="col-md-3 hr-muted">Venue</dt><dd class="col-md-9">{{ drive.venue|default:"--" }}</dd>
     <dt class="col-md-3 hr-muted">Eligibility</dt><dd class="col-md-9">{{ drive.eligibility_criteria|linebreaksbr|default:"--" }}</dd>
     <dt class="col-md-3 hr-muted">Remarks</dt><dd class="col-md-9">{{ drive.remarks|linebreaksbr|default:"--" }}</dd>
@@ -39,24 +41,25 @@
   <h5 class="fw-bold mb-3">Assigned Employees</h5>
   <div class="table-responsive">
     <table class="table hr-table">
-      <thead><tr><th>Employee</th><th>Designation</th><th>Skills</th><th>Interview Status</th><th>Final Status</th><th>Action</th></tr></thead>
+      <thead><tr><th>Employee</th><th>Employee ID</th><th>Designation</th><th>Skills</th><th>Interview Status</th><th>Final Status</th><th>Action</th></tr></thead>
       <tbody>
         {% for item in assignments %}
         <tr>
           <td>{{ item.display_name }}</td>
-          <td>{{ item.display_course|default:"--" }}</td>
+          <td>{% if item.employee %}{{ item.employee.employee_id }}{% else %}{{ item.employee_code|default:"--" }}{% endif %}</td>
+          <td>{{ item.display_designation|default:"--" }}</td>
           <td>{{ item.skills|truncatechars:50|default:"--" }}</td>
           <td><span class="status-badge status-{{ item.interview_status }}">{{ item.get_interview_status_display }}</span></td>
           <td><span class="status-badge status-{{ item.final_status }}">{{ item.get_final_status_display }}</span></td>
           <td>
-            <a class="action-btn" href="{% url 'hr:placement_assignment_detail' item.id %}"><i class="bi bi-eye"></i></a>
-            <a class="action-btn" href="{% url 'hr:placement_assignment_edit' item.id %}"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:placement_assignment_delete' item.id  %}"><i class="bi bi-trash"></i></a>
-            <a class="action-btn" href="{% url 'hr:placement_assignment_offer_create' item.id %}"><i class="bi bi-envelope-check"></i></a>
+            <a class="action-btn" href="{% url 'hr:project_assignment_detail' item.id %}"><i class="bi bi-eye"></i></a>
+            <a class="action-btn" href="{% url 'hr:project_assignment_edit' item.id %}"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn text-danger" href="{% url 'hr:project_assignment_delete' item.id  %}"><i class="bi bi-trash"></i></a>
+            <a class="action-btn" href="{% url 'hr:project_assignment_allocation_create' item.id %}"><i class="bi bi-clipboard-check"></i></a>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="6" class="text-center py-5 hr-muted">No employees assigned yet.</td></tr>
+        <tr><td colspan="7" class="text-center py-5 hr-muted">No employees assigned yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>

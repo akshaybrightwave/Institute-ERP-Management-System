@@ -1,0 +1,141 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Project Dashboard | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Internal <i class="bi bi-chevron-right mx-1"></i> Projects <i class="bi bi-chevron-right mx-1"></i> Dashboard</div>
+    <h1 class="fw-bold mb-1">Project Dashboard</h1>
+    <p class="hr-muted mb-0">Manage project companies, requirements and employee allocations.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-hr-primary" href="{% url 'hr:project_company_create' %}"><i class="bi bi-plus-lg me-1"></i>Add Company</a>
+    <a class="btn btn-soft" href="{% url 'hr:project_drive_create' %}"><i class="bi bi-calendar-plus me-1"></i>Add Project Drive</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for metric in metrics %}
+  <div class="col-sm-6 col-xl-3">
+    <div class="hr-kpi">
+      <div class="hr-kpi-top">
+        <div class="hr-kpi-icon tone-{{ metric.color }}"><i class="bi {{ metric.icon }}"></i></div>
+        <div>
+          <div class="small hr-muted">{{ metric.label }}</div>
+          <div class="hr-stat-number">{{ metric.value }}</div>
+        </div>
+      </div>
+      <div class="d-flex align-items-end justify-content-between">
+        <span class="small hr-muted">{{ metric.trend }}</span>
+        <div class="mini-bars">
+          {% for bar in metric.spark %}<span style="height: {{ bar }}%;"></span>{% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-xxl-8">
+    <div class="hr-panel p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Recent Project Drives</h5>
+        <a class="fw-semibold" href="{% url 'hr:project_drive_list' %}">View All Drives <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+      <div class="table-responsive">
+        <table class="table hr-table">
+          <thead>
+            <tr><th>Company</th><th>Drive Date</th><th>Project</th><th>Role</th><th>Employees</th><th>Selected</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            {% for drive in recent_drives %}
+            <tr>
+              <td>{{ drive.company|default:"--" }}</td>
+              <td>{{ drive.drive_date|date:"d M Y"|default:"--" }}</td>
+              <td>{{ drive.project_name|default:"--" }}</td>
+              <td>{{ drive.role_required|default:"--" }}</td>
+              <td>{{ drive.assignments_count }}</td>
+              <td>{{ drive.selected_count }}</td>
+              <td><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></td>
+              <td>
+                <a class="action-btn" href="{% url 'hr:project_drive_detail' drive.id %}"><i class="bi bi-eye"></i></a>
+                <a class="action-btn" href="{% url 'hr:project_drive_edit' drive.id %}"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn text-danger" href="{% url 'hr:project_drive_delete' drive.id  %}"><i class="bi bi-trash"></i></a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center py-5 hr-muted">No project drives yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="hr-panel p-4 mb-4">
+      <h5 class="fw-bold mb-4">Project Pipeline</h5>
+      <div class="row text-center g-3">
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-calendar-event fs-3 text-primary"></i><div class="fw-semibold mt-2">Drives</div><div class="hr-stat-number">{{ pipeline.scheduled }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-send fs-3 text-success"></i><div class="fw-semibold mt-2">Sent</div><div class="hr-stat-number">{{ pipeline.sent }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-person-video3 fs-3 text-primary"></i><div class="fw-semibold mt-2">Appeared</div><div class="hr-stat-number">{{ pipeline.appeared }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-clipboard-check fs-3 text-warning"></i><div class="fw-semibold mt-2">Allocations</div><div class="hr-stat-number">{{ pipeline.allocations }}</div></div></div>
+        <div class="col-md"><div class="hr-kpi"><i class="bi bi-award fs-3 text-success"></i><div class="fw-semibold mt-2">Allocated</div><div class="hr-stat-number">{{ pipeline.allocated }}</div></div></div>
+      </div>
+    </div>
+
+    <div class="hr-panel p-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Recent Project Activities</h5>
+        <a href="{% url 'hr:project_reports' %}" class="fw-semibold">View Reports <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+      {% for activity in activities %}
+      <div class="d-flex align-items-center gap-3 border-bottom py-2">
+        <span class="hr-kpi-icon tone-violet" style="width: 40px; height: 40px;"><i class="bi bi-lightning-charge"></i></span>
+        <div class="flex-grow-1">
+          <div class="fw-semibold">{{ activity.title }}</div>
+          <div class="small hr-muted">{{ activity.description|default:"Project activity" }}</div>
+        </div>
+        <div class="small hr-muted">{{ activity.created_at|date:"d M Y h:i A" }}</div>
+      </div>
+      {% empty %}
+      <p class="hr-muted text-center py-4 mb-0">No project activity yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-xxl-4">
+    <div class="hr-panel p-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Top Project Companies</h5>
+        <a class="btn btn-soft btn-sm" href="{% url 'hr:project_company_list' %}">View</a>
+      </div>
+      {% for company in top_companies %}
+      <div class="d-flex align-items-center gap-3 border-bottom py-3">
+        <span class="badge rounded-pill text-bg-light">{{ forloop.counter }}</span>
+        {% if company.logo %}<img class="candidate-avatar" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<span class="candidate-avatar d-inline-grid align-items-center text-center"><i class="bi bi-building"></i></span>{% endif %}
+        <div class="flex-grow-1 fw-semibold">{{ company }}</div>
+        <span class="small hr-muted">{{ company.allocated_count }} allocated</span>
+      </div>
+      {% empty %}
+      <p class="hr-muted text-center py-4">No companies yet.</p>
+      {% endfor %}
+    </div>
+
+    <div class="hr-panel p-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Upcoming Interviews</h5>
+        <a href="{% url 'hr:project_interview_list' %}" class="fw-semibold">View All</a>
+      </div>
+      {% for interview in upcoming_interviews %}
+      <div class="border rounded p-3 mb-2">
+        <div class="fw-semibold">{{ interview.company|default:"Company" }} - {{ interview.interview_round|default:"Interview" }}</div>
+        <div class="small hr-muted">{{ interview.date|date:"d M Y"|default:"--" }} {{ interview.time|time:"h:i A"|default:"" }}</div>
+      </div>
+      {% empty %}
+      <p class="hr-muted mb-0">No interviews scheduled.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{% if mode == 'edit' %}Edit Employee{% else %}Add Employee{% endif %} | HR Portal{% endblock %}
+
+{% block content %}
+<style>
+  .errorlist {
+    color: var(--bs-danger);
+    list-style-type: none;
+    padding-left: 0;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+</style>
+<div class="external-title-row">
+  <div>
+    <div class="small hr-muted mb-2">External <i class="bi bi-chevron-right mx-1"></i>{{ external_branch.name }} <i class="bi bi-chevron-right mx-1"></i> Employees</div>
+    <h1 class="fw-bold mb-1">{% if mode == 'edit' %}Edit Employee{% else %}Add Employee{% endif %}</h1>
+    <p class="hr-muted mb-0">Maintain employee personal, employment, and document information.</p>
+  </div>
+  <a class="btn btn-soft" href="{% url 'hr:external_employees' external_branch_slug %}"><i class="bi bi-arrow-left me-1"></i>Back to Directory</a>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="hr-panel p-3">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <div class="border-bottom pb-3 mb-3">
+    <h5 class="fw-bold mb-1">Personal Details</h5>
+    <div class="small hr-muted">Core identity and contact details.</div>
+  </div>
+  <div class="external-form-grid mb-4">
+    <div><label class="form-label fw-semibold">Full Name</label>{{ form.full_name }}{{ form.full_name.errors }}</div>
+    <div><label class="form-label fw-semibold">Mobile Number</label>{{ form.mobile }}{{ form.mobile.errors }}</div>
+    <div><label class="form-label fw-semibold">Email</label>{{ form.email }}{{ form.email.errors }}</div>
+    <div><label class="form-label fw-semibold">Date of Birth</label>{{ form.dob }}{{ form.dob.errors }}</div>
+    <div><label class="form-label fw-semibold">Gender</label>{{ form.gender }}{{ form.gender.errors }}</div>
+    <div><label class="form-label fw-semibold">Address</label>{{ form.address }}{{ form.address.errors }}</div>
+    <div><label class="form-label fw-semibold">Emergency Contact</label>{{ form.emergency_contact }}{{ form.emergency_contact.errors }}</div>
+  </div>
+
+  <div class="border-bottom pb-3 mb-3">
+    <h5 class="fw-bold mb-1">Employment Details</h5>
+    <div class="small hr-muted">Branch, role, manager, and employment status.</div>
+  </div>
+  <div class="external-form-grid mb-4">
+    <div><label class="form-label fw-semibold">Employee ID</label>{{ form.employee_id }}{{ form.employee_id.errors }}</div>
+    <div><label class="form-label fw-semibold">Login User</label>{{ form.user }}{{ form.user.errors }}</div>
+    <div><label class="form-label fw-semibold">Branch</label>{{ form.branch }}{{ form.branch.errors }}</div>
+    <div><label class="form-label fw-semibold">Department</label>{{ form.department }}{{ form.department.errors }}</div>
+    <div><label class="form-label fw-semibold">Designation</label>{{ form.designation }}{{ form.designation.errors }}</div>
+    <div><label class="form-label fw-semibold">Joining Date</label>{{ form.joining_date }}{{ form.joining_date.errors }}</div>
+    <div><label class="form-label fw-semibold">Employment Type</label>{{ form.employment_type }}{{ form.employment_type.errors }}</div>
+    <div><label class="form-label fw-semibold">Reporting Manager</label>{{ form.reporting_manager }}{{ form.reporting_manager.errors }}</div>
+    <div><label class="form-label fw-semibold">Status</label>{{ form.status }}{{ form.status.errors }}</div>
+  </div>
+
+  <div class="border-bottom pb-3 mb-3">
+    <h5 class="fw-bold mb-1">Documents</h5>
+    <div class="small hr-muted">Upload verification and profile documents.</div>
+  </div>
+  <div class="external-form-grid mb-4">
+    <div><label class="form-label fw-semibold">Aadhaar</label>{{ form.aadhaar }}{{ form.aadhaar.errors }}</div>
+    <div><label class="form-label fw-semibold">PAN</label>{{ form.pan }}{{ form.pan.errors }}</div>
+    <div><label class="form-label fw-semibold">Resume</label>{{ form.resume }}{{ form.resume.errors }}</div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 border-top pt-3">
+    <a class="btn btn-soft" href="{% url 'hr:external_employees' external_branch_slug %}">Cancel</a>
+    <button class="btn btn-hr-primary" type="submit"><i class="bi bi-check2 me-1"></i>Save Employee</button>
+  </div>
+</form>
+{% endblock %}

@@ -62,10 +62,7 @@
         <tr>
           <th>Candidate</th>
           <th>Applied For</th>
-          <th>Assigned HR</th>
           <th>Status</th>
-          <th>Last Activity</th>
-          <th>Next Follow-up</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -86,34 +83,17 @@
             </div>
           </td>
           <td>{{ candidate.applying_position }}</td>
-          <td>{{ candidate.assigned_hr.username|default:"Unassigned" }}</td>
           <td><span class="status-badge status-{{ candidate.status }}">{{ candidate.get_status_display }}</span></td>
-          <td>
-            {% with activity=candidate.latest_activity %}
-            <div>{{ activity.title|default:"No activity" }}</div>
-            <div class="small hr-muted">{{ activity.created_at|date:"d M Y"|default:"--" }}</div>
-            {% endwith %}
-          </td>
-          <td>
-            {% with next=candidate.next_follow_up %}
-            {% if next %}
-            <span class="fw-semibold text-warning">{{ next.follow_up_date|date:"d M Y" }}</span>
-            <div class="small text-warning">{{ next.follow_up_time|time:"h:i A" }}</div>
-            {% else %}
-            <span class="hr-muted">--</span>
-            {% endif %}
-            {% endwith %}
-          </td>
           <td>
             <a class="action-btn" href="{% url 'hr:candidate_detail' candidate.id %}" title="View"><i class="bi bi-eye"></i></a>
             <a class="action-btn" href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn text-danger" href="{% url 'hr:candidate_delete' candidate.id  %}"><i class="bi bi-trash"></i></a>
             <a class="action-btn" href="{% url 'hr:mark_call' candidate.id %}" title="Call"><i class="bi bi-telephone"></i></a>
-            <a class="action-btn" href="{% url 'hr:candidate_interview_create' candidate.id %}" title="Schedule Interview"><i class="bi bi-calendar-plus"></i></a>
           </td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7" class="text-center py-5">
+          <td colspan="4" class="text-center py-5">
             <i class="bi bi-inbox fs-1 text-primary"></i>
             <h5 class="fw-bold mt-3">No candidates found</h5>
             <a class="btn btn-hr-primary btn-sm mt-2" href="{% url 'hr:candidate_create' %}">Add Candidate</a>

@@ -50,7 +50,8 @@
           <td>{{ followup.get_follow_up_type_display }}</td>
           <td>{{ followup.get_outcome_display|default:"--" }}{% if followup.completed %}<span class="badge text-bg-success ms-1">Done</span>{% endif %}</td>
           <td>{{ followup.remarks|truncatechars:80|default:"--" }}</td>
-          <td><a class="action-btn" href="{% url 'hr:followup_edit' followup.id %}"><i class="bi bi-pencil"></i></a></td>
+          <td><a class="action-btn" href="{% url 'hr:followup_edit' followup.id %}"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn text-danger" href="{% url 'hr:followup_delete' followup.id  %}"><i class="bi bi-trash"></i></a></td>
         </tr>
         {% empty %}
         <tr><td colspan="6" class="text-center py-5 hr-muted">No follow-ups in this bucket.</td></tr>

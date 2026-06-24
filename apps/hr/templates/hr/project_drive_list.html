@@ -1,22 +1,22 @@
 {% extends 'hr/base.html' %}
 
-{% block title %}Placement Drives | HR Portal{% endblock %}
+{% block title %}Project Drives | HR Portal{% endblock %}
 
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Drives</div>
-    <h1 class="fw-bold mb-1">Placement Drive Management</h1>
-    <p class="hr-muted mb-0">Schedule, track and publish placement drive outcomes.</p>
+    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Drives</div>
+    <h1 class="fw-bold mb-1">Project Drive Management</h1>
+    <p class="hr-muted mb-0">Schedule and track project requirements company-wise.</p>
   </div>
-  <a class="btn btn-hr-primary" href="{% url 'hr:placement_drive_create' %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Drive</a>
+  <a class="btn btn-hr-primary" href="{% url 'hr:project_drive_create' %}"><i class="bi bi-calendar-plus me-1"></i>Add Project Drive</a>
 </div>
 
 <div class="hr-panel p-3 mb-4">
   <form class="row g-3 align-items-end" method="get">
     <div class="col-md-7">
       <label class="form-label small fw-semibold">Search</label>
-      <input class="form-control" name="q" value="{{ query }}" placeholder="Company, role, venue">
+      <input class="form-control" name="q" value="{{ query }}" placeholder="Company, project, role, venue">
     </div>
     <div class="col-md-3">
       <label class="form-label small fw-semibold">Status</label>
@@ -36,25 +36,26 @@
 <div class="hr-panel p-3">
   <div class="table-responsive">
     <table class="table hr-table">
-      <thead><tr><th>Company</th><th>Drive Date</th><th>Role</th><th>Sent</th><th>Appeared</th><th>Selected</th><th>Status</th><th>Action</th></tr></thead>
+      <thead><tr><th>Company</th><th>Drive Date</th><th>Project</th><th>Role</th><th>Sent</th><th>Appeared</th><th>Selected</th><th>Status</th><th>Action</th></tr></thead>
       <tbody>
         {% for drive in page_obj %}
         <tr>
           <td>{{ drive.company|default:"--" }}</td>
           <td>{{ drive.drive_date|date:"d M Y"|default:"--" }}</td>
-          <td>{{ drive.job_role|default:"--" }}</td>
+          <td>{{ drive.project_name|default:"--" }}</td>
+          <td>{{ drive.role_required|default:"--" }}</td>
           <td>{{ drive.assignments_count }}</td>
           <td>{{ drive.appeared_count }}</td>
           <td>{{ drive.selected_count }}</td>
           <td><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></td>
           <td>
-            <a class="action-btn" href="{% url 'hr:placement_drive_detail' drive.id %}"><i class="bi bi-eye"></i></a>
-            <a class="action-btn" href="{% url 'hr:placement_drive_edit' drive.id %}"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:placement_drive_delete' drive.id  %}"><i class="bi bi-trash"></i></a>
+            <a class="action-btn" href="{% url 'hr:project_drive_detail' drive.id %}"><i class="bi bi-eye"></i></a>
+            <a class="action-btn" href="{% url 'hr:project_drive_edit' drive.id %}"><i class="bi bi-pencil"></i></a>
+            <a class="action-btn text-danger" href="{% url 'hr:project_drive_delete' drive.id  %}"><i class="bi bi-trash"></i></a>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="8" class="text-center py-5 hr-muted">No placement drives found.</td></tr>
+        <tr><td colspan="9" class="text-center py-5 hr-muted">No project drives found.</td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -1,11 +1,14 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.db import IntegrityError
 
 from apps.accounts.models import User
 from apps.students.models import StudentProfile
 from .models import (
     Candidate,
     CandidateNote,
+    ExternalAttendanceLog,
+    ExternalEmployee,
     FollowUp,
     Interview,
     PlacementCompany,
@@ -13,6 +16,11 @@ from .models import (
     PlacementInterview,
     PlacementOffer,
     PlacementStudentAssignment,
+    ProjectAllocation,
+    ProjectCompany,
+    ProjectDrive,
+    ProjectEmployeeAssignment,
+    ProjectInterview,
 )
 
 
@@ -27,11 +35,32 @@ class HRSignupForm(UserCreationForm):
             'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
         }
 
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError('An account with this username already exists.')
+        return username
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if email and User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.role = 'hr'
         if commit:
-            user.save()
+            try:
+                user.save()
+            except IntegrityError as exc:
+                if 'username' in str(exc).lower():
+                    self.add_error('username', 'An account with this username already exists.')
+                elif 'email' in str(exc).lower():
+                    self.add_error('email', 'An account with this email already exists.')
+                else:
+                    self.add_error(None, 'Unable to create this HR account. Please check the details and try again.')
+                raise forms.ValidationError(self.errors)
         return user
 
 
@@ -225,6 +254,81 @@ class CandidateNoteForm(HRModelFormMixin, forms.ModelForm):
         self.apply_control_styles()
 
 
+class ExternalEmployeeForm(HRModelFormMixin, forms.ModelForm):
+    personal_fields = ['full_name', 'mobile', 'email', 'dob', 'gender', 'address', 'emergency_contact']
+    employment_fields = ['employee_id', 'user', 'branch', 'department', 'designation', 'joining_date', 'employment_type', 'reporting_manager', 'status']
+    document_fields = ['aadhaar', 'pan', 'resume']
+
+    class Meta:
+        model = ExternalEmployee
+        fields = [
+            'full_name',
+            'dob',
+            'gender',
+            'email',
+            'mobile',
+            'address',
+            'emergency_contact',
+            'employee_id',
+            'user',
+            'branch',
+            'department',
+            'designation',
+            'joining_date',
+            'employment_type',
+            'reporting_manager',
+            'status',
+            'aadhaar',
+            'pan',
+            'resume',
+        ]
+        widgets = {
+            'dob': forms.DateInput(attrs={'type': 'date'}),
+            'joining_date': forms.DateInput(attrs={'type': 'date'}),
+            'address': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        branch = kwargs.pop('branch', None)
+        current_user = kwargs.pop('current_user', None)
+        allow_all_users = kwargs.pop('allow_all_users', False)
+        super().__init__(*args, **kwargs)
+        if branch:
+            self.fields['branch'].initial = branch
+        self.fields['user'].queryset = User.objects.filter(is_active=True).order_by('username')
+        if current_user and not allow_all_users:
+            self.fields['user'].queryset = User.objects.filter(pk=current_user.pk)
+            self.fields['user'].initial = current_user
+            self.fields['user'].disabled = True
+        self.fields['user'].required = False
+        self.fields['user'].label = 'Login User'
+        self.apply_control_styles()
+
+
+class ExternalAttendanceForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = ExternalAttendanceLog
+        fields = ['employee', 'date', 'check_in', 'check_out', 'working_hours', 'status', 'location_ip', 'last_activity', 'notes']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'check_in': forms.TimeInput(attrs={'type': 'time'}),
+            'check_out': forms.TimeInput(attrs={'type': 'time'}),
+            'last_activity': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        branch = kwargs.pop('branch', None)
+        employee_queryset = kwargs.pop('employee_queryset', None)
+        super().__init__(*args, **kwargs)
+        self.fields['employee'].queryset = ExternalEmployee.objects.order_by('full_name')
+        if branch:
+            self.fields['employee'].queryset = self.fields['employee'].queryset.filter(branch=branch)
+        if employee_queryset is not None:
+            self.fields['employee'].queryset = employee_queryset
+        self.apply_control_styles()
+
+
 class PlacementCompanyForm(HRModelFormMixin, forms.ModelForm):
     class Meta:
         model = PlacementCompany
@@ -245,6 +349,8 @@ class PlacementCompanyForm(HRModelFormMixin, forms.ModelForm):
         widgets = {
             'address': forms.Textarea(attrs={'rows': 3}),
             'notes': forms.Textarea(attrs={'rows': 3}),
+            'package_offered': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
+            'project_value': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -271,6 +377,56 @@ class PlacementDriveForm(HRModelFormMixin, forms.ModelForm):
         if company:
             self.fields['company'].initial = company
             self.fields['company'].disabled = True
+
+
+class PlacementCompanyForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = PlacementCompany
+        fields = [
+            'name',
+            'industry',
+            'contact_person',
+            'designation',
+            'mobile',
+            'email',
+            'website',
+            'address',
+            'city',
+            'package_offered',
+            'logo',
+            'notes',
+        ]
+        widgets = {
+            'address': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+            'package_offered': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = False
+        self.apply_control_styles()
+
+
+class PlacementDriveForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = PlacementDrive
+        fields = ['company', 'job_role', 'drive_date', 'package', 'eligibility_criteria', 'venue', 'remarks', 'status']
+        widgets = {
+            'drive_date': forms.DateInput(attrs={'type': 'date'}),
+            'package': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA, Negotiable'}),
+            'eligibility_criteria': forms.Textarea(attrs={'rows': 3}),
+            'remarks': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+        self.fields['company'].queryset = PlacementCompany.objects.order_by('name', '-updated_at')
+        if company:
+            self.fields['company'].initial = company
+            self.fields['company'].disabled = True
         for field in self.fields.values():
             field.required = False
         self.apply_control_styles()
@@ -282,7 +438,6 @@ class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):
         fields = [
             'company',
             'drive',
-            'student',
             'student_name',
             'course_name',
             'percentage_or_cgpa',
@@ -300,7 +455,8 @@ class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['company'].queryset = PlacementCompany.objects.order_by('name', '-updated_at')
         self.fields['drive'].queryset = PlacementDrive.objects.select_related('company').order_by('-drive_date', '-updated_at')
-        self.fields['student'].queryset = StudentProfile.objects.select_related('batch', 'batch__course').order_by('full_name')
+        self.fields['student_name'].label = 'Employee Name'
+        self.fields['course_name'].label = 'Designation'
         if drive:
             self.fields['drive'].initial = drive
             self.fields['company'].initial = drive.company
@@ -310,6 +466,7 @@ class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):
         for field in self.fields.values():
             field.required = False
         self.apply_control_styles()
+
 
 
 class PlacementInterviewForm(HRModelFormMixin, forms.ModelForm):
@@ -349,6 +506,7 @@ class PlacementOfferForm(HRModelFormMixin, forms.ModelForm):
         widgets = {
             'joining_date': forms.DateInput(attrs={'type': 'date'}),
             'remarks': forms.Textarea(attrs={'rows': 3}),
+            'offered_package': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -362,3 +520,151 @@ class PlacementOfferForm(HRModelFormMixin, forms.ModelForm):
         for field in self.fields.values():
             field.required = False
         self.apply_control_styles()
+
+
+class ProjectCompanyForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = ProjectCompany
+        fields = [
+            'name',
+            'industry',
+            'contact_person',
+            'designation',
+            'mobile',
+            'email',
+            'website',
+            'address',
+            'city',
+            'project_value',
+            'logo',
+            'notes',
+        ]
+        widgets = {
+            'address': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 3}),
+            'package_offered': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
+            'project_value': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.required = False
+        self.apply_control_styles()
+
+
+class ProjectDriveForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = ProjectDrive
+        fields = ['company', 'project_name', 'role_required', 'drive_date', 'project_value', 'eligibility_criteria', 'venue', 'remarks', 'status']
+        widgets = {
+            'drive_date': forms.DateInput(attrs={'type': 'date'}),
+            'eligibility_criteria': forms.Textarea(attrs={'rows': 3}),
+            'remarks': forms.Textarea(attrs={'rows': 3}),
+            'project_value': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+        self.fields['company'].queryset = ProjectCompany.objects.order_by('name', '-updated_at')
+        if company:
+            self.fields['company'].initial = company
+            self.fields['company'].disabled = True
+        for field in self.fields.values():
+            field.required = False
+        self.apply_control_styles()
+
+
+class ProjectAssignmentForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = ProjectEmployeeAssignment
+        fields = [
+            'company',
+            'drive',
+            'employee',
+            'employee_name',
+            'employee_code',
+            'department',
+            'designation',
+            'skills',
+            'interview_status',
+            'final_status',
+        ]
+        widgets = {
+            'skills': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        drive = kwargs.pop('drive', None)
+        company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+        self.fields['company'].queryset = ProjectCompany.objects.order_by('name', '-updated_at')
+        self.fields['drive'].queryset = ProjectDrive.objects.select_related('company').order_by('-drive_date', '-updated_at')
+        self.fields['employee'].queryset = ExternalEmployee.objects.order_by('branch', 'full_name')
+        if drive:
+            self.fields['drive'].initial = drive
+            self.fields['company'].initial = drive.company
+        elif company:
+            self.fields['company'].initial = company
+            self.fields['drive'].queryset = ProjectDrive.objects.filter(company=company).order_by('-drive_date', '-updated_at')
+        for field in self.fields.values():
+            field.required = False
+        self.apply_control_styles()
+
+
+class ProjectInterviewForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = ProjectInterview
+        fields = ['company', 'drive', 'assignment', 'interview_round', 'date', 'time', 'venue', 'interviewer', 'remarks', 'status']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'time': forms.TimeInput(attrs={'type': 'time'}),
+            'remarks': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        assignment = kwargs.pop('assignment', None)
+        drive = kwargs.pop('drive', None)
+        super().__init__(*args, **kwargs)
+        self.fields['company'].queryset = ProjectCompany.objects.order_by('name', '-updated_at')
+        self.fields['drive'].queryset = ProjectDrive.objects.select_related('company').order_by('-drive_date', '-updated_at')
+        self.fields['assignment'].queryset = ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive').order_by('-assigned_at')
+        if assignment:
+            self.fields['assignment'].initial = assignment
+            self.fields['company'].initial = assignment.company
+            self.fields['drive'].initial = assignment.drive
+        elif drive:
+            self.fields['drive'].initial = drive
+            self.fields['company'].initial = drive.company
+            self.fields['assignment'].queryset = ProjectEmployeeAssignment.objects.filter(drive=drive).order_by('-assigned_at')
+        for field in self.fields.values():
+            field.required = False
+        self.apply_control_styles()
+
+
+class ProjectAllocationForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = ProjectAllocation
+        fields = ['assignment', 'company', 'billing_rate', 'allocation_status', 'allocation_date', 'release_date', 'remarks']
+        widgets = {
+            'allocation_date': forms.DateInput(attrs={'type': 'date'}),
+            'release_date': forms.DateInput(attrs={'type': 'date'}),
+            'remarks': forms.Textarea(attrs={'rows': 3}),
+            'billing_rate': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        assignment = kwargs.pop('assignment', None)
+        super().__init__(*args, **kwargs)
+        self.fields['assignment'].queryset = ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive').order_by('-assigned_at')
+        self.fields['company'].queryset = ProjectCompany.objects.order_by('name', '-updated_at')
+        if assignment:
+            self.fields['assignment'].initial = assignment
+            self.fields['company'].initial = assignment.company
+        self.fields['billing_rate'].label = 'Package'
+        for field in self.fields.values():
+            field.required = False
+        self.apply_control_styles()
+
+

@@ -1,0 +1,50 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ assignment.display_name }} | HR Portal{% endblock %}
+
+{% block content %}
+<div class="hr-page-title">
+  <div>
+    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Employee Details</div>
+    <h1 class="fw-bold mb-1">{{ assignment.display_name }}</h1>
+    <p class="hr-muted mb-0">{{ assignment.company|default:"Company not set" }}{% if assignment.drive %} - {{ assignment.drive.project_name|default:"Project Drive" }}{% endif %}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-soft" href="{% url 'hr:project_employee_list' %}"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    <a class="btn btn-hr-primary" href="{% url 'hr:project_assignment_edit' assignment.id %}"><i class="bi bi-pencil me-1"></i>Edit</a>
+    <a class="btn btn-hr-primary bg-danger border-danger" href="{% url 'hr:project_assignment_delete' assignment.id  %}"><i class="bi bi-trash me-1"></i>Delete</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="hr-panel p-4">
+      <h5 class="fw-bold mb-3">Employee Information</h5>
+      <dl class="row mb-0">
+        <dt class="col-md-3 hr-muted">Employee Name</dt><dd class="col-md-9">{{ assignment.display_name }}</dd>
+        <dt class="col-md-3 hr-muted">Employee ID</dt><dd class="col-md-9">{% if assignment.employee %}{{ assignment.employee.employee_id }}{% else %}{{ assignment.employee_code|default:"--" }}{% endif %}</dd>
+        <dt class="col-md-3 hr-muted">Company</dt><dd class="col-md-9">{{ assignment.company|default:"--" }}</dd>
+        <dt class="col-md-3 hr-muted">Project Drive</dt><dd class="col-md-9">{{ assignment.drive.project_name|default:"--" }}</dd>
+        <dt class="col-md-3 hr-muted">Department</dt><dd class="col-md-9">{% if assignment.employee %}{{ assignment.employee.department|default:"--" }}{% else %}{{ assignment.department|default:"--" }}{% endif %}</dd>
+        <dt class="col-md-3 hr-muted">Designation</dt><dd class="col-md-9">{{ assignment.display_designation|default:"--" }}</dd>
+        <dt class="col-md-3 hr-muted">Skills</dt><dd class="col-md-9">{{ assignment.skills|linebreaksbr|default:"--" }}</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="hr-panel p-4 mb-4">
+      <h5 class="fw-bold mb-3">Status</h5>
+      <div class="d-flex justify-content-between border-bottom py-2"><span class="hr-muted">Interview</span><span class="status-badge status-{{ assignment.interview_status }}">{{ assignment.get_interview_status_display }}</span></div>
+      <div class="d-flex justify-content-between py-2"><span class="hr-muted">Final</span><span class="status-badge status-{{ assignment.final_status }}">{{ assignment.get_final_status_display }}</span></div>
+    </div>
+    <div class="hr-panel p-4">
+      <h5 class="fw-bold mb-3">Schedule / Allocation</h5>
+      <dl class="row small mb-0">
+        <dt class="col-5 hr-muted">Schedule Date</dt><dd class="col-7">{{ interview.date|date:"d M Y"|default:"--" }}</dd>
+        <dt class="col-5 hr-muted">Schedule Time</dt><dd class="col-7">{{ interview.time|time:"h:i A"|default:"--" }}</dd>
+        <dt class="col-5 hr-muted">Allocation</dt><dd class="col-7">{% if allocation %}{{ allocation.get_allocation_status_display }}{% else %}--{% endif %}</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+{% endblock %}

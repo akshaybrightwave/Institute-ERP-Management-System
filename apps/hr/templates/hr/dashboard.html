@@ -3,211 +3,568 @@
 {% block title %}Recruitment Dashboard | HR Portal{% endblock %}
 
 {% block content %}
-<div class="hr-page-title">
-  <div>
-    <div class="small hr-muted mb-2">Internal <i class="bi bi-chevron-right mx-1"></i> Recruitment <i class="bi bi-chevron-right mx-1"></i> Dashboard</div>
-    <h1 class="fw-bold mb-1">Recruitment Dashboard</h1>
-    <p class="hr-muted mb-0">Track recruitment activities and candidate status.</p>
-  </div>
-  <div class="d-flex gap-2">
-    <a class="btn btn-soft" href="{% url 'hr:reports' %}"><i class="bi bi-calendar3 me-1"></i>This Month</a>
-    <a class="btn btn-hr-primary" href="{% url 'hr:candidate_create' %}"><i class="bi bi-plus-lg me-1"></i>Add Candidate</a>
-  </div>
-</div>
+<!-- Scoped Styles for Recruitment Dashboard to match exact UI design -->
+<style>
+/* Dashboard Base Colors & Spacing to match UI Image */
+.dashboard-page {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1e293b;
+  padding: 1.5rem;
+}
 
-<div class="row g-3 mb-4">
-  {% for metric in metrics %}
-  <div class="col-sm-6 col-xl-3">
-    <div class="hr-kpi">
-      <div class="hr-kpi-top">
-        <div class="hr-kpi-icon tone-{{ metric.color }}"><i class="bi {{ metric.icon }}"></i></div>
-        <div>
-          <div class="small hr-muted">{{ metric.label }}</div>
-          <div class="hr-stat-number">{{ metric.value }}</div>
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+.page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+.page-header p {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
+}
+.header-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #334155;
+  text-decoration: none;
+}
+
+/* KPI Cards */
+.kpi-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.kpi-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.kpi-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+.kpi-text .kpi-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+.kpi-text .kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+}
+.kpi-trend {
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.kpi-trend.up { color: #10b981; }
+.kpi-trend.neutral { color: #64748b; }
+
+/* KPI Icon Tones */
+.tone-indigo { background: #e0e7ff; color: #4f46e5; }
+.tone-emerald { background: #d1fae5; color: #10b981; }
+.tone-blue { background: #dbeafe; color: #3b82f6; }
+.tone-orange { background: #ffedd5; color: #f97316; }
+.tone-red { background: #fee2e2; color: #ef4444; }
+.tone-teal { background: #ccfbf1; color: #14b8a6; }
+.tone-amber { background: #fef3c7; color: #f59e0b; }
+.tone-violet { background: #ede9fe; color: #8b5cf6; }
+
+/* Panels */
+.dashboard-panel {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  height: 100%;
+}
+.panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.panel-title a {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+/* Recent Candidates Table */
+.recent-candidates-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.recent-candidates-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+}
+.recent-candidates-table td {
+  padding: 1rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+.recent-candidates-table tr:last-child td {
+  border-bottom: none;
+}
+.candidate-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #e0e7ff;
+  font-size: 0.875rem;
+  object-fit: cover;
+}
+.candidate-name {
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.125rem;
+}
+.candidate-mobile {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Status Badges */
+.status-pill {
+  display: inline-flex;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.status-pill.joined { background: #d1fae5; color: #10b981; }
+.status-pill.interview { background: #dbeafe; color: #3b82f6; }
+.status-pill.applied { background: #ede9fe; color: #8b5cf6; }
+.status-pill.follow-up { background: #ffedd5; color: #f97316; }
+.status-pill.default { background: #f1f5f9; color: #64748b; }
+
+/* Table Actions */
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.table-actions a {
+  color: #94a3b8;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+.table-actions a:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Recruitment Summary Chart & Legend */
+.summary-container {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.chart-wrap {
+  width: 140px;
+  height: 140px;
+  position: relative;
+}
+.chart-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.chart-center-text .val {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+.chart-center-text .lbl {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.custom-legend {
+  flex-grow: 1;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+.legend-item:last-child {
+  margin-bottom: 0;
+}
+.legend-color {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+.legend-label {
+  color: #334155;
+  flex-grow: 1;
+}
+.legend-value {
+  font-weight: 600;
+  color: #0f172a;
+  margin-right: 0.5rem;
+}
+.legend-pct {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+/* Follow Up Cards */
+.follow-up-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 100%;
+}
+.follow-up-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+.follow-up-text .val {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+  margin-bottom: 0.125rem;
+}
+.follow-up-text .lbl {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+</style>
+
+<div class="dashboard-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>Recruitment Dashboard</h1>
+      <p>Track recruitment activities and candidate status</p>
+    </div>
+    <div class="header-actions">
+      <a href="{% url 'hr:reports' %}" class="btn">
+        <i class="bi bi-calendar3"></i> This Month <i class="bi bi-chevron-down" style="font-size:0.75rem;"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Row 1 & 2 -->
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-4 mb-4">
+    {% for metric in metrics %}
+    <div class="col">
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <div class="kpi-icon-wrap tone-{{ metric.color }}">
+            <i class="bi {{ metric.icon }}"></i>
+          </div>
+          <div class="kpi-text">
+            <div class="kpi-label">{{ metric.label }}</div>
+            <div class="kpi-value">{{ metric.value|stringformat:"02d"|default:"0" }}</div>
+          </div>
         </div>
-      </div>
-      <div class="d-flex align-items-end justify-content-between">
-        <span class="small hr-muted">{{ metric.trend }} this month <i class="bi bi-arrow-up-right text-success"></i></span>
-        <div class="mini-bars">
-          {% for bar in metric.spark %}
-          <span style="height: {{ bar }}%;"></span>
-          {% endfor %}
+        <div class="kpi-trend {% if '+' in metric.trend %}up{% else %}neutral{% endif %}">
+          <i class="bi bi-arrow-up"></i> {{ metric.trend|default:"0%" }} this month
         </div>
       </div>
     </div>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
 
-<div class="row g-4">
-  <div class="col-xxl-9">
-    <div class="hr-panel p-3 mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0">Recent Candidates</h5>
-        <div class="d-flex gap-2">
-          <a class="btn btn-soft btn-sm" href="{% url 'hr:candidate_list' %}"><i class="bi bi-funnel me-1"></i>Filter</a>
-          <a class="btn btn-soft btn-sm" href="{% url 'hr:export_candidates' %}"><i class="bi bi-download"></i></a>
+  <!-- Middle Section -->
+  <div class="row g-4 mb-4">
+    <!-- Recent Candidates -->
+    <div class="col-xl-8">
+      <div class="dashboard-panel">
+        <div class="panel-title">
+          <span>Recent Candidates</span>
+          <a href="{% url 'hr:candidate_list' %}">View All</a>
         </div>
-      </div>
-      <div class="table-responsive">
-        <table class="table hr-table">
-          <thead>
-            <tr>
-              <th>Candidate</th>
-              <th>Applied For</th>
-              <th>HR</th>
-              <th>Status</th>
-              <th>Last Activity</th>
-              <th>Next Follow-up</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for candidate in recent_candidates %}
-            <tr>
-              <td>
-                <div class="d-flex align-items-center gap-2">
-                  {% if candidate.photo %}
-                  <img class="candidate-avatar" src="{{ candidate.photo.url }}" alt="{{ candidate.full_name }}">
-                  {% else %}
-                  <span class="candidate-avatar d-inline-grid text-center align-items-center"><i class="bi bi-person"></i></span>
-                  {% endif %}
-                  <div>
-                    <div class="fw-semibold">{{ candidate.full_name }}</div>
-                    <div class="small hr-muted">{{ candidate.mobile }}</div>
+        <div class="table-responsive">
+          <table class="recent-candidates-table">
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Applied For</th>
+                <th>Status</th>
+                <th>Last Activity</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for candidate in recent_candidates %}
+              <tr>
+                <td>
+                  <div class="candidate-info">
+                    {% if candidate.photo %}
+                    <img src="{{ candidate.photo.url }}" class="avatar" alt="Avatar">
+                    {% else %}
+                    <div class="avatar">{{ candidate.full_name|slice:":1"|upper }}</div>
+                    {% endif %}
+                    <div>
+                      <div class="candidate-name">{{ candidate.full_name }}</div>
+                      <div class="candidate-mobile">{{ candidate.mobile }}</div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td>{{ candidate.applying_position }}</td>
-              <td>{{ candidate.assigned_hr.username|default:"Unassigned" }}</td>
-              <td><span class="status-badge status-{{ candidate.status }}">{{ candidate.get_status_display }}</span></td>
-              <td>
-                {% with activity=candidate.latest_activity %}
-                <div>{{ activity.created_at|date:"d M Y"|default:"--" }}</div>
-                <div class="small hr-muted">{{ activity.title|default:"No activity" }}</div>
-                {% endwith %}
-              </td>
-              <td>
-                {% with next=candidate.next_follow_up %}
-                {% if next %}
-                <span class="text-warning fw-semibold">{{ next.follow_up_date|date:"d M Y" }}</span>
-                <div class="small text-warning">{{ next.follow_up_time|time:"h:i A" }}</div>
-                {% else %}
-                <span class="hr-muted">--</span>
-                {% endif %}
-                {% endwith %}
-              </td>
-              <td>
-                <a class="action-btn" href="{% url 'hr:candidate_detail' candidate.id %}" title="View"><i class="bi bi-eye"></i></a>
-                <a class="action-btn" href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
-                <a class="action-btn" href="{% url 'hr:mark_call' candidate.id %}" title="Call"><i class="bi bi-telephone"></i></a>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="7" class="text-center py-5">
-                <div class="fw-semibold">No candidates yet</div>
-                <a href="{% url 'hr:candidate_create' %}" class="btn btn-hr-primary btn-sm mt-3">Add Candidate</a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div class="text-center pt-3">
-        <a href="{% url 'hr:candidate_list' %}" class="fw-semibold">View All Candidates <i class="bi bi-arrow-right ms-1"></i></a>
+                </td>
+                <td style="color:#334155; font-size:0.875rem;">{{ candidate.applying_position|default:"--" }}</td>
+                <td>
+                  {% if candidate.status == 'joined' or candidate.status == 'selected' %}
+                    <span class="status-pill joined">{{ candidate.get_status_display }}</span>
+                  {% elif candidate.status == 'interview_scheduled' or candidate.status == 'interview_completed' %}
+                    <span class="status-pill interview">{{ candidate.get_status_display }}</span>
+                  {% elif candidate.status == 'new' %}
+                    <span class="status-pill applied">Applied</span>
+                  {% elif candidate.status == 'follow_up_pending' or candidate.status == 'called' %}
+                    <span class="status-pill follow-up">{{ candidate.get_status_display }}</span>
+                  {% else %}
+                    <span class="status-pill default">{{ candidate.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% with activity=candidate.latest_activity %}
+                  <div style="color:#0f172a; font-size:0.875rem;">{{ activity.created_at|date:"d M Y"|default:"--" }}</div>
+                  <div style="color:#64748b; font-size:0.75rem;">{{ activity.title|default:"No activity" }}</div>
+                  {% endwith %}
+                </td>
+                <td>
+                  <div class="table-actions">
+                    <a href="{% url 'hr:candidate_detail' candidate.id %}" title="View"><i class="bi bi-eye"></i></a>
+                    <a href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
+                    <a href="{% url 'hr:mark_call' candidate.id %}" title="Call"><i class="bi bi-telephone"></i></a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5" class="text-center py-4" style="color:#64748b;">No recent candidates.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-
-    <div class="row g-4">
-      <div class="col-lg-4">
-        <div class="hr-panel p-3 h-100">
-          <h6 class="fw-bold mb-3">Recruitment Summary</h6>
-          {% for key, count in status_counts.items %}
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <span class="small">{{ key|title }}</span>
-            <div class="w-50">
-              <div class="progress" style="height: 8px;">
-                <div class="progress-bar" style="width: {% widthratio count status_total 100 %}%"></div>
-              </div>
-            </div>
-            <span class="small fw-semibold">{{ count }}</span>
-          </div>
-          {% endfor %}
+    
+    <!-- Recruitment Summary -->
+    <div class="col-xl-4">
+      <div class="dashboard-panel">
+        <div class="panel-title">
+          <span>Recruitment Summary</span>
         </div>
-      </div>
-      <div class="col-lg-4">
-        <div class="hr-panel p-3 h-100">
-          <h6 class="fw-bold mb-3">HR Performance</h6>
-          {% for row in hr_performance %}
-          <div class="mb-3">
-            <div class="d-flex justify-content-between small">
-              <span>{{ row.name }}</span>
-              <span>{{ row.selected }} selected</span>
-            </div>
-            <div class="progress" style="height: 10px;">
-              <div class="progress-bar bg-success" style="width: {% widthratio row.selected 10 100 %}%"></div>
+        <div class="summary-container">
+          <div class="chart-wrap">
+            <canvas id="recruitmentChart"></canvas>
+            <div class="chart-center-text">
+              <div class="val">{{ status_total }}</div>
+              <div class="lbl">Total</div>
             </div>
           </div>
-          {% empty %}
-          <p class="hr-muted small mb-0">No HR performance data.</p>
-          {% endfor %}
-        </div>
-      </div>
-      <div class="col-lg-4">
-        <div class="hr-panel p-3 h-100">
-          <h6 class="fw-bold mb-3">Today's Follow-ups</h6>
-          <div class="display-6 fw-bold">{{ todays_followups }}</div>
-          <p class="hr-muted">Pending follow-ups: {{ pending_followups }}</p>
-          <a class="btn btn-soft btn-sm" href="{% url 'hr:followup_list' %}">View Follow-ups <i class="bi bi-arrow-right ms-1"></i></a>
+          
+          <div class="custom-legend" id="customLegend">
+            <!-- Legend is populated via JS -->
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="col-xxl-3">
-    <div class="hr-panel p-3 h-100">
-      {% if selected_candidate %}
-      <div class="text-center border-bottom pb-3 mb-3">
-        {% if selected_candidate.photo %}
-        <img class="candidate-avatar mb-2" style="width: 74px; height: 74px;" src="{{ selected_candidate.photo.url }}" alt="{{ selected_candidate.full_name }}">
-        {% else %}
-        <div class="candidate-avatar mx-auto mb-2 d-grid align-items-center" style="width: 74px; height: 74px;"><i class="bi bi-person fs-1"></i></div>
-        {% endif %}
-        <h5 class="fw-bold mb-1">{{ selected_candidate.full_name }}</h5>
-        <span class="status-badge status-{{ selected_candidate.status }}">{{ selected_candidate.get_status_display }}</span>
-        <div class="small hr-muted mt-2">{{ selected_candidate.email }}<br>{{ selected_candidate.mobile }}</div>
-        {% if selected_candidate.resume %}
-        <a class="btn btn-hr-primary btn-sm mt-3" href="{{ selected_candidate.resume.url }}"><i class="bi bi-download me-1"></i>View Resume</a>
-        {% endif %}
-      </div>
-      <h6 class="fw-bold">Candidate Information</h6>
-      <dl class="row small mb-3">
-        <dt class="col-5 hr-muted">Applying For</dt><dd class="col-7">{{ selected_candidate.applying_position }}</dd>
-        <dt class="col-5 hr-muted">Qualification</dt><dd class="col-7">{{ selected_candidate.qualification|default:"--" }}</dd>
-        <dt class="col-5 hr-muted">Experience</dt><dd class="col-7">{{ selected_candidate.experience|default:"--" }}</dd>
-        <dt class="col-5 hr-muted">Source</dt><dd class="col-7">{{ selected_candidate.get_source_display|default:"--" }}</dd>
-      </dl>
-      <h6 class="fw-bold">Activity Timeline</h6>
-      <div class="timeline">
-        {% for activity in selected_candidate.activities.all|slice:":7" %}
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="small fw-semibold">{{ activity.title }}</div>
-          <div class="small hr-muted">{{ activity.created_at|date:"d M Y, h:i A" }}</div>
+  <!-- Today's Follow Ups -->
+  <div>
+    <h6 style="font-weight:700; color:#0f172a; margin-bottom:1rem;">Today's Follow-ups</h6>
+    <div class="row g-4" style="max-width: 75%;">
+      <!-- Card 1 -->
+      <div class="col-md-4">
+        <div class="follow-up-card">
+          <div class="follow-up-icon tone-indigo">
+            <i class="bi bi-calendar-check"></i>
+          </div>
+          <div>
+            <div style="font-size:0.875rem; color:#334155; margin-bottom:0.25rem;">Interviews</div>
+            <div class="follow-up-text">
+              <span class="val">{{ today_interviews_count|stringformat:"02d"|default:"00" }}</span>
+              <span class="lbl">Scheduled</span>
+            </div>
+          </div>
         </div>
-        {% empty %}
-        <p class="small hr-muted">No activity yet.</p>
-        {% endfor %}
       </div>
-      {% else %}
-      <div class="text-center py-5">
-        <i class="bi bi-person-plus fs-1 text-primary"></i>
-        <h5 class="fw-bold mt-3">No candidate selected</h5>
-        <a class="btn btn-hr-primary btn-sm mt-2" href="{% url 'hr:candidate_create' %}">Add Candidate</a>
+      <!-- Card 2 -->
+      <div class="col-md-4">
+        <div class="follow-up-card">
+          <div class="follow-up-icon tone-emerald">
+            <i class="bi bi-telephone"></i>
+          </div>
+          <div>
+            <div style="font-size:0.875rem; color:#334155; margin-bottom:0.25rem;">Follow-up Calls</div>
+            <div class="follow-up-text">
+              <span class="val">{{ today_calls_pending|stringformat:"02d"|default:"00" }}</span>
+              <span class="lbl">Pending</span>
+            </div>
+          </div>
+        </div>
       </div>
-      {% endif %}
+      <!-- Card 3 -->
+      <div class="col-md-4">
+        <div class="follow-up-card">
+          <div class="follow-up-icon tone-blue">
+            <i class="bi bi-envelope"></i>
+          </div>
+          <div>
+            <div style="font-size:0.875rem; color:#334155; margin-bottom:0.25rem;">Offer Discussions</div>
+            <div class="follow-up-text">
+              <span class="val">{{ today_offer_discussions|stringformat:"02d"|default:"00" }}</span>
+              <span class="lbl">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+
 </div>
+
+<!-- Chart.js for Donut Chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const ctx = document.getElementById('recruitmentChart').getContext('2d');
+  
+  // Extract data from backend safely without complex template tags in script
+  const dataMap = { 'new': 0, 'interview': 0, 'offered': 0, 'rejected': 0, 'other': 0 };
+  const statusTotal = {{ status_total|default:1 }};
+  
+  {% for key, val in status_counts.items %}
+    {% if key == 'new' or key == 'called' %}
+      dataMap['new'] += {{ val }};
+    {% elif key == 'interview_scheduled' or key == 'interview_completed' %}
+      dataMap['interview'] += {{ val }};
+    {% elif key == 'selected' or key == 'joined' %}
+      dataMap['offered'] += {{ val }};
+    {% elif key == 'rejected' %}
+      dataMap['rejected'] += {{ val }};
+    {% else %}
+      dataMap['other'] += {{ val }};
+    {% endif %}
+  {% endfor %}
+  
+  // Custom legend generation
+  const legendData = [
+    { label: 'New', value: dataMap.new, color: '#8b5cf6' },
+    { label: 'Interview', value: dataMap.interview, color: '#3b82f6' },
+    { label: 'Offered', value: dataMap.offered, color: '#10b981' },
+    { label: 'Rejected', value: dataMap.rejected, color: '#ef4444' },
+    { label: 'Other', value: dataMap.other, color: '#f59e0b' }
+  ];
+  
+  let legendHtml = '';
+  legendData.forEach(item => {
+    if(item.value > 0) {
+      let pct = Math.round((item.value / statusTotal) * 100);
+      let valStr = item.value < 10 ? '0'+item.value : item.value;
+      legendHtml += `
+        <div class="legend-item">
+          <div class="legend-color" style="background:${item.color};"></div>
+          <div class="legend-label">${item.label}</div>
+          <div class="legend-value">${valStr}</div>
+          <div class="legend-pct">(${pct}%)</div>
+        </div>
+      `;
+    }
+  });
+  document.getElementById('customLegend').innerHTML = legendHtml;
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['New', 'Interview', 'Offered', 'Rejected', 'Other'],
+      datasets: [{
+        data: [dataMap.new, dataMap.interview, dataMap.offered, dataMap.rejected, dataMap.other],
+        backgroundColor: [
+          '#8b5cf6', // violet (new)
+          '#3b82f6', // blue (interview)
+          '#10b981', // green (offered)
+          '#ef4444', // red (rejected)
+          '#f59e0b'  // yellow (other)
+        ],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '75%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      }
+    }
+  });
+});
+</script>
 {% endblock %}
