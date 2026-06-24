@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Company Profile</div>
+    <div class="small text-secondary mb-1 mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Company Profile</div>
     <h1 class="fw-bold mb-1">{{ company }}</h1>
     <p class="hr-muted mb-0">{{ company.industry|default:"Industry not set" }}</p>
   </div>
@@ -19,35 +19,81 @@
 
 <div class="row g-4">
   <div class="col-xl-4">
-    <div class="hr-panel p-4">
-      <div class="text-center border-bottom pb-3 mb-3">
-        {% if company.logo %}<img class="candidate-avatar mb-3" style="width: 84px; height:84px;" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<div class="candidate-avatar mx-auto mb-3 d-grid align-items-center" style="width: 84px; height:84px;"><i class="bi bi-building fs-1"></i></div>{% endif %}
-        <h4 class="fw-bold mb-1">{{ company }}</h4>
+    <div class="hr-panel p-3" style="border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+      <div class="text-center border-bottom pb-3 mb-3" style="border-color: rgba(255,255,255,0.08) !important;">
+        {% if company.logo %}<img class="candidate-avatar mb-3" style="width: 84px; height:84px; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 0 15px rgba(255,255,255,0.1);" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<div class="candidate-avatar mx-auto mb-3 d-grid align-items-center" style="width: 84px; height:84px; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 0 15px rgba(255,255,255,0.1); background: #1a1a1a;"><i class="bi bi-building fs-1"></i></div>{% endif %}
+        <h4 class="fw-bold mb-1 text-white" style="text-shadow: 0 0 12px rgba(255,255,255,0.3);">{{ company }}</h4>
         <div class="hr-muted">{{ company.city|default:"City not set" }}</div>
       </div>
-      <dl class="row small mb-0">
-        <dt class="col-5 hr-muted">Contact</dt><dd class="col-7">{{ company.contact_person|default:"--" }}</dd>
-        <dt class="col-5 hr-muted">Designation</dt><dd class="col-7">{{ company.designation|default:"--" }}</dd>
-        <dt class="col-5 hr-muted">Mobile</dt><dd class="col-7">{{ company.mobile|default:"--" }}</dd>
-        <dt class="col-5 hr-muted">Email</dt><dd class="col-7">{{ company.email|default:"--" }}</dd>
-        <dt class="col-5 hr-muted">Website</dt><dd class="col-7">{% if company.website %}<a href="{{ company.website }}" target="_blank">Open</a>{% else %}--{% endif %}</dd>
-        <dt class="col-5 hr-muted">Package</dt><dd class="col-7">{{ company.package_offered|default:"--" }}</dd>
-        <dt class="col-5 hr-muted">Address</dt><dd class="col-7">{{ company.address|default:"--" }}</dd>
-      </dl>
+      <div class="d-flex flex-column gap-2">
+        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+          <span class="small hr-muted fw-semibold">Contact</span>
+          <span class="small text-white fw-bold">{{ company.contact_person|default:"--" }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+          <span class="small hr-muted fw-semibold">Designation</span>
+          <span class="small text-white fw-bold">{{ company.designation|default:"--" }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+          <span class="small hr-muted fw-semibold">Mobile</span>
+          <span class="small text-white fw-bold">{{ company.mobile|default:"--" }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+          <span class="small hr-muted fw-semibold">Email</span>
+          <span class="small text-white fw-bold">{{ company.email|default:"--" }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+          <span class="small hr-muted fw-semibold">Website</span>
+          <span class="small fw-bold">{% if company.website %}<a href="{{ company.website }}" class="text-info" target="_blank">Open <i class="bi bi-box-arrow-up-right ms-1" style="font-size:10px;"></i></a>{% else %}<span class="text-white">--</span>{% endif %}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+          <span class="small hr-muted fw-semibold">Package</span>
+          <span class="small text-success fw-bold">{{ company.package_offered|default:"--" }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+          <span class="small hr-muted fw-semibold">Address</span>
+          <span class="small text-white fw-bold text-end" style="max-width: 60%;">{{ company.address|default:"--" }}</span>
+        </div>
+      </div>
     </div>
   </div>
   <div class="col-xl-8">
-    <div class="row g-3 mb-4">
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Total Drives</div><div class="hr-stat-number">{{ company.drives.count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Employees Sent</div><div class="hr-stat-number">{{ company.students_sent_count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Selected</div><div class="hr-stat-number">{{ company.selected_count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Rejected</div><div class="hr-stat-number">{{ company.rejected_count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Joined</div><div class="hr-stat-number">{{ company.joined_count }}</div></div></div>
+    <div class="row g-3 mb-3">
+      <div class="col-md">
+        <div class="hr-kpi tone-violet" style="position: relative; overflow: hidden; border-radius: 8px; padding: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(74,20,140,0.5);">
+          <div class="small text-white fw-semibold mb-1" style="opacity: 0.85;">Total Drives</div>
+          <div class="fw-bold text-white" style="font-size: 28px; text-shadow: 0 0 12px rgba(255,255,255,0.4);">{{ company.drives.count }}</div>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="hr-kpi tone-blue" style="position: relative; overflow: hidden; border-radius: 8px; padding: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(21,101,192,0.5);">
+          <div class="small text-white fw-semibold mb-1" style="opacity: 0.85;">Employees Sent</div>
+          <div class="fw-bold text-white" style="font-size: 28px; text-shadow: 0 0 12px rgba(255,255,255,0.4);">{{ company.students_sent_count }}</div>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="hr-kpi tone-teal" style="position: relative; overflow: hidden; border-radius: 8px; padding: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(46,125,50,0.5);">
+          <div class="small text-white fw-semibold mb-1" style="opacity: 0.85;">Selected</div>
+          <div class="fw-bold text-white" style="font-size: 28px; text-shadow: 0 0 12px rgba(255,255,255,0.4);">{{ company.selected_count }}</div>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="hr-kpi tone-red" style="position: relative; overflow: hidden; border-radius: 8px; padding: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(194,24,91,0.5);">
+          <div class="small text-white fw-semibold mb-1" style="opacity: 0.85;">Rejected</div>
+          <div class="fw-bold text-white" style="font-size: 28px; text-shadow: 0 0 12px rgba(255,255,255,0.4);">{{ company.rejected_count }}</div>
+        </div>
+      </div>
+      <div class="col-md">
+        <div class="hr-kpi tone-emerald" style="position: relative; overflow: hidden; border-radius: 8px; padding: 16px; border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 4px 12px rgba(0,131,143,0.5);">
+          <div class="small text-white fw-semibold mb-1" style="opacity: 0.85;">Joined</div>
+          <div class="fw-bold text-white" style="font-size: 28px; text-shadow: 0 0 12px rgba(255,255,255,0.4);">{{ company.joined_count }}</div>
+        </div>
+      </div>
     </div>
     <div class="hr-panel p-3">
       <h5 class="fw-bold mb-3">Employees Sent to this Company</h5>
       <div class="table-responsive">
-        <table class="table hr-table">
+        <table class="table table-hover hr-table">
           <thead><tr><th>Employee</th><th>Designation</th><th>Drive</th><th>Interview Status</th><th>Final Status</th><th>Action</th></tr></thead>
           <tbody>
             {% for item in assignments %}
@@ -58,9 +104,11 @@
               <td><span class="status-badge status-{{ item.interview_status }}">{{ item.get_interview_status_display }}</span></td>
               <td><span class="status-badge status-{{ item.final_status }}">{{ item.get_final_status_display }}</span></td>
               <td>
-                <a class="action-btn" href="{% url 'hr:placement_assignment_detail' item.id %}"><i class="bi bi-eye"></i></a>
-                <a class="action-btn" href="{% url 'hr:placement_assignment_edit' item.id %}"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:placement_assignment_delete' item.id  %}"><i class="bi bi-trash"></i></a>
+                <div class="d-flex align-items-center gap-2">
+                  <a class="text-info" href="{% url 'hr:placement_assignment_detail' item.id %}" title="View" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(13,202,240,0.4);box-shadow:0 0 8px rgba(13,202,240,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(13,202,240,0.1)';this.style.boxShadow='0 0 15px rgba(13,202,240,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(13,202,240,0.2)';"><i class="bi bi-eye"></i></a>
+                  <a class="text-warning" href="{% url 'hr:placement_assignment_edit' item.id %}" title="Edit" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(255,193,7,0.4);box-shadow:0 0 8px rgba(255,193,7,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,193,7,0.1)';this.style.boxShadow='0 0 15px rgba(255,193,7,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(255,193,7,0.2)';"><i class="bi bi-pencil"></i></a>
+                  <a class="text-danger" href="{% url 'hr:placement_assignment_delete' item.id  %}" title="Delete" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(220,53,69,0.4);box-shadow:0 0 8px rgba(220,53,69,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(220,53,69,0.1)';this.style.boxShadow='0 0 15px rgba(220,53,69,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(220,53,69,0.2)';"><i class="bi bi-trash"></i></a>
+                </div>
               </td>
             </tr>
             {% empty %}

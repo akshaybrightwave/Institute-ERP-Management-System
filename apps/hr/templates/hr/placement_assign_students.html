@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Assign Employees</div>
+    <div class="small text-secondary mb-1 mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Assign Employees</div>
     <h1 class="fw-bold mb-1">{{ drive }}</h1>
     <p class="hr-muted mb-0">Select employees and assign them to this placement drive.</p>
   </div>
@@ -24,7 +24,7 @@
 <form method="post" class="hr-panel p-3">
   {% csrf_token %}
   <div class="table-responsive">
-    <table class="table hr-table">
+    <table class="table table-hover hr-table">
       <thead><tr><th></th><th>Employee</th><th>Designation</th><th>Phone</th><th>Email</th><th>Status</th></tr></thead>
       <tbody>
         {% for student in students %}

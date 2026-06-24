@@ -5,35 +5,40 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Employees</div>
+    <div class="small text-secondary mb-1 mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Employees</div>
     <h1 class="fw-bold mb-1">Placement Employees</h1>
     <p class="hr-muted mb-0">Track employees sent to companies and final placement outcomes.</p>
   </div>
   <a class="btn btn-hr-primary" href="{% url 'hr:placement_employee_create' %}"><i class="bi bi-person-plus me-1"></i>Add Employee</a>
 </div>
 
-<div class="hr-panel p-3 mb-4">
+<div class="hr-panel p-4 mb-4" style="border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
   <form class="row g-3 align-items-end" method="get">
     <div class="col-md-7">
-      <label class="form-label small fw-semibold">Search</label>
-      <input class="form-control" name="q" value="{{ query }}" placeholder="Employee, ID or company">
+      <label class="form-label small hr-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">Search</label>
+      <div class="position-relative">
+        <i class="bi bi-search position-absolute top-50 translate-middle-y text-secondary" style="left: 15px;"></i>
+        <input class="form-control text-white" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding-left: 45px; height: 48px; border-radius: 8px;" name="q" value="{{ query }}" placeholder="Employee, ID or company...">
+      </div>
     </div>
     <div class="col-md-3">
-      <label class="form-label small fw-semibold">Final Status</label>
-      <select class="form-select" name="status">
+      <label class="form-label small hr-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">Final Status</label>
+      <select class="form-select" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 48px; border-radius: 8px;" name="status">
         <option value="">All Status</option>
         {% for value, label in status_choices %}
         <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-2"><button class="btn btn-hr-primary w-100">Filter</button></div>
+    <div class="col-md-2">
+      <button class="btn w-100 fw-bold text-white shadow" style="background: linear-gradient(to right, #4a148c, #7b1fa2); height: 48px; border: none; border-radius: 8px;" type="submit">Filter</button>
+    </div>
   </form>
 </div>
 
 <div class="hr-panel p-3">
   <div class="table-responsive">
-    <table class="table hr-table">
+    <table class="table table-hover hr-table">
       <thead>
         <tr>
           <th>Employee</th>
@@ -48,19 +53,21 @@
       </thead>
       <tbody>
         {% for item in page_obj %}
-        <tr>
-          <td>{{ item.display_name }}</td>
-          <td>{% if item.student and item.student.user %}{{ item.student.user.username }}{% else %}{{ item.id }}{% endif %}</td>
-          <td>{{ item.company|default:"--" }}</td>
-          <td>{{ item.drive.job_role|default:"--" }}</td>
-          <td>{{ item.display_course|default:"--" }}</td>
+        <tr class="align-middle" style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)';" onmouseout="this.style.background='rgba(255,255,255,0.02)';">
+          <td class="fw-bold text-white" style="text-shadow: 0 0 8px rgba(255,255,255,0.2);">{{ item.display_name }}</td>
+          <td class="hr-muted fw-semibold">{% if item.student and item.student.user %}{{ item.student.user.username }}{% else %}{{ item.id }}{% endif %}</td>
+          <td class="text-white fw-semibold">{{ item.company|default:"--" }}</td>
+          <td class="hr-muted">{{ item.drive.job_role|default:"--" }}</td>
+          <td class="text-white">{{ item.display_course|default:"--" }}</td>
           <td><span class="status-badge status-{{ item.interview_status }}">{{ item.get_interview_status_display }}</span></td>
           <td><span class="status-badge status-{{ item.final_status }}">{{ item.get_final_status_display }}</span></td>
           <td>
-            <a class="action-btn" href="{% url 'hr:placement_employee_detail' item.id %}" title="View"><i class="bi bi-eye"></i></a>
-            <a class="action-btn" href="{% url 'hr:placement_employee_edit' item.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:placement_employee_delete' item.id  %}"><i class="bi bi-trash"></i></a>
-            <a class="action-btn" href="{% url 'hr:placement_employee_offer_create' item.id %}" title="Offer"><i class="bi bi-envelope-check"></i></a>
+            <div class="d-flex align-items-center gap-2">
+              <a class="text-info" href="{% url 'hr:placement_employee_detail' item.id %}" title="View" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(13,202,240,0.4);box-shadow:0 0 8px rgba(13,202,240,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(13,202,240,0.1)';this.style.boxShadow='0 0 15px rgba(13,202,240,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(13,202,240,0.2)';"><i class="bi bi-eye"></i></a>
+              <a class="text-warning" href="{% url 'hr:placement_employee_edit' item.id %}" title="Edit" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(255,193,7,0.4);box-shadow:0 0 8px rgba(255,193,7,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,193,7,0.1)';this.style.boxShadow='0 0 15px rgba(255,193,7,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(255,193,7,0.2)';"><i class="bi bi-pencil"></i></a>
+              <a class="text-danger" href="{% url 'hr:placement_employee_delete' item.id  %}" title="Delete" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(220,53,69,0.4);box-shadow:0 0 8px rgba(220,53,69,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(220,53,69,0.1)';this.style.boxShadow='0 0 15px rgba(220,53,69,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(220,53,69,0.2)';"><i class="bi bi-trash"></i></a>
+              <a class="text-success" href="{% url 'hr:placement_employee_offer_create' item.id %}" title="Offer Letter" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(25,135,84,0.4);box-shadow:0 0 8px rgba(25,135,84,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(25,135,84,0.1)';this.style.boxShadow='0 0 15px rgba(25,135,84,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(25,135,84,0.2)';"><i class="bi bi-envelope-check"></i></a>
+            </div>
           </td>
         </tr>
         {% empty %}

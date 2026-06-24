@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Management <i class="bi bi-chevron-right mx-1"></i> HR Performance</div>
+    <div class="small text-secondary mb-1 mb-2">Management <i class="bi bi-chevron-right mx-1"></i> HR Performance</div>
     <h1 class="fw-bold mb-1">HR Performance Dashboard</h1>
     <p class="hr-muted mb-0">Calls, candidates handled, interviews, decisions and conversion ratio.</p>
   </div>
@@ -13,7 +13,7 @@
 
 <div class="hr-panel p-3">
   <div class="table-responsive">
-    <table class="table hr-table">
+    <table class="table table-hover hr-table">
       <thead>
         <tr>
           <th>Rank</th>
@@ -32,7 +32,7 @@
           <td><span class="badge text-bg-primary">#{{ forloop.counter }}</span></td>
           <td>
             <div class="fw-semibold">{{ row.user.get_full_name|default:row.user.username }}</div>
-            <div class="small hr-muted">{{ row.user.email|default:"No email" }}</div>
+            <div class="small text-secondary mb-1">{{ row.user.email|default:"No email" }}</div>
           </td>
           <td>{{ row.calls }}</td>
           <td>{{ row.handled }}</td>
@@ -44,7 +44,7 @@
               <div class="progress flex-grow-1" style="height: 10px; min-width: 110px;">
                 <div class="progress-bar bg-success" style="width: {{ row.conversion }}%"></div>
               </div>
-              <strong>{{ row.conversion }}%</strong>
+              <strong class="text-white fs-6">{{ row.conversion }}%</strong>
             </div>
           </td>
         </tr>

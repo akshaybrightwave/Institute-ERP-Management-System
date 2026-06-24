@@ -865,6 +865,10 @@ def placement_assignment_create(request, drive_id=None, company_id=None):
         assignment.save()
         add_placement_activity('assignment', f'{assignment.display_name} assigned to {assignment.company or "company"}', request, company=assignment.company, drive=assignment.drive)
         messages.success(request, 'Employee assignment saved successfully.')
+        if company_id:
+            return redirect('hr:placement_company_detail', company_id=company_id)
+        elif drive_id:
+            return redirect('hr:placement_drive_detail', drive_id=drive_id)
         return redirect('hr:placement_employee_list')
     return render(request, 'hr/placement_assignment_form.html', {'form': form, 'drive': drive, 'company': company})
 

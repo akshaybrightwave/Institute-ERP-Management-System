@@ -21,7 +21,7 @@
     <div class="d-flex align-items-center gap-3 h-100">
       <div class="hr-kpi-icon tone-{{ item.color }}"><i class="bi {{ item.icon }}"></i></div>
       <div>
-        <div class="small hr-muted mb-1">{{ item.label }}</div>
+        <div class="small text-secondary mb-1 mb-1">{{ item.label }}</div>
         <div class="hr-stat-number">{{ item.value }}</div>
         {% if item.meta %}<div class="small fw-bold mt-2 {% if item.color == 'emerald' %}text-success{% elif item.color == 'red' %}text-danger{% elif item.color == 'amber' %}text-warning{% else %}hr-muted{% endif %}">{{ item.meta }}</div>{% endif %}
       </div>
@@ -33,7 +33,7 @@
 <div class="hr-panel">
 <form class="external-toolbar" method="get">
     <div class="external-toolbar-group">
-      <div class="d-flex align-items-center shadow-sm rounded-3">
+      <div class="d-flex align-items-center  rounded-3">
         <input class="form-control border-primary" type="date" name="date" value="{{ external_selected_date }}" onchange="this.form.submit()" style="width: 145px;">
       </div>
       <select class="form-select" name="department" style="width: 160px;" onchange="this.form.submit()">
@@ -77,23 +77,23 @@
   <div class="alert alert-warning m-3 d-flex align-items-center">
     <i class="bi bi-info-circle-fill me-2 fs-5"></i>
     <div>
-      <strong>Viewing Sample Data:</strong> The attendance records shown below are static sample data because no employees have been added to this branch yet. 
-      To enable date-wise attendance tracking and quick updates, please <strong>Add or Import Employees</strong>.
+      <strong class="text-white fs-6">Viewing Sample Data:</strong> The attendance records shown below are static sample data because no employees have been added to this branch yet. 
+      To enable date-wise attendance tracking and quick updates, please <strong class="text-white fs-6">Add or Import Employees</strong>.
     </div>
   </div>
   {% endif %}
 
   <div class="external-table-wrap">
-    <table class="table hr-table external-table mb-0" data-quick-attendance-url="{% url 'hr:external_attendance_quick_update' external_branch_slug %}" data-attendance-date="{{ external_selected_date }}">
-      <thead class="text-nowrap bg-light border-bottom border-2">
+    <table class="table table-hover hr-table external-table mb-0" data-quick-attendance-url="{% url 'hr:external_attendance_quick_update' external_branch_slug %}" data-attendance-date="{{ external_selected_date }}">
+      <thead class="text-nowrap  border-bottom border-2">
         <tr>
-          <th class="py-3 ps-4" style="min-width: 240px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Employee</th>
-          <th class="py-3" style="min-width: 130px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 0.75rem;"></i></th>
-          <th class="py-3" style="min-width: 140px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Check In</th>
-          <th class="py-3" style="min-width: 140px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Check Out</th>
-          <th class="py-3" style="min-width: 140px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Status</th>
-          <th class="py-3" style="min-width: 200px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Remarks</th>
-          <th class="py-3 text-center" style="min-width: 80px; font-weight: 600; color: #1e293b; font-size: 0.85rem;">Actions</th>
+          <th class="py-3 ps-4" style="min-width: 240px; font-weight: 600;  font-size: 0.85rem;">Employee</th>
+          <th class="py-3" style="min-width: 130px; font-weight: 600;  font-size: 0.85rem;">Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 0.75rem;"></i></th>
+          <th class="py-3" style="min-width: 140px; font-weight: 600;  font-size: 0.85rem;">Check In</th>
+          <th class="py-3" style="min-width: 140px; font-weight: 600;  font-size: 0.85rem;">Check Out</th>
+          <th class="py-3" style="min-width: 140px; font-weight: 600;  font-size: 0.85rem;">Status</th>
+          <th class="py-3" style="min-width: 200px; font-weight: 600;  font-size: 0.85rem;">Remarks</th>
+          <th class="py-3 text-center" style="min-width: 80px; font-weight: 600;  font-size: 0.85rem;">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -105,24 +105,24 @@
                 {{ row.initials }}
               </div>
               <div>
-                <div class="fw-semibold text-dark mb-1" style="font-size: 0.85rem;">
-                  <a class="text-decoration-none text-dark" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance">{{ row.full_name }}</a>
+                <div class="fw-semibold  mb-1" style="font-size: 0.85rem;">
+                  <a class="text-decoration-none " href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance">{{ row.full_name }}</a>
                 </div>
                 <div class="d-flex align-items-center mb-1">
-                  <span class="badge bg-light text-secondary border fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="bi bi-badge-id me-1"></i>{{ row.employee_id }}</span>
+                  <span class="badge  text-secondary border fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="bi bi-badge-id me-1"></i>{{ row.employee_id }}</span>
                 </div>
                 <div>
-                  <span class="badge rounded-pill px-2 py-1" style="font-size: 0.7rem; background-color: {% if row.department|lower == 'developing' or row.department|lower == 'development' %}#ede9fe; color: #6d28d9;{% else %}#e0f2fe; color: #0369a1;{% endif %}"><i class="bi bi-briefcase me-1"></i>{{ row.department|title }}</span>
+                  <span class="badge rounded-pill px-2 py-1" style="font-size: 0.7rem; background-color: {% if row.department|lower == 'developing' or row.department|lower == 'development' %}rgba(139, 92, 246, 0.2); color: #a78bfa;{% else %}rgba(59, 130, 246, 0.2); color: #60a5fa;{% endif %}"><i class="bi bi-briefcase me-1"></i>{{ row.department|title }}</span>
                 </div>
               </div>
             </div>
           </td>
           <td class="py-3">
-            <div class="text-dark fw-medium mb-1" style="font-size: 0.85rem;"><i class="bi bi-calendar3 text-muted me-2"></i>{{ row.date|date:"d M Y" }}</div>
+            <div class=" fw-medium mb-1" style="font-size: 0.85rem;"><i class="bi bi-calendar3 text-muted me-2"></i>{{ row.date|date:"d M Y" }}</div>
             <div class="text-muted ms-4" style="font-size: 0.75rem;">{{ row.date|date:"D" }}</div>
           </td>
           <td class="py-3">
-            <div class="d-inline-flex align-items-center badge {% if row.check_in != '--:--' %}bg-success bg-opacity-10 text-success border border-success border-opacity-25{% else %}bg-light text-secondary border{% endif %} px-2 py-1 mb-1 rounded" style="font-size: 0.75rem;">
+            <div class="d-inline-flex align-items-center badge {% if row.check_in != '--:--' %}bg-success bg-opacity-10 text-success border border-success border-opacity-25{% else %} text-secondary border{% endif %} px-2 py-1 mb-1 rounded" style="font-size: 0.75rem;">
               <i class="bi {% if row.check_in != '--:--' %}bi-box-arrow-in-right{% else %}bi-box-arrow-in-right text-muted{% endif %} me-2"></i>{{ row.check_in }}
             </div>
             <div class="text-muted d-flex align-items-center fw-medium mt-1" style="font-size: 0.7rem;">
@@ -150,18 +150,18 @@
             </div>
           </td>
           <td class="py-3">
-            <select class="form-select attendance-status-select status-{{ row.attendance_status }} fw-medium py-1 rounded" data-employee-id="{{ row.employee_pk }}" {% if not row.employee_pk %}disabled{% endif %} style="max-width: 130px; box-shadow: none; font-size: 0.8rem; min-height: 32px;">
+            <select class="form-select attendance-status-select status-{{ row.attendance_status }} fw-medium py-1 rounded" data-employee-id="{{ row.employee_pk }}" {% if not row.employee_pk %}disabled{% endif %}>
               {% for key, label in attendance_statuses %}
               <option value="{{ key }}" {% if row.attendance_status == key %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
           </td>
           <td class="py-3">
-            <input class="form-control attendance-remarks-input border py-1 bg-white" style="border-radius: 6px; font-size: 0.8rem; color: #475569; border-color: #e2e8f0; min-height: 32px;" data-employee-id="{{ row.employee_pk }}" value="{{ row.remarks }}" placeholder="Add note..." {% if not row.employee_pk %}disabled{% endif %}>
+            <input class="form-control attendance-remarks-input border py-1 " data-employee-id="{{ row.employee_pk }}" value="{{ row.remarks }}" placeholder="Add note..." {% if not row.employee_pk %}disabled{% endif %}>
           </td>
           <td class="py-3 text-center">
             <div class="d-flex justify-content-center">
-              <a class="btn bg-white rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-sm" style="width: 28px; height: 28px; border: 1px solid #e2e8f0; color: #4f46e5; font-size: 0.8rem;" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance" title="View Profile"><i class="bi bi-eye"></i></a>
+              <a class="btn  rounded-circle d-inline-flex align-items-center justify-content-center p-0  action-btn" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance" title="View Profile"><i class="bi bi-eye"></i></a>
             </div>
           </td>
         </tr>
@@ -179,7 +179,7 @@
   </div>
 
   <div class="d-flex align-items-center justify-content-between p-3 border-top flex-wrap gap-2">
-    <div class="small hr-muted">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_rows }} entries</div>
+    <div class="small text-secondary mb-1">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_rows }} entries</div>
     <div class="d-flex gap-2 align-items-center">
       {% if page_obj.has_previous %}
       <a class="btn btn-soft btn-sm icon-btn-square" href="?page={{ page_obj.previous_page_number }}&date={{ external_selected_date }}&q={{ query }}"><i class="bi bi-chevron-left"></i></a>

@@ -5,13 +5,13 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Drive</div>
+    <div class="small text-secondary mb-1 mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Drive</div>
     <h1 class="fw-bold mb-1">{% if drive %}Edit Project Drive{% else %}Add Project Drive{% endif %}</h1>
     <p class="hr-muted mb-0">All fields are optional for fast project scheduling.</p>
   </div>
 </div>
 
-<form method="post" class="hr-panel p-4">
+<form method="post" class="hr-panel p-3">
   {% csrf_token %}
   {{ form.non_field_errors }}
   <div class="row g-3">

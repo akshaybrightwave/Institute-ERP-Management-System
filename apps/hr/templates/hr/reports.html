@@ -5,46 +5,46 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Management <i class="bi bi-chevron-right mx-1"></i> Reports</div>
+    <div class="small text-secondary mb-1 mb-2">Management <i class="bi bi-chevron-right mx-1"></i> Reports</div>
     <h1 class="fw-bold mb-1">Recruitment Analytics</h1>
     <p class="hr-muted mb-0">Status distribution, funnel health, source analysis and report exports.</p>
   </div>
   <a class="btn btn-soft" href="{% url 'hr:export_candidates' %}"><i class="bi bi-download me-1"></i>Export Candidate Report</a>
 </div>
 
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-3">
   <div class="col-md-4">
     <div class="hr-kpi">
-      <div class="small hr-muted">Selection Ratio</div>
+      <div class="small text-secondary mb-1">Selection Ratio</div>
       <div class="hr-stat-number">{{ selection_ratio }}%</div>
       <div class="small text-success"><i class="bi bi-arrow-up-right"></i> Selected plus joined</div>
     </div>
   </div>
   <div class="col-md-4">
     <div class="hr-kpi">
-      <div class="small hr-muted">Interviews</div>
+      <div class="small text-secondary mb-1">Interviews</div>
       <div class="hr-stat-number">{{ interview_count }}</div>
-      <div class="small hr-muted">Scheduled and completed</div>
+      <div class="small text-secondary mb-1">Scheduled and completed</div>
     </div>
   </div>
   <div class="col-md-4">
     <div class="hr-kpi">
-      <div class="small hr-muted">Follow-ups</div>
+      <div class="small text-secondary mb-1">Follow-ups</div>
       <div class="hr-stat-number">{{ followup_count }}</div>
-      <div class="small hr-muted">All follow-up records</div>
+      <div class="small text-secondary mb-1">All follow-up records</div>
     </div>
   </div>
 </div>
 
 <div class="row g-4">
   <div class="col-lg-6">
-    <div class="hr-panel p-4 h-100">
+    <div class="hr-panel p-3 h-100">
       <h5 class="fw-bold mb-3">Candidate Status Distribution</h5>
       {% for key, count in status_counts.items %}
       <div class="mb-3">
         <div class="d-flex justify-content-between small">
           <span>{{ key|title }}</span>
-          <strong>{{ count }}</strong>
+          <strong class="text-white fs-6">{{ count }}</strong>
         </div>
         <div class="progress" style="height: 10px;">
           <div class="progress-bar" style="width: {% widthratio count total 100 %}%"></div>
@@ -54,13 +54,13 @@
     </div>
   </div>
   <div class="col-lg-6">
-    <div class="hr-panel p-4 h-100">
+    <div class="hr-panel p-3 h-100">
       <h5 class="fw-bold mb-3">Source Analysis</h5>
       {% for key, count in source_counts.items %}
       <div class="mb-3">
         <div class="d-flex justify-content-between small">
           <span>{{ key|title }}</span>
-          <strong>{{ count }}</strong>
+          <strong class="text-white fs-6">{{ count }}</strong>
         </div>
         <div class="progress" style="height: 10px;">
           <div class="progress-bar bg-success" style="width: {% widthratio count total 100 %}%"></div>
@@ -71,7 +71,7 @@
   </div>
 </div>
 
-<div class="hr-panel p-4 mt-4">
+<div class="hr-panel p-3 mt-4">
   <h5 class="fw-bold mb-3">Available Reports</h5>
   <div class="row g-3">
     <div class="col-md-4"><a class="btn btn-soft w-100 text-start" href="{% url 'hr:export_candidates' %}"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Candidate Report</a></div>

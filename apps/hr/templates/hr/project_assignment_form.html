@@ -5,13 +5,13 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Employee Assignment</div>
+    <div class="small text-secondary mb-1 mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Employee Assignment</div>
     <h1 class="fw-bold mb-1">Assign Employee</h1>
     <p class="hr-muted mb-0">Choose an existing employee or enter basic employee details manually.</p>
   </div>
 </div>
 
-<form method="post" class="hr-panel p-4">
+<form method="post" class="hr-panel p-3">
   {% csrf_token %}
   {{ form.non_field_errors }}
   <div class="row g-3">
@@ -29,7 +29,7 @@
       <span class="hr-kpi-icon tone-blue" style="width: 38px; height: 38px;"><i class="bi bi-calendar-event"></i></span>
       <div>
         <h6 class="fw-bold mb-0">Schedule Details</h6>
-        <div class="small hr-muted">Visible only when Interview status is Scheduled.</div>
+        <div class="small text-secondary mb-1">Visible only when Interview status is Scheduled.</div>
       </div>
     </div>
     <div class="row g-3">

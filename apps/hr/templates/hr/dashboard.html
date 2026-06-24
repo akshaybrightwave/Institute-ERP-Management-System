@@ -5,114 +5,177 @@
 {% block content %}
 <!-- Scoped Styles for Recruitment Dashboard to match exact UI design -->
 <style>
-/* Dashboard Base Colors & Spacing to match UI Image */
-.dashboard-page {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: #1e293b;
-  padding: 1.5rem;
-}
+  .placement-pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+  }
 
-/* Page Header */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 1.5rem;
-}
-.page-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
-}
-.page-header p {
-  color: #64748b;
-  font-size: 0.875rem;
-  margin: 0.25rem 0 0 0;
-}
-.header-actions .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #334155;
-  text-decoration: none;
-}
+  .placement-pipeline-card {
+    min-height: 140px;
+    height: 100%;
+    padding: 22px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+  }
 
-/* KPI Cards */
-.kpi-card {
-  background: #ffffff;
-  border-radius: 1rem;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  .placement-pipeline-card i {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  .placement-pipeline-title {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .placement-pipeline-card .hr-stat-number {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+  }
+
+  @media (max-width: 1199.98px) {
+    .placement-pipeline-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 767.98px) {
+    .placement-pipeline-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+/* KPI Cards - Aarya Ultra-Vivid Theme (Bulletproof) */
+.hr-kpi {
+  padding: 0 !important;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  overflow: hidden;
+  position: relative;
+  min-height: 130px;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  transition: all 0.3s ease;
+  background: #2a2a2a; /* Fallback */
 }
-.kpi-top {
+
+/* Bulletproof Classes directly on the parent */
+.hr-kpi.tone-violet { background: linear-gradient(to right, #4a148c, #7b1fa2) !important; } /* Deep Purple */
+.hr-kpi.tone-emerald { background: linear-gradient(to right, #00838f, #00acc1) !important; } /* Bright Cyan */
+.hr-kpi.tone-teal { background: linear-gradient(to right, #2e7d32, #4caf50) !important; } /* Vivid Green */
+.hr-kpi.tone-red { background: linear-gradient(to right, #c2185b, #e91e63) !important; } /* Hot Pink/Magenta */
+.hr-kpi.tone-blue { background: linear-gradient(to right, #1565c0, #1e88e5) !important; } /* Royal Blue */
+.hr-kpi.tone-amber { background: linear-gradient(to right, #f57f17, #ffb300) !important; } /* Bright Amber */
+.hr-kpi.tone-orange { background: linear-gradient(to right, #e65100, #fb8c00) !important; } /* Bright Orange */
+.hr-kpi.tone-indigo { background: linear-gradient(to right, #6a1b9a, #ab47bc) !important; } /* Bright Violet */
+
+/* Pipeline cards explicit overrides */
+.hr-kpi.tone-pipeline-1 { background: linear-gradient(to right, #b71c1c, #e53935) !important; } /* Red */
+.hr-kpi.tone-pipeline-2 { background: linear-gradient(to right, #bf360c, #f4511e) !important; } /* Brown/Orange */
+.hr-kpi.tone-pipeline-3 { background: linear-gradient(to right, #827717, #afb42b) !important; } /* Olive/Lime */
+.hr-kpi.tone-pipeline-4 { background: linear-gradient(to right, #263238, #546e7a) !important; } /* Dark Slate */
+.hr-kpi.tone-pipeline-5 { background: linear-gradient(to right, #00695c, #26a69a) !important; } /* Dark Teal */
+
+/* Main card body structure */
+.hr-kpi-top {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  padding: 16px 20px !important;
+  flex-grow: 1;
 }
-.kpi-icon-wrap {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  flex-shrink: 0;
+
+/* Text styles */
+.hr-kpi-top .small {
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
 }
-.kpi-text .kpi-label {
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-bottom: 0.25rem;
+.hr-kpi-top .hr-stat-number {
+  color: #ffffff !important;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
 }
-.kpi-text .kpi-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.1;
+.placement-pipeline-title {
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 14px;
+  justify-content: flex-start;
+  margin-bottom: 4px;
 }
-.kpi-trend {
-  font-size: 0.75rem;
+
+/* Background Icons */
+.hr-kpi-icon {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 50px;
+  line-height: 1;
+  margin-top: -5px;
+}
+.placement-pipeline-card i {
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 50px;
+  position: absolute;
+  right: 20px;
+  top: 16px;
+}
+
+/* Footer strip */
+.hr-kpi > .d-flex {
+  background: rgba(0, 0, 0, 0.25) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 20px !important;
+  border-radius: 0 0 12px 12px;
+  margin: 0 !important;
+  width: 100%;
+}
+.hr-kpi > .d-flex .small {
+  color: #ffffff !important;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  font-size: 13px;
 }
-.kpi-trend.up { color: #10b981; }
-.kpi-trend.neutral { color: #64748b; }
+.hr-kpi > .d-flex .small i {
+  color: #ffffff !important;
+  margin-right: 6px;
+}
 
-/* KPI Icon Tones */
-.tone-indigo { background: #e0e7ff; color: #4f46e5; }
-.tone-emerald { background: #d1fae5; color: #10b981; }
-.tone-blue { background: #dbeafe; color: #3b82f6; }
-.tone-orange { background: #ffedd5; color: #f97316; }
-.tone-red { background: #fee2e2; color: #ef4444; }
-.tone-teal { background: #ccfbf1; color: #14b8a6; }
-.tone-amber { background: #fef3c7; color: #f59e0b; }
-.tone-violet { background: #ede9fe; color: #8b5cf6; }
+.placement-pipeline-card {
+  padding: 16px 20px !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+}
 
-/* Panels */
+
+/* Restored Missing CSS for Recruitment Summary & Follow Ups */
 .dashboard-panel {
-  background: #ffffff;
-  border-radius: 1rem;
+  background: #1e1e1e;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   height: 100%;
 }
 .panel-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #ffffff;
   margin-bottom: 1.25rem;
   display: flex;
   justify-content: space-between;
@@ -124,90 +187,6 @@
   color: #3b82f6;
   text-decoration: none;
 }
-
-/* Recent Candidates Table */
-.recent-candidates-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.recent-candidates-table th {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-  text-align: left;
-}
-.recent-candidates-table td {
-  padding: 1rem 0;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.875rem;
-  vertical-align: middle;
-}
-.recent-candidates-table tr:last-child td {
-  border-bottom: none;
-}
-.candidate-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: #4f46e5;
-  background: #e0e7ff;
-  font-size: 0.875rem;
-  object-fit: cover;
-}
-.candidate-name {
-  font-weight: 600;
-  color: #0f172a;
-  margin-bottom: 0.125rem;
-}
-.candidate-mobile {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-/* Status Badges */
-.status-pill {
-  display: inline-flex;
-  padding: 0.25rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-.status-pill.joined { background: #d1fae5; color: #10b981; }
-.status-pill.interview { background: #dbeafe; color: #3b82f6; }
-.status-pill.applied { background: #ede9fe; color: #8b5cf6; }
-.status-pill.follow-up { background: #ffedd5; color: #f97316; }
-.status-pill.default { background: #f1f5f9; color: #64748b; }
-
-/* Table Actions */
-.table-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-.table-actions a {
-  color: #94a3b8;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  transition: all 0.2s;
-}
-.table-actions a:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-/* Recruitment Summary Chart & Legend */
 .summary-container {
   display: flex;
   align-items: center;
@@ -229,12 +208,12 @@
 .chart-center-text .val {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #ffffff;
   line-height: 1;
 }
 .chart-center-text .lbl {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #9ca3af;
 }
 .custom-legend {
   flex-grow: 1;
@@ -255,12 +234,12 @@
   margin-right: 0.5rem;
 }
 .legend-label {
-  color: #334155;
+  color: #e2e8f0;
   flex-grow: 1;
 }
 .legend-value {
   font-weight: 600;
-  color: #0f172a;
+  color: #ffffff;
   margin-right: 0.5rem;
 }
 .legend-pct {
@@ -270,10 +249,11 @@
 
 /* Follow Up Cards */
 .follow-up-card {
-  background: #ffffff;
-  border-radius: 1rem;
+  background: #1e1e1e;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -282,24 +262,62 @@
 .follow-up-icon {
   width: 40px;
   height: 40px;
-  border-radius: 0.5rem;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
 }
+.follow-up-text { display: flex; flex-direction: column; }
 .follow-up-text .val {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #ffffff;
   line-height: 1;
   margin-bottom: 0.125rem;
 }
 .follow-up-text .lbl {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #9ca3af;
+}
+
+/* Page Header Missing CSS */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+.page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+.page-header p {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0 0;
+}
+.header-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: transparent;
+  color: #ffffff;
+  text-decoration: none;
+}
+.header-actions .btn:hover {
+  background: rgba(255,255,255,0.1);
 }
 </style>
+
+
 
 <div class="dashboard-page">
 
@@ -316,23 +334,27 @@
     </div>
   </div>
 
-  <!-- KPI Row 1 & 2 -->
+          <!-- KPI Row 1 & 2 - Aarya Theme -->
   <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-4 mb-4">
     {% for metric in metrics %}
     <div class="col">
-      <div class="kpi-card">
-        <div class="kpi-top">
-          <div class="kpi-icon-wrap tone-{{ metric.color }}">
-            <i class="bi {{ metric.icon }}"></i>
-          </div>
-          <div class="kpi-text">
-            <div class="kpi-label">{{ metric.label }}</div>
-            <div class="kpi-value">{{ metric.value|stringformat:"02d"|default:"0" }}</div>
-          </div>
+      <div class="hr-kpi tone-{{ metric.color|default:'indigo' }}" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px;">
+        
+        <!-- Large Absolute Icon -->
+        <i class="bi {{ metric.icon }}" style="position: absolute; right: 15px; top: 15px; font-size: 45px; color: rgba(255,255,255,0.4); z-index: 1;"></i>
+        
+        <!-- Main Content -->
+        <div style="padding: 15px; position: relative; z-index: 2; flex-grow: 1;">
+          <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 4px; max-width: 75%;">{{ metric.label }}</div>
+          <div style="color: #ffffff; font-size: 32px; font-weight: 700; line-height: 1;">{{ metric.value|stringformat:"02d"|default:"0" }}</div>
         </div>
-        <div class="kpi-trend {% if '+' in metric.trend %}up{% else %}neutral{% endif %}">
-          <i class="bi bi-arrow-up"></i> {{ metric.trend|default:"0%" }} this month
+        
+        <!-- Footer Strip -->
+        <div style="background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.4); padding: 8px 15px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 2;">
+          <i class="bi bi-list-task text-white" style="font-size: 14px;"></i>
+          <span style="color: #ffffff; font-size: 12px; font-weight: 600;">View List</span>
         </div>
+        
       </div>
     </div>
     {% endfor %}
@@ -343,67 +365,60 @@
     <!-- Recent Candidates -->
     <div class="col-xl-8">
       <div class="dashboard-panel">
-        <div class="panel-title">
-          <span>Recent Candidates</span>
-          <a href="{% url 'hr:candidate_list' %}">View All</a>
+        <div class="panel-title d-flex justify-content-between align-items-center mb-3">
+          <span class="fw-bold text-white fs-5">Recent Candidates</span>
+          <a href="{% url 'hr:candidate_list' %}" class="btn btn-outline-primary btn-sm px-3 fw-semibold" style="border-radius: 6px;">View All <i class="bi bi-arrow-right ms-1"></i></a>
         </div>
         <div class="table-responsive">
-          <table class="recent-candidates-table">
+          <table class="table hr-table">
             <thead>
               <tr>
                 <th>Candidate</th>
-                <th>Applied For</th>
-                <th>Status</th>
+                <th class="text-center">Applied For</th>
+                <th class="text-center">Status</th>
                 <th>Last Activity</th>
-                <th>Action</th>
+                <th class="text-center">Action</th>
               </tr>
             </thead>
             <tbody>
               {% for candidate in recent_candidates %}
-              <tr>
+              <tr class="align-middle" style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);">
                 <td>
-                  <div class="candidate-info">
-                    {% if candidate.photo %}
-                    <img src="{{ candidate.photo.url }}" class="avatar" alt="Avatar">
-                    {% else %}
-                    <div class="avatar">{{ candidate.full_name|slice:":1"|upper }}</div>
-                    {% endif %}
-                    <div>
-                      <div class="candidate-name">{{ candidate.full_name }}</div>
-                      <div class="candidate-mobile">{{ candidate.mobile }}</div>
-                    </div>
+                  <div class="py-2">
+                    <div class="fw-bold text-white fs-6 mb-1">{{ candidate.full_name }}</div>
+                    <div class="small hr-muted fw-semibold"><i class="bi bi-telephone-fill me-2" style="opacity: 0.5;"></i>{{ candidate.mobile }}</div>
                   </div>
                 </td>
-                <td style="color:#334155; font-size:0.875rem;">{{ candidate.applying_position|default:"--" }}</td>
-                <td>
+                <td class="text-center fw-semibold text-white">{{ candidate.applying_position|default:"--" }}</td>
+                <td class="text-center">
                   {% if candidate.status == 'joined' or candidate.status == 'selected' %}
-                    <span class="status-pill joined">{{ candidate.get_status_display }}</span>
+                    <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #2e7d32; border-radius: 6px;">{{ candidate.get_status_display }}</span>
                   {% elif candidate.status == 'interview_scheduled' or candidate.status == 'interview_completed' %}
-                    <span class="status-pill interview">{{ candidate.get_status_display }}</span>
+                    <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #1565c0; border-radius: 6px;">{{ candidate.get_status_display }}</span>
                   {% elif candidate.status == 'new' %}
-                    <span class="status-pill applied">Applied</span>
+                    <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #00838f; border-radius: 6px;">Applied</span>
                   {% elif candidate.status == 'follow_up_pending' or candidate.status == 'called' %}
-                    <span class="status-pill follow-up">{{ candidate.get_status_display }}</span>
+                    <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #e65100; border-radius: 6px;">{{ candidate.get_status_display }}</span>
                   {% else %}
-                    <span class="status-pill default">{{ candidate.get_status_display }}</span>
+                    <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #4a148c; border-radius: 6px;">{{ candidate.get_status_display }}</span>
                   {% endif %}
                 </td>
                 <td>
                   {% with activity=candidate.latest_activity %}
-                  <div style="color:#0f172a; font-size:0.875rem;">{{ activity.created_at|date:"d M Y"|default:"--" }}</div>
-                  <div style="color:#64748b; font-size:0.75rem;">{{ activity.title|default:"No activity" }}</div>
+                  <div class="text-white fw-bold mb-1 fs-6">{{ activity.created_at|date:"d M Y"|default:"--" }}</div>
+                  <div class="hr-muted small fw-semibold">{{ activity.title|default:"No activity" }}</div>
                   {% endwith %}
                 </td>
                 <td>
-                  <div class="table-actions">
-                    <a href="{% url 'hr:candidate_detail' candidate.id %}" title="View"><i class="bi bi-eye"></i></a>
-                    <a href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
-                    <a href="{% url 'hr:mark_call' candidate.id %}" title="Call"><i class="bi bi-telephone"></i></a>
+                  <div class="d-flex align-items-center justify-content-center gap-3">
+                    <a class="action-btn text-info fs-5" href="{% url 'hr:candidate_detail' candidate.id %}" title="View Details" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: transparent; transition: all 0.2s;"><i class="bi bi-eye"></i></a>
+                    <a class="action-btn text-warning fs-5" href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit Candidate" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: transparent; transition: all 0.2s;"><i class="bi bi-pencil-square"></i></a>
+                    <a class="action-btn text-success fs-5" href="{% url 'hr:mark_call' candidate.id %}" title="Call" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: transparent; transition: all 0.2s;"><i class="bi bi-telephone-fill"></i></a>
                   </div>
                 </td>
               </tr>
               {% empty %}
-              <tr><td colspan="5" class="text-center py-4" style="color:#64748b;">No recent candidates.</td></tr>
+              <tr><td colspan="5" class="text-center py-5 hr-muted">No recent candidates.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -436,7 +451,7 @@
 
   <!-- Today's Follow Ups -->
   <div>
-    <h6 style="font-weight:700; color:#0f172a; margin-bottom:1rem;">Today's Follow-ups</h6>
+    <h6 style="font-weight:700; color: #e2e8f0; margin-bottom:1rem;">Today's Follow-ups</h6>
     <div class="row g-4" style="max-width: 75%;">
       <!-- Card 1 -->
       <div class="col-md-4">
@@ -445,7 +460,7 @@
             <i class="bi bi-calendar-check"></i>
           </div>
           <div>
-            <div style="font-size:0.875rem; color:#334155; margin-bottom:0.25rem;">Interviews</div>
+            <div style="font-size:0.875rem; color: #e2e8f0; margin-bottom:0.25rem;">Interviews</div>
             <div class="follow-up-text">
               <span class="val">{{ today_interviews_count|stringformat:"02d"|default:"00" }}</span>
               <span class="lbl">Scheduled</span>
@@ -460,7 +475,7 @@
             <i class="bi bi-telephone"></i>
           </div>
           <div>
-            <div style="font-size:0.875rem; color:#334155; margin-bottom:0.25rem;">Follow-up Calls</div>
+            <div style="font-size:0.875rem; color: #e2e8f0; margin-bottom:0.25rem;">Follow-up Calls</div>
             <div class="follow-up-text">
               <span class="val">{{ today_calls_pending|stringformat:"02d"|default:"00" }}</span>
               <span class="lbl">Pending</span>
@@ -475,7 +490,7 @@
             <i class="bi bi-envelope"></i>
           </div>
           <div>
-            <div style="font-size:0.875rem; color:#334155; margin-bottom:0.25rem;">Offer Discussions</div>
+            <div style="font-size:0.875rem; color: #e2e8f0; margin-bottom:0.25rem;">Offer Discussions</div>
             <div class="follow-up-text">
               <span class="val">{{ today_offer_discussions|stringformat:"02d"|default:"00" }}</span>
               <span class="lbl">Pending</span>

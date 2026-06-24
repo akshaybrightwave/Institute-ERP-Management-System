@@ -5,13 +5,13 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Feedback</div>
+    <div class="small text-secondary mb-1 mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Feedback</div>
     <h1 class="fw-bold mb-1">{{ interview.candidate.full_name }}</h1>
     <p class="hr-muted mb-0">{{ interview.get_interview_type_display }} with {{ interview.interviewer }}</p>
   </div>
 </div>
 
-<form method="post" class="hr-panel p-4" style="max-width: 840px;">
+<form method="post" class="hr-panel p-3" style="max-width: 840px;">
   {% csrf_token %}
   <div class="row g-3">
     {% for field in form %}

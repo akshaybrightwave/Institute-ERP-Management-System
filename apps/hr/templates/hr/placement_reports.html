@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Reports</div>
+    <div class="small text-secondary mb-1 mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Reports</div>
     <h1 class="fw-bold mb-1">Placement Reports</h1>
     <p class="hr-muted mb-0">Company-wise, employee-wise, selection and placement summary reports.</p>
   </div>
@@ -13,11 +13,11 @@
 </div>
 
 <div class="row g-3 mb-4">
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Companies</div><div class="hr-stat-number">{{ summary.companies }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Drives</div><div class="hr-stat-number">{{ summary.drives }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Employees Sent</div><div class="hr-stat-number">{{ summary.sent }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Selected</div><div class="hr-stat-number">{{ summary.selected }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Joined</div><div class="hr-stat-number">{{ summary.joined }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Companies</div><div class="hr-stat-number">{{ summary.companies }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Drives</div><div class="hr-stat-number">{{ summary.drives }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Employees Sent</div><div class="hr-stat-number">{{ summary.sent }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Selected</div><div class="hr-stat-number">{{ summary.selected }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Joined</div><div class="hr-stat-number">{{ summary.joined }}</div></div></div>
 </div>
 
 <div class="hr-panel p-3 mb-4">
@@ -42,7 +42,7 @@
 
 <div class="hr-panel p-3">
   <div class="table-responsive">
-    <table class="table hr-table">
+    <table class="table table-hover hr-table">
       <thead><tr><th>Employee</th><th>Designation</th><th>Company</th><th>Drive</th><th>Interview</th><th>Final</th></tr></thead>
       <tbody>
         {% for item in assignments %}

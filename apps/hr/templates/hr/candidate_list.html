@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Internal <i class="bi bi-chevron-right mx-1"></i> Recruitment</div>
+    <div class="small text-secondary mb-1 mb-2">Internal <i class="bi bi-chevron-right mx-1"></i> Recruitment</div>
     <h1 class="fw-bold mb-1">Candidates</h1>
     <p class="hr-muted mb-0">Search, filter, update and export recruitment candidates.</p>
   </div>
@@ -57,46 +57,53 @@
 
 <div class="hr-panel p-3">
   <div class="table-responsive">
-    <table class="table hr-table">
+    <table class="table table-hover hr-table">
       <thead>
         <tr>
-          <th>Candidate</th>
-          <th>Applied For</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th>CANDIDATE</th>
+          <th class="text-center">APPLIED FOR</th>
+          <th class="text-center">STATUS</th>
+          <th class="text-center">ACTION</th>
         </tr>
       </thead>
       <tbody>
         {% for candidate in page_obj %}
-        <tr>
+        <tr class="align-middle" style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02);">
           <td>
-            <div class="d-flex align-items-center gap-2">
-              {% if candidate.photo %}
-              <img class="candidate-avatar" src="{{ candidate.photo.url }}" alt="{{ candidate.full_name }}">
-              {% else %}
-              <span class="candidate-avatar d-inline-grid align-items-center text-center"><i class="bi bi-person"></i></span>
-              {% endif %}
-              <div>
-                <div class="fw-semibold">{{ candidate.full_name }}</div>
-                <div class="small hr-muted">{{ candidate.mobile }}</div>
-              </div>
+            <div class="py-2">
+              <div class="fw-bold text-white fs-6 mb-1">{{ candidate.full_name }}</div>
+              <div class="small hr-muted fw-semibold"><i class="bi bi-telephone-fill me-2" style="opacity: 0.5;"></i>{{ candidate.mobile }}</div>
             </div>
           </td>
-          <td>{{ candidate.applying_position }}</td>
-          <td><span class="status-badge status-{{ candidate.status }}">{{ candidate.get_status_display }}</span></td>
+          <td class="text-center fw-semibold text-white">{{ candidate.applying_position|default:"--" }}</td>
+          <td class="text-center">
+            {% if candidate.status == 'joined' or candidate.status == 'selected' %}
+              <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #2e7d32; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+            {% elif candidate.status == 'interview_scheduled' or candidate.status == 'interview_completed' %}
+              <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #1565c0; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+            {% elif candidate.status == 'new' %}
+              <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #00838f; border-radius: 6px;">Applied</span>
+            {% elif candidate.status == 'follow_up_pending' or candidate.status == 'called' %}
+              <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #e65100; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+            {% else %}
+              <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #4a148c; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+            {% endif %}
+          </td>
           <td>
-            <a class="action-btn" href="{% url 'hr:candidate_detail' candidate.id %}" title="View"><i class="bi bi-eye"></i></a>
-            <a class="action-btn" href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:candidate_delete' candidate.id  %}"><i class="bi bi-trash"></i></a>
-            <a class="action-btn" href="{% url 'hr:mark_call' candidate.id %}" title="Call"><i class="bi bi-telephone"></i></a>
+            <div class="d-flex align-items-center justify-content-center gap-3">
+              <a class="action-btn text-info fs-5" href="{% url 'hr:candidate_detail' candidate.id %}" title="View" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: transparent; transition: all 0.2s;"><i class="bi bi-eye"></i></a>
+              <a class="action-btn text-warning fs-5" href="{% url 'hr:candidate_edit' candidate.id %}" title="Edit" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: transparent; transition: all 0.2s;"><i class="bi bi-pencil-square"></i></a>
+              <a class="action-btn text-success fs-5" href="{% url 'hr:mark_call' candidate.id %}" title="Call" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: transparent; transition: all 0.2s;"><i class="bi bi-telephone-fill"></i></a>
+              <a class="action-btn text-danger fs-5" href="{% url 'hr:candidate_delete' candidate.id %}" title="Delete" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); background: transparent; transition: all 0.2s;"><i class="bi bi-trash-fill"></i></a>
+            </div>
           </td>
         </tr>
         {% empty %}
         <tr>
           <td colspan="4" class="text-center py-5">
             <i class="bi bi-inbox fs-1 text-primary"></i>
-            <h5 class="fw-bold mt-3">No candidates found</h5>
-            <a class="btn btn-hr-primary btn-sm mt-2" href="{% url 'hr:candidate_create' %}">Add Candidate</a>
+            <h5 class="fw-bold mt-3 text-white">No candidates found</h5>
+            <a class="btn btn-outline-primary btn-sm mt-2 fw-semibold" style="border-radius: 6px;" href="{% url 'hr:candidate_create' %}">Add Candidate</a>
           </td>
         </tr>
         {% endfor %}
@@ -106,7 +113,7 @@
 
   {% if page_obj.paginator.num_pages > 1 %}
   <div class="d-flex justify-content-between align-items-center pt-3">
-    <span class="small hr-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <span class="small text-secondary mb-1">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
     <div class="btn-group">
       {% if page_obj.has_previous %}
       <a class="btn btn-soft btn-sm" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&status={{ selected_status }}&source={{ selected_source }}&hr={{ selected_hr }}">Previous</a>

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Add Candidate</div>
+    <div class="small text-secondary mb-1 mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Add Candidate</div>
     <h1 class="fw-bold mb-1">Add Candidate</h1>
     <p class="hr-muted mb-0">Create a complete recruitment profile.</p>
   </div>
@@ -13,14 +13,14 @@
 
 <form method="post" enctype="multipart/form-data">
   {% csrf_token %}
-  <div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="wizard-step"><strong>1</strong><span>Basic Information</span></div></div>
-    <div class="col-md-3"><div class="wizard-step"><strong>2</strong><span>Professional Information</span></div></div>
-    <div class="col-md-3"><div class="wizard-step"><strong>3</strong><span>Recruitment Information</span></div></div>
-    <div class="col-md-3"><div class="wizard-step"><strong>4</strong><span>Documents</span></div></div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-3"><div class="wizard-step"><strong class="text-white fs-6">1</strong><span>Basic Information</span></div></div>
+    <div class="col-md-3"><div class="wizard-step"><strong class="text-white fs-6">2</strong><span>Professional Information</span></div></div>
+    <div class="col-md-3"><div class="wizard-step"><strong class="text-white fs-6">3</strong><span>Recruitment Information</span></div></div>
+    <div class="col-md-3"><div class="wizard-step"><strong class="text-white fs-6">4</strong><span>Documents</span></div></div>
   </div>
 
-  <div class="hr-panel p-4 mb-4">
+  <div class="hr-panel p-3 mb-3">
     <h5 class="fw-bold mb-3">Basic Information</h5>
     <div class="row g-3">
       {% for field in forms.basic %}
@@ -33,7 +33,7 @@
     </div>
   </div>
 
-  <div class="hr-panel p-4 mb-4">
+  <div class="hr-panel p-3 mb-3">
     <h5 class="fw-bold mb-3">Professional Information</h5>
     <div class="row g-3">
       {% for field in forms.professional %}
@@ -46,7 +46,7 @@
     </div>
   </div>
 
-  <div class="hr-panel p-4 mb-4">
+  <div class="hr-panel p-3 mb-3">
     <h5 class="fw-bold mb-3">Recruitment Information</h5>
     <div class="row g-3">
       {% for field in forms.recruitment %}
@@ -59,7 +59,7 @@
     </div>
   </div>
 
-  <div class="hr-panel p-4 mb-4">
+  <div class="hr-panel p-3 mb-3">
     <h5 class="fw-bold mb-3">Documents</h5>
     <div class="row g-3">
       {% for field in forms.documents %}
