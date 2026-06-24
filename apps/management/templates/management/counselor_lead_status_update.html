@@ -1,6 +1,7 @@
 {% extends 'management/base.html' %}
 
 {% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
 <style>
   .form-control, .form-select {
     background-color: #14142b !important;
@@ -49,7 +50,7 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top border-secondary">
-          <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-outline-secondary">Cancel</a>
+          <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-outline-secondary js-skip-action-modal">Cancel</a>
           <button type="submit" class="btn btn-info text-white fw-bold">Save Status</button>
         </div>
       </form>

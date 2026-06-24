@@ -58,18 +58,22 @@
   }
 
   .management-sidebar {
-    background: linear-gradient(180deg, #20115f 0%, #1c1b5c 48%, #17174d 100%);
-    color: #fff;
-    padding: 22px 18px;
+    background: #0f172a;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+    padding: 20px 14px;
     position: fixed;
     top: 0;
     left: -280px;
-    width: 260px;
+    width: 256px;
     height: 100vh;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 1050 !important;
     transition: left 0.3s ease;
     transform: none !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
   }
 
   .management-sidebar.sidebar-open {
@@ -98,16 +102,16 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 42px;
-    height: 42px;
-    border: 1px solid var(--mg-line);
-    border-radius: 8px;
-    background: #fff;
-    color: var(--mg-text);
+    width: 40px;
+    height: 40px;
+    border: 1.5px solid var(--mg-line);
+    border-radius: 10px;
+    background: #f8fafc;
+    color: var(--mg-muted);
     cursor: pointer;
     flex-shrink: 0;
     font-size: 20px;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.18s, color 0.18s, border-color 0.18s;
   }
 
   .hamburger-btn:hover {
@@ -276,103 +280,301 @@
   .management-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: #fff;
+    gap: 10px;
+    color: #f1f5f9;
     font-weight: 800;
-    font-size: 18px;
-    margin-bottom: 28px;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    margin-bottom: 24px;
     text-decoration: none;
+    padding: 0 6px;
   }
 
-  .management-brand:hover { color: #fff; }
+  .management-brand:hover { color: #fff; text-decoration: none; }
 
   .management-brand-icon {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     display: grid;
     place-items: center;
-    border-radius: 8px;
-    background: #fff;
-    color: var(--mg-primary);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #5b5fef, #818cf8);
+    color: #fff;
+    font-size: 16px;
+    flex-shrink: 0;
   }
 
   .sidebar-section {
-    color: rgba(255, 255, 255, .65);
-    font-size: 11px;
-    letter-spacing: .08em;
+    color: #334155;
+    font-size: 10px;
+    letter-spacing: .1em;
     text-transform: uppercase;
-    margin: 22px 12px 6px;
+    margin: 20px 6px 4px;
     padding: 0;
-    font-weight: 600;
+    font-weight: 700;
   }
 
   .sidebar-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: rgba(255, 255, 255, .88);
-    padding: 10px 14px;
-    border-radius: 6px;
-    margin-bottom: 2px;
-    font-size: 14px;
+    gap: 10px;
+    color: #64748b;
+    padding: 9px 12px;
+    border-radius: 8px;
+    margin-bottom: 1px;
+    font-size: 13.5px;
     font-weight: 500;
     text-decoration: none;
-    transition: background .16s ease, color .16s ease, transform .16s ease;
+    transition: background 0.15s ease, color 0.15s ease;
+    border-left: 2px solid transparent;
   }
 
-  .sidebar-item:hover,
+  .sidebar-item i {
+    font-size: 15px;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+
+  .sidebar-item:hover {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.05);
+    text-decoration: none;
+    border-left-color: rgba(91, 95, 239, 0.3);
+  }
+
+  .sidebar-item:hover i { opacity: 1; }
+
   .sidebar-item.active {
-    color: #fff;
-    background: rgba(91, 95, 239, .55);
-    transform: translateX(2px);
+    color: #e2e8f0;
+    background: rgba(91, 95, 239, 0.14);
+    border-left-color: #5b5fef;
+    font-weight: 600;
     text-decoration: none;
   }
+
+  .sidebar-item.active i { color: #818cf8; opacity: 1; }
 
   .management-main { min-width: 0; }
 
   .management-topbar {
-    min-height: 76px;
-    background: rgba(255, 255, 255, .92);
+    min-height: 68px;
+    background: rgba(255, 255, 255, .96);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--mg-line);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 0 28px;
+    gap: 12px;
+    padding: 0 22px;
     position: sticky;
     top: 0;
     z-index: 10;
   }
 
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .topbar-brand {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--mg-text);
+    letter-spacing: -0.01em;
+    gap: 6px;
+  }
+
+  .topbar-brand i { font-size: 18px; color: var(--mg-primary); }
+
   .management-search {
-    max-width: 520px;
     flex: 1;
+    max-width: 460px;
     position: relative;
   }
 
   .management-search i {
     position: absolute;
-    left: 14px;
+    left: 13px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--mg-muted);
+    font-size: 14px;
+    pointer-events: none;
   }
 
   .management-search input {
     width: 100%;
-    border: 1px solid var(--mg-line);
-    border-radius: 8px;
-    padding: 12px 14px 12px 42px;
+    border: 1.5px solid var(--mg-line);
+    border-radius: 10px;
+    padding: 10px 14px 10px 38px;
+    font-size: 0.875rem;
     outline: none;
-    background: #fff;
+    background: #f8fafc;
     color: var(--mg-text);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, .04);
+    transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  }
+
+  .management-search input:focus {
+    border-color: var(--mg-primary);
+    box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.12);
+    background: #fff;
   }
 
   .management-search input::placeholder {
-    color: #64748b;
+    color: #94a3b8;
     opacity: 1;
+  }
+
+  /* ── Topbar right actions ── */
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .topbar-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--mg-muted);
+    background: transparent;
+    border: 1.5px solid var(--mg-line);
+    text-decoration: none;
+    transition: color 0.18s, border-color 0.18s, background 0.18s;
+    white-space: nowrap;
+  }
+
+  .topbar-icon-btn i { font-size: 15px; }
+
+  .topbar-icon-btn:hover {
+    color: var(--mg-primary);
+    border-color: var(--mg-primary);
+    background: rgba(91, 95, 239, 0.06);
+  }
+
+  .topbar-btn-label { display: none; }
+
+  .topbar-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--mg-primary);
+    border: none;
+    text-decoration: none;
+    transition: background 0.18s, transform 0.15s, box-shadow 0.18s;
+    white-space: nowrap;
+  }
+
+  .topbar-add-btn i { font-size: 15px; }
+
+  .topbar-add-btn:hover {
+    background: var(--mg-primary-dark);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(91, 95, 239, 0.32);
+  }
+
+  /* ── User button ── */
+  .topbar-user-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px 5px 5px;
+    border-radius: 10px;
+    background: transparent;
+    border: 1.5px solid var(--mg-line);
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+    color: var(--mg-text);
+  }
+
+  .topbar-user-btn:hover {
+    border-color: var(--mg-primary);
+    background: rgba(91, 95, 239, 0.05);
+  }
+
+  .topbar-user-btn .bi-chevron-down {
+    font-size: 10px;
+    color: var(--mg-muted);
+  }
+
+  .user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--mg-primary), var(--mg-primary-dark));
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0;
+  }
+
+  .user-info { line-height: 1; gap: 2px; }
+
+  .user-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--mg-text);
+    line-height: 1.3;
+  }
+
+  .user-role {
+    font-size: 0.68rem;
+    color: var(--mg-muted);
+    line-height: 1.3;
+    text-transform: capitalize;
+  }
+
+  /* ── Topbar dropdown ── */
+  .topbar-dropdown {
+    min-width: 195px;
+    border: 1px solid var(--mg-line);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.09);
+    padding: 6px;
+    background: #fff;
+  }
+
+  .topbar-dropdown .dropdown-header {
+    padding: 8px 12px 4px;
+    line-height: 1.4;
+  }
+
+  .topbar-dropdown .dropdown-item {
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+  }
+
+  .topbar-dropdown .dropdown-item:hover {
+    background: #f1f5f9;
+  }
+
+  .topbar-dropdown .dropdown-divider { margin: 4px 0; }
+
+  @media (min-width: 768px) {
+    .topbar-btn-label { display: inline; }
   }
 
   .management-content {
@@ -630,111 +832,8 @@
     border-color: var(--mg-primary);
   }
 
-  @media (max-width: 991.98px) {
-    .management-layout { grid-template-columns: 1fr; }
-    .management-sidebar {
-      position: fixed;
-      height: 100vh;
-      left: -280px;
-    }
-    .management-sidebar.sidebar-open {
-      left: 0;
-    }
-    .management-topbar {
-      flex-wrap: wrap;
-      padding: 16px;
-    }
-    .management-content { padding: 18px; }
-  }
-</style>
-{% block extra_style %}{% endblock %}
-<style>
-  .management-content .m-card,
-  .management-content .stat-card {
-    background: #fff !important;
-    border: 1px solid var(--mg-line) !important;
-    border-radius: 8px !important;
-    color: var(--mg-text) !important;
-    box-shadow: 0 18px 42px rgba(15, 23, 42, .06) !important;
-  }
-
-  .management-content .stat-card:hover {
-    color: var(--mg-text) !important;
-    transform: translateY(-2px);
-    border-color: rgba(91, 95, 239, .38) !important;
-    box-shadow: 0 22px 50px rgba(15, 23, 42, .10) !important;
-  }
-
-  .management-content .stat-card-body {
-    padding: 18px 18px 8px !important;
-    display: flex !important;
-    align-items: center;
-    gap: 13px;
-  }
-
-  .management-content .stat-card-title {
-    color: var(--mg-muted) !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    letter-spacing: 0 !important;
-    margin-bottom: 4px !important;
-    text-transform: none !important;
-    opacity: 1 !important;
-  }
-
-  .management-content .stat-card-value {
-    color: #001b44 !important;
-    font-size: 28px !important;
-    font-weight: 800 !important;
-  }
-
-  .management-content .stat-card-icon {
-    position: static !important;
-    transform: none !important;
-    width: 50px !important;
-    height: 50px !important;
-    display: grid !important;
-    place-items: center;
-    border-radius: 8px;
-    background: rgba(91, 95, 239, .12);
-    color: var(--mg-primary);
-    font-size: 22px !important;
-    opacity: 1 !important;
-    order: -1;
-    flex: 0 0 auto;
-  }
-
-  .management-content .stat-card-footer {
-    padding: 10px 18px 18px !important;
-    background: transparent !important;
-    border-top: 0 !important;
-    color: var(--mg-muted) !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
-  }
-
-  .management-content .action-btn {
-    background: #fff !important;
-    border: 1px solid var(--mg-line) !important;
-    color: var(--mg-text) !important;
-    border-radius: 8px !important;
-  }
-
-  .management-content .action-btn:hover {
-    color: var(--mg-primary) !important;
-    border-color: rgba(91, 95, 239, .38) !important;
-    background: #f5f3ff !important;
-  }
-
-  .management-content .action-btn i {
-    color: var(--mg-primary) !important;
-  }
-
-  .management-content .nav-tabs {
-    border-color: var(--mg-line) !important;
-    gap: 6px;
-  }
-
+  /* ── Nav Tabs ── */
+  .management-content .nav-tabs { border-color: var(--mg-line) !important; gap: 6px; }
   .management-content .nav-tabs .nav-link {
     border: 1px solid transparent !important;
     border-radius: 8px 8px 0 0 !important;
@@ -743,13 +842,11 @@
     padding: 10px 18px;
     background: transparent !important;
   }
-
   .management-content .nav-tabs .nav-link:hover {
     background: #f5f3ff !important;
     border-color: #ddd6fe !important;
     color: var(--mg-primary-dark) !important;
   }
-
   .management-content .nav-tabs .nav-link.active,
   .management-content .nav-tabs .nav-link.bg-dark,
   .management-content .nav-tabs .nav-link.text-white {
@@ -758,13 +855,11 @@
     color: var(--mg-text) !important;
     box-shadow: 0 -1px 0 #fff inset, 0 10px 24px rgba(15, 23, 42, .05);
   }
-
   .management-content .nav-tabs .nav-link.active i,
   .management-content .nav-tabs .nav-link.bg-dark i,
-  .management-content .nav-tabs .nav-link.text-white i {
-    color: var(--mg-primary) !important;
-  }
+  .management-content .nav-tabs .nav-link.text-white i { color: var(--mg-primary) !important; }
 
+  /* ── Content-area form controls (higher specificity) ── */
   .management-content .form-control,
   .management-content .form-select,
   .management-content textarea.form-control {
@@ -774,7 +869,6 @@
     border-radius: 8px !important;
     box-shadow: none !important;
   }
-
   .management-content .form-control:focus,
   .management-content .form-select:focus,
   .management-content textarea.form-control:focus {
@@ -783,91 +877,40 @@
     color: var(--mg-text) !important;
     box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
   }
-
   .management-content .form-control::placeholder,
-  .management-content textarea.form-control::placeholder {
-    color: #64748b !important;
-    opacity: 1;
-  }
-
+  .management-content textarea.form-control::placeholder { color: #64748b !important; opacity: 1; }
   .management-content .input-group-text {
     background: #fff !important;
     border-color: var(--mg-line) !important;
     color: var(--mg-muted) !important;
   }
-
-  .management-content .form-select option {
-    background: #fff;
-    color: var(--mg-text);
-  }
-
+  .management-content .form-select option { background: #fff; color: var(--mg-text); }
   .management-content .form-control[readonly],
   .management-content .form-control:disabled,
-  .management-content .form-select:disabled {
-    background-color: #f8fafc !important;
-    color: #475569 !important;
-  }
+  .management-content .form-select:disabled { background-color: #f8fafc !important; color: #475569 !important; }
 
+  /* ── Lead Profile Page ── */
   .lead-profile-page > .d-flex:first-child {
     align-items: flex-start !important;
     gap: 16px;
     margin-bottom: 22px !important;
     flex-wrap: wrap;
   }
-
-  .lead-profile-page > .d-flex:first-child h2 {
-    line-height: 1.12;
-  }
-
-  .lead-profile-page > .d-flex:first-child .btn {
-    min-height: 38px;
-  }
-
-  .lead-profile-page > .row {
-    --bs-gutter-x: 18px;
-    --bs-gutter-y: 18px;
-  }
-
-  .lead-profile-page .m-card {
-    padding: 20px !important;
-  }
-
-  .lead-profile-page .m-card h4 {
-    color: var(--mg-text) !important;
-    font-size: 22px;
-    line-height: 1.2;
-  }
-
-  .lead-profile-page .m-card h5 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--mg-text) !important;
-    font-size: 18px;
-  }
-
-  .lead-profile-page .m-card h5 i {
-    margin-right: 0 !important;
-  }
-
-  .lead-profile-page .lead-info-right {
-    border-color: var(--mg-line) !important;
-  }
-
+  .lead-profile-page > .d-flex:first-child h2 { line-height: 1.12; }
+  .lead-profile-page > .d-flex:first-child .btn { min-height: 38px; }
+  .lead-profile-page > .row { --bs-gutter-x: 18px; --bs-gutter-y: 18px; }
+  .lead-profile-page .m-card { padding: 20px !important; }
+  .lead-profile-page .m-card h4 { color: var(--mg-text) !important; font-size: 22px; line-height: 1.2; }
+  .lead-profile-page .m-card h5 { display: flex; align-items: center; gap: 8px; color: var(--mg-text) !important; font-size: 18px; }
+  .lead-profile-page .m-card h5 i { margin-right: 0 !important; }
+  .lead-profile-page .lead-info-right { border-color: var(--mg-line) !important; }
   .lead-profile-page .lead-info-right > div {
-    min-width: 112px;
-    padding: 10px 12px;
-    border: 1px solid var(--mg-line);
-    border-radius: 8px;
-    background: #f8fafc;
+    min-width: 112px; padding: 10px 12px;
+    border: 1px solid var(--mg-line); border-radius: 8px; background: #f8fafc;
   }
-
   .lead-profile-page .border-top,
   .lead-profile-page .border-bottom,
-  .lead-profile-page .border-secondary {
-    border-color: var(--mg-line) !important;
-  }
-
+  .lead-profile-page .border-secondary { border-color: var(--mg-line) !important; }
   .lead-profile-page .bg-dark-soft,
   .lead-profile-page .empty-state,
   .lead-profile-page .border-dashed {
@@ -963,16 +1006,16 @@
     }
   }
 
+  /* ── Inline color correction hacks (override hardcoded dark colors) ── */
   .management-content [style*="background-color: #16162a"],
-  .management-content [style*="background-color:#16162a"] {
-    background-color: #f8fafc !important;
-  }
-
+  .management-content [style*="background-color:#16162a"] { background-color: #f8fafc !important; }
   .management-content [style*="border-color: #2a2a4a"],
-  .management-content [style*="border-color:#2a2a4a"] {
-    border-color: var(--mg-line) !important;
-  }
+  .management-content [style*="border-color:#2a2a4a"] { border-color: var(--mg-line) !important; }
 </style>
+
+{# Child templates override base styles here — e.g. dark theme, page-specific CSS #}
+{% block extra_style %}{% endblock %}
+
 {% endblock %}
 
 {% block footer %}{% endblock %}
@@ -988,20 +1031,20 @@
     </div>
     {% if request.user.role == 'admin' %}
     <a class="management-brand" href="{% url 'management_super_admin_dashboard' %}">
-      <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
-      MANAGEMENT
+      <span class="management-brand-icon"><i class="bi bi-building-fill"></i></span>
+      ERP Admin
     </a>
     <div class="sidebar-section">Admin Portal</div>
     {% elif request.user.role == 'telecaller' %}
     <a class="management-brand" href="{% url 'management_dashboard' %}">
-      <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
-      TELECALLER
+      <span class="management-brand-icon"><i class="bi bi-telephone-fill"></i></span>
+      Telecaller CRM
     </a>
     <div class="sidebar-section">Telecaller Portal</div>
     {% elif request.user.role == 'counselor' %}
     <a class="management-brand" href="{% url 'counselor_dashboard' %}">
-      <span class="management-brand-icon"><i class="bi bi-flower1"></i></span>
-      COUNSELOR
+      <span class="management-brand-icon"><i class="bi bi-person-badge-fill"></i></span>
+      Counselor CRM
     </a>
     <div class="sidebar-section">Counselor Portal</div>
     {% endif %}
@@ -1091,13 +1134,22 @@
 
   <div class="management-main">
     <header class="management-topbar">
-      <button class="hamburger-btn" id="sidebarToggle" aria-label="Open sidebar">
-        <i class="bi bi-list"></i>
-      </button>
+      <!-- Left: hamburger + brand -->
+      <div class="topbar-left">
+        <button class="hamburger-btn" id="sidebarToggle" aria-label="Toggle sidebar" title="Toggle Menu">
+          <i class="bi bi-list"></i>
+        </button>
+        <span class="topbar-brand d-none d-md-flex align-items-center">
+          <i class="bi bi-mortarboard-fill"></i>
+          <span>Examly ERP</span>
+        </span>
+      </div>
+
+      <!-- Center: search -->
       {% if request.user.role == 'counselor' %}
       <form class="management-search" action="{% url 'counselor_lead_list' %}" method="get">
         <i class="bi bi-search"></i>
-        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search assigned leads, follow-ups, visits...">
+        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search leads, follow-ups, visits...">
       </form>
       {% else %}
       <form class="management-search" action="{% url 'lead_list' %}" method="get">
@@ -1105,41 +1157,62 @@
         <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search inquiries, leads, follow-ups...">
       </form>
       {% endif %}
-      <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+
+      <!-- Right: actions + user -->
+      <div class="topbar-actions">
         {% if request.user.role == 'counselor' %}
-        <a class="btn btn-outline-secondary" href="{% url 'counselor_followup_list' %}">
+        <a class="topbar-icon-btn" href="{% url 'counselor_followup_list' %}" title="Follow-ups">
           <i class="bi bi-bell"></i>
+          <span class="topbar-btn-label">Follow-ups</span>
         </a>
-        <a class="btn btn-outline-secondary" href="{% url 'counselor_visit_list' %}">
+        <a class="topbar-icon-btn" href="{% url 'counselor_visit_list' %}" title="Visits">
           <i class="bi bi-calendar-event"></i>
+          <span class="topbar-btn-label">Visits</span>
         </a>
-        <a class="btn btn-primary" href="{% url 'counselor_session_add' %}">
-          <i class="bi bi-plus-lg me-1"></i>Add Session
+        <a class="topbar-add-btn" href="{% url 'counselor_session_add' %}">
+          <i class="bi bi-plus-lg"></i>
+          <span>Add Session</span>
         </a>
         {% else %}
-        <a class="btn btn-outline-secondary" href="{% url 'followup_list' %}">
+        <a class="topbar-icon-btn" href="{% url 'followup_list' %}" title="Follow-ups">
           <i class="bi bi-bell"></i>
+          <span class="topbar-btn-label">Follow-ups</span>
         </a>
-        <a class="btn btn-outline-secondary" href="{% url 'call_log_list' %}">
-          <i class="bi bi-calendar-event"></i>
+        <a class="topbar-icon-btn" href="{% url 'call_log_list' %}" title="Call Logs">
+          <i class="bi bi-telephone-inbound"></i>
+          <span class="topbar-btn-label">Call Logs</span>
         </a>
-        <a class="btn btn-primary" href="{% url 'inquiry_add' %}">
-          <i class="bi bi-plus-lg me-1"></i>Add Inquiry
+        <a class="topbar-add-btn" href="{% url 'inquiry_add' %}">
+          <i class="bi bi-plus-lg"></i>
+          <span>Add Inquiry</span>
         </a>
         {% endif %}
+
+        <!-- User dropdown -->
         <div class="dropdown">
-          <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">
-            <i class="bi bi-person-circle me-1"></i>{{ request.user.username }}
+          <button class="topbar-user-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="user-avatar">{{ request.user.username|slice:":1"|upper }}</span>
+            <span class="user-info d-none d-sm-flex flex-column align-items-start">
+              <span class="user-name">{{ request.user.username }}</span>
+              <span class="user-role">{{ request.user.role }}</span>
+            </span>
+            <i class="bi bi-chevron-down"></i>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end">
+          <ul class="dropdown-menu dropdown-menu-end topbar-dropdown">
+            <li class="dropdown-header d-sm-none">
+              <div class="fw-semibold" style="font-size:0.85rem;">{{ request.user.username }}</div>
+              <div class="text-muted" style="font-size:0.72rem;">{{ request.user.role|title }}</div>
+            </li>
+            <li class="d-sm-none"><hr class="dropdown-divider"></li>
             {% if request.user.role == 'admin' %}
-            <li><a class="dropdown-item" href="{% url 'management_super_admin_dashboard' %}">Dashboard</a></li>
+            <li><a class="dropdown-item" href="{% url 'management_super_admin_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'telecaller' %}
-            <li><a class="dropdown-item" href="{% url 'management_dashboard' %}">Dashboard</a></li>
+            <li><a class="dropdown-item" href="{% url 'management_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'counselor' %}
-            <li><a class="dropdown-item" href="{% url 'counselor_dashboard' %}">Dashboard</a></li>
+            <li><a class="dropdown-item" href="{% url 'counselor_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% endif %}
-            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
           </ul>
         </div>
       </div>

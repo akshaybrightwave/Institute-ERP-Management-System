@@ -18,29 +18,144 @@
     color: #94a3b8 !important;
   }
 
-  .management-topbar {
-    background: #111827 !important;
-    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  /* ── Global dark form controls — beats base.html's .form-control { background:#fff !important } ── */
+  html body.management-shell .management-content .form-control,
+  html body.management-shell .management-content .form-select,
+  html body.management-shell .management-content textarea.form-control,
+  html body.management-shell .management-content input[type="date"],
+  html body.management-shell .management-content input[type="time"],
+  html body.management-shell .management-content input[type="number"] {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
   }
-  
-  .management-sidebar {
-    background: #111827 !important;
-    border-right: 1px solid rgba(255,255,255,0.05) !important;
+  html body.management-shell .management-content .form-control::placeholder,
+  html body.management-shell .management-content textarea.form-control::placeholder {
+    color: #475569 !important;
   }
-  
-  .management-sidebar .nav-link,
-  .management-sidebar .sidebar-heading,
-  .management-sidebar .sidebar-item {
+  html body.management-shell .management-content .form-control:focus,
+  html body.management-shell .management-content .form-select:focus,
+  html body.management-shell .management-content textarea.form-control:focus {
+    background: #0f172a !important;
+    border-color: #5b5fef !important;
+    box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.2) !important;
+    color: #f1f5f9 !important;
+  }
+  html body.management-shell .management-content .input-group-text {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #64748b !important;
+  }
+  html body.management-shell .management-content input[type="date"],
+  html body.management-shell .management-content input[type="time"] {
+    color-scheme: dark;
+  }
+  html body.management-shell .management-content .form-check-input {
+    background-color: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+  }
+  html body.management-shell .management-content .form-check-input:checked {
+    background-color: #5b5fef !important;
+    border-color: #5b5fef !important;
+  }
+  html body.management-shell .management-content .form-check-label {
     color: #94a3b8 !important;
   }
-  
-  .management-sidebar .nav-link:hover, 
-  .management-sidebar .nav-link.active,
-  .management-sidebar .sidebar-item:hover,
-  .management-sidebar .sidebar-item.active {
-    color: #f8fafc !important;
-    background-color: #1e293b !important;
+  html body.management-shell .management-content .form-control[readonly],
+  html body.management-shell .management-content .form-control:disabled,
+  html body.management-shell .management-content .form-select:disabled {
+    background: #0f172a !important;
+    color: #475569 !important;
+    opacity: 1 !important;
   }
+
+  /* ── Dark Topbar background ── */
+  .management-topbar {
+    background: #111827 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* ── Dark Topbar elements (hamburger, search, buttons, user chip) ── */
+  .management-topbar .topbar-brand { color: #f1f5f9 !important; }
+  .management-topbar .topbar-brand i { color: #818cf8 !important; }
+
+  .management-topbar .hamburger-btn {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #94a3b8 !important;
+  }
+  .management-topbar .hamburger-btn:hover {
+    background: #5b5fef !important;
+    border-color: #5b5fef !important;
+    color: #fff !important;
+  }
+
+  .management-topbar .management-search input {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
+  }
+  .management-topbar .management-search input:focus {
+    border-color: #5b5fef !important;
+    box-shadow: 0 0 0 3px rgba(91, 95, 239, 0.2) !important;
+    background: #0f172a !important;
+  }
+  .management-topbar .management-search input::placeholder { color: #475569 !important; }
+  .management-topbar .management-search i { color: #475569 !important; }
+
+  .management-topbar .topbar-icon-btn {
+    color: #94a3b8 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: transparent !important;
+  }
+  .management-topbar .topbar-icon-btn:hover {
+    color: #a5b4fc !important;
+    border-color: #5b5fef !important;
+    background: rgba(91, 95, 239, 0.15) !important;
+  }
+
+  .management-topbar .topbar-add-btn {
+    background: #5b5fef !important;
+    border-color: #5b5fef !important;
+  }
+  .management-topbar .topbar-add-btn:hover {
+    background: #4338ca !important;
+    box-shadow: 0 4px 14px rgba(91, 95, 239, 0.4) !important;
+  }
+
+  .management-topbar .topbar-user-btn {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #f1f5f9 !important;
+  }
+  .management-topbar .topbar-user-btn:hover {
+    border-color: #5b5fef !important;
+    background: rgba(91, 95, 239, 0.15) !important;
+  }
+  .management-topbar .topbar-user-btn .bi-chevron-down { color: #64748b !important; }
+  .management-topbar .user-name { color: #f1f5f9 !important; }
+  .management-topbar .user-role { color: #64748b !important; }
+
+  .management-topbar .topbar-dropdown {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5) !important;
+  }
+  .management-topbar .topbar-dropdown .dropdown-item { color: #94a3b8 !important; }
+  .management-topbar .topbar-dropdown .dropdown-item:hover { background: #334155 !important; color: #f1f5f9 !important; }
+  .management-topbar .topbar-dropdown .dropdown-item.text-danger { color: #f87171 !important; }
+  .management-topbar .topbar-dropdown .dropdown-divider { border-color: rgba(255, 255, 255, 0.08) !important; }
+
+  /* Sidebar dark — base.html now uses #0f172a by default;
+     these reinforce consistency on all premium-theme pages */
+  .management-sidebar {
+    background: #0f172a !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  .management-sidebar .sidebar-item { color: #64748b !important; }
+  .management-sidebar .sidebar-item:hover { color: #cbd5e1 !important; background: rgba(255,255,255,0.05) !important; }
+  .management-sidebar .sidebar-item.active { color: #e2e8f0 !important; background: rgba(91,95,239,0.14) !important; border-left-color: #5b5fef !important; }
+  .management-sidebar .sidebar-item.active i { color: #818cf8 !important; }
 
   /* ── Premium Content Cards (`m-card`) ── */
   /* Using ultra-high specificity to beat base.html styles */
@@ -203,4 +318,80 @@
     background: #e2e8f0 !important;
     color: #0f172a !important;
   }
+
+  /* ══════════════════════════════════════════
+     ERP STAT CARD — shared across all dashboards
+  ══════════════════════════════════════════ */
+  .erp-card {
+    border-radius: 14px;
+    overflow: hidden;
+    color: #fff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(135, 135, 220, 0.18);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    text-decoration: none !important;
+  }
+  .erp-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(140, 140, 255, 0.38);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
+    color: #fff !important;
+  }
+  .erp-card-body { padding: 1.15rem 1.25rem 1rem; position: relative; flex: 1; }
+  .erp-card-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255,255,255,0.9); margin-bottom: 0.5rem; }
+  .erp-card-number { font-size: 2.3rem; font-weight: 800; line-height: 1; text-shadow: 0 3px 10px rgba(0,0,0,0.38); }
+  .erp-card-number.sm { font-size: 1.65rem; }
+  .erp-card-bg-icon { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: 4rem; opacity: 0.16; pointer-events: none; line-height: 1; }
+  .erp-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.52rem 1.2rem;
+    background: rgba(5, 5, 18, 0.34);
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    transition: background 0.2s, color 0.2s;
+  }
+  .erp-card-footer:hover { background: rgba(5, 5, 18, 0.52); color: #fff; }
+
+  /* ── m-table dark mode fix: base.html sets color:#111827 !important on td which
+       makes text invisible against dark cards — override with light color here ── */
+  html body.management-shell .management-content table.m-table tbody td {
+    color: #cbd5e1 !important;
+  }
+  html body.management-shell .management-content table.m-table tbody td .text-white,
+  html body.management-shell .management-content table.m-table tbody td.text-white {
+    color: #f1f5f9 !important;
+  }
+  html body.management-shell .management-content table.m-table thead th {
+    color: #94a3b8 !important;
+  }
+
+  /* ── Gradient backgrounds (used by erp-card) ── */
+  .bg-g-purple  { background: linear-gradient(145deg, #27185f 0%, #4a32a1 100%); }
+  .bg-g-blue    { background: linear-gradient(145deg, #123a82 0%, #2459bd 100%); }
+  .bg-g-navy    { background: linear-gradient(145deg, #071348 0%, #11277f 100%); }
+  .bg-g-teal    { background: linear-gradient(145deg, #075766 0%, #1592a4 100%); }
+  .bg-g-dteal   { background: linear-gradient(145deg, #003c3d 0%, #006465 100%); }
+  .bg-g-green   { background: linear-gradient(145deg, #0d5a33 0%, #1b8f53 100%); }
+  .bg-g-dgreen  { background: linear-gradient(145deg, #163b19 0%, #245b27 100%); }
+  .bg-g-olive   { background: linear-gradient(145deg, #364d00 0%, #537200 100%); }
+  .bg-g-pink    { background: linear-gradient(145deg, #89105d 0%, #c31782 100%); }
+  .bg-g-violet  { background: linear-gradient(145deg, #54106a 0%, #80209a 100%); }
+  .bg-g-orange  { background: linear-gradient(145deg, #7b3f00 0%, #b86708 100%); }
+  .bg-g-amber   { background: linear-gradient(145deg, #623000 0%, #884300 100%); }
+  .bg-g-red     { background: linear-gradient(145deg, #7a0e1d 0%, #b0152e 100%); }
+  .bg-g-crimson { background: linear-gradient(145deg, #880b23 0%, #b71634 100%); }
+  .bg-g-dred    { background: linear-gradient(145deg, #6b0000 0%, #9a0505 100%); }
+  .bg-g-slate   { background: linear-gradient(145deg, #171729 0%, #252640 100%); }
+
+  /* ── Overdue badge ── */
+  .badge-overdue { background-color: #ef4444; color: #fff; font-weight: 700; font-size: 0.7rem; padding: 0.25em 0.5em; border-radius: 4px; text-transform: uppercase; }
 </style>

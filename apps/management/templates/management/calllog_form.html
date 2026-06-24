@@ -1,5 +1,9 @@
 {% extends 'management/base.html' %}
 
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+{% endblock %}
+
 {% block management_content %}
 <div class="mb-4">
   <h2 class="fw-bold text-white mb-1">Record Call Log</h2>
@@ -26,9 +30,9 @@
             <label class="form-label text-muted small fw-bold">Select Lead <span class="text-danger">*</span></label>
             {% if selected_lead %}
               <input type="hidden" name="lead" value="{{ selected_lead.pk }}">
-              <input type="text" class="form-control bg-dark border-secondary text-white" value="{{ selected_lead.inquiry.full_name }} ({{ selected_lead.inquiry.mobile_number }})" readonly>
+              <input type="text" class="form-control" value="{{ selected_lead.inquiry.full_name }} ({{ selected_lead.inquiry.mobile_number }})" readonly>
             {% else %}
-              <select name="lead" class="form-select bg-dark border-secondary text-white" required>
+              <select name="lead" class="form-select" required>
                 <option value="">-- Choose Lead --</option>
                 {% for lead in leads %}
                   <option value="{{ lead.pk }}">{{ lead.inquiry.full_name }} ({{ lead.inquiry.mobile_number }})</option>
@@ -66,7 +70,7 @@
         </div>
 
         <div class="d-flex align-items-center justify-content-end gap-2 mt-4 pt-3 border-top border-secondary">
-          <a href="{% if selected_lead %}{% url 'lead_detail' selected_lead.pk %}{% else %}{% url 'call_log_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+          <a href="{% if selected_lead %}{% url 'lead_detail' selected_lead.pk %}{% else %}{% url 'call_log_list' %}{% endif %}" class="btn btn-outline-secondary js-skip-action-modal">Cancel</a>
           <button type="submit" class="btn btn-info text-white fw-bold">Save Call Log</button>
         </div>
       </form>

@@ -1,318 +1,530 @@
 {% extends 'management/base.html' %}
 
 {% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
 <style>
-  .timeline-badge {
-    background-color: #242448;
-    border: 1px solid #3d3d6a;
-    border-radius: 6px;
-    padding: 0.5rem;
-    font-size: 0.8rem;
-  }
-  .bg-dark-soft {
-    background-color: #16162a !important;
-  }
-  .border-dashed {
-    border-style: dashed !important;
-    border-color: #2a2a4a !important;
-  }
-  .fs-8 {
-    font-size: 0.75rem !important;
-  }
-  .tracking-wider {
-    letter-spacing: 0.05em;
-  }
-  .lead-badge-container {
+  /* ── Utilities ── */
+  .fs-8 { font-size: 0.75rem !important; }
+  .tracking-wider { letter-spacing: 0.05em; }
+
+  /* ── Restore old dark inline-style hacks to dark (base.html forces them light) ── */
+  .management-content [style*="background-color: #16162a"],
+  .management-content [style*="background-color:#16162a"],
+  .management-content .bg-dark-soft { background-color: #1e293b !important; }
+  .management-content [style*="border-color: #2a2a4a"],
+  .management-content [style*="border-color:#2a2a4a"],
+  .management-content .border-dashed { border-color: rgba(255,255,255,0.1) !important; }
+
+  /* ── Page header ── */
+  .lp-page-header {
     display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
     flex-wrap: wrap;
-    gap: 1.5rem;
-    align-items: center;
   }
-  .badge-overdue {
-    background-color: #dc3545;
+
+  /* ── Avatar ── */
+  .lp-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #5b5fef, #818cf8);
     color: #fff;
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Contact info rows ── */
+  .lp-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .lp-info-icon {
+    font-size: 15px;
+    color: #38bdf8;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .lp-info-label {
+    font-size: 0.68rem;
     font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    margin-bottom: 2px;
   }
-  .table-danger-row {
-    background-color: rgba(220, 53, 69, 0.03) !important;
-    border-left: 3px solid #dc3545 !important;
+  .lp-info-value {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #e2e8f0;
   }
-  .table-danger-row td {
-    background-color: rgba(220, 53, 69, 0.03) !important;
+
+  /* ── Notes ── */
+  .bg-dark-soft { background: #1e293b !important; color: #e2e8f0 !important; }
+  .border-dashed { border-style: dashed !important; }
+  .empty-state {
+    background: #1e293b !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: #475569 !important;
+    min-height: 90px;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
   }
-  @media (min-width: 768px) {
-    .lead-info-right {
-      border-left: 1px solid #2a2a4a;
-      padding-left: 2rem;
-      justify-content: flex-end;
-    }
+  .empty-state i { color: #334155 !important; }
+
+  /* ── Right panel stat rows ── */
+  .lp-stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .lp-stat-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  /* ── Action buttons ── */
+  .lp-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.18s;
+    border: none;
+  }
+  .lp-action-primary {
+    background: #5b5fef;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(91,95,239,0.3);
+  }
+  .lp-action-primary:hover { background: #4338ca; color: #fff; transform: translateY(-1px); }
+
+  .lp-action-warning {
+    background: rgba(251,191,36,0.12);
+    border: 1px solid rgba(251,191,36,0.35) !important;
+    color: #fbbf24;
+  }
+  .lp-action-warning:hover { background: rgba(251,191,36,0.2); color: #fde68a; }
+
+  .lp-action-info {
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.3) !important;
+    color: #38bdf8;
+  }
+  .lp-action-info:hover { background: rgba(56,189,248,0.18); color: #7dd3fc; }
+
+  .lp-action-ghost {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: #64748b;
+  }
+  .lp-action-ghost:hover { background: rgba(255,255,255,0.09); color: #94a3b8; }
+
+  /* ── Meta labels (inquiry background) ── */
+  .lp-meta-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    margin-bottom: 4px;
+  }
+
+  /* ── Table enhancements ── */
+  .lead-profile-page .m-table tbody td { color: #cbd5e1 !important; }
+  .lead-profile-page .m-table tbody td.lp-td-white { color: #f1f5f9 !important; }
+  .table-danger-row { background: rgba(248,113,113,0.06) !important; border-left: 3px solid #f87171 !important; }
+  .table-danger-row td { background: rgba(248,113,113,0.06) !important; }
+  .badge-overdue {
+    background: #ef4444; color: #fff;
+    font-size: 0.65rem; font-weight: 700;
+    padding: 0.15rem 0.4rem; border-radius: 4px;
+    vertical-align: middle;
+  }
+
+  /* ── Button overrides ── */
+  .lead-profile-page .btn-info { background: #0284c7 !important; border-color: #0284c7 !important; color: #fff !important; }
+  .lead-profile-page .btn-warning { background: #d97706 !important; border-color: #d97706 !important; color: #fff !important; }
+  .lead-profile-page .btn-success { background: #16a34a !important; border-color: #16a34a !important; color: #fff !important; }
+  .lead-profile-page .btn-outline-warning { background: rgba(251,191,36,0.1) !important; border-color: rgba(251,191,36,0.4) !important; color: #fbbf24 !important; }
+  .lead-profile-page .btn-outline-info { background: rgba(56,189,248,0.1) !important; border-color: rgba(56,189,248,0.4) !important; color: #38bdf8 !important; }
+  .lead-profile-page .btn-outline-secondary { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.15) !important; color: #94a3b8 !important; }
+
+  /* ── Lead name heading — ultra-high specificity to beat base.html's
+       .lead-profile-page .m-card h4 { color: var(--mg-text) !important } ── */
+  html body.management-shell .management-content .lead-profile-page h4,
+  html body.management-shell .management-content .lead-profile-page .m-card h4 {
+    color: #f1f5f9 !important;
+  }
+  html body.management-shell .management-content .lead-profile-page h5,
+  html body.management-shell .management-content .lead-profile-page .m-card h5 {
+    color: #f1f5f9 !important;
   }
 </style>
 {% endblock %}
 
 {% block management_content %}
 <div class="lead-profile-page">
-<div class="d-flex align-items-center justify-content-between mb-4">
-  <div>
-    <h2 class="fw-bold text-white mb-1">Lead Profile</h2>
-    <p class="text-muted small mb-0">Overview of client conversion stages and history</p>
-  </div>
-  <div class="d-flex gap-2">
-    <a href="{% url 'lead_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Back</a>
-    <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-warning"><i class="bi bi-pencil me-1"></i> Edit Lead</a>
-  </div>
-</div>
 
-<div class="row g-4">
-  <!-- Left Side: Profile and Tabs -->
-  <div class="col-lg-8">
-    <!-- Profile Card -->
-    <div class="m-card mb-4">
-      <div class="row g-4">
-        <div class="col-md-7">
-          <h4 class="fw-bold text-white mb-1">{{ lead.inquiry.full_name }}</h4>
-          <p class="text-info small mb-3"><i class="bi bi-person-circle me-1"></i>Assigned Telecaller: {{ lead.assigned_telecaller.username|default:"Unassigned" }}</p>
-          
-          <div class="row g-3 text-muted small">
-            <div class="col-md-6 d-flex align-items-center gap-2">
-              <i class="bi bi-telephone text-info"></i>
-              <span>{{ lead.inquiry.mobile_number }}</span>
-            </div>
-            <div class="col-md-6 d-flex align-items-center gap-2">
-              <i class="bi bi-envelope text-info"></i>
-              <span class="text-truncate" title="{{ lead.inquiry.email }}">{{ lead.inquiry.email|default:"No email provided" }}</span>
-            </div>
-            <div class="col-md-6 d-flex align-items-center gap-2">
-              <i class="bi bi-geo-alt text-info"></i>
-              <span>{{ lead.inquiry.city }}</span>
-            </div>
-            <div class="col-md-6 d-flex align-items-center gap-2">
-              <i class="bi bi-journal-bookmark text-info"></i>
-              <span>{{ lead.inquiry.course_interest }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-5 d-flex flex-row flex-wrap align-items-center gap-4 ps-md-4 lead-info-right">
-          <div class="text-md-end">
-            <div class="text-muted small mb-1">Lead Status</div>
-            <span class="badge px-3 py-2 fs-7 {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info text-white{% elif lead.status == 'Interested' %}bg-warning text-dark{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}" style="{% if lead.status == 'Follow Up' %}background-color: #6f42c1;{% endif %}">
-              {{ lead.status }}
-            </span>
-          </div>
-
-          <div class="text-md-end">
-            <div class="text-muted small mb-1">Priority</div>
-            <span class="badge px-3 py-2 fs-7 {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-              {{ lead.priority }}
-            </span>
-          </div>
-
-          <div class="text-md-end">
-            <div class="text-muted small mb-1">Next Follow-Up</div>
-            <span class="fw-bold fs-7 {% if lead.next_followup_date %}text-white{% else %}text-muted{% endif %}">
-              {{ lead.next_followup_date|date:"d M Y"|default:"Not Scheduled" }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notes Area -->
-      <div class="mt-4 pt-3 border-top border-secondary">
-        <label class="text-muted small fw-bold mb-2">Internal Notes</label>
-        {% if lead.notes %}
-          <div class="text-white bg-dark-soft border border-secondary p-3 rounded small" style="border-color: #2a2a4a !important;">
-            {{ lead.notes|linebreaksbr }}
-          </div>
-        {% else %}
-          <div class="text-muted bg-dark-soft border border-secondary border-dashed p-3 rounded small text-center" style="background-color: #16162a; border-style: dashed !important; border-color: #2a2a4a !important;">
-            <i class="bi bi-journal-text me-2"></i>No active notes.
-          </div>
-        {% endif %}
-      </div>
+  <!-- ── Page Header ── -->
+  <div class="lp-page-header">
+    <div>
+      <h2 class="fw-bold mb-1" style="color:#f1f5f9;">Lead Profile</h2>
+      <p class="text-muted small mb-0">Overview of client conversion stages and history</p>
     </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'lead_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Back
+      </a>
+      <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-warning fw-bold">
+        <i class="bi bi-pencil me-1"></i> Edit Lead
+      </a>
+    </div>
+  </div>
 
-    <!-- Call Log History -->
-    <div class="m-card mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold text-white mb-0"><i class="bi bi-telephone-outbound text-info me-2"></i>Call History Logs</h5>
-        <a href="{% url 'call_log_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-info text-white fw-bold"><i class="bi bi-plus"></i> Record Call</a>
+  <div class="row g-4">
+
+    <!-- ══════════════════════════════
+         LEFT — Profile + History
+    ══════════════════════════════ -->
+    <div class="col-lg-8">
+
+      <!-- Profile Card -->
+      <div class="m-card mb-4">
+        <!-- Name + Avatar -->
+        <div class="d-flex align-items-start gap-3 mb-4">
+          <div class="lp-avatar">{{ lead.inquiry.full_name|slice:":1"|upper }}</div>
+          <div class="flex-grow-1 min-w-0">
+            <h4 class="fw-bold mb-1" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</h4>
+            <p class="mb-0" style="color:#38bdf8;font-size:0.82rem;">
+              <i class="bi bi-person-circle me-1"></i>
+              Assigned Telecaller:
+              <strong>{{ lead.assigned_telecaller.username|default:"Unassigned" }}</strong>
+            </p>
+          </div>
+          <span class="badge bg-secondary fs-8 fw-bold" style="border-radius:6px;padding:5px 10px;">#{{ lead.pk }}</span>
+        </div>
+
+        <!-- Contact Grid -->
+        <div class="row g-2">
+          <div class="col-sm-6">
+            <div class="lp-info-item">
+              <i class="bi bi-telephone lp-info-icon"></i>
+              <div>
+                <div class="lp-info-label">Phone</div>
+                <div class="lp-info-value">{{ lead.inquiry.mobile_number }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="lp-info-item">
+              <i class="bi bi-envelope lp-info-icon"></i>
+              <div class="min-w-0 overflow-hidden">
+                <div class="lp-info-label">Email</div>
+                <div class="lp-info-value text-truncate">{{ lead.inquiry.email|default:"—" }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="lp-info-item">
+              <i class="bi bi-geo-alt lp-info-icon"></i>
+              <div>
+                <div class="lp-info-label">City</div>
+                <div class="lp-info-value">{{ lead.inquiry.city|default:"—" }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="lp-info-item">
+              <i class="bi bi-journal-bookmark lp-info-icon"></i>
+              <div>
+                <div class="lp-info-label">Course Interest</div>
+                <div class="lp-info-value">{{ lead.inquiry.course_interest|default:"—" }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Internal Notes -->
+        <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,0.08);">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="bi bi-journal-text" style="color:#818cf8;"></i>
+            <span class="lp-info-label">Internal Notes</span>
+          </div>
+          {% if lead.notes %}
+            <div class="bg-dark-soft border border-dashed p-3 rounded small" style="line-height:1.7;">
+              {{ lead.notes|linebreaksbr }}
+            </div>
+          {% else %}
+            <div class="empty-state border border-dashed py-3">
+              <i class="bi bi-journal-text mb-1 d-block" style="font-size:1.5rem;"></i>
+              <span class="small">No internal notes added yet.</span>
+            </div>
+          {% endif %}
+        </div>
       </div>
 
-      <div class="table-responsive">
-        {% if call_logs %}
-          <table class="table m-table align-middle border-0 mb-0">
-            <thead>
-              <tr class="text-uppercase tracking-wider text-muted fs-8">
-                <th style="width: 25%">Call Date & Time</th>
-                <th style="width: 15%">Status</th>
-                <th style="width: 15%">Duration</th>
-                <th style="width: 20%">Created By</th>
-                <th style="width: 25%">Remarks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for log in call_logs %}
+      <!-- Call History Logs -->
+      <div class="m-card mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="fw-bold mb-0" style="color:#f1f5f9;">
+            <i class="bi bi-telephone-outbound me-2" style="color:#38bdf8;"></i>Call History Logs
+          </h5>
+          <a href="{% url 'call_log_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-info fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> Record Call
+          </a>
+        </div>
+        <div class="table-responsive">
+          {% if call_logs %}
+            <table class="table m-table align-middle mb-0">
+              <thead>
                 <tr>
-                  <td class="text-white small">{{ log.call_date|date:"d M Y, H:i" }}</td>
-                  <td>
-                    <span class="badge {% if log.call_status == 'Connected' %}bg-success{% elif log.call_status == 'Not Answered' %}bg-secondary{% else %}bg-danger{% endif %}">
-                      {{ log.call_status }}
-                    </span>
-                  </td>
-                  <td>{{ log.call_duration }}s</td>
-                  <td>{{ log.created_by.username|default:"System" }}</td>
-                  <td class="small">{{ log.remarks|default:"-" }}</td>
+                  <th>Call Date & Time</th>
+                  <th>Status</th>
+                  <th>Duration</th>
+                  <th>By</th>
+                  <th>Remarks</th>
                 </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-            <i class="bi bi-telephone text-muted fs-2 d-block mb-2"></i>
-            <p class="small text-muted mb-0">No call log recorded for this lead.</p>
+              </thead>
+              <tbody>
+                {% for log in call_logs %}
+                  <tr>
+                    <td class="lp-td-white small">{{ log.call_date|date:"d M Y, H:i" }}</td>
+                    <td>
+                      <span class="badge-premium {% if log.call_status == 'Connected' %}bg-success{% elif log.call_status == 'Not Answered' %}bg-secondary{% else %}bg-danger{% endif %}">
+                        {{ log.call_status }}
+                      </span>
+                    </td>
+                    <td>{{ log.call_duration }}s</td>
+                    <td>{{ log.created_by.username|default:"System" }}</td>
+                    <td class="small">{{ log.remarks|default:"—" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="empty-state border border-dashed py-4">
+              <i class="bi bi-telephone fs-2 mb-2 d-block"></i>
+              <p class="small mb-0">No call log recorded for this lead.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Scheduled Follow-ups -->
+      <div class="m-card mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="fw-bold mb-0" style="color:#f1f5f9;">
+            <i class="bi bi-clock-history me-2" style="color:#fbbf24;"></i>Scheduled Follow-ups
+          </h5>
+          <a href="{% url 'followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-warning fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> Schedule
+          </a>
+        </div>
+        <div class="table-responsive">
+          {% if followups %}
+            <table class="table m-table align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Next Planned</th>
+                  <th>Response</th>
+                  <th>By</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for fp in followups %}
+                  <tr class="{% if fp.is_overdue %}table-danger-row{% endif %}">
+                    <td class="lp-td-white fw-semibold">
+                      {{ fp.followup_date|date:"d M Y" }}
+                      {% if fp.is_overdue %}<span class="badge-overdue ms-1">Overdue</span>{% endif %}
+                    </td>
+                    <td>
+                      <span class="badge-premium {% if fp.status == 'Completed' %}bg-success{% else %}bg-warning{% endif %}">
+                        {{ fp.status }}
+                      </span>
+                    </td>
+                    <td>{{ fp.next_followup_date|date:"d M Y"|default:"—" }}</td>
+                    <td class="small">{{ fp.response|default:"—" }}</td>
+                    <td>{{ fp.created_by.username|default:"System" }}</td>
+                    <td class="text-end">
+                      {% if fp.status == 'Pending' %}
+                        <div class="d-inline-flex gap-1">
+                          <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed">
+                            <i class="bi bi-check-lg"></i>
+                          </a>
+                          <a href="{% url 'followup_edit' fp.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                          </a>
+                        </div>
+                      {% else %}
+                        <span style="color:#4ade80;font-size:0.8rem;">
+                          <i class="bi bi-check-circle-fill"></i> Done
+                        </span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="empty-state border border-dashed py-4">
+              <i class="bi bi-calendar-x fs-2 mb-2 d-block"></i>
+              <p class="small mb-0">No scheduled follow-up logs found.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════
+         RIGHT — Status + Actions + Info
+    ══════════════════════════════ -->
+    <div class="col-lg-4">
+
+      <!-- Lead Overview Card -->
+      <div class="m-card mb-4">
+        <h6 class="fw-bold mb-3" style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">
+          <i class="bi bi-bar-chart-line me-2" style="color:#818cf8;"></i>Lead Overview
+        </h6>
+
+        <div class="lp-stat-row">
+          <span class="lp-stat-label">Status</span>
+          <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
+            {{ lead.status }}
+          </span>
+        </div>
+
+        <div class="lp-stat-row">
+          <span class="lp-stat-label">Priority</span>
+          <span class="badge-premium {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+            {{ lead.priority }}
+          </span>
+        </div>
+
+        <div class="lp-stat-row" style="border-bottom:0;padding-bottom:0;">
+          <span class="lp-stat-label">Next Follow-Up</span>
+          {% if lead.next_followup_date %}
+            <span class="d-inline-flex align-items-center gap-1" style="color:#e2e8f0;font-size:0.82rem;font-weight:600;">
+              <i class="bi bi-calendar3" style="color:#818cf8;font-size:12px;"></i>
+              {{ lead.next_followup_date|date:"d M Y" }}
+            </span>
+          {% else %}
+            <span class="text-muted small">Not Scheduled</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Quick Actions Card -->
+      <div class="m-card mb-4">
+        <h6 class="fw-bold mb-3" style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">
+          <i class="bi bi-lightning-charge me-2" style="color:#fbbf24;"></i>Quick Actions
+        </h6>
+        <div class="d-flex flex-column gap-2">
+          <a href="{% url 'call_log_add' %}?lead_id={{ lead.pk }}" class="lp-action-btn lp-action-primary">
+            <i class="bi bi-telephone-outbound"></i> Record Call
+          </a>
+          <a href="{% url 'followup_add' %}?lead_id={{ lead.pk }}" class="lp-action-btn lp-action-warning">
+            <i class="bi bi-calendar-plus"></i> Schedule Follow-up
+          </a>
+          <a href="{% url 'lead_notes_list' lead.pk %}" class="lp-action-btn lp-action-info">
+            <i class="bi bi-chat-left-text"></i> View Notes Timeline
+          </a>
+          <a href="{% url 'lead_edit' lead.pk %}" class="lp-action-btn lp-action-ghost">
+            <i class="bi bi-pencil"></i> Update Lead Details
+          </a>
+        </div>
+      </div>
+
+      <!-- Inquiry Background Card -->
+      <div class="m-card">
+        <h6 class="fw-bold mb-3" style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">
+          <i class="bi bi-info-circle me-2" style="color:#38bdf8;"></i>Inquiry Background
+        </h6>
+        <div class="d-flex flex-column gap-3">
+          <div>
+            <div class="lp-meta-label">Converted From</div>
+            <a href="{% url 'inquiry_detail' lead.inquiry.pk %}" class="d-inline-flex align-items-center gap-1 fw-semibold text-decoration-none" style="color:#38bdf8;font-size:0.875rem;">
+              <i class="bi bi-link-45deg"></i> {{ lead.inquiry.full_name }}
+            </a>
           </div>
+          <div>
+            <div class="lp-meta-label">Inquiry Origin</div>
+            <span class="badge-premium bg-secondary">{{ lead.inquiry.source }}</span>
+          </div>
+          <div>
+            <div class="lp-meta-label">Creation Date</div>
+            <span style="color:#e2e8f0;font-size:0.82rem;">{{ lead.created_at|date:"d M Y, H:i" }}</span>
+          </div>
+          <div>
+            <div class="lp-meta-label">Last Activity</div>
+            <span style="color:#e2e8f0;font-size:0.82rem;">{{ lead.updated_at|date:"d M Y, H:i" }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Admission History -->
+  {% if admission %}
+  <div class="m-card mt-4">
+    <h6 class="fw-bold mb-3" style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">
+      <i class="bi bi-journal-check me-2" style="color:#4ade80;"></i>Admission History
+    </h6>
+    <div class="row g-3">
+      <div class="col-sm-3">
+        <div class="lp-meta-label">Admission No</div>
+        <span style="color:#38bdf8;font-weight:700;">{{ admission.admission_number }}</span>
+      </div>
+      <div class="col-sm-3">
+        <div class="lp-meta-label">Date</div>
+        <span style="color:#e2e8f0;">{{ admission.admission_date|date:"d M Y" }}</span>
+      </div>
+      <div class="col-sm-3">
+        <div class="lp-meta-label">Status</div>
+        {% if admission.admission_status == 'CONFIRMED' %}
+          <span class="badge-premium bg-success">Confirmed</span>
+        {% elif admission.admission_status == 'PENDING' %}
+          <span class="badge-premium bg-warning">Pending</span>
+        {% else %}
+          <span class="badge-premium bg-danger">Cancelled</span>
         {% endif %}
       </div>
-    </div>
-
-    <!-- Follow Ups History -->
-    <div class="m-card mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold text-white mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Scheduled Follow-ups</h5>
-        <a href="{% url 'followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-sm btn-warning fw-bold"><i class="bi bi-plus"></i> Schedule Follow-up</a>
-      </div>
-
-      <div class="table-responsive">
-        {% if followups %}
-          <table class="table m-table align-middle border-0 mb-0">
-            <thead>
-              <tr class="text-uppercase tracking-wider text-muted fs-8">
-                <th style="width: 25%">Follow-up Date</th>
-                <th style="width: 15%">Status</th>
-                <th style="width: 20%">Next Planned Date</th>
-                <th style="width: 25%">Response / Notes</th>
-                <th style="width: 10%">Created By</th>
-                <th style="width: 5%" class="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for fp in followups %}
-                <tr class="{% if fp.is_overdue %}table-danger-row{% endif %}">
-                  <td class="fw-bold text-white">
-                    {{ fp.followup_date|date:"d M Y" }}
-                    {% if fp.is_overdue %}
-                      <span class="badge-overdue ms-1">Overdue</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <span class="badge {% if fp.status == 'Completed' %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                      {{ fp.status }}
-                    </span>
-                  </td>
-                  <td>{{ fp.next_followup_date|date:"d M Y"|default:"-" }}</td>
-                  <td class="small">{{ fp.response|default:"-" }}</td>
-                  <td>{{ fp.created_by.username|default:"System" }}</td>
-                  <td class="text-end">
-                    {% if fp.status == 'Pending' %}
-                      <div class="d-inline-flex gap-1">
-                        <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success text-white" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
-                        <a href="{% url 'followup_edit' fp.pk %}" class="btn btn-sm btn-outline-warning" title="Edit"><i class="bi bi-pencil"></i></a>
-                      </div>
-                    {% else %}
-                      <span class="text-muted small text-nowrap"><i class="bi bi-check-circle-fill text-success"></i> Finished</span>
-                    {% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-            <i class="bi bi-calendar-x text-muted fs-2 d-block mb-2"></i>
-            <p class="small text-muted mb-0">No scheduled follow-up logs found.</p>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-  <!-- Right Side: Workflow Overview -->
-  <div class="col-lg-4">
-    <!-- Quick Actions Panel -->
-    <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge text-warning me-2"></i>Actions</h5>
-      <div class="d-flex flex-column gap-2">
-        <a href="{% url 'call_log_add' %}?lead_id={{ lead.pk }}" class="btn btn-primary w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
-          <i class="bi bi-telephone-outbound"></i> Record Call Record
-        </a>
-        <a href="{% url 'followup_add' %}?lead_id={{ lead.pk }}" class="btn btn-outline-warning w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
-          <i class="bi bi-calendar-plus"></i> Schedule Follow-up
-        </a>
-
-        <a href="{% url 'lead_edit' lead.pk %}" class="btn btn-outline-light w-100 fw-bold py-2 d-flex align-items-center justify-content-center gap-2">
-          <i class="bi bi-pencil"></i> Update Lead Details
+      <div class="col-sm-3">
+        <div class="lp-meta-label">Actions</div>
+        <a href="{% url 'admission_detail' admission.pk %}" class="btn btn-sm btn-outline-info">
+          <i class="bi bi-eye me-1"></i> View
         </a>
       </div>
     </div>
-
-
-    <!-- Details Timeline -->
-    <div class="m-card">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-info-circle text-info me-2"></i>Inquiry Background</h5>
-      <div class="d-flex flex-column gap-3">
-        <div>
-          <div class="text-muted small mb-1">Converted From Inquiry</div>
-          <a href="{% url 'inquiry_detail' lead.inquiry.pk %}" class="text-info text-decoration-none fw-bold d-inline-flex align-items-center gap-1"><i class="bi bi-link-45deg"></i> {{ lead.inquiry.full_name }}</a>
-        </div>
-        <div>
-          <div class="text-muted small mb-1">Inquiry Origin</div>
-          <span class="badge bg-secondary">{{ lead.inquiry.source }}</span>
-        </div>
-        <div>
-          <div class="text-muted small mb-1">Creation Date</div>
-          <span class="text-white small">{{ lead.created_at|date:"d M Y, H:i" }}</span>
-        </div>
-        <div>
-          <div class="text-muted small mb-1">Last Activity Date</div>
-          <span class="text-white small">{{ lead.updated_at|date:"d M Y, H:i" }}</span>
-        </div>
-      </div>
-    </div>
   </div>
-</div>
+  {% endif %}
 
-<!-- Admission History -->
-{% if admission %}
-<div class="m-card mt-4">
-  <h5 class="fw-bold text-white mb-3"><i class="bi bi-journal-check text-success me-2"></i>Admission History</h5>
-  <div class="row g-3">
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Admission No</span>
-      <span class="text-info fw-bold">{{ admission.admission_number }}</span>
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Date</span>
-      <span class="text-white">{{ admission.admission_date|date:"d M Y" }}</span>
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Status</span>
-      {% if admission.admission_status == 'CONFIRMED' %}
-        <span class="badge bg-success">Confirmed</span>
-      {% elif admission.admission_status == 'PENDING' %}
-        <span class="badge bg-warning text-dark">Pending</span>
-        <span class="badge bg-danger">Cancelled</span>
-      {% endif %}
-    </div>
-    <div class="col-md-3">
-      <span class="text-muted small d-block">Actions</span>
-      <a href="{% url 'admission_detail' admission.pk %}" class="btn btn-sm btn-outline-info me-1"><i class="bi bi-eye"></i> View</a>
-    </div>
-  </div>
-</div>
-{% endif %}
 </div>
 {% endblock %}

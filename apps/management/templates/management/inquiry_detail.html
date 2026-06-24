@@ -1,33 +1,60 @@
 {% extends 'management/base.html' %}
 
 {% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
 <style>
+  /* ── Info field labels ── */
+  .inquiry-detail-page .text-muted.small { color: #475569 !important; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  /* ── Remarks readonly panel ── */
   .inquiry-detail-page .detail-readonly-panel {
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
+    background: #1e293b !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
     border-radius: 8px;
-    color: #111827;
+    color: #e2e8f0 !important;
     min-height: 80px;
     padding: 14px 16px;
-    line-height: 1.55;
+    line-height: 1.6;
   }
 
+  /* ── Status panel box ── */
   .inquiry-detail-page .status-panel {
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    background: #1e293b !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 10px;
+    text-align: center;
+    padding: 24px 16px;
+    margin-bottom: 16px;
   }
 
+  /* ── Workflow info note ── */
   .inquiry-detail-page .workflow-note {
-    background: #f8fafc !important;
-    border-color: #cbd5e1 !important;
-    color: #475569 !important;
+    background: rgba(56,189,248,0.08) !important;
+    border: 1px solid rgba(56,189,248,0.2) !important;
+    color: #94a3b8 !important;
     border-radius: 8px;
+    font-size: 0.85rem;
+  }
+  .inquiry-detail-page .workflow-note .bi-info-circle-fill { color: #38bdf8 !important; }
+
+  /* ── Dividers ── */
+  .inquiry-detail-page .border-top.border-secondary,
+  .inquiry-detail-page .border-secondary {
+    border-color: rgba(255,255,255,0.08) !important;
   }
 
-  .inquiry-detail-page .border-secondary {
-    border-color: #e5e7eb !important;
+  /* ── Heading + card overrides ── */
+  html body.management-shell .management-content .inquiry-detail-page .m-card h5 {
+    color: #f1f5f9 !important;
   }
+  .inquiry-detail-page .fw-bold.text-white { color: #f1f5f9 !important; }
+  .inquiry-detail-page .fs-5.text-white { color: #f1f5f9 !important; }
+  .inquiry-detail-page .text-white { color: #e2e8f0 !important; }
+
+  /* ── Button overrides ── */
+  .inquiry-detail-page .btn-outline-secondary { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.15) !important; color: #94a3b8 !important; }
+  .inquiry-detail-page .btn-warning { background: #d97706 !important; border-color: #d97706 !important; color: #fff !important; }
+  .inquiry-detail-page .btn-success { background: #16a34a !important; border-color: #16a34a !important; color: #fff !important; }
 </style>
 {% endblock %}
 
@@ -103,9 +130,9 @@
       <div>
         <h5 class="fw-bold text-white mb-4"><i class="bi bi-check-circle-fill text-warning me-2"></i>Status & Workflow</h5>
         
-        <div class="status-panel text-center py-4 mb-4">
-          <div class="text-muted small mb-2">Current Status</div>
-          <span class="fs-4 fw-bold badge {% if inquiry.status == 'New' %}bg-primary{% elif inquiry.status == 'Contacted' %}bg-warning text-dark{% elif inquiry.status == 'Qualified' %}bg-success{% else %}bg-danger{% endif %}">
+        <div class="status-panel">
+          <div class="text-muted small mb-3" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;">Current Status</div>
+          <span class="badge-premium fs-6 fw-bold {% if inquiry.status == 'New' %}bg-primary{% elif inquiry.status == 'Contacted' %}bg-info{% elif inquiry.status == 'Qualified' %}bg-success{% else %}bg-danger{% endif %}" style="padding:10px 22px;border-radius:999px;font-size:1rem !important;">
             {{ inquiry.status }}
           </span>
         </div>

@@ -3,6 +3,7 @@
 {% block title %}Lead Source Analytics | Examly{% endblock %}
 
 {% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
 <style>
   .source-analytics-page {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -25,164 +26,120 @@
     gap: 16px;
   }
 
+  /* ── KPI cards ── */
   .source-kpi-label {
-    color: var(--mg-muted);
-    font-size: 13px;
-    font-weight: 800;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: .06em;
+    letter-spacing: .08em;
     margin-bottom: 8px;
   }
-
   .source-kpi-value {
-    color: var(--mg-text);
+    color: #f1f5f9;
     font-size: 30px;
     font-weight: 900;
     line-height: 1;
     letter-spacing: -0.03em;
   }
-
   .source-kpi-sub {
-    color: var(--mg-muted);
-    font-size: 13px;
+    color: #64748b;
+    font-size: 12px;
     margin-top: 8px;
   }
-
   .source-kpi-icon {
     width: 52px;
     height: 52px;
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    border-radius: 8px;
-    background: rgba(91, 95, 239, .12);
-    color: var(--mg-primary);
+    border-radius: 10px;
+    background: rgba(91, 95, 239, .15);
+    color: #818cf8;
     font-size: 24px;
   }
 
-  .source-chart-card {
-    padding: 20px !important;
-    min-height: 360px;
-  }
-
+  /* ── Chart cards ── */
+  .source-chart-card { padding: 20px !important; min-height: 360px; }
   .source-card-title {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--mg-text) !important;
+    color: #f1f5f9 !important;
     font-size: 18px;
-    font-weight: 900;
+    font-weight: 700;
     margin-bottom: 4px;
   }
+  .source-card-title i { color: #818cf8; }
+  .source-card-subtitle { color: #64748b; font-size: 13px; margin-bottom: 18px; }
+  .source-chart-wrap { position: relative; height: 260px; width: 100%; }
 
-  .source-card-title i {
-    color: var(--mg-primary);
-  }
-
-  .source-card-subtitle {
-    color: var(--mg-muted);
-    font-size: 13px;
-    margin-bottom: 18px;
-  }
-
-  .source-chart-wrap {
-    position: relative;
-    height: 260px;
-    width: 100%;
-  }
-
-  .source-table-card {
-    padding: 0 !important;
-    overflow: hidden;
-  }
-
+  /* ── Table card ── */
+  .source-table-card { padding: 0 !important; overflow: hidden; }
   .source-table-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
     padding: 20px;
-    border-bottom: 1px solid var(--mg-line);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
-
-  .source-table {
-    min-width: 860px;
-    margin-bottom: 0;
-  }
-
+  .source-table { min-width: 860px; margin-bottom: 0; }
   .source-table th {
     padding: 14px 18px !important;
-    background: #f8fafc !important;
-    color: var(--mg-muted) !important;
+    background: #0f172a !important;
+    color: #475569 !important;
     font-size: 11px;
-    font-weight: 900;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .08em;
-    border-bottom: 1px solid var(--mg-line) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
   }
-
   .source-table td {
     padding: 16px 18px !important;
-    color: var(--mg-text) !important;
-    border-bottom: 1px solid var(--mg-line) !important;
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
     vertical-align: middle;
+    background: transparent !important;
   }
+  .source-table tbody tr:hover td { background: rgba(255,255,255,0.03) !important; }
+  .source-table tbody tr:last-child td { border-bottom: 0 !important; }
+  .source-table td.fw-bold { color: #f1f5f9 !important; }
 
-  .source-table tbody tr:hover td {
-    background: #fbfdff !important;
-  }
-
-  .source-channel {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    font-weight: 900;
-  }
-
+  /* ── Source channel chip ── */
+  .source-channel { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; color: #e2e8f0; }
   .source-channel-icon {
     width: 34px;
     height: 34px;
     display: inline-grid;
     place-items: center;
     border-radius: 8px;
-    background: #eef2ff;
-    color: var(--mg-primary);
+    background: rgba(91, 95, 239, .15);
+    color: #818cf8;
   }
 
+  /* ── Progress bar ── */
   .source-progress {
-    height: 8px;
+    height: 7px;
     border-radius: 999px;
-    background: #e2e8f0;
+    background: rgba(255,255,255,0.08);
     overflow: hidden;
     min-width: 120px;
   }
-
   .source-progress span {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, var(--mg-primary), #06b6d4);
+    background: linear-gradient(90deg, #5b5fef, #06b6d4);
   }
 
-  .source-empty {
-    padding: 48px 18px;
-    text-align: center;
-    color: var(--mg-muted);
-  }
-
-  .source-empty i {
-    display: block;
-    color: rgba(91, 95, 239, .42);
-    font-size: 42px;
-    margin-bottom: 10px;
-  }
+  /* ── Empty state ── */
+  .source-empty { padding: 48px 18px; text-align: center; color: #475569; }
+  .source-empty i { display: block; color: rgba(91,95,239,.4); font-size: 42px; margin-bottom: 10px; }
+  .source-empty h5 { color: #64748b !important; }
 
   @media (max-width: 991.98px) {
-    .source-header,
-    .source-table-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
+    .source-header, .source-table-header { flex-direction: column; align-items: flex-start; }
   }
 </style>
 {% endblock %}
@@ -342,7 +299,7 @@
       datasets: [{
         data: sourceDistribution,
         backgroundColor: palette,
-        borderColor: '#fff',
+        borderColor: '#111827',
         borderWidth: 3,
         hoverOffset: 8
       }]
@@ -357,7 +314,7 @@
           labels: {
             boxWidth: 12,
             boxHeight: 12,
-            color: '#334155',
+            color: '#94a3b8',
             font: chartFont,
             padding: 16
           }
@@ -386,7 +343,7 @@
           beginAtZero: true,
           max: 100,
           ticks: { color: '#64748b', font: chartFont, callback: value => value + '%' },
-          grid: { color: '#e5e7eb' }
+          grid: { color: 'rgba(255,255,255,0.06)' }
         },
         x: {
           ticks: { color: '#64748b', font: chartFont },

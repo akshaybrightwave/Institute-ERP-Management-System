@@ -1,6 +1,7 @@
 {% extends 'management/base.html' %}
 
 {% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
 <style>
   .lead-list-page,
   .lead-modal input,
@@ -42,73 +43,119 @@
     line-height: 1;
   }
 
+  /* ── Modal shell ── */
   .lead-modal .modal-content {
-    border: 0;
-    border-radius: 8px;
+    background: #111827 !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 12px !important;
     overflow: hidden;
   }
-
   .lead-modal .modal-header {
-    background: #0f172a;
-    border-bottom: 0;
-    color: #fff;
+    background: #0f172a !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    color: #f1f5f9 !important;
   }
-
   .lead-modal .modal-body {
-    background: #f8fafc;
+    background: #111827 !important;
+  }
+  .lead-modal .modal-footer {
+    background: #0f172a !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
   }
 
-  .lead-modal .form-label {
-    color: var(--mg-muted);
-    font-size: 13px;
-    font-weight: 800;
-  }
-
+  /* ── Modal form controls ── */
+  .lead-modal .form-label { color: #64748b !important; font-size: 13px; font-weight: 700; }
   .lead-modal .form-control,
   .lead-modal .form-select {
     min-height: 44px;
-    border: 1px solid var(--mg-line) !important;
-    background: #fff !important;
-    color: var(--mg-text) !important;
+    background: #1e293b !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #f1f5f9 !important;
     border-radius: 8px !important;
   }
-
+  .lead-modal .form-control::placeholder { color: #475569 !important; }
   .lead-modal .form-control:focus,
   .lead-modal .form-select:focus {
-    border-color: rgba(91, 95, 239, .55) !important;
-    box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
+    background: #0f172a !important;
+    border-color: #5b5fef !important;
+    box-shadow: 0 0 0 3px rgba(91,95,239,0.2) !important;
   }
+  .lead-modal .form-check-input {
+    background-color: #1e293b !important;
+    border-color: rgba(255,255,255,0.25) !important;
+  }
+  .lead-modal .form-check-input:checked { background-color: #5b5fef !important; border-color: #5b5fef !important; }
+  .lead-modal .form-check-label { color: #94a3b8 !important; }
 
+  /* ── Modal footer buttons ── */
+  .lead-modal .btn-outline-secondary {
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.15) !important;
+    color: #94a3b8 !important;
+  }
+  .lead-modal .btn-outline-secondary:hover { background: rgba(255,255,255,0.1) !important; color: #e2e8f0 !important; }
+
+  /* ── Lead info tiles (view modal) ── */
   .lead-modal-info {
-    border: 1px solid var(--mg-line);
+    background: #1e293b !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
     border-radius: 8px;
-    background: #fff;
     padding: 14px;
   }
+  .lead-modal-info small { display: block; color: #475569 !important; font-weight: 700; margin-bottom: 3px; }
+  .lead-modal-info .fw-bold { color: #e2e8f0 !important; }
 
-  .lead-modal-info small {
-    display: block;
-    color: var(--mg-muted);
-    font-weight: 700;
-    margin-bottom: 3px;
-  }
-
+  /* ── Bulk table ── */
   .lead-bulk-table {
     max-height: 430px;
     overflow: auto;
-    border: 1px solid var(--mg-line);
+    border: 1px solid rgba(255,255,255,0.08) !important;
     border-radius: 8px;
-    background: #fff;
+    background: #1e293b !important;
   }
+  .lead-bulk-table .table { margin-bottom: 0; color: #94a3b8 !important; }
+  .lead-bulk-table .table thead th {
+    background: #0f172a !important;
+    color: #475569 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  }
+  .lead-bulk-table .table tbody td {
+    background: transparent !important;
+    color: #94a3b8 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  }
+  .lead-bulk-table .table tbody tr:hover td { background: rgba(255,255,255,0.03) !important; }
+  .lead-bulk-table .table tbody td.fw-bold { color: #e2e8f0 !important; }
+  .lead-bulk-table .form-check-input {
+    background-color: #1e293b !important;
+    border-color: rgba(255,255,255,0.25) !important;
+  }
+  .lead-bulk-table .form-check-input:checked { background-color: #5b5fef !important; border-color: #5b5fef !important; }
 
-  .lead-bulk-table .table {
-    margin-bottom: 0;
+  /* ── Filter inputs (high-specificity to beat base.html's !important) ── */
+  html body.management-shell .management-content .lead-list-page .form-control,
+  html body.management-shell .management-content .lead-list-page .form-select {
+    background: #1e293b !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: #f1f5f9 !important;
+  }
+  html body.management-shell .management-content .lead-list-page .form-control::placeholder {
+    color: #475569 !important;
+  }
+  html body.management-shell .management-content .lead-list-page .form-control:focus,
+  html body.management-shell .management-content .lead-list-page .form-select:focus {
+    background: #0f172a !important;
+    border-color: #5b5fef !important;
+    box-shadow: 0 0 0 3px rgba(91,95,239,0.2) !important;
+  }
+  html body.management-shell .management-content .lead-list-page .input-group-text {
+    background: #1e293b !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: #64748b !important;
   }
 
   @media (max-width: 991.98px) {
-    .lead-page-header {
-      flex-direction: column;
-    }
+    .lead-page-header { flex-direction: column; }
   }
 </style>
 {% endblock %}
@@ -134,15 +181,15 @@
     <div class="col-md-5">
       <label class="form-label text-muted small fw-bold">Search</label>
       <div class="input-group">
-        <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
-        <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white" placeholder="Search by name or mobile number...">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name or mobile number...">
       </div>
     </div>
-    
+
     <!-- Status -->
     <div class="col-md-3">
       <label class="form-label text-muted small fw-bold">Status</label>
-      <select name="status" class="form-select bg-dark border-secondary text-white">
+      <select name="status" class="form-select">
         <option value="">All Statuses</option>
         {% for code, name in status_choices %}
           <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
@@ -153,7 +200,7 @@
     <!-- Priority -->
     <div class="col-md-3">
       <label class="form-label text-muted small fw-bold">Priority</label>
-      <select name="priority" class="form-select bg-dark border-secondary text-white">
+      <select name="priority" class="form-select">
         <option value="">All Priorities</option>
         {% for code, name in priority_choices %}
           <option value="{{ code }}" {% if priority == code %}selected{% endif %}>{{ name }}</option>
@@ -328,10 +375,18 @@
                 {% for lead in page_obj %}
                 <tr>
                   <td><input type="checkbox" name="leads" value="{{ lead.id }}" class="form-check-input lead-bulk-checkbox"></td>
-                  <td class="fw-bold">{{ lead.inquiry.full_name }}</td>
+                  <td class="fw-bold" style="color:#e2e8f0;">{{ lead.inquiry.full_name }}</td>
                   <td>{{ lead.inquiry.mobile_number }}</td>
-                  <td>{{ lead.priority }}</td>
-                  <td>{{ lead.status }}</td>
+                  <td>
+                    <span class="badge-premium {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+                      {{ lead.priority }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                      {{ lead.status }}
+                    </span>
+                  </td>
                 </tr>
                 {% empty %}
                 <tr>

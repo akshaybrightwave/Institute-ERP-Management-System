@@ -3,115 +3,7 @@
 {% block title %}Management Super Admin Dashboard | Examly{% endblock %}
 
 {% block extra_style %}
-<style>
-  /* Premium Dashboard Styling */
-  .stat-card {
-    display: block !important;
-    border-radius: 12px;
-    border: none;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.45);
-    color: #fff !important;
-    text-decoration: none !important;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .stat-card:hover {
-    color: #fff !important;
-    text-decoration: none !important;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-  }
-  .stat-card-body {
-    padding: 1.15rem;
-    position: relative;
-  }
-  .stat-card-title {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    opacity: 0.85;
-    margin-bottom: 0.4rem;
-  }
-  .stat-card-value {
-    font-size: 2rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-  .stat-card-icon {
-    position: absolute;
-    right: 0.8rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 3rem;
-    opacity: 0.15;
-  }
-  .stat-card-footer {
-    padding: 0.4rem 1.15rem;
-    background: rgba(0,0,0,0.2);
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.85);
-  }
-  .stat-card:hover .stat-card-footer {
-    background: rgba(0,0,0,0.3);
-    color: #fff;
-  }
-
-  /* Distinct Gradient Styles */
-  .bg-blue     { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
-  .bg-teal     { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); }
-  .bg-indigo   { background: linear-gradient(135deg, #312e81 0%, #4f46e5 100%); }
-  .bg-orange   { background: linear-gradient(135deg, #7c2d12 0%, #ea580c 100%); }
-  .bg-red      { background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%); }
-  .bg-green    { background: linear-gradient(135deg, #065f46 0%, #10b981 100%); }
-  .bg-purple   { background: linear-gradient(135deg, #5b21b6 0%, #8b5cf6 100%); }
-  .bg-pink     { background: linear-gradient(135deg, #9d174d 0%, #ec4899 100%); }
-  .bg-cyan     { background: linear-gradient(135deg, #155e75 0%, #06b6d4 100%); }
-  .bg-violet   { background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%); }
-
-  /* Quick Actions */
-  .action-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 0.8rem 1rem;
-    background: #14142b;
-    border: 1px solid #242448;
-    color: #fff;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-decoration: none;
-    transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
-  }
-  .action-btn:hover {
-    transform: translateY(-2px);
-    border-color: #0dcaf0;
-    color: #fff;
-    background: #1e1e3d;
-  }
-  .action-btn i {
-    font-size: 1.2rem;
-    color: #0dcaf0;
-  }
-
-  .badge-overdue {
-    background-color: #ef4444;
-    color: white;
-    font-weight: 700;
-    font-size: 0.7rem;
-    padding: 0.25em 0.5em;
-    border-radius: 4px;
-    text-transform: uppercase;
-  }
-</style>
+{# All dark theme CSS (topbar, sidebar, cards, erp-card, gradients) comes from the shared include #}
 {% include 'management/premium_theme_css.html' %}
 {% endblock %}
 
@@ -129,132 +21,132 @@
   </div>
 </div>
 
-<!-- Stats Row -->
+<!-- Stats Row — uses shared erp-card component from premium_theme_css.html -->
 <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
   <!-- Total Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}" class="stat-card bg-blue d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Total Leads</div>
-        <div class="stat-card-value">{{ total_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-person-lines-fill"></i></div>
+    <div class="erp-card bg-g-blue">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Total Leads</div>
+        <div class="erp-card-number">{{ total_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-lines-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'lead_list' %}" class="erp-card-footer">
         <i class="bi bi-eye"></i> View all
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Assigned Leads -->
   <div class="col">
-    <a href="{% url 'lead_assign' %}" class="stat-card bg-teal d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Assigned Leads</div>
-        <div class="stat-card-value">{{ assigned_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-person-check-fill"></i></div>
+    <div class="erp-card bg-g-teal">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Assigned Leads</div>
+        <div class="erp-card-number">{{ assigned_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'lead_assign' %}" class="erp-card-footer">
         <i class="bi bi-gear"></i> Assign leads
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Contacted Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Contacted" class="stat-card bg-cyan d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Contacted Leads</div>
-        <div class="stat-card-value">{{ contacted_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-telephone-fill"></i></div>
+    <div class="erp-card bg-g-dteal">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Contacted Leads</div>
+        <div class="erp-card-number">{{ contacted_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-telephone-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'lead_list' %}?status=Contacted" class="erp-card-footer">
         <i class="bi bi-funnel"></i> View contacted
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Interested Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Interested" class="stat-card bg-violet d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Interested Leads</div>
-        <div class="stat-card-value">{{ interested_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-heart-fill"></i></div>
+    <div class="erp-card bg-g-violet">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Interested Leads</div>
+        <div class="erp-card-number">{{ interested_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'lead_list' %}?status=Interested" class="erp-card-footer">
         <i class="bi bi-funnel"></i> View interested
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Qualified Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Qualified" class="stat-card bg-green d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Qualified Leads</div>
-        <div class="stat-card-value">{{ qualified_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-award-fill"></i></div>
+    <div class="erp-card bg-g-green">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Qualified Leads</div>
+        <div class="erp-card-number">{{ qualified_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-award-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'lead_list' %}?status=Qualified" class="erp-card-footer">
         <i class="bi bi-funnel"></i> View qualified
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Rejected Leads -->
   <div class="col">
-    <a href="{% url 'lead_list' %}?status=Rejected" class="stat-card bg-red d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Rejected Leads</div>
-        <div class="stat-card-value">{{ rejected_leads }}</div>
-        <div class="stat-card-icon"><i class="bi bi-x-circle-fill"></i></div>
+    <div class="erp-card bg-g-crimson">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Rejected Leads</div>
+        <div class="erp-card-number">{{ rejected_leads }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-x-circle-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'lead_list' %}?status=Rejected" class="erp-card-footer">
         <i class="bi bi-funnel"></i> View rejected
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Today's Calls -->
   <div class="col">
-    <a href="{% url 'call_log_list' %}" class="stat-card bg-orange d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Today's Calls</div>
-        <div class="stat-card-value">{{ today_calls }}</div>
-        <div class="stat-card-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+    <div class="erp-card bg-g-orange">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Today's Calls</div>
+        <div class="erp-card-number">{{ today_calls }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'call_log_list' %}" class="erp-card-footer">
         <i class="bi bi-clock-history"></i> Call logs
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Pending Follow-ups -->
   <div class="col">
-    <a href="{% url 'followup_list' %}?status=Pending" class="stat-card bg-pink d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Pending Follow-ups</div>
-        <div class="stat-card-value">{{ pending_followups }}</div>
-        <div class="stat-card-icon"><i class="bi bi-calendar-event-fill"></i></div>
+    <div class="erp-card bg-g-pink">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Pending Follow-ups</div>
+        <div class="erp-card-number">{{ pending_followups }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
         <i class="bi bi-eye"></i> View pending
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 
   <!-- Overdue Follow-ups -->
   <div class="col">
-    <a href="{% url 'followup_list' %}?status=Pending" class="stat-card bg-red d-block">
-      <div class="stat-card-body">
-        <div class="stat-card-title">Overdue Follow-ups</div>
-        <div class="stat-card-value">{{ overdue_followups }}</div>
-        <div class="stat-card-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <div class="erp-card bg-g-dred">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Overdue Follow-ups</div>
+        <div class="erp-card-number">{{ overdue_followups }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
       </div>
-      <div class="stat-card-footer">
+      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
         <i class="bi bi-exclamation-circle"></i> Handle overdue
-      </div>
-    </a>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -279,12 +171,15 @@
                 <th>Priority</th>
                 <th>Next Follow-Up</th>
                 <th>Assigned Telecaller</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for lead in recent_leads %}
                 <tr>
-                  <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
+                  <td>
+                    <span class="fw-semibold" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</span>
+                  </td>
                   <td>
                     <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
                       {{ lead.status }}
@@ -297,12 +192,29 @@
                   </td>
                   <td>
                     {% if lead.next_followup_date %}
-                      {{ lead.next_followup_date|date:"d M Y" }}
+                      <span class="d-inline-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.82rem;">
+                        <i class="bi bi-calendar3" style="color:#818cf8;"></i>
+                        {{ lead.next_followup_date|date:"d M Y" }}
+                      </span>
                     {% else %}
-                      <span class="text-muted small">Not Scheduled</span>
+                      <span class="text-muted small">—</span>
                     {% endif %}
                   </td>
-                  <td class="small text-info fw-bold">{{ lead.assigned_telecaller.username|default:"Unassigned" }}</td>
+                  <td>
+                    {% if lead.assigned_telecaller %}
+                      <div class="d-inline-flex align-items-center gap-2">
+                        <span style="width:26px;height:26px;border-radius:6px;background:#5b5fef;color:#fff;font-size:0.7rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">{{ lead.assigned_telecaller.username|slice:":1"|upper }}</span>
+                        <span style="color:#e2e8f0;font-size:0.82rem;font-weight:600;">{{ lead.assigned_telecaller.username }}</span>
+                      </div>
+                    {% else %}
+                      <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i class="bi bi-eye"></i></a>
+                    </div>
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>

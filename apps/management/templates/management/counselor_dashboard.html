@@ -404,7 +404,9 @@
               <tbody>
                 {% for lead in recent_leads %}
                   <tr>
-                    <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
+                    <td>
+                      <span class="fw-semibold" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</span>
+                    </td>
                     <td>
                       <span class="badge-premium {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}">
                         {{ lead.get_counselor_status_display }}
@@ -417,9 +419,12 @@
                     </td>
                     <td>
                       {% if lead.next_followup_date %}
-                        {{ lead.next_followup_date|date:"d M Y" }}
+                        <span class="d-inline-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.82rem;">
+                          <i class="bi bi-calendar3" style="color:#818cf8;"></i>
+                          {{ lead.next_followup_date|date:"d M Y" }}
+                        </span>
                       {% else %}
-                        <span class="text-muted small">Not Scheduled</span>
+                        <span class="text-muted small">—</span>
                       {% endif %}
                     </td>
                     <td>

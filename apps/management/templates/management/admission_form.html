@@ -2,6 +2,11 @@
 
 {% block title %}{{ title }} | Examly{% endblock %}
 
+
+{% block extra_style %}
+{% include 'management/premium_theme_css.html' %}
+{% endblock %}
+
 {% block management_content %}
 <div class="mb-4">
   <h2 class="fw-bold text-white mb-1">{{ title }}</h2>
@@ -141,7 +146,7 @@
 
   <div class="mt-4 d-flex gap-3">
     <button type="submit" class="btn btn-info text-white fw-bold px-4"><i class="bi bi-check-circle me-1"></i> Save Admission</button>
-    <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-outline-secondary fw-bold">Cancel</a>
+    <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-outline-secondary fw-bold js-skip-action-modal">Cancel</a>
   </div>
 </form>
 

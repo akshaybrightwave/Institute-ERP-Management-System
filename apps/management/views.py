@@ -47,7 +47,7 @@ def management_dashboard(request):
     }
 
     # Tables
-    recent_leads = leads_qs.order_by('-created_at')[:5]
+    recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.filter(lead__assigned_telecaller=request.user).order_by('-created_at')[:5]
     today_followups_list = followups_qs.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
     overdue_followups_list = followups_qs.filter(status='Pending', followup_date__lt=today).order_by('followup_date')[:5]
@@ -109,7 +109,7 @@ def management_super_admin_dashboard(request):
     }
 
     # Tables
-    recent_leads = Lead.objects.order_by('-created_at')[:5]
+    recent_leads = Lead.objects.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.all().order_by('-created_at')[:5]
     today_followups_list = FollowUp.objects.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
     overdue_followups_list = FollowUp.objects.filter(status='Pending', followup_date__lt=today).order_by('followup_date')[:5]
@@ -1513,7 +1513,7 @@ def counselor_dashboard(request):
     }
     
     # Table Contexts
-    recent_leads = leads_qs.order_by('-created_at')[:5]
+    recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').order_by('-created_at')[:5]
     today_followups_list = followups_qs.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
     overdue_followups_list = followups_qs.filter(status='Pending', followup_date__lt=today).order_by('followup_date')[:5]
     recent_activities = activities_qs.order_by('-created_at')[:5]
