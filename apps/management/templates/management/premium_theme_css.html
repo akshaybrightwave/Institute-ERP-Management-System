@@ -29,6 +29,22 @@
     border-color: rgba(255, 255, 255, 0.1) !important;
     color: #f1f5f9 !important;
   }
+  
+  /* ── Fix for Chrome/Webkit Autofill on Dark Theme ── */
+  html body.management-shell .management-content input:-webkit-autofill,
+  html body.management-shell .management-content input:-webkit-autofill:hover, 
+  html body.management-shell .management-content input:-webkit-autofill:focus, 
+  html body.management-shell .management-content input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #1e293b inset !important;
+    -webkit-text-fill-color: #f1f5f9 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+  
+  /* ── Fix for Select Dropdown Options ── */
+  html body.management-shell .management-content .form-select option {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+  }
   html body.management-shell .management-content .form-control::placeholder,
   html body.management-shell .management-content textarea.form-control::placeholder {
     color: #475569 !important;
@@ -261,24 +277,47 @@
     color: inherit !important;
   }
 
+  /* ── Overrides for White Boxes in Profile ── */
+  html body.management-shell .management-content .lead-profile-page .lead-info-right > div {
+    background: #1a2234 !important;
+    border-color: rgba(255,255,255,0.08) !important;
+  }
+  html body.management-shell .management-content .lead-profile-page .bg-dark-soft,
+  html body.management-shell .management-content .lead-profile-page .border-dashed {
+    background: #1a2234 !important;
+    border-color: rgba(255,255,255,0.08) !important;
+    color: #cbd5e1 !important;
+  }
+
   /* ── Empty States ── */
   html body.management-shell .management-content .empty-state-premium {
     text-align: center;
-    padding: 40px 20px;
-    background: rgba(15, 23, 42, 0.5) !important;
-    border-radius: 12px !important;
-    border: 1px dashed rgba(255,255,255,0.1) !important;
+    padding: 24px !important;
+    background: #1a2234 !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
   html body.management-shell .management-content .empty-state-premium i {
-    font-size: 3rem !important;
+    font-size: 2.5rem !important;
     color: #475569 !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 12px !important;
     display: block !important;
   }
-  html body.management-shell .management-content .empty-state-premium p {
+  html body.management-shell .management-content .empty-state-premium .empty-state-title {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 6px !important;
+  }
+  html body.management-shell .management-content .empty-state-premium .empty-state-desc {
     color: #94a3b8 !important;
-    font-size: 0.95rem !important;
-    margin: 0 !important;
+    font-size: 0.9rem !important;
+    max-width: 320px;
+    margin: 0 auto;
   }
 
   /* ── Button Overrides ── */
@@ -394,4 +433,33 @@
 
   /* ── Overdue badge ── */
   .badge-overdue { background-color: #ef4444; color: #fff; font-weight: 700; font-size: 0.7rem; padding: 0.25em 0.5em; border-radius: 4px; text-transform: uppercase; }
+
+  /* ── Modal & Iframe Dark Theme Overrides ── */
+  html body.management-shell .management-action-modal .modal-content {
+    background: #0b0f19 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.5) !important;
+  }
+  html body.management-shell .management-action-modal .modal-header {
+    background: linear-gradient(135deg, #111827 0%, #1e1b4b 100%) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #f1f5f9 !important;
+  }
+  html body.management-shell .management-action-modal .modal-title {
+    color: #f8fafc !important;
+  }
+  html body.management-shell .management-action-modal .modal-body,
+  html body.management-shell .management-action-frame {
+    background: #0b0f19 !important;
+  }
+  html body.management-shell .management-action-loader {
+    background: #0b0f19 !important;
+    color: #94a3b8 !important;
+  }
+  html body.management-shell.modal-embedded {
+    background-color: #0b0f19 !important;
+  }
+  html body.management-shell.modal-embedded .management-content {
+    background-color: transparent !important;
+  }
 </style>

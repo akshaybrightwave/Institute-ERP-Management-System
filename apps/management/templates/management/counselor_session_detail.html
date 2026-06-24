@@ -5,16 +5,6 @@
 {% block extra_style %}
 {% include 'management/premium_theme_css.html' %}
 <style>
-  .session-detail-page .session-note-panel {
-    background: #f8fafc;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    color: #111827;
-    min-height: 64px;
-    padding: 14px 16px;
-    line-height: 1.55;
-  }
-
   .session-detail-page .session-meta {
     color: #475569;
   }
@@ -69,7 +59,7 @@
 
       <div class="mb-4">
         <label class="text-muted small fw-bold mb-2">Discussion Notes</label>
-        <div class="session-note-panel">
+        <div class="bg-dark-soft text-white border border-secondary p-3 rounded" style="line-height: 1.55;">
           {{ session.discussion_notes|linebreaksbr }}
         </div>
       </div>
@@ -77,7 +67,7 @@
       {% if session.career_guidance_notes %}
         <div class="mb-4">
           <label class="text-muted small fw-bold mb-2">Career Guidance & Course Recommendations</label>
-          <div class="session-note-panel">
+          <div class="bg-dark-soft text-white border border-secondary p-3 rounded" style="line-height: 1.55;">
             {{ session.career_guidance_notes|linebreaksbr }}
           </div>
         </div>

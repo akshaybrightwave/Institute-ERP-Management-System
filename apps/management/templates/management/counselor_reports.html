@@ -5,29 +5,18 @@
 {% block extra_style %}
 {% include 'management/premium_theme_css.html' %}
 <style>
-  .counselor-reports-page {
-    color: #334155;
-  }
   .page-title {
     margin-bottom: 24px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #334155;
     padding-bottom: 16px;
   }
   .page-title h2 {
-    color: #0f172a !important;
-  }
-  .m-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-    padding: 24px;
-    margin-bottom: 24px;
+    color: #f8fafc !important;
   }
   
   /* Modern Tabs */
   .modern-tabs {
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid #334155;
     margin-bottom: 24px;
     gap: 8px;
   }
@@ -35,7 +24,7 @@
     margin-bottom: -2px;
   }
   .modern-tabs .nav-link {
-    color: #64748b;
+    color: #94a3b8;
     font-weight: 600;
     padding: 12px 20px;
     border: none;
@@ -44,58 +33,19 @@
     transition: all 0.2s ease;
   }
   .modern-tabs .nav-link:hover {
-    color: #4f46e5;
-    border-bottom-color: #cbd5e1;
+    color: #818cf8;
+    border-bottom-color: #475569;
   }
   .modern-tabs .nav-link.active {
-    color: #4f46e5;
-    border-bottom-color: #4f46e5;
+    color: #818cf8;
+    border-bottom-color: #818cf8;
     background: transparent;
-  }
-  
-  /* Tables */
-  .m-table th {
-    background-color: #f8fafc;
-    color: #475569;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    padding: 16px;
-    border-bottom: 2px solid #e2e8f0;
-  }
-  .m-table td {
-    padding: 16px;
-    color: #334155;
-    border-bottom: 1px solid #e2e8f0;
-    vertical-align: middle;
-  }
-  .m-table tbody tr:hover {
-    background-color: #f8fafc;
-  }
-
-  /* Form Elements */
-  .form-label {
-    color: #475569;
-    font-weight: 600;
-    font-size: 0.85rem;
-    margin-bottom: 6px;
-  }
-  .form-select, .form-control {
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #0f172a;
-    border-radius: 6px;
-  }
-  .form-select:focus, .form-control:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
   }
   
   /* Metric Cards */
   .metric-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: #1e293b;
+    border: 1px solid #334155;
     border-radius: 8px;
     padding: 20px;
     text-align: center;
@@ -103,10 +53,10 @@
   }
   .metric-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
   }
   .metric-label {
-    color: #64748b;
+    color: #94a3b8;
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -116,7 +66,7 @@
   .metric-value {
     font-size: 1.75rem;
     font-weight: 800;
-    color: #0f172a;
+    color: #f1f5f9;
     margin: 0;
   }
 
@@ -126,14 +76,14 @@
     font-weight: 600;
     border-radius: 6px;
   }
-  .bg-soft-primary { background-color: #e0e7ff; color: #4f46e5; }
-  .bg-soft-indigo { background-color: #e0e7ff; color: #4338ca; }
-  .bg-soft-violet { background-color: #ede9fe; color: #7c3aed; }
-  .bg-soft-success { background-color: #dcfce7; color: #16a34a; }
-  .bg-soft-warning { background-color: #fef3c7; color: #d97706; }
-  .bg-soft-danger { background-color: #fee2e2; color: #dc2626; }
-  .bg-soft-info { background-color: #e0f2fe; color: #0284c7; }
-  .bg-soft-secondary { background-color: #f1f5f9; color: #475569; }
+  .bg-soft-primary { background-color: rgba(79, 70, 229, 0.2); color: #818cf8; border: 1px solid rgba(79, 70, 229, 0.3); }
+  .bg-soft-indigo { background-color: rgba(67, 56, 202, 0.2); color: #818cf8; border: 1px solid rgba(67, 56, 202, 0.3); }
+  .bg-soft-violet { background-color: rgba(124, 58, 237, 0.2); color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.3); }
+  .bg-soft-success { background-color: rgba(22, 163, 74, 0.2); color: #4ade80; border: 1px solid rgba(22, 163, 74, 0.3); }
+  .bg-soft-warning { background-color: rgba(217, 119, 6, 0.2); color: #fbbf24; border: 1px solid rgba(217, 119, 6, 0.3); }
+  .bg-soft-danger { background-color: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.3); }
+  .bg-soft-info { background-color: rgba(2, 132, 199, 0.2); color: #38bdf8; border: 1px solid rgba(2, 132, 199, 0.3); }
+  .bg-soft-secondary { background-color: rgba(71, 85, 105, 0.2); color: #cbd5e1; border: 1px solid rgba(71, 85, 105, 0.3); }
 </style>
 {% endblock %}
 
@@ -228,7 +178,7 @@
           <tbody>
             {% for row in report_data %}
             <tr>
-              <td class="fw-bold text-primary"><i class="bi bi-person-badge-fill me-1 text-muted"></i>{{ row.counselor }}</td>
+              <td class="fw-bold text-info"><i class="bi bi-person-badge-fill me-1 text-muted"></i>{{ row.counselor }}</td>
               <td class="fw-bold">{{ row.total_leads }}</td>
               <td>{{ row.sessions_conducted }}</td>
               <td class="text-success fw-bold">{{ row.followups_completed }}</td>
@@ -263,7 +213,7 @@
           <tbody>
             {% for row in report_data %}
             <tr>
-              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="fw-bold text-white">{{ row.candidate }}</td>
               <td class="text-muted">{{ row.counselor }}</td>
               <td>
                 <span class="badge {% if row.status == 'NEW' %}bg-soft-primary{% elif row.status == 'CONTACTED' %}bg-soft-info{% elif row.status == 'COUNSELING_DONE' %}bg-soft-indigo{% elif row.status == 'FOLLOW_UP_REQUIRED' %}bg-soft-warning{% elif row.status == 'INTERESTED' %}bg-soft-violet{% elif row.status == 'CONVERTED' %}bg-soft-success{% elif row.status == 'NOT_INTERESTED' %}bg-soft-secondary{% elif row.status == 'LOST' %}bg-soft-danger{% else %}bg-soft-secondary{% endif %}">
@@ -302,14 +252,14 @@
           <tbody>
             {% for row in report_data %}
             <tr>
-              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="fw-bold text-white">{{ row.candidate }}</td>
               <td class="text-muted">{{ row.followup_date }}</td>
               <td>
                 <span class="badge {% if row.status == 'Completed' %}bg-soft-success{% elif row.status == 'Missed' %}bg-soft-danger{% else %}bg-soft-warning{% endif %}">
                   {{ row.status }}
                 </span>
               </td>
-              <td class="text-dark">{{ row.outcome }}</td>
+              <td class="text-white">{{ row.outcome }}</td>
               <td class="small text-muted">{{ row.notes }}</td>
             </tr>
             {% empty %}
@@ -336,7 +286,7 @@
           <tbody>
             {% for row in report_data %}
             <tr>
-              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="fw-bold text-white">{{ row.candidate }}</td>
               <td class="text-muted">{{ row.counselor }}</td>
               <td class="text-muted">{{ row.date }}</td>
               <td class="small text-danger fw-medium">{{ row.reason }}</td>
@@ -397,10 +347,10 @@
           <tbody>
             {% for row in report_data %}
             <tr>
-              <td class="fw-bold text-dark">{{ row.candidate }}</td>
+              <td class="fw-bold text-white">{{ row.candidate }}</td>
               <td class="text-muted">{{ row.mobile_number }}</td>
               <td class="text-muted">{{ row.course }}</td>
-              <td class="text-muted">{{ row.visit_date }} <span class="badge bg-light text-dark ms-1">{{ row.visit_time }}</span></td>
+              <td class="text-muted">{{ row.visit_date }} <span class="badge bg-secondary text-white ms-1">{{ row.visit_time }}</span></td>
               <td>
                 <span class="badge {% if row.status == 'Visited' or row.status == 'Admission Done' %}bg-soft-success{% elif row.status == 'Cancelled' or row.status == 'No Show' %}bg-soft-danger{% else %}bg-soft-warning{% endif %}">
                   {{ row.status }}

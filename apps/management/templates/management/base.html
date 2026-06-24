@@ -1013,6 +1013,8 @@
   .management-content [style*="border-color:#2a2a4a"] { border-color: var(--mg-line) !important; }
 </style>
 
+{% include 'management/premium_theme_css.html' %}
+
 {# Child templates override base styles here — e.g. dark theme, page-specific CSS #}
 {% block extra_style %}{% endblock %}
 
@@ -1273,6 +1275,14 @@
       var link = event.target.closest('a[href]');
       if (!link || link.target || link.hasAttribute('download') || link.dataset.bsToggle) return;
 
+      if (link.classList.contains('js-skip-action-modal')) {
+        event.preventDefault();
+        window.parent.postMessage({
+          type: 'management-action-modal:close'
+        }, window.location.origin);
+        return;
+      }
+
       var href = link.getAttribute('href') || '';
       if (!href || href === '#' || href.indexOf('javascript:') === 0) return;
 
@@ -1404,25 +1414,32 @@
   });
 
   window.addEventListener('message', function(event) {
-    if (event.origin !== window.location.origin || !event.data || event.data.type !== 'management-action-modal:navigate') {
+    if (event.origin !== window.location.origin || !event.data) {
       return;
     }
 
-    var url;
-    try {
-      url = new URL(event.data.href, window.location.href);
-    } catch (e) {
+    if (event.data.type === 'management-action-modal:close') {
+      modal.hide();
       return;
     }
 
-    initialPath = url.pathname;
-    hasLoadedInitialPage = false;
-    titleEl.textContent = event.data.title || 'Management Action';
-    modalEl.classList.add('is-loading');
-    if (errorEl) errorEl.classList.add('d-none');
-    frame.style.display = 'block';
-    frame.src = url.href;
-    modal.show();
+    if (event.data.type === 'management-action-modal:navigate') {
+      var url;
+      try {
+        url = new URL(event.data.href, window.location.href);
+      } catch (e) {
+        return;
+      }
+
+      initialPath = url.pathname;
+      hasLoadedInitialPage = false;
+      titleEl.textContent = event.data.title || 'Management Action';
+      modalEl.classList.add('is-loading');
+      if (errorEl) errorEl.classList.add('d-none');
+      frame.style.display = 'block';
+      frame.src = url.href;
+      modal.show();
+    }
   });
 
   frame.addEventListener('load', function() {

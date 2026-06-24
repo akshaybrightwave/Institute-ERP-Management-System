@@ -38,37 +38,38 @@
     box-shadow: 0 0 0 4px rgba(25, 135, 84, 0.2);
   }
   .timeline-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: #1e293b;
+    border: 1px solid #334155;
     border-radius: 8px;
     padding: 1rem;
-    color: #111827;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, .05);
+    color: #f1f5f9;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
   }
   .timeline-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #334155;
     padding-bottom: 0.4rem;
     margin-bottom: 0.5rem;
   }
   .timeline-time {
     font-size: 0.75rem;
-    color: #64748b;
+    color: #94a3b8;
   }
   .timeline-author {
     font-weight: 600;
     font-size: 0.8rem;
-    color: #4f46e5;
+    color: #818cf8;
   }
   .timeline-text {
     font-size: 0.9rem;
     line-height: 1.4;
     white-space: pre-line;
-    color: #111827;
+    color: #f1f5f9;
   }
 </style>
+{% include 'management/premium_theme_css.html' %}
 {% endblock %}
 
 {% block management_content %}
@@ -104,9 +105,9 @@
           {% endfor %}
         </div>
       {% else %}
-        <div class="empty-state py-5">
-          <i class="bi bi-chat-left-quote"></i>
-          <h4>No Timeline Notes</h4>
+        <div class="empty-state-premium py-5">
+          <i class="bi bi-chat-left-quote text-muted" style="font-size: 3rem;"></i>
+          <h4 class="text-white mt-3">No Timeline Notes</h4>
           <p class="text-muted">No communication records or notes have been logged for this lead yet.</p>
         </div>
       {% endif %}

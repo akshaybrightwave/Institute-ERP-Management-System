@@ -278,9 +278,10 @@
               {{ lead.notes|linebreaksbr }}
             </div>
           {% else %}
-            <div class="empty-state border border-dashed py-3">
-              <i class="bi bi-journal-text mb-1 d-block" style="font-size:1.5rem;"></i>
-              <span class="small">No internal notes added yet.</span>
+            <div class="empty-state-premium">
+              <i class="bi bi-journal-text"></i>
+              <div class="empty-state-title">No Internal Notes Yet</div>
+              <div class="empty-state-desc">Notes added by telecallers and counselors will appear here.</div>
             </div>
           {% endif %}
         </div>
@@ -325,9 +326,10 @@
               </tbody>
             </table>
           {% else %}
-            <div class="empty-state border border-dashed py-4">
-              <i class="bi bi-telephone fs-2 mb-2 d-block"></i>
-              <p class="small mb-0">No call log recorded for this lead.</p>
+            <div class="empty-state-premium">
+              <i class="bi bi-telephone"></i>
+              <div class="empty-state-title">No Call History Available</div>
+              <div class="empty-state-desc">Call records will appear once calls are logged.</div>
             </div>
           {% endif %}
         </div>
@@ -373,14 +375,20 @@
                     <td>{{ fp.created_by.username|default:"System" }}</td>
                     <td class="text-end">
                       {% if fp.status == 'Pending' %}
-                        <div class="d-inline-flex gap-1">
-                          <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed">
-                            <i class="bi bi-check-lg"></i>
-                          </a>
-                          <a href="{% url 'followup_edit' fp.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                          </a>
-                        </div>
+                        {% if request.user.role == 'admin' or request.user == fp.created_by %}
+                          <div class="d-inline-flex gap-1">
+                            <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed">
+                              <i class="bi bi-check-lg"></i>
+                            </a>
+                            <a href="{% url 'followup_edit' fp.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
+                              <i class="bi bi-pencil"></i>
+                            </a>
+                          </div>
+                        {% else %}
+                          <span class="text-muted small">
+                            <i class="bi bi-lock-fill me-1"></i> No Access
+                          </span>
+                        {% endif %}
                       {% else %}
                         <span style="color:#4ade80;font-size:0.8rem;">
                           <i class="bi bi-check-circle-fill"></i> Done
@@ -392,9 +400,10 @@
               </tbody>
             </table>
           {% else %}
-            <div class="empty-state border border-dashed py-4">
-              <i class="bi bi-calendar-x fs-2 mb-2 d-block"></i>
-              <p class="small mb-0">No scheduled follow-up logs found.</p>
+            <div class="empty-state-premium">
+              <i class="bi bi-calendar-check"></i>
+              <div class="empty-state-title">No Follow-Ups Scheduled</div>
+              <div class="empty-state-desc">Scheduled follow-ups will appear here.</div>
             </div>
           {% endif %}
         </div>

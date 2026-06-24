@@ -37,69 +37,7 @@
     align-items: center;
     gap: 8px;
   }
-  .hero-metric {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: #111827 !important;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .hero-metric:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.8) !important;
-  }
-  .hero-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-  }
-  .hero-value {
-    font-size: 1.8rem;
-    font-weight: 800;
-    line-height: 1;
-    margin-bottom: 4px;
-    color: #e2e8f0 !important;
-  }
-  .hero-label {
-    font-size: 0.85rem;
-    color: #94a3b8 !important;
-    font-weight: 600;
-  }
 
-  .stat-chip {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    background: #0f172a !important;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    border: 1px solid rgba(255,255,255,0.05) !important;
-  }
-  .stat-chip-label {
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
-  .stat-chip-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #e2e8f0 !important;
-  }
-
-  .bg-icon-primary { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; }
-  .bg-icon-warning { background: rgba(245, 158, 11, 0.15) !important; color: #fbbf24 !important; }
-  .bg-icon-success { background: rgba(16, 185, 129, 0.15) !important; color: #34d399 !important; }
-  .bg-icon-danger { background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; }
-  .bg-icon-info { background: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; }
-  .bg-icon-purple { background: rgba(139, 92, 246, 0.15) !important; color: #a78bfa !important; }
 
   .action-btn {
     display: none; /* We use premium_theme_css.html .action-btn now */
@@ -126,165 +64,189 @@
     </div>
   </div>
 
-  <!-- Row 1: Hero Metrics -->
-  <div class="row g-4 mb-4">
-    <div class="col-sm-6 col-xl-3">
-      <div class="hero-metric">
-        <div class="hero-icon bg-icon-primary"><i class="bi bi-people-fill"></i></div>
-        <div>
-          <div class="hero-value">{{ total_assigned }}</div>
-          <div class="hero-label">Total Assigned Leads</div>
+  <!-- Row 1: KPI Metrics -->
+  <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-4">
+    <!-- 1. Assigned Leads -->
+    <div class="col">
+      <div class="erp-card bg-g-blue">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Assigned Leads</div>
+          <div class="erp-card-number">{{ total_assigned }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-people-fill"></i></div>
         </div>
+        <a href="{% url 'counselor_lead_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View assigned
+        </a>
       </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-      <div class="hero-metric">
-        <div class="hero-icon bg-icon-warning"><i class="bi bi-hourglass-split"></i></div>
-        <div>
-          <div class="hero-value">{{ pending_followups }}</div>
-          <div class="hero-label">Pending Follow-ups</div>
+    
+    <!-- 2. Pending Follow-Ups -->
+    <div class="col">
+      <div class="erp-card bg-g-orange">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Pending Follow-ups</div>
+          <div class="erp-card-number">{{ pending_followups }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-hourglass-split"></i></div>
         </div>
+        <a href="{% url 'counselor_followup_list' %}?status=Pending" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View pending
+        </a>
       </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-      <div class="hero-metric">
-        <div class="hero-icon bg-icon-info"><i class="bi bi-calendar-event"></i></div>
-        <div>
-          <div class="hero-value">{{ today_visits }}</div>
-          <div class="hero-label">Today's Visits</div>
+
+    <!-- 3. Overdue Follow-Ups -->
+    <div class="col">
+      <div class="erp-card bg-g-red">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Overdue Follow-ups</div>
+          <div class="erp-card-number">{{ overdue_followups }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
         </div>
+        <a href="{% url 'counselor_followup_list' %}?status=Pending" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> Handle overdue
+        </a>
       </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-      <div class="hero-metric">
-        <div class="hero-icon bg-icon-success"><i class="bi bi-journal-check"></i></div>
-        <div>
-          <div class="hero-value">{{ admission_metrics.total }}</div>
-          <div class="hero-label">Total Admissions</div>
+    
+    <!-- 4. Today's Visits -->
+    <div class="col">
+      <div class="erp-card bg-g-teal">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Today's Visits</div>
+          <div class="erp-card-number">{{ today_visits }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
         </div>
+        <a href="{% url 'counselor_visit_list' %}?start_date={% now 'Y-m-d' %}&end_date={% now 'Y-m-d' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View today's
+        </a>
+      </div>
+    </div>
+    
+    <!-- 5. Interested Leads -->
+    <div class="col">
+      <div class="erp-card bg-g-violet">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Interested Leads</div>
+          <div class="erp-card-number">{{ interested_leads }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
+        </div>
+        <a href="{% url 'counselor_lead_list' %}?status=INTERESTED" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View interested
+        </a>
+      </div>
+    </div>
+
+    <!-- 6. Counseling Completed -->
+    <div class="col">
+      <div class="erp-card bg-g-navy">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Counseling Completed</div>
+          <div class="erp-card-number">{{ counseling_done }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-video3"></i></div>
+        </div>
+        <a href="{% url 'counselor_lead_list' %}?status=COUNSELING_DONE" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View counseling
+        </a>
+      </div>
+    </div>
+
+    <!-- 7. Confirmed Admissions -->
+    <div class="col">
+      <div class="erp-card bg-g-green">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Confirmed Admissions</div>
+          <div class="erp-card-number">{{ admission_metrics.confirmed }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-check-circle-fill"></i></div>
+        </div>
+        <a href="{% url 'admission_list' %}?status=CONFIRMED" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View confirmed
+        </a>
+      </div>
+    </div>
+
+    <!-- 8. Conversion Rate -->
+    <div class="col">
+      <div class="erp-card bg-g-slate">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Conversion Rate</div>
+          <div class="erp-card-number">
+            {% if counseling_done > 0 %}
+              {% widthratio admission_metrics.confirmed counseling_done 100 %}%
+            {% else %}
+              N/A
+            {% endif %}
+          </div>
+          <div class="erp-card-bg-icon"><i class="bi bi-percent"></i></div>
+        </div>
+        <a href="javascript:void(0);" class="erp-card-footer" style="cursor: default;">
+          <i class="bi bi-graph-up"></i> Confirmed / Counseling
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- Rows 2-5: Summary Overview Widgets -->
+  <!-- Secondary Summary Widgets -->
   <div class="row g-4 mb-4">
-    <!-- Row 2: Lead Pipeline -->
-    <div class="col-lg-6 col-xl-3">
-      <div class="m-card">
-        <div class="m-card-title"><i class="bi bi-funnel"></i> Lead Pipeline</div>
-        <div class="row g-2">
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2">
-              <span class="stat-chip-label text-primary small">New</span>
-              <span class="stat-chip-value fs-5">{{ new_leads }}</span>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2">
-              <span class="stat-chip-label text-info small">Contacted</span>
-              <span class="stat-chip-value fs-5">{{ contacted_leads }}</span>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2 border-warning">
-              <span class="stat-chip-label text-warning small" style="font-size: 0.75rem;">Follow-up Req.</span>
-              <span class="stat-chip-value fs-5">{{ followup_req }}</span>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2">
-              <span class="stat-chip-label text-purple small">Interested</span>
-              <span class="stat-chip-value fs-5">{{ interested_leads }}</span>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2 border-indigo">
-              <span class="stat-chip-label text-indigo small">Counseling Done</span>
-              <span class="stat-chip-value fs-5">{{ counseling_done }}</span>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2 border-success">
-              <span class="stat-chip-label text-success small">Converted</span>
-              <span class="stat-chip-value fs-5">{{ converted_leads }}</span>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2">
-              <span class="stat-chip-label text-secondary small">Not Interested</span>
-              <span class="stat-chip-value fs-5">{{ not_interested }}</span>
-            </div>
-          </div>
-          <div class="col-6">
-            <div class="stat-chip flex-column align-items-start h-100 p-2 border-danger">
-              <span class="stat-chip-label text-danger small">Lost</span>
-              <span class="stat-chip-value fs-5">{{ lost_leads }}</span>
-            </div>
+    <!-- Pipeline Summary -->
+    <div class="col-md-4">
+      <div class="m-card p-0 overflow-hidden border-0 bg-dark-soft">
+        <div class="bg-dark p-3 border-bottom border-secondary d-flex align-items-center justify-content-between">
+          <h6 class="mb-0 text-white fw-bold"><i class="bi bi-funnel me-2 text-info"></i> Pipeline Summary</h6>
+        </div>
+        <div class="list-group list-group-flush bg-transparent">
+          <a href="{% url 'counselor_lead_list' %}?status=NEW" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>New Leads</span> <span class="badge bg-primary rounded-pill">{{ new_leads }}</span>
+          </a>
+          <a href="{% url 'counselor_lead_list' %}?status=CONTACTED" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>Contacted</span> <span class="badge bg-info rounded-pill">{{ contacted_leads }}</span>
+          </a>
+          <a href="{% url 'counselor_lead_list' %}?status=FOLLOW_UP_REQUIRED" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>Follow-up Req.</span> <span class="badge bg-warning text-dark rounded-pill">{{ followup_req }}</span>
+          </a>
+          <a href="{% url 'counselor_lead_list' %}?status=CONVERTED" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>Converted</span> <span class="badge bg-success rounded-pill">{{ converted_leads }}</span>
+          </a>
+          <div class="list-group-item bg-transparent border-secondary text-muted small d-flex justify-content-between">
+            <span>Not Interested: {{ not_interested }}</span>
+            <span>Lost: {{ lost_leads }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Row 3: Follow-up Overview -->
-    <div class="col-lg-6 col-xl-3">
-      <div class="m-card">
-        <div class="m-card-title"><i class="bi bi-telephone"></i> Follow-up Overview</div>
-        <div class="stat-chip border-warning">
-          <span class="stat-chip-label text-warning">Pending</span>
-          <span class="stat-chip-value">{{ pending_followups }}</span>
+    <!-- Visit Summary -->
+    <div class="col-md-4">
+      <div class="m-card p-0 overflow-hidden border-0 bg-dark-soft">
+        <div class="bg-dark p-3 border-bottom border-secondary d-flex align-items-center justify-content-between">
+          <h6 class="mb-0 text-white fw-bold"><i class="bi bi-building me-2 text-info"></i> Visit Summary</h6>
         </div>
-        <div class="stat-chip border-danger">
-          <span class="stat-chip-label text-danger">Overdue</span>
-          <span class="stat-chip-value">{{ overdue_followups }}</span>
-        </div>
-        <div class="stat-chip mt-4 border-0 bg-transparent text-center">
-          <a href="{% url 'counselor_followup_list' %}?status=Pending" class="btn btn-sm btn-outline-warning w-100">View Pending Follow-ups</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- Row 4: Visit Overview -->
-    <div class="col-lg-6 col-xl-3">
-      <div class="m-card">
-        <div class="m-card-title"><i class="bi bi-building"></i> Visit Overview</div>
-        <div class="stat-chip">
-          <span class="stat-chip-label text-warning">Today's Visits</span>
-          <span class="stat-chip-value">{{ today_visits }}</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-chip-label text-info">Upcoming</span>
-          <span class="stat-chip-value">{{ upcoming_visits }}</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-chip-label text-success">Completed</span>
-          <span class="stat-chip-value">{{ completed_visits }}</span>
-        </div>
-        <div class="stat-chip border-danger">
-          <span class="stat-chip-label text-danger">No Shows</span>
-          <span class="stat-chip-value">{{ no_shows }}</span>
+        <div class="list-group list-group-flush bg-transparent">
+          <a href="{% url 'counselor_visit_list' %}" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>Upcoming Visits</span> <span class="badge bg-primary rounded-pill">{{ upcoming_visits }}</span>
+          </a>
+          <a href="{% url 'counselor_visit_list' %}" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>Completed Visits</span> <span class="badge bg-success rounded-pill">{{ completed_visits }}</span>
+          </a>
+          <a href="{% url 'counselor_visit_list' %}?status=No+Show" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>No Shows</span> <span class="badge bg-danger rounded-pill">{{ no_shows }}</span>
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Row 5: Admission Overview -->
-    <div class="col-lg-6 col-xl-3">
-      <div class="m-card">
-        <div class="m-card-title"><i class="bi bi-award"></i> Admission Overview</div>
-        <div class="stat-chip">
-          <span class="stat-chip-label text-primary">Total Admissions</span>
-          <span class="stat-chip-value">{{ admission_metrics.total }}</span>
+    <!-- Admission Summary -->
+    <div class="col-md-4">
+      <div class="m-card p-0 overflow-hidden border-0 bg-dark-soft">
+        <div class="bg-dark p-3 border-bottom border-secondary d-flex align-items-center justify-content-between">
+          <h6 class="mb-0 text-white fw-bold"><i class="bi bi-award me-2 text-warning"></i> Admission Summary</h6>
         </div>
-        <div class="stat-chip">
-          <span class="stat-chip-label text-success">Confirmed</span>
-          <span class="stat-chip-value">{{ admission_metrics.confirmed }}</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-chip-label text-warning">Pending</span>
-          <span class="stat-chip-value">{{ admission_metrics.pending }}</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-chip-label text-danger">Cancelled</span>
-          <span class="stat-chip-value">{{ admission_metrics.cancelled }}</span>
+        <div class="list-group list-group-flush bg-transparent">
+          <a href="{% url 'admission_list' %}?status=PENDING" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>Pending</span> <span class="badge bg-warning text-dark rounded-pill">{{ admission_metrics.pending }}</span>
+          </a>
+          <a href="{% url 'admission_list' %}?status=CANCELLED" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
+            <span>Cancelled</span> <span class="badge bg-danger rounded-pill">{{ admission_metrics.cancelled }}</span>
+          </a>
         </div>
       </div>
     </div>

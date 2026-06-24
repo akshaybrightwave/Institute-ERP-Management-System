@@ -131,8 +131,10 @@
             {{ lead.notes|linebreaksbr }}
           </div>
         {% else %}
-          <div class="text-muted bg-dark-soft border border-secondary border-dashed p-3 rounded small text-center" style="background-color: #16162a; border-style: dashed !important; border-color: #2a2a4a !important;">
-            <i class="bi bi-journal-text me-2"></i>No background notes available.
+          <div class="empty-state-premium">
+            <i class="bi bi-journal-text"></i>
+            <div class="empty-state-title">No Background Notes</div>
+            <div class="empty-state-desc">No background notes available from telecallers.</div>
           </div>
         {% endif %}
       </div>
@@ -170,9 +172,10 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-            <i class="bi bi-chat-quote text-muted fs-2 d-block mb-2"></i>
-            <p class="small text-muted mb-0">No counseling sessions recorded yet.</p>
+          <div class="empty-state-premium">
+            <i class="bi bi-chat-quote"></i>
+            <div class="empty-state-title">No Counseling Sessions</div>
+            <div class="empty-state-desc">Counseling sessions recorded will appear here.</div>
           </div>
         {% endif %}
       </div>
@@ -229,9 +232,10 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-            <i class="bi bi-calendar-x text-muted fs-2 d-block mb-2"></i>
-            <p class="small text-muted mb-0">No follow-ups scheduled.</p>
+          <div class="empty-state-premium">
+            <i class="bi bi-calendar-check"></i>
+            <div class="empty-state-title">No Follow-Ups Scheduled</div>
+            <div class="empty-state-desc">Scheduled follow-ups will appear here.</div>
           </div>
         {% endif %}
       </div>
@@ -275,9 +279,10 @@
             </tbody>
           </table>
         {% else %}
-          <div class="empty-state py-4 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-            <i class="bi bi-geo-alt text-muted fs-2 d-block mb-2"></i>
-            <p class="small text-muted mb-0">No visits scheduled.</p>
+          <div class="empty-state-premium">
+            <i class="bi bi-geo-alt"></i>
+            <div class="empty-state-title">No Visits Scheduled</div>
+            <div class="empty-state-desc">Scheduled center visits will appear here.</div>
           </div>
         {% endif %}
       </div>
@@ -334,8 +339,10 @@
           {% endfor %}
         </div>
       {% else %}
-        <div class="empty-state py-3 text-center border border-secondary border-dashed rounded" style="border-style: dashed !important; border-color: #2a2a4a !important; background-color: #16162a;">
-          <p class="small text-muted mb-0"><i class="bi bi-chat-left-text me-2"></i>No timeline notes logged yet.</p>
+        <div class="empty-state-premium">
+          <i class="bi bi-clock-history"></i>
+          <div class="empty-state-title">No Timeline Notes</div>
+          <div class="empty-state-desc">Notes logged on the timeline will appear here.</div>
         </div>
       {% endif %}
     </div>

@@ -7,33 +7,26 @@
 <style>
   .detail-page-title {
     margin-bottom: 24px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid #334155;
     padding-bottom: 16px;
   }
   .detail-page-title h2 {
-    color: #0f172a;
+    color: #f8fafc !important;
     letter-spacing: -0.02em;
   }
   .detail-page-title p {
-    color: #64748b;
+    color: #94a3b8 !important;
   }
-  .m-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    height: 100%;
-  }
+  
   .m-card-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #0f172a;
+    color: #f8fafc;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 1px dashed #e2e8f0;
+    border-bottom: 1px dashed #334155;
     padding-bottom: 12px;
   }
   .info-group {
@@ -41,7 +34,7 @@
   }
   .info-label {
     font-size: 0.85rem;
-    color: #64748b;
+    color: #94a3b8;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -50,12 +43,12 @@
   }
   .info-value {
     font-size: 1.05rem;
-    color: #1e293b;
+    color: #f1f5f9;
     font-weight: 600;
   }
   .info-value-large {
     font-size: 1.2rem;
-    color: #0f172a;
+    color: #f8fafc;
     font-weight: 700;
   }
   .status-badge {
@@ -65,10 +58,10 @@
     border-radius: 20px;
     letter-spacing: 0.02em;
   }
-  .bg-soft-success { background: #dcfce7; color: #166534; }
-  .bg-soft-warning { background: #fef9c3; color: #854d0e; }
-  .bg-soft-danger { background: #fee2e2; color: #991b1b; }
-  .bg-soft-info { background: #e0f2fe; color: #075985; }
+  .bg-soft-success { background: rgba(22, 163, 74, 0.2); color: #4ade80; border: 1px solid rgba(22, 163, 74, 0.3); }
+  .bg-soft-warning { background: rgba(217, 119, 6, 0.2); color: #fbbf24; border: 1px solid rgba(217, 119, 6, 0.3); }
+  .bg-soft-danger { background: rgba(220, 38, 38, 0.2); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.3); }
+  .bg-soft-info { background: rgba(2, 132, 199, 0.2); color: #38bdf8; border: 1px solid rgba(2, 132, 199, 0.3); }
 </style>
 {% endblock %}
 
@@ -76,7 +69,7 @@
 <div class="detail-page-title d-flex justify-content-between align-items-center flex-wrap gap-3">
   <div>
     <h2 class="fw-bold mb-1">{{ admission.admission_number }}</h2>
-    <p class="mb-0">Admission created on <span class="fw-bold text-dark">{{ admission.admission_date|date:"d M Y" }}</span></p>
+    <p class="mb-0">Admission created on <span class="fw-bold text-white">{{ admission.admission_date|date:"d M Y" }}</span></p>
   </div>
   <div class="d-flex gap-2">
     <a href="{% url 'admission_edit' admission.pk %}" class="btn btn-warning fw-bold text-dark shadow-sm">
@@ -89,76 +82,85 @@
 </div>
 
 <div class="row g-4">
-  <!-- Status & Summary -->
-  <div class="col-lg-4">
+  <!-- Status & Assignment -->
+  <div class="col-lg-12">
     <div class="m-card">
       <h5 class="m-card-title"><i class="bi bi-shield-check text-primary"></i> Status & Assignment</h5>
-      <div class="info-group mt-3">
-        <span class="info-label">Admission Status</span>
-        {% if admission.admission_status == 'CONFIRMED' %}
-          <span class="badge status-badge bg-soft-success">Confirmed</span>
-        {% elif admission.admission_status == 'PENDING' %}
-          <span class="badge status-badge bg-soft-warning">Pending</span>
-        {% else %}
-          <span class="badge status-badge bg-soft-danger">Cancelled</span>
-        {% endif %}
-      </div>
-      <div class="info-group">
-        <span class="info-label">Seat Status</span>
-        {% if admission.seat_status == 'BOOKED' %}
-          <span class="badge status-badge bg-soft-info">Booked</span>
-        {% elif admission.seat_status == 'CONFIRMED' %}
-          <span class="badge status-badge bg-soft-success">Confirmed</span>
-        {% else %}
-          <span class="badge status-badge bg-soft-danger">Cancelled</span>
-        {% endif %}
-      </div>
-      <div class="info-group mt-4">
-        <span class="info-label">Counselor</span>
-        <span class="info-value text-capitalize">
-          <i class="bi bi-person-badge text-muted me-1"></i> {{ admission.counselor.username|default:"Unassigned" }}
-        </span>
-      </div>
-      <div class="info-group mb-0">
-        <span class="info-label">Created By</span>
-        <span class="info-value text-capitalize text-muted fs-6">
-          {{ admission.created_by.username|default:"System" }}
-        </span>
+      <div class="row g-3 mt-1">
+        <div class="col-sm-3">
+          <div class="info-group mb-0">
+            <span class="info-label">Admission Status</span>
+            {% if admission.admission_status == 'CONFIRMED' %}
+              <span class="badge status-badge bg-soft-success">Confirmed</span>
+            {% elif admission.admission_status == 'PENDING' %}
+              <span class="badge status-badge bg-soft-warning">Pending</span>
+            {% else %}
+              <span class="badge status-badge bg-soft-danger">Cancelled</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-sm-3">
+          <div class="info-group mb-0">
+            <span class="info-label">Seat Status</span>
+            {% if admission.seat_status == 'BOOKED' %}
+              <span class="badge status-badge bg-soft-info">Booked</span>
+            {% elif admission.seat_status == 'CONFIRMED' %}
+              <span class="badge status-badge bg-soft-success">Confirmed</span>
+            {% else %}
+              <span class="badge status-badge bg-soft-danger">Cancelled</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-sm-3">
+          <div class="info-group mb-0">
+            <span class="info-label">Counselor</span>
+            <span class="info-value text-capitalize">
+              <i class="bi bi-person-badge text-muted me-1"></i> {{ admission.counselor.username|default:"Unassigned" }}
+            </span>
+          </div>
+        </div>
+        <div class="col-sm-3">
+          <div class="info-group mb-0">
+            <span class="info-label">Created By</span>
+            <span class="info-value text-capitalize text-muted fs-6">
+              {{ admission.created_by.username|default:"System" }}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Student Info -->
-  <div class="col-lg-8">
+  <div class="col-lg-12">
     <div class="m-card">
       <h5 class="m-card-title"><i class="bi bi-person-lines-fill text-primary"></i> Student Information</h5>
       <div class="row g-4 mt-1">
-        <div class="col-sm-6">
+        <div class="col-sm-4">
           <div class="info-group mb-0">
             <span class="info-label">Student Name</span>
             <span class="info-value-large text-capitalize">{{ admission.student_name }}</span>
           </div>
         </div>
-        <div class="col-sm-6">
+        <div class="col-sm-4">
           <div class="info-group mb-0">
             <span class="info-label">Mobile Number</span>
             <span class="info-value-large">{{ admission.mobile_number }}</span>
           </div>
         </div>
-        <div class="col-sm-6">
+        <div class="col-sm-4">
           <div class="info-group mb-0">
             <span class="info-label">Email Address</span>
             <span class="info-value">{{ admission.email_id|default:"Not Provided" }}</span>
           </div>
         </div>
-        <div class="col-sm-6"></div>
-        <div class="col-sm-6">
+        <div class="col-sm-4">
           <div class="info-group mb-0">
             <span class="info-label">Parent Name</span>
             <span class="info-value text-capitalize">{{ admission.parent_name|default:"Not Provided" }}</span>
           </div>
         </div>
-        <div class="col-sm-6">
+        <div class="col-sm-4">
           <div class="info-group mb-0">
             <span class="info-label">Parent Mobile</span>
             <span class="info-value">{{ admission.parent_mobile|default:"Not Provided" }}</span>
@@ -209,7 +211,7 @@
         <div class="col-sm-12">
           <div class="info-group mb-0">
             <span class="info-label">Course Enrolled</span>
-            <span class="info-value-large text-primary">{{ admission.course_name|default:"-" }}</span>
+            <span class="info-value-large text-info">{{ admission.course_name|default:"-" }}</span>
           </div>
         </div>
         <div class="col-sm-6">
@@ -233,8 +235,8 @@
   <div class="col-12">
     <div class="m-card">
       <h5 class="m-card-title"><i class="bi bi-chat-quote-fill text-primary"></i> Internal Remarks</h5>
-      <div class="bg-light p-3 rounded border">
-        <p class="mb-0 text-dark" style="font-size: 0.95rem; line-height: 1.6;">
+      <div class="bg-dark p-3 rounded border border-secondary">
+        <p class="mb-0 text-white" style="font-size: 0.95rem; line-height: 1.6;">
           {{ admission.remarks|linebreaksbr }}
         </p>
       </div>
