@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Company Profile</div>
+    <div class="small text-secondary mb-1 mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Company Profile</div>
     <h1 class="fw-bold mb-1">{{ company }}</h1>
     <p class="hr-muted mb-0">{{ company.industry|default:"Industry not set" }}</p>
   </div>
@@ -19,7 +19,7 @@
 
 <div class="row g-4">
   <div class="col-xl-4">
-    <div class="hr-panel p-4">
+    <div class="hr-panel p-3">
       <div class="text-center border-bottom pb-3 mb-3">
         {% if company.logo %}<img class="candidate-avatar mb-3" style="width: 84px; height:84px;" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<div class="candidate-avatar mx-auto mb-3 d-grid align-items-center" style="width: 84px; height:84px;"><i class="bi bi-building fs-1"></i></div>{% endif %}
         <h4 class="fw-bold mb-1">{{ company }}</h4>
@@ -37,17 +37,17 @@
     </div>
   </div>
   <div class="col-xl-8">
-    <div class="row g-3 mb-4">
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Total Drives</div><div class="hr-stat-number">{{ company.drives.count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Employees Sent</div><div class="hr-stat-number">{{ company.employees_sent_count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Selected</div><div class="hr-stat-number">{{ company.selected_count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Rejected</div><div class="hr-stat-number">{{ company.rejected_count }}</div></div></div>
-      <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Allocated</div><div class="hr-stat-number">{{ company.allocated_count }}</div></div></div>
+    <div class="row g-3 mb-3">
+      <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Total Drives</div><div class="hr-stat-number">{{ company.drives.count }}</div></div></div>
+      <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Employees Sent</div><div class="hr-stat-number">{{ company.employees_sent_count }}</div></div></div>
+      <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Selected</div><div class="hr-stat-number">{{ company.selected_count }}</div></div></div>
+      <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Rejected</div><div class="hr-stat-number">{{ company.rejected_count }}</div></div></div>
+      <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Allocated</div><div class="hr-stat-number">{{ company.allocated_count }}</div></div></div>
     </div>
     <div class="hr-panel p-3">
       <h5 class="fw-bold mb-3">Employees Sent to this Company</h5>
       <div class="table-responsive">
-        <table class="table hr-table">
+        <table class="table table-hover hr-table">
           <thead><tr><th>Employee</th><th>Employee ID</th><th>Designation</th><th>Drive</th><th>Interview Status</th><th>Final Status</th><th>Action</th></tr></thead>
           <tbody>
             {% for item in assignments %}

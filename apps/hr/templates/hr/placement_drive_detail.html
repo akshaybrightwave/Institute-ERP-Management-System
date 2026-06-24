@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Drive Profile</div>
+    <div class="small text-secondary mb-1 mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Drive Profile</div>
     <h1 class="fw-bold mb-1">{{ drive.company|default:"Placement Drive" }}</h1>
     <p class="hr-muted mb-0">{{ drive.job_role|default:"Role not set" }} · {{ drive.drive_date|date:"d M Y"|default:"Date not set" }}</p>
   </div>
@@ -17,14 +17,14 @@
   </div>
 </div>
 
-<div class="row g-3 mb-4">
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Employees Sent</div><div class="hr-stat-number">{{ drive.assignments_count }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Appeared</div><div class="hr-stat-number">{{ drive.appeared_count }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Selected</div><div class="hr-stat-number">{{ drive.selected_count }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small hr-muted">Status</div><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></div></div>
+<div class="row g-3 mb-3">
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Employees Sent</div><div class="hr-stat-number">{{ drive.assignments_count }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Appeared</div><div class="hr-stat-number">{{ drive.appeared_count }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Selected</div><div class="hr-stat-number">{{ drive.selected_count }}</div></div></div>
+  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Status</div><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></div></div>
 </div>
 
-<div class="hr-panel p-4 mb-4">
+<div class="hr-panel p-3 mb-3">
   <h5 class="fw-bold mb-3">Drive Details</h5>
   <dl class="row mb-0">
     <dt class="col-md-3 hr-muted">Company</dt><dd class="col-md-9">{{ drive.company|default:"--" }}</dd>
@@ -38,7 +38,7 @@
 <div class="hr-panel p-3">
   <h5 class="fw-bold mb-3">Assigned Employees</h5>
   <div class="table-responsive">
-    <table class="table hr-table">
+    <table class="table table-hover hr-table">
       <thead><tr><th>Employee</th><th>Designation</th><th>Skills</th><th>Interview Status</th><th>Final Status</th><th>Action</th></tr></thead>
       <tbody>
         {% for item in assignments %}

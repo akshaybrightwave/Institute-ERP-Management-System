@@ -35,28 +35,28 @@
   <div class="tab-content pt-4">
     <section class="tab-pane fade {% if request.GET.tab != 'attendance' and request.GET.tab != 'documents' %}show active{% endif %}" id="personal" role="tabpanel">
       <div class="row g-3">
-        <div class="col-md-4"><div class="small hr-muted">Full Name</div><div class="fw-semibold">{{ employee.full_name }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Mobile</div><div class="fw-semibold">{{ employee.mobile|default:"--" }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Email</div><div class="fw-semibold">{{ employee.email|default:"--" }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">DOB</div><div class="fw-semibold">{{ employee.dob }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Gender</div><div class="fw-semibold">{{ employee.gender }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Emergency Contact</div><div class="fw-semibold">{{ employee.emergency_contact|default:"--" }}</div></div>
-        <div class="col-12"><div class="small hr-muted">Address</div><div class="fw-semibold">{{ employee.address|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Full Name</div><div class="fw-semibold">{{ employee.full_name }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Mobile</div><div class="fw-semibold">{{ employee.mobile|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Email</div><div class="fw-semibold">{{ employee.email|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">DOB</div><div class="fw-semibold">{{ employee.dob }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Gender</div><div class="fw-semibold">{{ employee.gender }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Emergency Contact</div><div class="fw-semibold">{{ employee.emergency_contact|default:"--" }}</div></div>
+        <div class="col-12"><div class="small text-secondary mb-1">Address</div><div class="fw-semibold">{{ employee.address|default:"--" }}</div></div>
       </div>
     </section>
 
     <section class="tab-pane fade" id="employment" role="tabpanel">
       <div class="row g-3">
-        <div class="col-md-4"><div class="small hr-muted">Employee ID</div><div class="fw-semibold">{{ employee.employee_id }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Employee ID</div><div class="fw-semibold">{{ employee.employee_id }}</div></div>
         {% if employee_object %}
-        <div class="col-md-4"><div class="small hr-muted">Login User</div><div class="fw-semibold">{{ employee_object.user.username|default:"Not linked" }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Login User</div><div class="fw-semibold">{{ employee_object.user.username|default:"Not linked" }}</div></div>
         {% endif %}
-        <div class="col-md-4"><div class="small hr-muted">Branch</div><div class="fw-semibold">{{ employee.branch }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Department</div><div class="fw-semibold">{{ employee.department }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Designation</div><div class="fw-semibold">{{ employee.designation }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Joining Date</div><div class="fw-semibold">{{ employee.joining_date }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Employment Type</div><div class="fw-semibold">{{ employee.employment_type }}</div></div>
-        <div class="col-md-4"><div class="small hr-muted">Reporting Manager</div><div class="fw-semibold">{{ employee.reporting_manager|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Branch</div><div class="fw-semibold">{{ employee.branch }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Department</div><div class="fw-semibold">{{ employee.department }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Designation</div><div class="fw-semibold">{{ employee.designation }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Joining Date</div><div class="fw-semibold">{{ employee.joining_date }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Employment Type</div><div class="fw-semibold">{{ employee.employment_type }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Reporting Manager</div><div class="fw-semibold">{{ employee.reporting_manager|default:"--" }}</div></div>
       </div>
     </section>
 
@@ -90,17 +90,17 @@
       </form>
 
       <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Present</div><div class="fw-bold">{{ history_summary.present|default:0 }}</div></div></div>
-        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Absent</div><div class="fw-bold">{{ history_summary.absent|default:0 }}</div></div></div>
-        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Leave</div><div class="fw-bold">{{ history_summary.leave|default:0 }}</div></div></div>
-        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Half Days</div><div class="fw-bold">{{ history_summary.half_day|default:0 }}</div></div></div>
-        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Late Count</div><div class="fw-bold">{{ history_summary.late|default:0 }}</div></div></div>
-        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Working Days</div><div class="fw-bold">{{ history_summary.working_days|default:0 }}</div></div></div>
-        <div class="col-md-3"><div class="hr-panel p-3 shadow-none"><div class="small hr-muted">Total Hours</div><div class="fw-bold">{{ history_summary.total_hours|default:"00h 00m" }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 "><div class="small text-secondary mb-1">Present</div><div class="fw-bold">{{ history_summary.present|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 "><div class="small text-secondary mb-1">Absent</div><div class="fw-bold">{{ history_summary.absent|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 "><div class="small text-secondary mb-1">Leave</div><div class="fw-bold">{{ history_summary.leave|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 "><div class="small text-secondary mb-1">Half Days</div><div class="fw-bold">{{ history_summary.half_day|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 "><div class="small text-secondary mb-1">Late Count</div><div class="fw-bold">{{ history_summary.late|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 "><div class="small text-secondary mb-1">Working Days</div><div class="fw-bold">{{ history_summary.working_days|default:0 }}</div></div></div>
+        <div class="col-md-3"><div class="hr-panel p-3 "><div class="small text-secondary mb-1">Total Hours</div><div class="fw-bold">{{ history_summary.total_hours|default:"00h 00m" }}</div></div></div>
       </div>
 
       <div class="external-table-wrap mb-4">
-        <table class="table hr-table mb-0">
+        <table class="table table-hover hr-table mb-0">
           <thead><tr><th>Date</th><th>Login Time</th><th>Logout Time</th><th>Working Hours</th><th>Late</th><th>Status</th><th>Remarks</th></tr></thead>
           <tbody>
             {% for log in logs %}
@@ -120,14 +120,14 @@
         </table>
       </div>
 
-      <div class="hr-panel p-3 shadow-none">
+      <div class="hr-panel p-3 ">
         <h5 class="fw-bold mb-3">Monthly Attendance Calendar</h5>
         <div class="attendance-calendar">
           <div class="calendar-head">Mon</div><div class="calendar-head">Tue</div><div class="calendar-head">Wed</div><div class="calendar-head">Thu</div><div class="calendar-head">Fri</div><div class="calendar-head">Sat</div><div class="calendar-head">Sun</div>
           {% for week in calendar_weeks %}
             {% for item in week %}
             <div class="calendar-cell status-{{ item.status }}">
-              {% if item.day %}<span>{{ item.day }}</span><strong>{{ item.code }}</strong>{% endif %}
+              {% if item.day %}<span>{{ item.day }}</span><strong class="text-white fs-6">{{ item.code }}</strong>{% endif %}
             </div>
             {% endfor %}
           {% endfor %}

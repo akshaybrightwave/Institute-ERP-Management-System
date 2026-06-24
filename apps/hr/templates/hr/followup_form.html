@@ -5,13 +5,13 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Follow-up</div>
+    <div class="small text-secondary mb-1 mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Follow-up</div>
     <h1 class="fw-bold mb-1">{% if candidate %}{{ candidate.full_name }}{% else %}Add Follow-up{% endif %}</h1>
     <p class="hr-muted mb-0">Record follow-up date, type, remarks and outcome.</p>
   </div>
 </div>
 
-<form method="post" class="hr-panel p-4" style="max-width: 840px;">
+<form method="post" class="hr-panel p-3" style="max-width: 840px;">
   {% csrf_token %}
   {{ form.non_field_errors }}
   <div class="row g-3">

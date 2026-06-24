@@ -14,7 +14,7 @@
 </style>
 <div class="external-title-row">
   <div>
-    <div class="small hr-muted mb-2">External <i class="bi bi-chevron-right mx-1"></i>{{ external_branch.name }} <i class="bi bi-chevron-right mx-1"></i> Employees</div>
+    <div class="small text-secondary mb-1 mb-2">External <i class="bi bi-chevron-right mx-1"></i>{{ external_branch.name }} <i class="bi bi-chevron-right mx-1"></i> Employees</div>
     <h1 class="fw-bold mb-1">{% if mode == 'edit' %}Edit Employee{% else %}Add Employee{% endif %}</h1>
     <p class="hr-muted mb-0">Maintain employee personal, employment, and document information.</p>
   </div>
@@ -29,7 +29,7 @@
 
   <div class="border-bottom pb-3 mb-3">
     <h5 class="fw-bold mb-1">Personal Details</h5>
-    <div class="small hr-muted">Core identity and contact details.</div>
+    <div class="small text-secondary mb-1">Core identity and contact details.</div>
   </div>
   <div class="external-form-grid mb-4">
     <div><label class="form-label fw-semibold">Full Name</label>{{ form.full_name }}{{ form.full_name.errors }}</div>
@@ -43,7 +43,7 @@
 
   <div class="border-bottom pb-3 mb-3">
     <h5 class="fw-bold mb-1">Employment Details</h5>
-    <div class="small hr-muted">Branch, role, manager, and employment status.</div>
+    <div class="small text-secondary mb-1">Branch, role, manager, and employment status.</div>
   </div>
   <div class="external-form-grid mb-4">
     <div><label class="form-label fw-semibold">Employee ID</label>{{ form.employee_id }}{{ form.employee_id.errors }}</div>
@@ -59,7 +59,7 @@
 
   <div class="border-bottom pb-3 mb-3">
     <h5 class="fw-bold mb-1">Documents</h5>
-    <div class="small hr-muted">Upload verification and profile documents.</div>
+    <div class="small text-secondary mb-1">Upload verification and profile documents.</div>
   </div>
   <div class="external-form-grid mb-4">
     <div><label class="form-label fw-semibold">Aadhaar</label>{{ form.aadhaar }}{{ form.aadhaar.errors }}</div>

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Candidate Profile</div>
+    <div class="small text-secondary mb-1 mb-2">Recruitment <i class="bi bi-chevron-right mx-1"></i> Candidate Profile</div>
     <h1 class="fw-bold mb-1">{{ candidate.full_name }}</h1>
     <p class="hr-muted mb-0">{{ candidate.applying_position }}{% if candidate.department %} · {{ candidate.department }}{% endif %}</p>
   </div>
@@ -18,22 +18,34 @@
 
 <div class="row g-4">
   <div class="col-xl-3">
-    <div class="hr-panel p-4 text-center mb-4">
+    <div class="hr-panel p-3 text-center mb-3">
       {% if candidate.photo %}
       <img class="candidate-avatar mb-3" style="width: 96px; height: 96px;" src="{{ candidate.photo.url }}" alt="{{ candidate.full_name }}">
       {% else %}
       <div class="candidate-avatar mx-auto mb-3 d-grid align-items-center" style="width: 96px; height: 96px;"><i class="bi bi-person fs-1"></i></div>
       {% endif %}
-      <h4 class="fw-bold mb-1">{{ candidate.full_name }}</h4>
-      <span class="status-badge status-{{ candidate.status }}">{{ candidate.get_status_display }}</span>
-      <div class="small hr-muted mt-3">{{ candidate.email|default:"No email" }}</div>
-      <div class="small hr-muted">{{ candidate.mobile }}</div>
+      <h4 class="fw-bold mb-1 text-white">{{ candidate.full_name }}</h4>
+      <div class="mt-2 mb-3">
+        {% if candidate.status == 'joined' or candidate.status == 'selected' %}
+          <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #2e7d32; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+        {% elif candidate.status == 'interview_scheduled' or candidate.status == 'interview_completed' %}
+          <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #1565c0; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+        {% elif candidate.status == 'new' %}
+          <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #00838f; border-radius: 6px;">Applied</span>
+        {% elif candidate.status == 'follow_up_pending' or candidate.status == 'called' %}
+          <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #e65100; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+        {% else %}
+          <span class="status-badge text-white px-3 py-1 fw-bold" style="background: #4a148c; border-radius: 6px;">{{ candidate.get_status_display }}</span>
+        {% endif %}
+      </div>
+      <div class="small hr-muted mb-1 mt-3">{{ candidate.email|default:"No email" }}</div>
+      <div class="small fw-semibold text-white mb-1"><i class="bi bi-telephone-fill me-2" style="opacity: 0.5;"></i>{{ candidate.mobile }}</div>
       {% if candidate.resume %}
       <a class="btn btn-hr-primary w-100 mt-3" href="{{ candidate.resume.url }}"><i class="bi bi-download me-1"></i>Download Resume</a>
       {% endif %}
     </div>
 
-    <div class="hr-panel p-3 mb-4">
+    <div class="hr-panel p-3 mb-3">
       <h6 class="fw-bold mb-3">Quick Actions</h6>
       <div class="d-grid gap-2">
         <a class="btn btn-soft text-start" href="{% url 'hr:mark_call' candidate.id %}"><i class="bi bi-telephone me-2"></i>Call</a>
@@ -51,39 +63,39 @@
   </div>
 
   <div class="col-xl-6">
-    <div class="hr-panel p-3 mb-4">
-      <ul class="nav nav-pills gap-2 mb-3">
-        <li class="nav-item"><a class="nav-link {% if tab == 'basic' or tab == 'overview' %}active{% endif %}" href="?tab=basic">Basic Information</a></li>
-        <li class="nav-item"><a class="nav-link {% if tab == 'professional' %}active{% endif %}" href="?tab=professional">Professional Information</a></li>
-        <li class="nav-item"><a class="nav-link {% if tab == 'recruitment' %}active{% endif %}" href="?tab=recruitment">Recruitment Information</a></li>
-        <li class="nav-item"><a class="nav-link {% if tab == 'documents' %}active{% endif %}" href="?tab=documents">Documents</a></li>
+    <div class="hr-panel p-3 mb-3">
+      <ul class="nav nav-pills gap-3 mb-4 flex-wrap" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+        <li class="nav-item"><a class="nav-link {% if tab == 'basic' or tab == 'overview' %}active{% else %}text-white{% endif %}" style="font-weight: 500;" href="?tab=basic">Basic Information</a></li>
+        <li class="nav-item"><a class="nav-link {% if tab == 'professional' %}active{% else %}text-white{% endif %}" style="font-weight: 500;" href="?tab=professional">Professional Information</a></li>
+        <li class="nav-item"><a class="nav-link {% if tab == 'recruitment' %}active{% else %}text-white{% endif %}" style="font-weight: 500;" href="?tab=recruitment">Recruitment Information</a></li>
+        <li class="nav-item"><a class="nav-link {% if tab == 'documents' %}active{% else %}text-white{% endif %}" style="font-weight: 500;" href="?tab=documents">Documents</a></li>
       </ul>
 
       {% if tab == 'basic' or tab == 'overview' %}
       <div class="row g-3">
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Full Name</div><strong>{{ candidate.full_name|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Gender</div><strong>{{ candidate.get_gender_display|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Date of Birth</div><strong>{{ candidate.dob|date:"d M Y"|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Mobile Number</div><strong>{{ candidate.mobile|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Email Address</div><strong>{{ candidate.email|default:"--" }}</strong></div></div>
-        <div class="col-12"><div class="p-3 bg-light rounded"><div class="small hr-muted">Address</div><strong>{{ candidate.address|linebreaksbr|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Full Name</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.full_name|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Gender</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.get_gender_display|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Date of Birth</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.dob|date:"d M Y"|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Mobile Number</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.mobile|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Email Address</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.email|default:"--" }}</div></div></div>
+        <div class="col-12"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Address</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.address|linebreaksbr|default:"--" }}</div></div></div>
       </div>
       {% elif tab == 'professional' %}
       <div class="row g-3">
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Qualification</div><strong>{{ candidate.qualification|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Experience</div><strong>{{ candidate.experience|default:"--" }} years</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Current Company</div><strong>{{ candidate.current_company|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Current Salary</div><strong>{{ candidate.current_salary|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Expected Salary</div><strong>{{ candidate.expected_salary|default:"--" }}</strong></div></div>
-        <div class="col-12"><div class="p-3 bg-light rounded"><div class="small hr-muted">Skills</div><strong>{{ candidate.skills|linebreaksbr|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Qualification</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.qualification|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Experience</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.experience|default:"--" }} years</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Current Company</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.current_company|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Current Salary</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.current_salary|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Expected Salary</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.expected_salary|default:"--" }}</div></div></div>
+        <div class="col-12"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Skills</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.skills|linebreaksbr|default:"--" }}</div></div></div>
       </div>
       {% elif tab == 'recruitment' %}
       <div class="row g-3">
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Applying Position</div><strong>{{ candidate.applying_position|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Department</div><strong>{{ candidate.department|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Source</div><strong>{{ candidate.get_source_display|default:"--" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Assigned HR</div><strong>{{ candidate.assigned_hr.username|default:"Unassigned" }}</strong></div></div>
-        <div class="col-md-6"><div class="p-3 bg-light rounded"><div class="small hr-muted">Status</div><strong>{{ candidate.get_status_display|default:"--" }}</strong></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Applying Position</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.applying_position|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Department</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.department|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Source</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.get_source_display|default:"--" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Assigned HR</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.assigned_hr.username|default:"Unassigned" }}</div></div></div>
+        <div class="col-md-6"><div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 16px; height: 100%;"><div style="color: #9ca3af; font-size: 13px; font-weight: 500; margin-bottom: 6px;">Status</div><div style="color: #ffffff; font-size: 16px; font-weight: 700; word-break: break-word;">{{ candidate.get_status_display|default:"--" }}</div></div></div>
       </div>
 
       {% elif tab == 'documents' %}
@@ -94,7 +106,7 @@
         {% if not candidate.resume and not candidate.photo and not candidate.certificates %}<div class="list-group-item hr-muted">No documents uploaded.</div>{% endif %}
       </div>
       
-      <div class="hr-panel p-3 border rounded bg-light">
+      <div class="hr-panel p-3 border rounded ">
         <h6 class="fw-bold mb-3">Upload / Update Documents</h6>
         <form method="post" enctype="multipart/form-data" action="{% url 'hr:candidate_document_update' candidate.id %}">
           {% csrf_token %}
@@ -122,11 +134,11 @@
         <div class="timeline-item">
           <span class="timeline-dot"></span>
           <div class="small fw-semibold">{{ activity.title }}</div>
-          <div class="small hr-muted">{{ activity.created_at|date:"d M Y, h:i A" }}</div>
+          <div class="small text-secondary mb-1">{{ activity.created_at|date:"d M Y, h:i A" }}</div>
           {% if activity.description %}<div class="small">{{ activity.description }}</div>{% endif %}
         </div>
         {% empty %}
-        <p class="small hr-muted">No activity yet.</p>
+        <p class="small text-secondary mb-1">No activity yet.</p>
         {% endfor %}
       </div>
     </div>

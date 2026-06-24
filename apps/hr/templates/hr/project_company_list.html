@@ -5,14 +5,14 @@
 {% block content %}
 <div class="hr-page-title">
   <div>
-    <div class="small hr-muted mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Companies</div>
+    <div class="small text-secondary mb-1 mb-2">Projects <i class="bi bi-chevron-right mx-1"></i> Companies</div>
     <h1 class="fw-bold mb-1">Project Company Management</h1>
     <p class="hr-muted mb-0">Manage companies and employee project outcomes.</p>
   </div>
   <a class="btn btn-hr-primary" href="{% url 'hr:project_company_create' %}"><i class="bi bi-plus-lg me-1"></i>Add Company</a>
 </div>
 
-<div class="hr-panel p-3 mb-4">
+<div class="hr-panel p-3 mb-3">
   <form class="row g-3 align-items-end" method="get">
     <div class="col-md-10">
       <label class="form-label small fw-semibold">Search</label>
@@ -27,12 +27,12 @@
 <div class="row g-4">
   {% for company in page_obj %}
   <div class="col-md-6 col-xl-4">
-    <div class="hr-panel p-4 h-100">
+    <div class="hr-panel p-3 h-100">
       <div class="d-flex gap-3">
         {% if company.logo %}<img class="candidate-avatar" style="width: 54px; height:54px;" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<span class="candidate-avatar d-inline-grid align-items-center text-center" style="width: 54px; height:54px;"><i class="bi bi-building"></i></span>{% endif %}
         <div class="flex-grow-1">
           <h5 class="fw-bold mb-1">{{ company }}</h5>
-          <div class="small hr-muted">{{ company.industry|default:"Industry not set" }}</div>
+          <div class="small text-secondary mb-1">{{ company.industry|default:"Industry not set" }}</div>
         </div>
       </div>
       <dl class="row small mt-3 mb-0">
