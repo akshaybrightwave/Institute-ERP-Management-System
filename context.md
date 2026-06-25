@@ -988,6 +988,60 @@ NOT_INTERESTED → Candidate not interested
 
 ---
 
+## Phase 11.x — Telecaller Lead Conversion Enhancement (Counselor Assignment During Conversion)
+
+### Purpose
+Eliminated the separate Counselor assignment step by making Counselor selection mandatory at the point of Inquiry → Lead conversion. A Telecaller can no longer create a lead without assigning an active Counselor, ensuring the Counselor receives the lead immediately upon creation.
+
+### Workflow (Updated)
+```text
+Inquiry
+→ Telecaller Converts Inquiry
+→ Selects Assigned Counselor (mandatory)
+→ Lead Created
+→ Counselor Receives Lead Immediately
+```
+
+### Business Rule
+Counselor assignment is **mandatory** during Inquiry → Lead conversion. A lead cannot be created without selecting an active Counselor from the dropdown.
+
+### Implementation
+
+**Form** (`apps/management/forms.py`):
+- Added `LeadConversionForm` (non-ModelForm) with a required `assigned_counselor` ModelChoiceField.
+- Queryset filters `User.objects.filter(role='counselor', is_active=True)` — inactive counselors are never shown.
+
+**View** (`apps/management/views.py` — `inquiry_convert`):
+- Now instantiates `LeadConversionForm(request.POST or None)` and validates it.
+- On valid POST: creates `Lead` with `assigned_counselor` set from form.
+- Three audit entries logged via `log_lead_activity`: `LEAD_CREATED`, telecaller `ASSIGNED`, counselor `ASSIGNED`.
+- On invalid POST (no counselor selected): re-renders form with inline validation error.
+
+**Template** (`apps/management/templates/management/inquiry_convert.html`):
+- Replaced single-button confirmation with a proper form containing the counselor dropdown.
+- If no active counselors exist, the dropdown is replaced with a warning alert and the submit button is disabled.
+- Validation error renders inline below the dropdown.
+
+### Role Behavior
+
+| Role | Can Do |
+|---|---|
+| Telecaller | Convert Inquiry to Lead, select Counselor during conversion |
+| Telecaller | Cannot reassign Counselor after creation |
+| Counselor | View and manage leads assigned to them |
+| Counselor | Cannot assign or reassign leads |
+| Admin | Assign, reassign, and transfer leads at any time via `lead_assign_counselor` |
+
+### Files Modified
+- `apps/management/forms.py`: Added `LeadConversionForm`.
+- `apps/management/views.py`: Updated `inquiry_convert` view.
+- `apps/management/templates/management/inquiry_convert.html`: New counselor selection UI.
+
+### Dashboard Integration
+No dashboard changes required. Leads assigned during conversion automatically appear on the Counselor Dashboard because `counselor_dashboard` queries `Lead.objects.filter(assigned_counselor=request.user)`.
+
+---
+
 ## Phase 11.5 — Admission Sheet Management
 
 ### Purpose

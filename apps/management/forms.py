@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth import get_user_model
 from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet, AdmissionSheet
 
 class InquiryForm(forms.ModelForm):
@@ -33,6 +34,31 @@ class InquiryForm(forms.ModelForm):
             raise forms.ValidationError("An inquiry with this mobile number already exists.")
             
         return mobile
+
+
+class LeadConversionForm(forms.Form):
+    """Form used during Inquiry → Lead conversion.
+    Requires telecaller to select an active counselor before the lead is created.
+    """
+    assigned_counselor = forms.ModelChoiceField(
+        queryset=None,          # populated in __init__ to get fresh queryset each time
+        required=True,
+        empty_label="— Select Assigned Counselor —",
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_assigned_counselor',
+        }),
+        label="Assigned Counselor",
+        error_messages={'required': 'Please select a counselor before converting this inquiry.'},
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        User = get_user_model()
+        self.fields['assigned_counselor'].queryset = (
+            User.objects.filter(role='counselor', is_active=True)
+                        .order_by('username')
+        )
 
 
 class LeadForm(forms.ModelForm):
@@ -118,9 +144,17 @@ class CounselorFollowUpForm(forms.ModelForm):
 class CounselorLeadStatusForm(forms.ModelForm):
     class Meta:
         model = Lead
-        fields = ['counselor_status']
+        fields = ['counselor_status', 'notes']
         widgets = {
             'counselor_status': forms.Select(attrs={'class': 'form-select'}),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Add a remark or note about this status update...',
+            }),
+        }
+        labels = {
+            'notes': 'Remark',
         }
 
 

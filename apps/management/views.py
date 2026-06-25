@@ -5,12 +5,20 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 import datetime
+from datetime import datetime, date, time
 import json
 from django.utils import timezone
 
 from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
-from .forms import InquiryForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm
+from .forms import InquiryForm, LeadConversionForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm
 from .decorators import telecaller_required, counselor_required
+
+def normalize_timestamp(value):
+    if isinstance(value, date) and not isinstance(value, datetime):
+        # Convert a date (naive) to a datetime at midnight and make it timezone‑aware
+        dt = datetime.combine(value, time.min)
+        return timezone.make_aware(dt) if not timezone.is_aware(dt) else dt
+    return value
 
 @login_required
 @telecaller_required
@@ -249,37 +257,49 @@ def inquiry_delete(request, pk):
 @telecaller_required
 def inquiry_convert(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
-    # Security Data Isolation
+
+    # Security: telecaller can only convert their own inquiries
     if request.user.role != 'admin' and inquiry.created_by != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
-    # Rule: Prevent duplicate Lead creation.
+    # Guard: prevent duplicate lead creation
     if hasattr(inquiry, 'lead'):
         messages.warning(request, "This inquiry has already been converted to a Lead.")
         return redirect('lead_detail', pk=inquiry.lead.pk)
 
+    form = LeadConversionForm(request.POST or None)
+
     if request.method == 'POST':
-        # Create Lead
-        lead = Lead.objects.create(
-            inquiry=inquiry,
-            assigned_telecaller=request.user,
-            status='New',
-            priority='Medium',
-            assigned_by=request.user,
-            assigned_at=timezone.now()
-        )
-        # Auto-update Inquiry status to Qualified
-        inquiry.status = 'Qualified'
-        inquiry.save()
+        if form.is_valid():
+            assigned_counselor = form.cleaned_data['assigned_counselor']
 
-        # Log lead activities
-        log_lead_activity(lead, 'LEAD_CREATED', f"Lead created from inquiry conversion by {request.user.username}.", request.user)
-        log_lead_activity(lead, 'ASSIGNED', f"Lead auto-assigned to {request.user.username} upon conversion.", request.user)
+            # Create Lead with counselor assigned at conversion time
+            lead = Lead.objects.create(
+                inquiry=inquiry,
+                assigned_telecaller=request.user,
+                assigned_counselor=assigned_counselor,
+                status='New',
+                priority='Medium',
+                assigned_by=request.user,
+                assigned_at=timezone.now(),
+            )
 
-        messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead successfully.")
-        return redirect('lead_detail', pk=lead.pk)
+            # Auto-qualify the inquiry
+            inquiry.status = 'Qualified'
+            inquiry.save()
 
-    return render(request, 'management/inquiry_convert.html', {'inquiry': inquiry})
+            # Audit trail
+            log_lead_activity(lead, 'LEAD_CREATED', f"Lead created from inquiry conversion by {request.user.username}.", request.user)
+            log_lead_activity(lead, 'ASSIGNED', f"Telecaller {request.user.username} assigned upon conversion.", request.user)
+            log_lead_activity(lead, 'ASSIGNED', f"Counselor {assigned_counselor.username} assigned during conversion by {request.user.username}.", request.user)
+
+            messages.success(
+                request,
+                f"Inquiry for {inquiry.full_name} converted to Lead and assigned to counselor {assigned_counselor.username}."
+            )
+            return redirect('lead_detail', pk=lead.pk)
+
+    return render(request, 'management/inquiry_convert.html', {'inquiry': inquiry, 'form': form})
 
 
 @login_required
@@ -1594,6 +1614,28 @@ def counselor_lead_detail(request, pk):
     activities = lead.activities.all().order_by('-created_at')
     visits = lead.visit_sheets.all().order_by('-visit_date', '-visit_time')
 
+    # Aggregate communication history
+    communication_history = []
+    for note in notes:
+        communication_history.append({
+            'type': 'Note',
+            'timestamp': note.created_at,
+            'content': note.note,
+        })
+    for call in lead.call_logs.all().order_by('-call_date'):
+        communication_history.append({
+            'type': 'Call',
+            'timestamp': normalize_timestamp(call.call_date),
+            'content': f"{call.call_status}: {call.remarks}",
+        })
+    for fu in followups:
+        communication_history.append({
+            'type': 'FollowUp',
+            'timestamp': normalize_timestamp(fu.followup_date),
+            'content': fu.response or fu.outcome or "",
+        })
+    communication_history.sort(key=lambda x: x['timestamp'], reverse=True)
+
     # Check admission sheet
     try:
         admission = lead.admission_sheet
@@ -1608,6 +1650,7 @@ def counselor_lead_detail(request, pk):
         'activities': activities,
         'visits': visits,
         'admission': admission,
+        'communication_history': communication_history,
     })
 
 
@@ -1627,10 +1670,14 @@ def counselor_lead_status_update(request, pk):
             updated_lead.save()
             
             if old_status != updated_lead.counselor_status:
+                remark = updated_lead.notes.strip() if updated_lead.notes else ''
+                activity_msg = f"Counselor status updated from {old_status} to {updated_lead.counselor_status}."
+                if remark:
+                    activity_msg += f" Remark: {remark}"
                 log_lead_activity(
-                    updated_lead, 
-                    'STATUS_CHANGED', 
-                    f"Counselor status updated from {old_status} to {updated_lead.counselor_status}.", 
+                    updated_lead,
+                    'STATUS_CHANGED',
+                    activity_msg,
                     request.user
                 )
             
@@ -2436,7 +2483,7 @@ def admission_create(request, lead_pk):
             'college_name': '',
             'department': '',
             'course_name': inquiry.course_interest or '',
-            'admission_date': datetime.date.today(),
+            'admission_date': date.today(),
         }
         form = AdmissionSheetForm(initial=initial)
 

@@ -104,7 +104,14 @@
               <td class="text-end">
                 <div class="d-inline-flex gap-1">
                   <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-sm btn-outline-info" title="View Profile"><i class="bi bi-eye"></i> Profile</a>
-                  <a href="{% url 'counselor_lead_status_update' lead.pk %}" class="btn btn-sm btn-outline-warning" title="Update Status"><i class="bi bi-pencil"></i> Status</a>
+                  <button type="button" class="btn btn-sm btn-outline-warning js-status-btn"
+                    data-lead-id="{{ lead.pk }}"
+                    data-lead-name="{{ lead.inquiry.full_name }}"
+                    data-current-status="{{ lead.counselor_status }}"
+                    data-current-notes="{{ lead.notes|escapejs }}"
+                    title="Update Status">
+                    <i class="bi bi-pencil"></i> Status
+                  </button>
                 </div>
               </td>
             </tr>
@@ -144,4 +151,64 @@
     {% endif %}
   </div>
 </div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark border border-secondary">
+      <form id="statusForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title text-white fw-bold" id="statusModalLabel">
+            <i class="bi bi-pencil-square text-warning me-2"></i>Update Status
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">Candidate: <strong class="text-white" id="modalLeadName"></strong></p>
+
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">Counselor Status <span class="text-danger">*</span></label>
+            <select name="counselor_status" id="modalStatus" class="form-select bg-dark border-secondary text-white">
+              {% for code, name in status_choices %}
+                <option value="{{ code }}">{{ name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-1">
+            <label class="form-label text-muted small fw-bold">Remark</label>
+            <textarea name="notes" id="modalNotes" class="form-control bg-dark border-secondary text-white"
+              rows="3" placeholder="Add a remark or note about this status update..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning fw-bold text-dark">
+            <i class="bi bi-check-lg me-1"></i>Save Status
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.js-status-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var leadId = this.dataset.leadId;
+      var leadName = this.dataset.leadName;
+      var currentStatus = this.dataset.currentStatus;
+      var currentNotes = this.dataset.currentNotes;
+
+      document.getElementById('modalLeadName').textContent = leadName;
+      document.getElementById('modalStatus').value = currentStatus;
+      document.getElementById('modalNotes').value = currentNotes;
+      document.getElementById('statusForm').action = '/management/counselor/leads/' + leadId + '/status/';
+
+      var modal = new bootstrap.Modal(document.getElementById('statusModal'));
+      modal.show();
+    });
+  });
+</script>
 {% endblock %}

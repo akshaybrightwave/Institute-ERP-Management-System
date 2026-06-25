@@ -3,56 +3,125 @@
 {% block extra_style %}
 {% include 'management/premium_theme_css.html' %}
 <style>
-  .inquiry-convert-page .convert-icon-wrap {
-    width: 80px;
-    height: 80px;
+  /* ── Convert page layout ── */
+  .convert-card {
+    padding: 36px 32px !important;
+  }
+
+  /* ── Header icon ── */
+  .convert-icon-wrap {
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
     background: rgba(22, 163, 74, 0.12);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
-  .inquiry-convert-page .convert-icon-wrap i {
-    font-size: 2.4rem;
-    color: #4ade80;
-  }
+  .convert-icon-wrap i { font-size: 2.2rem; color: #4ade80; }
 
-  .inquiry-convert-page .conversion-checklist {
-    max-width: 460px;
-    background: #1e293b;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
-    color: #94a3b8;
-    text-align: left;
-    padding: 16px 20px;
-    margin: 0 auto 24px;
+  /* ── Inquiry identity chip ── */
+  .convert-inquiry-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(129, 140, 248, 0.1);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #a5b4fc;
+    margin-bottom: 28px;
   }
-  .inquiry-convert-page .conversion-checklist li {
-    margin-bottom: 8px;
+  .convert-inquiry-chip i { font-size: 14px; color: #818cf8; }
+
+  /* ── Counselor field wrapper ── */
+  .counselor-field-wrap {
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 20px 20px 16px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .counselor-field-wrap.has-error {
+    border-color: rgba(248,113,113,0.5);
+    background: rgba(248,113,113,0.05);
+  }
+  .counselor-field-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    margin-bottom: 10px;
+  }
+  .counselor-field-label i { color: #818cf8; font-size: 14px; }
+  .counselor-required-star { color: #f87171; margin-left: 2px; }
+  .counselor-field-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #f87171;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 8px;
+  }
+  .counselor-field-error i { font-size: 13px; }
+
+  /* ── Checklist ── */
+  .conversion-checklist {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .conversion-checklist li {
     display: flex;
     align-items: flex-start;
     gap: 8px;
-    color: #94a3b8;
-    font-size: 0.875rem;
+    color: #64748b;
+    font-size: 0.82rem;
     line-height: 1.5;
+    margin-bottom: 7px;
   }
-  .inquiry-convert-page .conversion-checklist li::before {
+  .conversion-checklist li:last-child { margin-bottom: 0; }
+  .conversion-checklist li::before {
     content: '\F633';
     font-family: "bootstrap-icons";
     color: #4ade80;
-    font-size: 14px;
+    font-size: 13px;
     flex-shrink: 0;
     margin-top: 1px;
   }
-  .inquiry-convert-page .conversion-checklist li:last-child { margin-bottom: 0; }
-  .inquiry-convert-page .conversion-checklist strong { color: #e2e8f0; }
+  .conversion-checklist li strong { color: #a5b4fc; }
 
+  /* ── No counselors warning ── */
+  .no-counselors-alert {
+    background: rgba(251,191,36,0.08);
+    border: 1px solid rgba(251,191,36,0.25);
+    border-radius: 10px;
+    padding: 14px 18px;
+    color: #fbbf24;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .no-counselors-alert i { margin-right: 6px; }
+
+  /* ── Buttons ── */
   .inquiry-convert-page .btn-outline-secondary {
     background: rgba(255,255,255,0.05) !important;
     border-color: rgba(255,255,255,0.15) !important;
     color: #94a3b8 !important;
-    min-width: 110px;
+    min-width: 100px;
   }
   .inquiry-convert-page .btn-outline-secondary:hover {
     background: rgba(255,255,255,0.1) !important;
@@ -62,12 +131,18 @@
     background: #16a34a !important;
     border-color: #16a34a !important;
     color: #fff !important;
-    min-width: 150px;
+    min-width: 160px;
     box-shadow: 0 4px 14px rgba(22,163,74,0.3);
   }
   .inquiry-convert-page .btn-success:hover {
     background: #15803d !important;
     box-shadow: 0 6px 18px rgba(22,163,74,0.4) !important;
+    transform: translateY(-1px);
+  }
+  .inquiry-convert-page .btn-success:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 </style>
 {% endblock %}
@@ -75,41 +150,83 @@
 {% block management_content %}
 <div class="inquiry-convert-page">
   <div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-      <div class="m-card text-center" style="padding: 36px 32px !important;">
+    <div class="col-md-7 col-lg-6">
+      <div class="m-card convert-card text-center">
 
         <!-- Icon -->
         <div class="convert-icon-wrap">
           <i class="bi bi-person-check-fill"></i>
         </div>
 
+        <!-- Title -->
         <h3 class="fw-bold mb-2" style="color:#f1f5f9;">Convert Inquiry to Lead</h3>
-        <p class="text-muted mb-4" style="font-size:0.9rem;">
-          You are converting the inquiry of
-          <strong style="color:#e2e8f0;">{{ inquiry.full_name }}</strong>
-          into an active lead. This will:
+        <p class="text-muted mb-4" style="font-size:0.875rem;">
+          Assign a counselor and convert this inquiry into an active lead.
         </p>
 
-        <!-- Checklist (list-style removed — custom ::before icons) -->
-        <ul class="conversion-checklist list-unstyled">
-          <li>Create a corresponding Lead record.</li>
-          <li>Assign the Lead to you ({{ request.user.username }}).</li>
-          <li>Set the initial status of the Lead to "New".</li>
-          <li>Update this Inquiry status to <strong>Qualified</strong>.</li>
-        </ul>
+        <!-- Inquiry identity chip -->
+        <div class="convert-inquiry-chip">
+          <i class="bi bi-person-lines-fill"></i>
+          {{ inquiry.full_name }}
+          <span style="color:#64748b;font-weight:400;">·</span>
+          <span style="color:#64748b;font-size:0.8rem;">{{ inquiry.mobile_number }}</span>
+        </div>
 
-        <!-- Actions -->
-        <form method="POST" class="d-flex justify-content-center gap-3 mt-2">
+        <form method="POST">
           {% csrf_token %}
-          {# js-skip-action-modal prevents the iframe JS from intercepting this link #}
-          <a href="{% url 'inquiry_detail' inquiry.pk %}"
-             class="btn btn-outline-secondary fw-semibold js-skip-action-modal"
-             id="convertCancelBtn">
-            <i class="bi bi-x-lg me-1"></i> Cancel
-          </a>
-          <button type="submit" class="btn btn-success fw-bold">
-            <i class="bi bi-check-lg me-1"></i> Convert to Lead
-          </button>
+
+          <!-- ── Counselor Selection (mandatory) ── -->
+          {% if form.assigned_counselor.field.queryset.exists %}
+
+            <div class="counselor-field-wrap {% if form.assigned_counselor.errors %}has-error{% endif %}">
+              <div class="counselor-field-label">
+                <i class="bi bi-person-badge-fill"></i>
+                Assigned Counselor
+                <span class="counselor-required-star">*</span>
+              </div>
+              {{ form.assigned_counselor }}
+              {% if form.assigned_counselor.errors %}
+                <div class="counselor-field-error">
+                  <i class="bi bi-exclamation-circle-fill"></i>
+                  {{ form.assigned_counselor.errors|first }}
+                </div>
+              {% endif %}
+            </div>
+
+          {% else %}
+
+            <!-- No active counselors exist — block conversion -->
+            <div class="no-counselors-alert">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <strong>No active counselors available.</strong>
+              Please ask your administrator to add an active counselor before converting this inquiry.
+            </div>
+
+          {% endif %}
+
+          <!-- ── What will happen ── -->
+          <ul class="conversion-checklist list-unstyled text-start">
+            <li>Create a new Lead record for <strong>{{ inquiry.full_name }}</strong>.</li>
+            <li>Assign the Lead to telecaller <strong>{{ request.user.username }}</strong>.</li>
+            <li>Assign the Lead immediately to the selected <strong>Counselor</strong>.</li>
+            <li>Set the initial Lead status to <strong>New</strong>.</li>
+            <li>Mark this Inquiry as <strong>Qualified</strong>.</li>
+          </ul>
+
+          <!-- ── Actions ── -->
+          <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'inquiry_detail' inquiry.pk %}"
+               class="btn btn-outline-secondary fw-semibold js-skip-action-modal"
+               id="convertCancelBtn">
+              <i class="bi bi-x-lg me-1"></i> Cancel
+            </a>
+            <button type="submit"
+                    class="btn btn-success fw-bold"
+                    {% if not form.assigned_counselor.field.queryset.exists %}disabled{% endif %}>
+              <i class="bi bi-check-lg me-1"></i> Convert to Lead
+            </button>
+          </div>
+
         </form>
 
       </div>
@@ -125,17 +242,13 @@
   if (!cancelBtn) return;
 
   if (window.self !== window.top) {
-    /* ── Inside the management action modal (iframe) ──
-       Close the parent modal by reloading the parent page.
-       This dismisses the modal and returns the user to the
-       inquiry list they were viewing.                        */
+    /* Inside the management action modal (iframe):
+       reload parent so the modal closes and returns to the list. */
     cancelBtn.addEventListener('click', function(e) {
       e.preventDefault();
       try {
         window.parent.location.reload();
       } catch (err) {
-        /* Fallback: navigate so the frame-load handler in
-           base.html detects the path change and reloads.    */
         window.location.href = cancelBtn.href;
       }
     });
