@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 import datetime
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 import json
 from django.utils import timezone
 
@@ -26,7 +26,7 @@ def management_dashboard(request):
     if request.user.role == 'admin':
         return redirect('management_super_admin_dashboard')
         
-    today = datetime.date.today()
+    today = date.today()
     
     # Base Querysets with Data Isolation (telecaller sees own data)
     inquiries_qs = Inquiry.objects.filter(created_by=request.user)
@@ -86,7 +86,7 @@ def management_super_admin_dashboard(request):
             return redirect('management_dashboard')
         return HttpResponseForbidden("Access Denied: Admin access only.")
 
-    today = datetime.date.today()
+    today = date.today()
 
     # Global statistics (9 metrics)
     total_leads = Lead.objects.count()
@@ -139,7 +139,7 @@ def management_super_admin_dashboard(request):
         'today_followups_list': today_followups_list,
         'overdue_followups_list': overdue_followups_list,
     }
-    return render(request, 'management/super_admin_dashboard.html', context)
+    return render(request, 'management/admin_dashboard.html', context)
 
 
 # ==================================================
@@ -311,7 +311,7 @@ def update_call_status(request, pk):
 
     inquiry = get_object_or_404(Inquiry, pk=pk)
 
-    # Access control: Tele Caller can update own inquiries, Super Admin can update any
+    # Access control: Tele Caller can update own inquiries, Admin can update any
     if request.user.role != 'admin' and inquiry.created_by != request.user:
         return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
 
@@ -395,11 +395,14 @@ def lead_detail(request, pk):
     except AdmissionSheet.DoesNotExist:
         admission = None
 
+    notes = lead.notes_timeline.all().select_related('created_by').order_by('-created_at')
+
     return render(request, 'management/lead_detail.html', {
         'lead': lead,
         'call_logs': call_logs,
         'followups': followups,
         'admission': admission,
+        'notes': notes,
     })
 
 
@@ -444,7 +447,7 @@ def call_log_list(request):
     date_str = request.GET.get('date', '').strip()
     if date_str:
         try:
-            date_val = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+            date_val = datetime.strptime(date_str, "%Y-%m-%d").date()
             call_logs = call_logs.filter(call_date__date=date_val)
         except ValueError:
             pass
@@ -1052,18 +1055,49 @@ def lead_note_add(request, pk):
 
     if request.method == 'POST':
         note_text = request.POST.get('note', '').strip()
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
+        
         if note_text:
-            LeadNote.objects.create(
+            note_obj = LeadNote.objects.create(
                 lead=lead,
                 note=note_text,
                 created_by=request.user
             )
             # Log activity
             log_lead_activity(lead, 'NOTE_ADDED', f"Note added: '{note_text[:50]}...'", request.user)
+            
+            # Broadcast via Channels
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            from django.utils import timezone
+            
+            channel_layer = get_channel_layer()
+            role_display = 'Telecaller' if request.user.role == 'telecaller' else ('Counselor' if request.user.role == 'counselor' else 'Admin')
+            
+            payload = {
+                "note_id": note_obj.pk,
+                "lead_id": lead.pk,
+                "author_name": request.user.username,
+                "author_role": role_display,
+                "remark": note_text,
+                "timestamp": timezone.localtime(note_obj.created_at).strftime("%d %b %Y %I:%M %p")
+            }
+            async_to_sync(channel_layer.group_send)(
+                f"lead_remarks_{lead.pk}",
+                {"type": "remark_message", "payload": payload}
+            )
+            print("BROADCAST SENT", lead.pk)
+
+            if is_ajax:
+                return JsonResponse({"status": "success", "message": "Note added successfully."})
+
             messages.success(request, "Note added successfully.")
         else:
+            if is_ajax:
+                return JsonResponse({"status": "error", "message": "Note content cannot be empty."}, status=400)
             messages.error(request, "Note content cannot be empty.")
-        return redirect('lead_notes_list', pk=lead.pk)
+            
+        return redirect(request.META.get('HTTP_REFERER', 'lead_detail'))
 
     return render(request, 'management/lead_note_form.html', {'lead': lead})
 
@@ -1334,13 +1368,13 @@ def telecaller_report(request):
     date_filter = request.GET.get('date_filter', 'this_month')
     start_date = None
     end_date = None
-    today = datetime.date.today()
+    today = date.today()
 
     if date_filter == 'today':
         start_date = today
         end_date = today
     elif date_filter == 'this_week':
-        start_date = today - datetime.timedelta(days=today.weekday())
+        start_date = today - timedelta(days=today.weekday())
         end_date = today
     elif date_filter == 'this_month':
         start_date = today.replace(day=1)
@@ -1350,9 +1384,9 @@ def telecaller_report(request):
         end_date_str = request.GET.get('end_date', '')
         try:
             if start_date_str:
-                start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
             if end_date_str:
-                end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         except ValueError:
             pass
     else:
@@ -1480,7 +1514,7 @@ def telecaller_report(request):
 @login_required
 @counselor_required
 def counselor_dashboard(request):
-    today = datetime.date.today()
+    today = date.today()
     
     # Base Lead Queryset Scoping
     if request.user.role == 'admin':
@@ -1610,7 +1644,7 @@ def counselor_lead_detail(request, pk):
 
     sessions = lead.counseling_sessions.all().order_by('-session_date')
     followups = lead.followups.all().order_by('-followup_date')
-    notes = lead.notes_timeline.all().order_by('-created_at')
+    notes = lead.notes_timeline.all().select_related('created_by').order_by('-created_at')
     activities = lead.activities.all().order_by('-created_at')
     visits = lead.visit_sheets.all().order_by('-visit_date', '-visit_time')
 
@@ -1925,16 +1959,47 @@ def counselor_note_add(request, lead_pk):
 
     if request.method == 'POST':
         note_text = request.POST.get('note', '').strip()
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
+        
         if note_text:
-            LeadNote.objects.create(
+            note_obj = LeadNote.objects.create(
                 lead=lead,
                 note=note_text,
                 created_by=request.user
             )
             log_lead_activity(lead, 'NOTE_ADDED', f"Counselor note added: '{note_text[:50]}...'", request.user)
+            
+            # Broadcast via Channels
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            from django.utils import timezone
+            
+            channel_layer = get_channel_layer()
+            role_display = 'Telecaller' if request.user.role == 'telecaller' else ('Counselor' if request.user.role == 'counselor' else 'Admin')
+            
+            payload = {
+                "note_id": note_obj.pk,
+                "lead_id": lead.pk,
+                "author_name": request.user.username,
+                "author_role": role_display,
+                "remark": note_text,
+                "timestamp": timezone.localtime(note_obj.created_at).strftime("%d %b %Y %I:%M %p")
+            }
+            async_to_sync(channel_layer.group_send)(
+                f"lead_remarks_{lead.pk}",
+                {"type": "remark_message", "payload": payload}
+            )
+            print("BROADCAST SENT", lead.pk)
+
+            if is_ajax:
+                return JsonResponse({"status": "success", "message": "Note added successfully."})
+            
             messages.success(request, "Counselor note timeline updated successfully.")
         else:
+            if is_ajax:
+                return JsonResponse({"status": "error", "message": "Note content cannot be empty."}, status=400)
             messages.error(request, "Note content cannot be empty.")
+            
     return redirect('counselor_lead_detail', pk=lead.pk)
 
 
@@ -1952,13 +2017,13 @@ def counselor_reports_dashboard(request):
     date_filter = request.GET.get('date_filter', 'this_month')
     start_date = None
     end_date = None
-    today = datetime.date.today()
+    today = date.today()
 
     if date_filter == 'today':
         start_date = today
         end_date = today
     elif date_filter == 'this_week':
-        start_date = today - datetime.timedelta(days=today.weekday())
+        start_date = today - timedelta(days=today.weekday())
         end_date = today
     elif date_filter == 'this_month':
         start_date = today.replace(day=1)
@@ -1968,9 +2033,9 @@ def counselor_reports_dashboard(request):
         end_date_str = request.GET.get('end_date', '')
         try:
             if start_date_str:
-                start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
             if end_date_str:
-                end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         except ValueError:
             pass
 
@@ -2270,12 +2335,12 @@ def counselor_visit_list(request):
     end_date = request.GET.get('end_date', '').strip()
     if start_date:
         try:
-            visits = visits.filter(visit_date__gte=datetime.datetime.strptime(start_date, "%Y-%m-%d").date())
+            visits = visits.filter(visit_date__gte=datetime.strptime(start_date, "%Y-%m-%d").date())
         except ValueError:
             pass
     if end_date:
         try:
-            visits = visits.filter(visit_date__lte=datetime.datetime.strptime(end_date, "%Y-%m-%d").date())
+            visits = visits.filter(visit_date__lte=datetime.strptime(end_date, "%Y-%m-%d").date())
         except ValueError:
             pass
 

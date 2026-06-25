@@ -133,7 +133,7 @@
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <span class="role-badge">
               <i class="bi bi-person-circle"></i>
-              {% if request.user.role == 'admin' %}Super Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'hr' %}HR{% elif request.user.role == 'telecaller' %}Telecaller{% elif request.user.role == 'counselor' %}Counselor{% else %}Student{% endif %}
+              {% if request.user.role == 'admin' %}Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'hr' %}HR{% elif request.user.role == 'telecaller' %}Telecaller{% elif request.user.role == 'counselor' %}Counselor{% else %}Student{% endif %}
               &middot; {{ request.user.username }}
             </span>
           </li>

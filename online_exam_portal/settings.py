@@ -45,6 +45,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -99,6 +101,19 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'online_exam_portal.wsgi.application'
+ASGI_APPLICATION = 'online_exam_portal.asgi.application'
+
+# Channel Layers Configuration
+import os
+redis_host = os.environ.get('REDIS_HOST', '127.0.0.1')
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
+        "CONFIG": {
+            "hosts": [(redis_host, 6379)],
+        },
+    },
+}
 
 
 # Database

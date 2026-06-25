@@ -20,7 +20,7 @@ class AllUserManager(UserManager):
 
 class User(AbstractUser):
     ROLE_CHOICES = (
-        ('admin', 'Super Admin'),
+        ('admin', 'Admin'),
         ('center', 'Center'),
         ('teacher', 'Teacher'),
         ('student', 'Student'),

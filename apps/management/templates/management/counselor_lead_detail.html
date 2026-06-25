@@ -136,32 +136,9 @@
       <div class="empty-state-desc">No summary notes available from telecallers.</div>
     </div>
   {% endif %}
-</div>      </div>
-    </div>
-{% comment %} Communication History Section {% endcomment %}
-<div class="mt-4 pt-3 border-top border-secondary">
-  <label class="text-muted small fw-bold mb-2">Communication History</label>
-  {% if communication_history %}
-    <ul class="list-group list-group-flush bg-transparent">
-      {% for entry in communication_history %}
-        <li class="list-group-item bg-transparent text-white border-secondary px-0 py-2">
-          <div class="d-flex justify-content-between align-items-start">
-            <span class="badge bg-info me-2">{{ entry.type }}</span>
-            <span class="text-muted small" style="font-size:0.7rem;">{{ entry.timestamp|date:"d M Y, H:i" }}</span>
-          </div>
-          <p class="mb-0 small" style="line-height:1.4;">{{ entry.content }}</p>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <div class="empty-state-premium">
-      <i class="bi bi-clock-history"></i>
-      <div class="empty-state-title">No Communication History</div>
-      <div class="empty-state-desc">Telecaller calls, notes, and follow‑up will appear here.</div>
-    </div>
-  {% endif %}
 </div>
 
+    </div>
     <!-- Counseling Sessions -->
     <div class="m-card mb-4">
       <div class="d-flex align-items-center justify-content-between mb-3">
@@ -329,41 +306,44 @@
       </div>
     </div>
 
-    <!-- Quick Note Form -->
+    <!-- Shared Lead Remarks -->
     <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-chat-left-dots text-info me-2"></i>Add Counselor Note</h5>
-      <form method="POST" action="{% url 'counselor_note_add' lead.pk %}">
+      <h5 class="fw-bold text-white mb-1"><i class="bi bi-chat-dots text-info me-2"></i>Shared Lead Remarks</h5>
+      <p class="text-muted small mb-3">Visible to Assigned Telecaller, Assigned Counselor, and Admin.</p>
+      
+      <form id="remark-form" method="POST" action="{% url 'counselor_note_add' lead.pk %}" class="mb-4">
         {% csrf_token %}
         <div class="mb-3">
-          <textarea name="note" class="form-control bg-dark border-secondary text-white small" rows="3" placeholder="Enter comments or notes about candidate conversation..." required></textarea>
+          <textarea name="note" class="form-control bg-dark border-secondary text-white small" rows="3" placeholder="Enter lead update, discussion summary, follow-up outcome, visit outcome, admission update, or important information..." required></textarea>
         </div>
-        <button type="submit" class="btn btn-info text-white btn-sm w-100 fw-bold">Post Note to Timeline</button>
+        <button type="submit" class="btn btn-info text-white btn-sm w-100 fw-bold">Save Remark</button>
       </form>
-    </div>
 
-    <!-- Notes History Timeline (Quick View) -->
-    <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-chat-left-text text-success me-2"></i>Notes Timeline</h5>
-      
+      <div id="remarks-container" class="list-group list-group-flush bg-transparent">
+
       {% if notes %}
-        <div class="list-group list-group-flush bg-transparent">
-          {% for note in notes|slice:":4" %}
+          {% for note in notes %}
             <div class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="fw-bold text-info small">{{ note.created_by.username|default:"System" }}</span>
-                <span class="text-muted small" style="font-size: 0.7rem;">{{ note.created_at|date:"d M Y, H:i" }}</span>
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div>
+                  <span class="fw-bold text-info small">{{ note.created_by.username|default:"System" }}</span>
+                  <span class="badge bg-secondary ms-1" style="font-size:0.65rem;">
+                    {% if note.created_by.role == 'telecaller' %}Telecaller{% elif note.created_by.role == 'counselor' %}Counselor{% elif note.created_by.role == 'admin' %}Admin{% else %}{{ note.created_by.role|title }}{% endif %}
+                  </span>
+                </div>
+                <span class="text-muted small" style="font-size: 0.7rem;">{{ note.created_at|date:"d M Y h:i A" }}</span>
               </div>
-              <p class="small mb-0 text-muted" style="line-height: 1.4;">{{ note.note }}</p>
+              <p class="small mb-0" style="line-height: 1.4; color: #cbd5e1;">{{ note.note|linebreaksbr }}</p>
             </div>
           {% endfor %}
-        </div>
       {% else %}
-        <div class="empty-state-premium">
-          <i class="bi bi-clock-history"></i>
-          <div class="empty-state-title">No Timeline Notes</div>
-          <div class="empty-state-desc">Notes logged on the timeline will appear here.</div>
+        <div class="empty-state-premium mt-2">
+          <i class="bi bi-chat-quote"></i>
+          <div class="empty-state-title">No Shared Remarks</div>
+          <div class="empty-state-desc">Collaboration timeline notes will appear here.</div>
         </div>
       {% endif %}
+      </div>
     </div>
 
 
@@ -423,4 +403,67 @@
 </div>
 {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const leadId = "{{ lead.pk }}";
+    const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const remarksSocket = new WebSocket(
+        wsProtocol + '://' + window.location.host + '/ws/lead/' + leadId + '/remarks/'
+    );
+
+    remarksSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const container = document.getElementById('remarks-container');
+        if (container) {
+            // Remove empty state if present
+            const emptyState = container.querySelector('.empty-state-premium');
+            if (emptyState) emptyState.remove();
+            
+            const remarkHtml = `
+            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <div>
+                  <span class="fw-bold text-info small">${data.author_name}</span>
+                  <span class="badge bg-secondary ms-1" style="font-size:0.65rem;">${data.author_role}</span>
+                </div>
+                <span class="text-muted small" style="font-size: 0.7rem;">${data.timestamp}</span>
+              </div>
+              <p class="small mb-0" style="line-height: 1.4; color: #cbd5e1;">${data.remark.replace(/\n/g, '<br>')}</p>
+            </div>
+            `;
+            container.insertAdjacentHTML('afterbegin', remarkHtml);
+        }
+    };
+
+    remarksSocket.onclose = function(e) {
+        console.error('Remarks socket closed unexpectedly');
+    };
+
+    const form = document.getElementById('remark-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.status === 'success') {
+                      form.reset();
+                  } else {
+                      alert(data.message);
+                  }
+              })
+              .catch(error => console.error('Error:', error));
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -12,6 +12,13 @@ services:
       - .env
     environment:
       - DB_HOST=host.docker.internal
+      - REDIS_HOST=redis
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  redis:
+    image: redis:alpine
+    container_name: online_exam_redis
+    ports:
+      - "6379:6379"
+    restart: always

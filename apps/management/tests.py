@@ -51,7 +51,7 @@ class TelecallerModuleTests(TestCase):
         )
 
     def test_portal_access_restrictions(self):
-        # Student should be blocked from management dashboard and super admin dashboard
+        # Student should be blocked from management dashboard and admin dashboard
         response = self.client_student.get(reverse('management_dashboard'))
         self.assertEqual(response.status_code, 403)
         response = self.client_student.get(reverse('management_super_admin_dashboard'))
@@ -65,7 +65,7 @@ class TelecallerModuleTests(TestCase):
         response = self.client_admin.get(reverse('management_dashboard'))
         self.assertRedirects(response, reverse('management_super_admin_dashboard'))
 
-        # Admin can access super admin dashboard
+        # Admin can access admin dashboard
         response = self.client_admin.get(reverse('management_super_admin_dashboard'))
         self.assertEqual(response.status_code, 200)
 
@@ -73,7 +73,7 @@ class TelecallerModuleTests(TestCase):
         response = self.client_tele1.get(reverse('management_dashboard'))
         self.assertEqual(response.status_code, 200)
 
-        # Telecaller accessing super admin dashboard should be redirected to management dashboard
+        # Telecaller accessing admin dashboard should be redirected to management dashboard
         response = self.client_tele1.get(reverse('management_super_admin_dashboard'))
         self.assertRedirects(response, reverse('management_dashboard'))
 
