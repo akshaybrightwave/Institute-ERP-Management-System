@@ -23,19 +23,6 @@
 
 <!-- Stats Row -->
 <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
-  <!-- Total Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-purple">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Total Leads</div>
-        <div class="erp-card-number">{{ total_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-person-lines-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View all
-      </a>
-    </div>
-  </div>
 
   <!-- Assigned Leads -->
   <div class="col">
@@ -51,61 +38,6 @@
     </div>
   </div>
 
-  <!-- Contacted Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-green">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Contacted Leads</div>
-        <div class="erp-card-number">{{ contacted_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-telephone-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Contacted" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View contacted
-      </a>
-    </div>
-  </div>
-
-  <!-- Interested Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-pink">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Interested Leads</div>
-        <div class="erp-card-number">{{ interested_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Interested" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View interested
-      </a>
-    </div>
-  </div>
-
-  <!-- Qualified Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-teal">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Qualified Leads</div>
-        <div class="erp-card-number">{{ qualified_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-award-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Qualified" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View qualified
-      </a>
-    </div>
-  </div>
-
-  <!-- Rejected Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-red">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Rejected Leads</div>
-        <div class="erp-card-number">{{ rejected_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-x-circle-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Rejected" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View rejected
-      </a>
-    </div>
-  </div>
 
   <!-- Today's Calls -->
   <div class="col">

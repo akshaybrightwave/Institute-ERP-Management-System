@@ -51,61 +51,6 @@
     </div>
   </div>
 
-  <!-- Contacted Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-dteal">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Contacted Leads</div>
-        <div class="erp-card-number">{{ contacted_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-telephone-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Contacted" class="erp-card-footer">
-        <i class="bi bi-funnel"></i> View contacted
-      </a>
-    </div>
-  </div>
-
-  <!-- Interested Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-violet">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Interested Leads</div>
-        <div class="erp-card-number">{{ interested_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Interested" class="erp-card-footer">
-        <i class="bi bi-funnel"></i> View interested
-      </a>
-    </div>
-  </div>
-
-  <!-- Qualified Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-green">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Qualified Leads</div>
-        <div class="erp-card-number">{{ qualified_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-award-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Qualified" class="erp-card-footer">
-        <i class="bi bi-funnel"></i> View qualified
-      </a>
-    </div>
-  </div>
-
-  <!-- Rejected Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-crimson">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Rejected Leads</div>
-        <div class="erp-card-number">{{ rejected_leads }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-x-circle-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_list' %}?status=Rejected" class="erp-card-footer">
-        <i class="bi bi-funnel"></i> View rejected
-      </a>
-    </div>
-  </div>
 
   <!-- Today's Calls -->
   <div class="col">
@@ -145,6 +90,61 @@
       </div>
       <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
         <i class="bi bi-exclamation-circle"></i> Handle overdue
+      </a>
+    </div>
+  </div>
+  <!-- Counseling Completed -->
+  <div class="col">
+    <div class="erp-card bg-g-navy">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Counseling Completed</div>
+        <div class="erp-card-number">{{ counseling_done }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-video3"></i></div>
+      </div>
+      <a href="{% url 'lead_list' %}?counselor_status=COUNSELING_DONE" class="erp-card-footer">
+        <i class="bi bi-person-video3"></i> View counseling
+      </a>
+    </div>
+  </div>
+
+  <!-- Today's Visits -->
+  <div class="col">
+    <div class="erp-card bg-g-teal">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Today's Visits</div>
+        <div class="erp-card-number">{{ today_visits }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
+      </div>
+      <a href="{% url 'counselor_visit_list' %}?start_date={% now 'Y-m-d' %}&end_date={% now 'Y-m-d' %}" class="erp-card-footer">
+        <i class="bi bi-calendar2-day"></i> View today's
+      </a>
+    </div>
+  </div>
+
+  <!-- Total Admissions -->
+  <div class="col">
+    <div class="erp-card bg-g-purple">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Total Admissions</div>
+        <div class="erp-card-number">{{ admission_metrics.total }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-journal-check"></i></div>
+      </div>
+      <a href="{% url 'admission_list' %}" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View admissions
+      </a>
+    </div>
+  </div>
+
+  <!-- Pending Admissions -->
+  <div class="col">
+    <div class="erp-card bg-g-orange">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Pending Admissions</div>
+        <div class="erp-card-number">{{ admission_metrics.pending }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-clock-history"></i></div>
+      </div>
+      <a href="{% url 'admission_list' %}?status=PENDING" class="erp-card-footer">
+        <i class="bi bi-clock"></i> View pending
       </a>
     </div>
   </div>

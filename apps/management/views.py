@@ -116,6 +116,10 @@ def management_super_admin_dashboard(request):
         'cancelled': AdmissionSheet.objects.filter(admission_status='CANCELLED').count(),
     }
 
+    # Counselor Metrics
+    counseling_done = Lead.objects.filter(counselor_status='COUNSELING_DONE').count()
+    today_visits = VisitSheet.objects.filter(visit_date=today).count()
+
     # Tables
     recent_leads = Lead.objects.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.all().order_by('-created_at')[:5]
@@ -138,6 +142,8 @@ def management_super_admin_dashboard(request):
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
         'overdue_followups_list': overdue_followups_list,
+        'counseling_done': counseling_done,
+        'today_visits': today_visits,
     }
     return render(request, 'management/admin_dashboard.html', context)
 
