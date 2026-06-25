@@ -2,6 +2,20 @@
 
 {% block title %}Attendance | HR Portal{% endblock %}
 
+{% block style %}
+<style>
+  .hr-kpi {
+    transition: all 0.3s ease;
+  }
+
+  .hr-kpi:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.05);
+    filter: brightness(1.1);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="external-title-row">
   <div>
@@ -15,17 +29,23 @@
   </div>
 </div>
 
-<div class="external-kpi-grid">
+<div class="external-kpi-grid mb-4">
   {% for item in kpis %}
-  <div class="hr-panel external-kpi">
-    <div class="d-flex align-items-center gap-3 h-100">
-      <div class="hr-kpi-icon tone-{{ item.color }}"><i class="bi {{ item.icon }}"></i></div>
-      <div>
-        <div class="small text-secondary mb-1 mb-1">{{ item.label }}</div>
-        <div class="hr-stat-number">{{ item.value }}</div>
-        {% if item.meta %}<div class="small fw-bold mt-2 {% if item.color == 'emerald' %}text-success{% elif item.color == 'red' %}text-danger{% elif item.color == 'amber' %}text-warning{% else %}hr-muted{% endif %}">{{ item.meta }}</div>{% endif %}
-      </div>
+  <div class="hr-kpi" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 120px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px;
+    {% if forloop.counter0 == 0 %}background: linear-gradient(to right, #4a148c, #7b1fa2) !important;{% endif %}
+    {% if forloop.counter0 == 1 %}background: linear-gradient(to right, #00838f, #00acc1) !important;{% endif %}
+    {% if forloop.counter0 == 2 %}background: linear-gradient(to right, #1565c0, #1e88e5) !important;{% endif %}
+    {% if forloop.counter0 == 3 %}background: linear-gradient(to right, #e65100, #fb8c00) !important;{% endif %}">
+    
+    <!-- Large Absolute Icon -->
+    <i class="bi {{ item.icon }}" style="position: absolute; right: 15px; top: 15px; font-size: 45px; color: rgba(255,255,255,0.4); z-index: 1;"></i>
+    
+    <!-- Main Content -->
+    <div style="padding: 15px; position: relative; z-index: 2;">
+      <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 4px; max-width: 75%;">{{ item.label }}</div>
+      <div style="color: #ffffff; font-size: 32px; font-weight: 700; line-height: 1;">{{ item.value|default:"0" }}</div>
     </div>
+    
   </div>
   {% endfor %}
 </div>
@@ -85,35 +105,30 @@
 
   <div class="external-table-wrap">
     <table class="table table-hover hr-table external-table mb-0" data-quick-attendance-url="{% url 'hr:external_attendance_quick_update' external_branch_slug %}" data-attendance-date="{{ external_selected_date }}">
-      <thead class="text-nowrap  border-bottom border-2">
+      <thead class="border-bottom border-2">
         <tr>
-          <th class="py-3 ps-4" style="min-width: 240px; font-weight: 600;  font-size: 0.85rem;">Employee</th>
-          <th class="py-3" style="min-width: 130px; font-weight: 600;  font-size: 0.85rem;">Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 0.75rem;"></i></th>
-          <th class="py-3" style="min-width: 140px; font-weight: 600;  font-size: 0.85rem;">Check In</th>
-          <th class="py-3" style="min-width: 140px; font-weight: 600;  font-size: 0.85rem;">Check Out</th>
-          <th class="py-3" style="min-width: 140px; font-weight: 600;  font-size: 0.85rem;">Status</th>
-          <th class="py-3" style="min-width: 200px; font-weight: 600;  font-size: 0.85rem;">Remarks</th>
-          <th class="py-3 text-center" style="min-width: 80px; font-weight: 600;  font-size: 0.85rem;">Actions</th>
+          <th class="py-3 ps-4 text-uppercase" style="font-weight: 600; font-size: 0.8rem; letter-spacing: 0.5px;">Employee</th>
+          <th class="py-3 text-uppercase" style="font-weight: 600; font-size: 0.8rem; letter-spacing: 0.5px;">Date <i class="bi bi-arrow-down-up ms-1 text-muted" style="font-size: 0.75rem;"></i></th>
+          <th class="py-3 text-uppercase" style="font-weight: 600; font-size: 0.8rem; letter-spacing: 0.5px;">Check In</th>
+          <th class="py-3 text-uppercase" style="font-weight: 600; font-size: 0.8rem; letter-spacing: 0.5px;">Check Out</th>
+          <th class="py-3 text-uppercase" style="font-weight: 600; font-size: 0.8rem; letter-spacing: 0.5px;">Status</th>
+          <th class="py-3 text-uppercase" style="font-weight: 600; font-size: 0.8rem; letter-spacing: 0.5px;">Remarks</th>
+          <th class="py-3 text-center text-uppercase" style="font-weight: 600; font-size: 0.8rem; letter-spacing: 0.5px;">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for row in page_obj %}
         <tr data-attendance-row data-employee-id="{{ row.employee_pk }}" class="align-middle border-bottom">
           <td class="py-3 ps-4">
-            <div class="d-flex align-items-center gap-3">
-              <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold {% if forloop.counter0|divisibleby:3 %}bg-warning bg-opacity-10 text-warning{% elif forloop.counter0|divisibleby:2 %}bg-primary bg-opacity-10 text-primary{% else %}bg-info bg-opacity-10 text-info{% endif %}" style="width: 40px; height: 40px; font-size: 0.9rem; flex-shrink: 0;">
-                {{ row.initials }}
+            <div>
+              <div class="fw-semibold mb-1" style="font-size: 0.85rem;">
+                <a class="text-decoration-none" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance">{{ row.full_name }}</a>
+              </div>
+              <div class="d-flex align-items-center mb-1">
+                <span class="badge text-secondary border fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="bi bi-badge-id me-1"></i>{{ row.employee_id }}</span>
               </div>
               <div>
-                <div class="fw-semibold  mb-1" style="font-size: 0.85rem;">
-                  <a class="text-decoration-none " href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance">{{ row.full_name }}</a>
-                </div>
-                <div class="d-flex align-items-center mb-1">
-                  <span class="badge  text-secondary border fw-normal px-2 py-1" style="font-size: 0.7rem;"><i class="bi bi-badge-id me-1"></i>{{ row.employee_id }}</span>
-                </div>
-                <div>
-                  <span class="badge rounded-pill px-2 py-1" style="font-size: 0.7rem; background-color: {% if row.department|lower == 'developing' or row.department|lower == 'development' %}rgba(139, 92, 246, 0.2); color: #a78bfa;{% else %}rgba(59, 130, 246, 0.2); color: #60a5fa;{% endif %}"><i class="bi bi-briefcase me-1"></i>{{ row.department|title }}</span>
-                </div>
+                <span class="badge rounded-pill px-2 py-1" style="font-size: 0.7rem; background-color: {% if row.department|lower == 'developing' or row.department|lower == 'development' %}rgba(139, 92, 246, 0.2); color: #a78bfa;{% else %}rgba(59, 130, 246, 0.2); color: #60a5fa;{% endif %}"><i class="bi bi-briefcase me-1"></i>{{ row.department|title }}</span>
               </div>
             </div>
           </td>
@@ -122,30 +137,26 @@
             <div class="text-muted ms-4" style="font-size: 0.75rem;">{{ row.date|date:"D" }}</div>
           </td>
           <td class="py-3">
-            <div class="d-inline-flex align-items-center badge {% if row.check_in != '--:--' %}bg-success bg-opacity-10 text-success border border-success border-opacity-25{% else %} text-secondary border{% endif %} px-2 py-1 mb-1 rounded" style="font-size: 0.75rem;">
-              <i class="bi {% if row.check_in != '--:--' %}bi-box-arrow-in-right{% else %}bi-box-arrow-in-right text-muted{% endif %} me-2"></i>{{ row.check_in }}
+            <div class="d-inline-flex align-items-center badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 mb-1 rounded check-in-badge" style="font-size: 0.75rem;">
+              <i class="bi bi-box-arrow-in-right me-2"></i><span class="check-in-time">{{ row.check_in }}</span>
             </div>
             <div class="text-muted d-flex align-items-center fw-medium mt-1" style="font-size: 0.7rem;">
-              {% if row.check_in != '--:--' %}
-                {% if row.late_minutes > 0 %}
-                  <span class="bg-warning rounded-circle me-1" style="width: 5px; height: 5px;"></span>Late ({{ row.late_minutes }}m)
-                {% else %}
-                  <span class="bg-success rounded-circle me-1" style="width: 5px; height: 5px;"></span>On Time
-                {% endif %}
+              {% if row.check_in and row.check_in != '--:--' %}
+                <span class="bg-success rounded-circle me-1 check-in-dot" style="width: 5px; height: 5px;"></span><span class="check-in-text">Checked In</span>
               {% else %}
-                <span class="bg-secondary rounded-circle me-1" style="width: 5px; height: 5px;"></span>Not Checked In
+                <span class="bg-secondary rounded-circle me-1 check-in-dot" style="width: 5px; height: 5px;"></span><span class="check-in-text">Not Checked In</span>
               {% endif %}
             </div>
           </td>
           <td class="py-3">
-            <div class="d-inline-flex align-items-center badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 px-2 py-1 mb-1 rounded" style="font-size: 0.75rem;">
-              <i class="bi bi-box-arrow-right me-2"></i>{{ row.check_out }}
+            <div class="d-inline-flex align-items-center badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10 px-2 py-1 mb-1 rounded check-out-badge" style="font-size: 0.75rem;">
+              <i class="bi bi-box-arrow-right me-2"></i><span class="check-out-time">{{ row.check_out }}</span>
             </div>
             <div class="text-muted d-flex align-items-center fw-medium mt-1" style="font-size: 0.7rem;">
-              {% if row.check_out != '--:--' %}
-                <span class="bg-danger rounded-circle me-1" style="width: 5px; height: 5px;"></span>Checked Out
+              {% if row.check_out and row.check_out != '--:--' %}
+                <span class="bg-danger rounded-circle me-1 check-out-dot" style="width: 5px; height: 5px;"></span><span class="check-out-text">Checked Out</span>
               {% else %}
-                <span class="bg-danger rounded-circle me-1" style="width: 5px; height: 5px;"></span>Not Checked Out
+                <span class="bg-secondary rounded-circle me-1 check-out-dot" style="width: 5px; height: 5px;"></span><span class="check-out-text">Not Checked Out</span>
               {% endif %}
             </div>
           </td>
@@ -160,8 +171,13 @@
             <input class="form-control attendance-remarks-input border py-1 " data-employee-id="{{ row.employee_pk }}" value="{{ row.remarks }}" placeholder="Add note..." {% if not row.employee_pk %}disabled{% endif %}>
           </td>
           <td class="py-3 text-center">
-            <div class="d-flex justify-content-center">
-              <a class="btn  rounded-circle d-inline-flex align-items-center justify-content-center p-0  action-btn" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance" title="View Profile"><i class="bi bi-eye"></i></a>
+            <div class="d-flex justify-content-center gap-2">
+              <a class="btn rounded-3 d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; border: 1px solid rgba(67, 97, 238, 0.5); background-color: rgba(67, 97, 238, 0.1); color: #4361ee;" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}?tab=attendance" title="Edit Profile">
+                <i class="bi bi-pencil" style="font-size: 0.85rem;"></i>
+              </a>
+              <button type="button" class="btn rounded-3 d-inline-flex align-items-center justify-content-center p-0 delete-attendance-btn" style="width: 32px; height: 32px; border: 1px solid rgba(239, 68, 68, 0.5); background-color: rgba(239, 68, 68, 0.1); color: #ef4444;" data-employee-id="{{ row.employee_pk }}" title="Delete Attendance">
+                <i class="bi bi-trash" style="font-size: 0.85rem;"></i>
+              </button>
             </div>
           </td>
         </tr>
@@ -218,6 +234,7 @@
 
       const status = row.querySelector('.attendance-status-select').value;
       const remarks = row.querySelector('.attendance-remarks-input').value;
+
       return new URLSearchParams({
         employee_id: employeeId,
         date: table.dataset.attendanceDate,
@@ -243,9 +260,39 @@
         .then((data) => {
           if (!data.ok) return;
           const statusSelect = row.querySelector('.attendance-status-select');
-          statusSelect.className = 'form-select form-select-sm attendance-status-select status-' + data.status;
+          statusSelect.className = 'form-select attendance-status-select status-' + data.status + ' fw-medium py-1 rounded';
           const workingHours = row.querySelector('[data-working-hours]');
           if (workingHours) workingHours.textContent = data.working_hours;
+          
+          // Update dots and text
+          const checkInText = row.querySelector('.check-in-text');
+          const checkInDot = row.querySelector('.check-in-dot');
+          const checkInTime = row.querySelector('.check-in-time');
+          if (checkInText && checkInDot && checkInTime) {
+            checkInTime.textContent = data.check_in || '--:--';
+            if (data.check_in && data.check_in !== '--:--') {
+              checkInText.textContent = 'Checked In';
+              checkInDot.className = 'bg-success rounded-circle me-1 check-in-dot';
+            } else {
+              checkInText.textContent = 'Not Checked In';
+              checkInDot.className = 'bg-secondary rounded-circle me-1 check-in-dot';
+            }
+          }
+          
+          const checkOutText = row.querySelector('.check-out-text');
+          const checkOutDot = row.querySelector('.check-out-dot');
+          const checkOutTime = row.querySelector('.check-out-time');
+          if (checkOutText && checkOutDot && checkOutTime) {
+            checkOutTime.textContent = data.check_out || '--:--';
+            if (data.check_out && data.check_out !== '--:--') {
+              checkOutText.textContent = 'Checked Out';
+              checkOutDot.className = 'bg-danger rounded-circle me-1 check-out-dot';
+            } else {
+              checkOutText.textContent = 'Not Checked Out';
+              checkOutDot.className = 'bg-secondary rounded-circle me-1 check-out-dot';
+            }
+          }
+
           return data;
         })
         .finally(() => row.classList.remove('opacity-75'));
@@ -307,6 +354,45 @@
         clearTimeout(timer);
         timer = setTimeout(() => input.form.submit(), 350);
       });
+    });
+
+    table.addEventListener('click', (e) => {
+      const deleteBtn = e.target.closest('.delete-attendance-btn');
+      if (deleteBtn) {
+        const row = deleteBtn.closest('[data-attendance-row]');
+        if (row) {
+          e.preventDefault();
+          
+          var modalEl = document.getElementById('globalDeleteModal');
+          if (!modalEl) {
+            // Fallback if modal doesn't exist
+            if (confirm('Are you sure you want to remove this attendance row?')) row.remove();
+            return;
+          }
+          
+          var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+          var form = document.getElementById('globalDeleteForm');
+          
+          // Custom submit handler to just remove the row
+          var submitHandler = function(ev) {
+            ev.preventDefault();
+            row.remove();
+            modal.hide();
+            form.removeEventListener('submit', submitHandler);
+          };
+          
+          form.addEventListener('submit', submitHandler);
+          
+          // Cleanup if modal is closed without submitting
+          var hideHandler = function() {
+            form.removeEventListener('submit', submitHandler);
+            modalEl.removeEventListener('hidden.bs.modal', hideHandler);
+          };
+          modalEl.addEventListener('hidden.bs.modal', hideHandler);
+          
+          modal.show();
+        }
+      }
     });
   })();
 </script>

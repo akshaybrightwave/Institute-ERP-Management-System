@@ -187,11 +187,11 @@ def dashboard_metrics(request):
     return [
         metric('Total Candidates', 'bi-people-fill', 'indigo', candidates.count(), Q(created_at__date__gte=month_start), Q(created_at__date__gte=prev_month_start, created_at__date__lte=prev_month_end)),
         {'label': 'Calls Made', 'icon': 'bi-telephone-fill', 'color': 'emerald', 'value': calls_current, 'trend': trend_label(calls_current, calls_previous), 'spark': [22, 45, 70]},
-        {'label': 'Interviews Scheduled', 'icon': 'bi-calendar-check-fill', 'color': 'blue', 'value': interviews.count(), 'trend': trend_label(interviews_current, interviews_previous), 'spark': [20, 62, 44]},
+        metric('Interviews Scheduled', 'bi-calendar-check-fill', 'blue', candidates.filter(status='interview_scheduled').count(), Q(status='interview_scheduled', updated_at__date__gte=month_start), Q(status='interview_scheduled', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
         metric('Selected', 'bi-patch-check-fill', 'orange', candidates.filter(status='selected').count(), Q(status='selected', updated_at__date__gte=month_start), Q(status='selected', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
         metric('Rejected', 'bi-x-octagon-fill', 'red', candidates.filter(status='rejected').count(), Q(status='rejected', updated_at__date__gte=month_start), Q(status='rejected', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
         metric('Joined', 'bi-person-check-fill', 'teal', candidates.filter(status='joined').count(), Q(status='joined', updated_at__date__gte=month_start), Q(status='joined', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
-        {'label': 'Pending Follow-ups', 'icon': 'bi-clock-fill', 'color': 'amber', 'value': pending_followups, 'trend': '+10%', 'spark': [44, 50, 72]},
+        metric('Pending Follow-ups', 'bi-clock-fill', 'amber', candidates.filter(status='follow_up_pending').count(), Q(status='follow_up_pending', updated_at__date__gte=month_start), Q(status='follow_up_pending', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
         {'label': "Today's Activities", 'icon': 'bi-lightning-charge-fill', 'color': 'violet', 'value': todays_activities, 'trend': '+Today', 'spark': [18, 35, 58]},
     ]
 
@@ -413,7 +413,7 @@ def candidate_download_pdf(request, candidate_id):
         'request': request,
         'resume_b64': get_image_base64(candidate.resume),
         'photo_b64': get_image_base64(candidate.photo, max_size=(300, 300)),
-        'certificates_b64': get_image_base64(candidate.certificates),
+
     }
     
     template = get_template('hr/candidate_pdf.html')
@@ -1419,7 +1419,8 @@ def project_reports(request):
         'summary': {
             'companies': companies.count(),
             'drives': hr_scope(ProjectDrive.objects.all(), request).count(),
-            'assigned': hr_scope(ProjectEmployeeAssignment.objects.all(), request).count(),
+            'sent': hr_scope(ProjectEmployeeAssignment.objects.all(), request).count(),
+            'selected': hr_scope(ProjectEmployeeAssignment.objects.filter(interview_status='selected'), request).count(),
             'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='allocated'), request).count(),
             'released': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='released'), request).count(),
         },
@@ -1490,7 +1491,7 @@ def external_attendance_dashboard(request, branch_slug='thane'):
     if query:
         employees = employees.filter(Q(full_name__icontains=query) | Q(employee_id__icontains=query))
 
-    logs = hr_scope(ExternalAttendanceLog.objects.filter(employee__branch=branch_slug, date=selected_date), request)
+    logs = ExternalAttendanceLog.objects.filter(employee__in=employees, date=selected_date)
     log_dict = {log.employee_id: log for log in logs}
 
     rows = []
@@ -1584,6 +1585,8 @@ def external_attendance_quick_update(request, branch_slug):
             date_str = request.POST.get('date')
             status = request.POST.get('status')
             remarks = request.POST.get('remarks')
+            check_in_str = request.POST.get('check_in')
+            check_out_str = request.POST.get('check_out')
             
             if emp_id and date_str:
                 emp = hr_scope(ExternalEmployee.objects.filter(id=emp_id, branch=branch_slug), request).first()
@@ -1593,17 +1596,39 @@ def external_attendance_quick_update(request, branch_slug):
                     log, _ = ExternalAttendanceLog.objects.get_or_create(
                         employee=emp, date=target_date, defaults={'marked_by': request.user}
                     )
+                    
+                    update_fields = ['marked_by', 'updated_at']
+                    
                     if status:
                         log.status = status
+                        update_fields.append('status')
                     if remarks is not None:
                         log.notes = remarks
+                        update_fields.append('notes')
+                    
+                    if check_in_str is not None:
+                        if check_in_str.strip():
+                            log.check_in = datetime.strptime(check_in_str.strip(), '%H:%M').time() if ':' in check_in_str else None
+                        else:
+                            log.check_in = None
+                        update_fields.append('check_in')
+                        
+                    if check_out_str is not None:
+                        if check_out_str.strip():
+                            log.check_out = datetime.strptime(check_out_str.strip(), '%H:%M').time() if ':' in check_out_str else None
+                        else:
+                            log.check_out = None
+                        update_fields.append('check_out')
+                        
                     log.marked_by = request.user
-                    log.save(update_fields=['status', 'notes', 'marked_by', 'updated_at'])
+                    log.save(update_fields=update_fields)
                     
                     return JsonResponse({
                         'ok': True, 
                         'status': log.status, 
-                        'working_hours': log.working_hours_display
+                        'working_hours': log.working_hours_display,
+                        'check_in': log.check_in.strftime('%H:%M') if log.check_in else '',
+                        'check_out': log.check_out.strftime('%H:%M') if log.check_out else ''
                     })
             return JsonResponse({'ok': False, 'error': 'Invalid parameters'})
         except Exception as e:
@@ -1619,7 +1644,8 @@ def export_external_attendance(request, branch_slug):
     response['Content-Disposition'] = f'attachment; filename="attendance-{branch_slug}.csv"'
     writer = csv.writer(response)
     writer.writerow(['Employee', 'ID', 'Date', 'Status', 'Check In', 'Check Out', 'Working Hours', 'Late Minutes'])
-    for log in hr_scope(ExternalAttendanceLog.objects.filter(employee__branch=branch_slug), request).select_related('employee').order_by('-date'):
+    base_employees = hr_scope(ExternalEmployee.objects.filter(branch=branch_slug), request)
+    for log in ExternalAttendanceLog.objects.filter(employee__in=base_employees).select_related('employee').order_by('-date'):
         writer.writerow([
             log.employee.full_name,
             log.employee.employee_id,
@@ -1778,6 +1804,7 @@ def external_employee_detail(request, branch_slug, employee_code):
         'end_date': end_date_str or end_date.strftime('%Y-%m-%d'),
         'history_summary': history_summary,
         'calendar_weeks': calendar_weeks,
+        'month_name': calendar.month_name[selected_month],
     })
 
 

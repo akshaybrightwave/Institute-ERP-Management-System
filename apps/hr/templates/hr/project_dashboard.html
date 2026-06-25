@@ -2,6 +2,30 @@
 
 {% block title %}Project Dashboard | HR Portal{% endblock %}
 
+{% block style %}
+<style>
+  .hr-kpi {
+    background: #2a2a2a;
+    transition: all 0.3s ease;
+  }
+
+  .hr-kpi:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.05);
+    filter: brightness(1.1);
+  }
+
+  .hr-kpi.tone-violet { background: linear-gradient(to right, #4a148c, #7b1fa2) !important; }
+  .hr-kpi.tone-emerald { background: linear-gradient(to right, #00838f, #00acc1) !important; }
+  .hr-kpi.tone-teal { background: linear-gradient(to right, #2e7d32, #4caf50) !important; }
+  .hr-kpi.tone-red { background: linear-gradient(to right, #c2185b, #e91e63) !important; }
+  .hr-kpi.tone-blue { background: linear-gradient(to right, #1565c0, #1e88e5) !important; }
+  .hr-kpi.tone-amber { background: linear-gradient(to right, #f57f17, #ffb300) !important; }
+  .hr-kpi.tone-orange { background: linear-gradient(to right, #e65100, #fb8c00) !important; }
+  .hr-kpi.tone-indigo { background: linear-gradient(to right, #6a1b9a, #ab47bc) !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="hr-page-title">
   <div>
@@ -15,30 +39,33 @@
   </div>
 </div>
 
-<div class="row g-3 mb-3">
+<div class="row g-3 mb-4">
   {% for metric in metrics %}
-  <div class="col-sm-6 col-xl-3">
-    <div class="hr-kpi">
-      <div class="hr-kpi-top">
-        <div class="hr-kpi-icon tone-{{ metric.color }}"><i class="bi {{ metric.icon }}"></i></div>
-        <div>
-          <div class="small text-secondary mb-1">{{ metric.label }}</div>
-          <div class="hr-stat-number">{{ metric.value }}</div>
-        </div>
+  <div class="col-sm-6 col-xl-4">
+    <div class="hr-kpi tone-{{ metric.color|default:'indigo' }}" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px;">
+      
+      <!-- Large Absolute Icon -->
+      <i class="bi {{ metric.icon }}" style="position: absolute; right: 15px; top: 15px; font-size: 45px; color: rgba(255,255,255,0.4); z-index: 1;"></i>
+      
+      <!-- Main Content -->
+      <div style="padding: 15px; position: relative; z-index: 2; flex-grow: 1;">
+        <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 4px; max-width: 75%;">{{ metric.label }}</div>
+        <div style="color: #ffffff; font-size: 32px; font-weight: 700; line-height: 1;">{{ metric.value|default:"0" }}</div>
       </div>
-      <div class="d-flex align-items-end justify-content-between">
-        <span class="small text-secondary mb-1">{{ metric.trend }}</span>
-        <div class="mini-bars">
-          {% for bar in metric.spark %}<span style="height: {{ bar }}%;"></span>{% endfor %}
-        </div>
+      
+      <!-- Footer Strip -->
+      <div style="background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.4); padding: 8px 15px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 2;">
+        <i class="bi bi-list-task text-white" style="font-size: 14px;"></i>
+        <span style="color: #ffffff; font-size: 12px; font-weight: 600;">View List</span>
       </div>
+      
     </div>
   </div>
   {% endfor %}
 </div>
 
 <div class="row g-4">
-  <div class="col-xxl-8">
+  <div class="col-12">
     <div class="hr-panel p-3 mb-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="fw-bold mb-0">Recent Project Drives</h5>
@@ -47,42 +74,54 @@
       <div class="table-responsive">
         <table class="table table-hover hr-table">
           <thead>
-            <tr><th>Company</th><th>Drive Date</th><th>Project</th><th>Role</th><th>Employees</th><th>Selected</th><th>Status</th><th>Action</th></tr>
+            <tr>
+              <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">COMPANY</th>
+              <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">DRIVE DATE</th>
+              <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">PROJECT</th>
+              <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ROLE</th>
+              <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ASSIGNED</th>
+              <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ALLOCATED</th>
+              <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">SELECTED</th>
+              <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">STATUS</th>
+              <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ACTION</th>
+            </tr>
           </thead>
           <tbody>
             {% for drive in recent_drives %}
-            <tr>
-              <td>{{ drive.company|default:"--" }}</td>
-              <td>{{ drive.drive_date|date:"d M Y"|default:"--" }}</td>
-              <td>{{ drive.project_name|default:"--" }}</td>
-              <td>{{ drive.role_required|default:"--" }}</td>
-              <td>{{ drive.assignments_count }}</td>
-              <td>{{ drive.selected_count }}</td>
-              <td><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></td>
+            <tr class="align-middle">
+              <td class="fw-medium text-white">{{ drive.company|default:"--" }}</td>
+              <td class="text-muted">{{ drive.drive_date|date:"d M Y"|default:"--" }}</td>
+              <td class="text-muted">{{ drive.project_name|default:"--" }}</td>
+              <td class="text-muted">{{ drive.role_required|default:"--" }}</td>
+              <td class="text-center fw-bold text-white fs-6">{{ drive.assignments_count }}</td>
+              <td class="text-center fw-bold text-info fs-6">{{ drive.allocated_count }}</td>
+              <td class="text-center fw-bold text-success fs-6">{{ drive.selected_count }}</td>
+              <td class="text-center">
+                <span class="badge rounded" style="background-color: #5b21b6; color: white; padding: 0.4em 0.8em; font-size: 0.75rem; font-weight: 600;">{{ drive.get_status_display }}</span>
+              </td>
               <td>
-                <a class="action-btn" href="{% url 'hr:project_drive_detail' drive.id %}"><i class="bi bi-eye"></i></a>
-                <a class="action-btn" href="{% url 'hr:project_drive_edit' drive.id %}"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:project_drive_delete' drive.id  %}"><i class="bi bi-trash"></i></a>
+                <div class="d-flex align-items-center justify-content-center gap-2">
+                  <a class="btn rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; border: 1px solid rgba(67, 97, 238, 0.5); background-color: rgba(67, 97, 238, 0.1); color: #4361ee;" href="{% url 'hr:project_drive_detail' drive.id %}" title="View">
+                    <i class="bi bi-eye" style="font-size: 0.85rem;"></i>
+                  </a>
+                  <a class="btn rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; border: 1px solid rgba(245, 158, 11, 0.5); background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;" href="{% url 'hr:project_drive_edit' drive.id %}" title="Edit">
+                    <i class="bi bi-pencil" style="font-size: 0.85rem;"></i>
+                  </a>
+                  <a class="btn rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; border: 1px solid rgba(239, 68, 68, 0.5); background-color: rgba(239, 68, 68, 0.1); color: #ef4444;" href="{% url 'hr:project_drive_delete' drive.id %}" title="Delete">
+                    <i class="bi bi-trash" style="font-size: 0.85rem;"></i>
+                  </a>
+                </div>
               </td>
             </tr>
             {% empty %}
-            <tr><td colspan="8" class="text-center py-5 hr-muted">No project drives yet.</td></tr>
+            <tr><td colspan="9" class="text-center py-5 hr-muted">No project drives yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
 
-    <div class="hr-panel p-3 mb-3">
-      <h5 class="fw-bold mb-3">Project Pipeline</h5>
-      <div class="row text-center g-3">
-        <div class="col-md"><div class="hr-kpi"><i class="bi bi-calendar-event fs-3 text-primary"></i><div class="fw-semibold mt-2">Drives</div><div class="hr-stat-number">{{ pipeline.scheduled }}</div></div></div>
-        <div class="col-md"><div class="hr-kpi"><i class="bi bi-send fs-3 text-success"></i><div class="fw-semibold mt-2">Sent</div><div class="hr-stat-number">{{ pipeline.sent }}</div></div></div>
-        <div class="col-md"><div class="hr-kpi"><i class="bi bi-person-video3 fs-3 text-primary"></i><div class="fw-semibold mt-2">Appeared</div><div class="hr-stat-number">{{ pipeline.appeared }}</div></div></div>
-        <div class="col-md"><div class="hr-kpi"><i class="bi bi-clipboard-check fs-3 text-warning"></i><div class="fw-semibold mt-2">Allocations</div><div class="hr-stat-number">{{ pipeline.allocations }}</div></div></div>
-        <div class="col-md"><div class="hr-kpi"><i class="bi bi-award fs-3 text-success"></i><div class="fw-semibold mt-2">Allocated</div><div class="hr-stat-number">{{ pipeline.allocated }}</div></div></div>
-      </div>
-    </div>
+
 
     <div class="hr-panel p-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
@@ -104,38 +143,6 @@
     </div>
   </div>
 
-  <div class="col-xxl-4">
-    <div class="hr-panel p-3 mb-3">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0">Top Project Companies</h5>
-        <a class="btn btn-soft btn-sm" href="{% url 'hr:project_company_list' %}">View</a>
-      </div>
-      {% for company in top_companies %}
-      <div class="d-flex align-items-center gap-3 border-bottom py-3">
-        <span class="badge rounded-pill text-">{{ forloop.counter }}</span>
-        {% if company.logo %}<img class="candidate-avatar" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<span class="candidate-avatar d-inline-grid align-items-center text-center"><i class="bi bi-building"></i></span>{% endif %}
-        <div class="flex-grow-1 fw-semibold">{{ company }}</div>
-        <span class="small text-secondary mb-1">{{ company.allocated_count }} allocated</span>
-      </div>
-      {% empty %}
-      <p class="hr-muted text-center py-4">No companies yet.</p>
-      {% endfor %}
-    </div>
 
-    <div class="hr-panel p-3">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-bold mb-0">Upcoming Interviews</h5>
-        <a href="{% url 'hr:project_interview_list' %}" class="fw-semibold">View All</a>
-      </div>
-      {% for interview in upcoming_interviews %}
-      <div class="border rounded p-3 mb-2">
-        <div class="fw-semibold">{{ interview.company|default:"Company" }} - {{ interview.interview_round|default:"Interview" }}</div>
-        <div class="small text-secondary mb-1">{{ interview.date|date:"d M Y"|default:"--" }} {{ interview.time|time:"h:i A"|default:"" }}</div>
-      </div>
-      {% empty %}
-      <p class="hr-muted mb-0">No interviews scheduled.</p>
-      {% endfor %}
-    </div>
-  </div>
 </div>
 {% endblock %}

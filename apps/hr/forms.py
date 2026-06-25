@@ -124,7 +124,7 @@ class CandidateRecruitmentForm(HRModelFormMixin, forms.ModelForm):
 class CandidateDocumentsForm(HRModelFormMixin, forms.ModelForm):
     class Meta:
         model = Candidate
-        fields = ['resume', 'photo', 'certificates']
+        fields = ['resume', 'photo']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -159,7 +159,6 @@ class CandidateQuickForm(
             'status',
             'resume',
             'photo',
-            'certificates',
         ]
         widgets = {
             'dob': forms.DateInput(attrs={'type': 'date'}),

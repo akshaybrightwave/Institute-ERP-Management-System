@@ -57,7 +57,7 @@ class Candidate(models.Model):
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='new')
     resume = models.FileField(upload_to='hr/resumes/', blank=True)
     photo = models.ImageField(upload_to='hr/candidates/', blank=True)
-    certificates = models.FileField(upload_to='hr/certificates/', blank=True)
+
     date_added = models.DateField(default=timezone.localdate)
     last_call_at = models.DateTimeField(null=True, blank=True)
     joined_at = models.DateField(null=True, blank=True)
@@ -552,6 +552,10 @@ class ProjectDrive(models.Model):
     def selected_count(self):
         return self.assignments.filter(final_status__in=['selected', 'allocated']).count()
 
+    @property
+    def allocated_count(self):
+        return self.assignments.filter(final_status='allocated').count()
+
 
 class ProjectEmployeeAssignment(models.Model):
     INTERVIEW_STATUS_CHOICES = (
@@ -725,7 +729,7 @@ class ExternalEmployee(models.Model):
     aadhaar = models.FileField(upload_to='hr/external/documents/aadhaar/', blank=True)
     pan = models.FileField(upload_to='hr/external/documents/pan/', blank=True)
     bank_details = models.FileField(upload_to='hr/external/documents/bank/', blank=True)
-    certificates = models.FileField(upload_to='hr/external/documents/certificates/', blank=True)
+
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='external_employees_created')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

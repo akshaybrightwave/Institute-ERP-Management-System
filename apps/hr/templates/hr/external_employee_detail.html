@@ -2,6 +2,42 @@
 
 {% block title %}{{ employee.full_name }} | HR Portal{% endblock %}
 
+{% block style %}
+<style>
+  .attendance-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 10px;
+  }
+  .calendar-head {
+    text-align: center;
+    font-weight: 600;
+    color: #a1a1aa;
+    padding-bottom: 6px;
+    font-size: 0.75rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .calendar-cell {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 6px;
+    min-height: 45px;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    transition: background 0.2s ease;
+  }
+  .calendar-cell:hover {
+    background: rgba(255,255,255,0.08);
+  }
+  .calendar-cell.status-present { border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1); }
+  .calendar-cell.status-absent { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1); }
+  .calendar-cell.status-late { border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.1); }
+  .calendar-cell.status-empty { visibility: hidden; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="external-title-row">
   <div>
@@ -121,13 +157,18 @@
       </div>
 
       <div class="hr-panel p-3 ">
-        <h5 class="fw-bold mb-3">Monthly Attendance Calendar</h5>
+        <h5 class="fw-bold mb-3">Attendance Calendar - <span class="text-primary">{{ month_name }} {{ selected_year }}</span></h5>
         <div class="attendance-calendar">
           <div class="calendar-head">Mon</div><div class="calendar-head">Tue</div><div class="calendar-head">Wed</div><div class="calendar-head">Thu</div><div class="calendar-head">Fri</div><div class="calendar-head">Sat</div><div class="calendar-head">Sun</div>
           {% for week in calendar_weeks %}
             {% for item in week %}
             <div class="calendar-cell status-{{ item.status }}">
-              {% if item.day %}<span>{{ item.day }}</span><strong class="text-white fs-6">{{ item.code }}</strong>{% endif %}
+              {% if item.day %}
+                <div class="text-end fw-bold text-muted mb-1" style="font-size: 0.7rem;">{{ item.day }}</div>
+                <div class="d-flex align-items-center justify-content-center flex-grow-1">
+                  <strong class="fs-6 {% if item.status == 'present' %}text-success{% elif item.status == 'absent' %}text-danger{% elif item.status == 'late' %}text-warning{% else %}text-white{% endif %}">{{ item.code }}</strong>
+                </div>
+              {% endif %}
             </div>
             {% endfor %}
           {% endfor %}

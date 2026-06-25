@@ -2,6 +2,25 @@
 
 {% block title %}Placement Reports | HR Portal{% endblock %}
 
+{% block style %}
+<style>
+  .hr-kpi {
+    background: #2a2a2a;
+    transition: all 0.3s ease;
+  }
+  .hr-kpi:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.05);
+    filter: brightness(1.1);
+  }
+  .hr-kpi.tone-violet { background: linear-gradient(to right, #4a148c, #7b1fa2) !important; }
+  .hr-kpi.tone-emerald { background: linear-gradient(to right, #00838f, #00acc1) !important; }
+  .hr-kpi.tone-blue { background: linear-gradient(to right, #1565c0, #1e88e5) !important; }
+  .hr-kpi.tone-teal { background: linear-gradient(to right, #2e7d32, #4caf50) !important; }
+  .hr-kpi.tone-amber { background: linear-gradient(to right, #f57f17, #ffb300) !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="hr-page-title">
   <div>
@@ -13,24 +32,54 @@
 </div>
 
 <div class="row g-3 mb-4">
-  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Companies</div><div class="hr-stat-number">{{ summary.companies }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Drives</div><div class="hr-stat-number">{{ summary.drives }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Employees Sent</div><div class="hr-stat-number">{{ summary.sent }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Selected</div><div class="hr-stat-number">{{ summary.selected }}</div></div></div>
-  <div class="col-md"><div class="hr-kpi"><div class="small text-secondary mb-1">Joined</div><div class="hr-stat-number">{{ summary.joined }}</div></div></div>
+  <div class="col-md">
+    <div class="hr-kpi tone-violet" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 100px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);">
+      <i class="bi bi-buildings-fill" style="position: absolute; right: 15px; top: 15px; font-size: 40px; color: rgba(255,255,255,0.2); z-index: 1;"></i>
+      <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 5px; position: relative; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;">Companies</div>
+      <div style="color: #ffffff; font-size: 36px; font-weight: 700; line-height: 1; position: relative; z-index: 2;">{{ summary.companies }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="hr-kpi tone-emerald" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 100px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);">
+      <i class="bi bi-megaphone-fill" style="position: absolute; right: 15px; top: 15px; font-size: 40px; color: rgba(255,255,255,0.2); z-index: 1;"></i>
+      <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 5px; position: relative; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;">Drives</div>
+      <div style="color: #ffffff; font-size: 36px; font-weight: 700; line-height: 1; position: relative; z-index: 2;">{{ summary.drives }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="hr-kpi tone-blue" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 100px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);">
+      <i class="bi bi-send-fill" style="position: absolute; right: 15px; top: 15px; font-size: 40px; color: rgba(255,255,255,0.2); z-index: 1;"></i>
+      <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 5px; position: relative; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;">Employees Sent</div>
+      <div style="color: #ffffff; font-size: 36px; font-weight: 700; line-height: 1; position: relative; z-index: 2;">{{ summary.sent }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="hr-kpi tone-teal" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 100px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);">
+      <i class="bi bi-person-check-fill" style="position: absolute; right: 15px; top: 15px; font-size: 40px; color: rgba(255,255,255,0.2); z-index: 1;"></i>
+      <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 5px; position: relative; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;">Selected</div>
+      <div style="color: #ffffff; font-size: 36px; font-weight: 700; line-height: 1; position: relative; z-index: 2;">{{ summary.selected }}</div>
+    </div>
+  </div>
+  <div class="col-md">
+    <div class="hr-kpi tone-amber" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; min-height: 100px; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);">
+      <i class="bi bi-award-fill" style="position: absolute; right: 15px; top: 15px; font-size: 40px; color: rgba(255,255,255,0.2); z-index: 1;"></i>
+      <div style="color: #ffffff; font-size: 13px; font-weight: 700; margin-bottom: 5px; position: relative; z-index: 2; text-transform: uppercase; letter-spacing: 0.5px;">Joined</div>
+      <div style="color: #ffffff; font-size: 36px; font-weight: 700; line-height: 1; position: relative; z-index: 2;">{{ summary.joined }}</div>
+    </div>
+  </div>
 </div>
 
 <div class="hr-panel p-3 mb-4">
   <form class="row g-3 align-items-end" method="get">
     <div class="col-md-5">
-      <label class="form-label small fw-semibold">Company</label>
+      <label class="form-label small fw-semibold text-white">Company</label>
       <select class="form-select" name="company">
         <option value="">All Companies</option>
         {% for company in companies %}<option value="{{ company.id }}" {% if company_id == company.id|stringformat:"s" %}selected{% endif %}>{{ company }}</option>{% endfor %}
       </select>
     </div>
     <div class="col-md-5">
-      <label class="form-label small fw-semibold">Final Status</label>
+      <label class="form-label small fw-semibold text-white">Final Status</label>
       <select class="form-select" name="status">
         <option value="">All Status</option>
         {% for value, label in status_choices %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
@@ -43,16 +92,39 @@
 <div class="hr-panel p-3">
   <div class="table-responsive">
     <table class="table table-hover hr-table">
-      <thead><tr><th>Employee</th><th>Designation</th><th>Company</th><th>Drive</th><th>Interview</th><th>Final</th></tr></thead>
+      <thead>
+        <tr>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Employee</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Designation</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Company</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Drive</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Interview</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Final</th>
+        </tr>
+      </thead>
       <tbody>
         {% for item in assignments %}
-        <tr>
-          <td>{{ item.display_name }}</td>
-          <td>{{ item.display_course|default:"--" }}</td>
-          <td>{{ item.company|default:"--" }}</td>
-          <td>{{ item.drive.job_role|default:"--" }}</td>
-          <td>{{ item.get_interview_status_display }}</td>
-          <td>{{ item.get_final_status_display }}</td>
+        <tr class="align-middle">
+          <td class="fw-bold text-white">{{ item.display_name|title }}</td>
+          <td class="text-muted">{{ item.display_course|default:"--" }}</td>
+          <td class="fw-medium text-info">{{ item.company|default:"--" }}</td>
+          <td class="fw-medium text-warning">{{ item.drive.job_role|default:"--" }}</td>
+          <td>
+            {% if item.get_interview_status_display == 'Selected' %}
+              <span class="badge" style="background-color: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); font-weight: 600;">{{ item.get_interview_status_display }}</span>
+            {% elif item.get_interview_status_display == 'Rejected' %}
+              <span class="badge" style="background-color: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); font-weight: 600;">{{ item.get_interview_status_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary text-white">{{ item.get_interview_status_display }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if item.get_final_status_display == 'Joined' %}
+              <span class="badge" style="background-color: rgba(67, 97, 238, 0.2); color: #4361ee; border: 1px solid rgba(67, 97, 238, 0.5); font-weight: 600; padding: 0.4em 0.8em;">{{ item.get_final_status_display }}</span>
+            {% else %}
+              <span class="badge bg-secondary text-white" style="padding: 0.4em 0.8em;">{{ item.get_final_status_display }}</span>
+            {% endif %}
+          </td>
         </tr>
         {% empty %}
         <tr><td colspan="6" class="text-center py-5 hr-muted">No report data found.</td></tr>

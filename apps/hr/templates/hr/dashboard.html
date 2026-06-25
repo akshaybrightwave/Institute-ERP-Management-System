@@ -449,57 +449,7 @@
     </div>
   </div>
 
-  <!-- Today's Follow Ups -->
-  <div>
-    <h6 style="font-weight:700; color: #e2e8f0; margin-bottom:1rem;">Today's Follow-ups</h6>
-    <div class="row g-4" style="max-width: 75%;">
-      <!-- Card 1 -->
-      <div class="col-md-4">
-        <div class="follow-up-card">
-          <div class="follow-up-icon tone-indigo">
-            <i class="bi bi-calendar-check"></i>
-          </div>
-          <div>
-            <div style="font-size:0.875rem; color: #e2e8f0; margin-bottom:0.25rem;">Interviews</div>
-            <div class="follow-up-text">
-              <span class="val">{{ today_interviews_count|stringformat:"02d"|default:"00" }}</span>
-              <span class="lbl">Scheduled</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Card 2 -->
-      <div class="col-md-4">
-        <div class="follow-up-card">
-          <div class="follow-up-icon tone-emerald">
-            <i class="bi bi-telephone"></i>
-          </div>
-          <div>
-            <div style="font-size:0.875rem; color: #e2e8f0; margin-bottom:0.25rem;">Follow-up Calls</div>
-            <div class="follow-up-text">
-              <span class="val">{{ today_calls_pending|stringformat:"02d"|default:"00" }}</span>
-              <span class="lbl">Pending</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- Card 3 -->
-      <div class="col-md-4">
-        <div class="follow-up-card">
-          <div class="follow-up-icon tone-blue">
-            <i class="bi bi-envelope"></i>
-          </div>
-          <div>
-            <div style="font-size:0.875rem; color: #e2e8f0; margin-bottom:0.25rem;">Offer Discussions</div>
-            <div class="follow-up-text">
-              <span class="val">{{ today_offer_discussions|stringformat:"02d"|default:"00" }}</span>
-              <span class="lbl">Pending</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
 
 </div>
 

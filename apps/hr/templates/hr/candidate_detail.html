@@ -102,8 +102,7 @@
       <div class="list-group mb-4">
         {% if candidate.resume %}<a class="list-group-item list-group-item-action" href="{{ candidate.resume.url }}"><i class="bi bi-file-earmark-person me-2"></i>Resume</a>{% endif %}
         {% if candidate.photo %}<a class="list-group-item list-group-item-action" href="{{ candidate.photo.url }}"><i class="bi bi-image me-2"></i>Photo</a>{% endif %}
-        {% if candidate.certificates %}<a class="list-group-item list-group-item-action" href="{{ candidate.certificates.url }}"><i class="bi bi-file-earmark-check me-2"></i>Certificates</a>{% endif %}
-        {% if not candidate.resume and not candidate.photo and not candidate.certificates %}<div class="list-group-item hr-muted">No documents uploaded.</div>{% endif %}
+        {% if not candidate.resume and not candidate.photo %}<div class="list-group-item hr-muted">No documents uploaded.</div>{% endif %}
       </div>
       
       <div class="hr-panel p-3 border rounded ">

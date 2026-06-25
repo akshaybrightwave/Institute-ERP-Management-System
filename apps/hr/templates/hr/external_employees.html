@@ -8,28 +8,11 @@
     <h2>Employee Directory</h2>
     <p class="hr-muted mb-0">View and manage employee details</p>
   </div>
-  <div class="d-flex gap-2 flex-wrap">
-    <form method="post" enctype="multipart/form-data" action="{% url 'hr:external_employee_import' external_branch_slug %}" class="d-inline">
-      {% csrf_token %}
-      <input class="d-none" type="file" name="employees_file" accept=".csv" data-import-file>
-      <button class="btn btn-soft text-primary border-primary" type="button" data-import-trigger><i class="bi bi-upload me-2"></i>Import Employees</button>
-    </form>
-    <div class="dropdown">
-      <button class="btn btn-soft text-primary border-primary" type="button" data-bs-toggle="dropdown">
-        <i class="bi bi-download me-2"></i>Export Employees
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=csv">CSV</a></li>
-        <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=excel">Excel</a></li>
-      </ul>
-    </div>
-    <a class="btn btn-hr-primary" href="{{ external_primary_url }}"><i class="bi bi-person-plus me-2"></i>Add Employee</a>
-  </div>
 </div>
 
 <div class="hr-panel">
-  <form class="external-toolbar" method="get">
-    <div class="external-toolbar-group">
+  <form class="external-toolbar d-flex justify-content-between w-100 mb-3 align-items-center" method="get">
+    <div class="d-flex gap-2 align-items-center">
       <div class="hr-search" style="max-width: 242px;">
         <i class="bi bi-search"></i>
         <input type="search" name="q" value="{{ query }}" placeholder="Search employees...">
@@ -40,43 +23,69 @@
         <option value="{{ designation }}" {% if selected_designation == designation %}selected{% endif %}>{{ designation }}</option>
         {% endfor %}
       </select>
-      <button class="btn btn-soft" type="submit"><i class="bi bi-search"></i></button>
+      
+      <div class="dropdown">
+        <button class="btn d-inline-flex align-items-center fw-medium" style="background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); padding: 0.5rem 1rem; border-radius: 6px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);" type="button" data-bs-toggle="dropdown">
+          <i class="bi bi-download me-2"></i>Export
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=csv">CSV</a></li>
+          <li><a class="dropdown-item" href="{{ external_export_url }}?{{ request.GET.urlencode }}&format=excel">Excel</a></li>
+        </ul>
+      </div>
     </div>
+    <a class="btn text-white fw-medium d-inline-flex align-items-center" style="background-color: #6366f1; border-radius: 6px; padding: 0.5rem 1rem;" href="{{ external_primary_url }}">
+      <i class="bi bi-person-plus me-2"></i>Add Employee
+    </a>
   </form>
 
   <div class="external-table-wrap">
     <table class="table hr-table external-table mb-0">
       <thead>
         <tr>
-          <th>Employee ID</th>
-          <th>Full Name</th>
-          <th>Phone</th>
-          <th>Email</th>
-          <th>Designation</th>
-          <th>Joining Date</th>
-          <th>Status</th>
-          <th class="text-end">Actions</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px; padding-left: 1.5rem;">EMPLOYEE</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">EMAIL</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">DESIGNATION</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">JOINING DATE</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">STATUS</th>
+          <th class="text-uppercase text-end" style="font-size: 0.75rem; letter-spacing: 0.5px; padding-right: 1.5rem;">ACTION</th>
         </tr>
       </thead>
       <tbody>
         {% for row in page_obj %}
-        <tr>
-          <td>{{ row.employee_id }}</td>
-          <td class="fw-semibold">{{ row.full_name }}</td>
-          <td>{{ row.mobile }}</td>
-          <td>{{ row.email }}</td>
-          <td>{{ row.designation }}</td>
-          <td>{{ row.joining_date }}</td>
-          <td><span class="status-badge status-{{ row.status_key }}">{{ row.status }}</span></td>
-          <td class="text-end">
-            <a class="action-btn" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}" title="View"><i class="bi bi-eye"></i></a>
-            {% if row.is_db %}
-            <a class="action-btn" href="{% url 'hr:external_employee_edit' external_branch_slug row.employee_id %}" title="Edit"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:external_employee_delete' external_branch_slug row.employee_id  %}"><i class="bi bi-trash"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:external_employee_delete' external_branch_slug row.employee_id  %}"><i class="bi bi-trash"></i></a>
+        <tr class="align-middle">
+          <td class="py-2" style="padding-left: 1.5rem;">
+            <div class="fw-bold fs-6 mb-0 text-white">{{ row.full_name|title }}</div>
+            <div class="text-muted d-flex align-items-center" style="font-size: 0.8rem;">
+              <i class="bi bi-telephone-fill me-2" style="font-size: 0.75rem;"></i>{{ row.mobile|default:"No Phone" }}
+            </div>
+          </td>
+          <td class="py-2">
+            {% if row.email %}
+            <div class="text-white fw-medium d-flex align-items-center" style="font-size: 0.85rem;">
+              <i class="bi bi-envelope-fill text-muted me-2" style="font-size: 0.8rem;"></i>{{ row.email }}
+            </div>
             {% else %}
-            <a class="action-btn" href="{{ external_primary_url }}" title="Add stored record"><i class="bi bi-pencil"></i></a>
+            <span class="text-muted">-</span>
             {% endif %}
+          </td>
+          <td class="py-2 fw-medium">{{ row.designation|default:"-" }}</td>
+          <td class="py-2">{{ row.joining_date|default:"-" }}</td>
+          <td class="py-2">
+            <span class="badge rounded" style="background-color: #5b21b6; color: white; padding: 0.4em 0.8em; font-size: 0.75rem; font-weight: 600;">{{ row.status|title }}</span>
+          </td>
+          <td class="py-2 text-end" style="padding-right: 1.5rem;">
+            <div class="d-inline-flex gap-2">
+              <a class="btn rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; border: 1px solid rgba(67, 97, 238, 0.5); background-color: rgba(67, 97, 238, 0.1); color: #4361ee;" href="{% url 'hr:external_employee_detail' external_branch_slug row.employee_id %}" title="View">
+                <i class="bi bi-eye" style="font-size: 0.85rem;"></i>
+              </a>
+              <a class="btn rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; border: 1px solid rgba(245, 158, 11, 0.5); background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;" href="{% url 'hr:external_employee_edit' external_branch_slug row.employee_id %}" title="Edit">
+                <i class="bi bi-pencil" style="font-size: 0.85rem;"></i>
+              </a>
+              <a class="btn rounded-circle d-inline-flex align-items-center justify-content-center p-0" style="width: 32px; height: 32px; border: 1px solid rgba(239, 68, 68, 0.5); background-color: rgba(239, 68, 68, 0.1); color: #ef4444;" href="{% url 'hr:external_employee_delete' external_branch_slug row.employee_id %}" title="Delete">
+                <i class="bi bi-trash" style="font-size: 0.85rem;"></i>
+              </a>
+            </div>
           </td>
         </tr>
         {% empty %}
@@ -117,15 +126,6 @@
 {% block scripts %}
 <script>
   (function () {
-    document.querySelectorAll('[data-import-trigger]').forEach((button) => {
-      const form = button.closest('form');
-      const input = form.querySelector('[data-import-file]');
-      button.addEventListener('click', () => input.click());
-      input.addEventListener('change', () => {
-        if (input.files.length) form.submit();
-      });
-    });
-
     document.querySelectorAll('.external-toolbar input[type="search"]').forEach((input) => {
       let timer;
       input.addEventListener('input', () => {
