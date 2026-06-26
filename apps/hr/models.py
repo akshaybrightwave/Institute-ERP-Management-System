@@ -483,7 +483,7 @@ class ProjectCompany(models.Model):
 
     @property
     def selected_count(self):
-        return self.project_assignments.filter(final_status__in=['selected', 'allocated']).count()
+        return self.project_assignments.filter(final_status='selected').count()
 
     @property
     def rejected_count(self):
@@ -550,7 +550,7 @@ class ProjectDrive(models.Model):
 
     @property
     def selected_count(self):
-        return self.assignments.filter(final_status__in=['selected', 'allocated']).count()
+        return self.assignments.filter(final_status='selected').count()
 
     @property
     def allocated_count(self):

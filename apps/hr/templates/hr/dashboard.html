@@ -327,11 +327,6 @@
       <h1>Recruitment Dashboard</h1>
       <p>Track recruitment activities and candidate status</p>
     </div>
-    <div class="header-actions">
-      <a href="{% url 'hr:reports' %}" class="btn">
-        <i class="bi bi-calendar3"></i> This Month <i class="bi bi-chevron-down" style="font-size:0.75rem;"></i>
-      </a>
-    </div>
   </div>
 
           <!-- KPI Row 1 & 2 - Aarya Theme -->
@@ -436,7 +431,7 @@
           <div class="chart-wrap">
             <canvas id="recruitmentChart"></canvas>
             <div class="chart-center-text">
-              <div class="val">{{ status_total }}</div>
+              <div class="val">{{ status_total|default:"0" }}</div>
               <div class="lbl">Total</div>
             </div>
           </div>
@@ -459,65 +454,68 @@
 document.addEventListener('DOMContentLoaded', function() {
   const ctx = document.getElementById('recruitmentChart').getContext('2d');
   
-  // Extract data from backend safely without complex template tags in script
-  const dataMap = { 'new': 0, 'interview': 0, 'offered': 0, 'rejected': 0, 'other': 0 };
-  const statusTotal = {{ status_total|default:1 }};
+  const statusTotal = {{ status_total|default:0 }};
   
+  const rawData = [];
+  const backgroundColors = [];
+  const labels = [];
+  
+  const colorMap = {
+    'new': '#8b5cf6',
+    'called': '#e65100',
+    'follow_up_pending': '#f57f17',
+    'interview_scheduled': '#3b82f6',
+    'interview_completed': '#2563eb',
+    'selected': '#10b981',
+    'joined': '#059669',
+    'rejected': '#ef4444',
+  };
+  
+  function getLabel(key) {
+      if (key === 'new') return 'Applied';
+      const words = key.split('_');
+      return words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
   {% for key, val in status_counts.items %}
-    {% if key == 'new' or key == 'called' %}
-      dataMap['new'] += {{ val }};
-    {% elif key == 'interview_scheduled' or key == 'interview_completed' %}
-      dataMap['interview'] += {{ val }};
-    {% elif key == 'selected' or key == 'joined' %}
-      dataMap['offered'] += {{ val }};
-    {% elif key == 'rejected' %}
-      dataMap['rejected'] += {{ val }};
-    {% else %}
-      dataMap['other'] += {{ val }};
-    {% endif %}
+    if ({{ val }} > 0) {
+        let labelStr = getLabel('{{ key }}');
+        labels.push(labelStr);
+        rawData.push({{ val }});
+        backgroundColors.push(colorMap['{{ key }}'] || '#f59e0b');
+    }
   {% endfor %}
   
-  // Custom legend generation
-  const legendData = [
-    { label: 'New', value: dataMap.new, color: '#8b5cf6' },
-    { label: 'Interview', value: dataMap.interview, color: '#3b82f6' },
-    { label: 'Offered', value: dataMap.offered, color: '#10b981' },
-    { label: 'Rejected', value: dataMap.rejected, color: '#ef4444' },
-    { label: 'Other', value: dataMap.other, color: '#f59e0b' }
-  ];
-  
   let legendHtml = '';
-  legendData.forEach(item => {
-    if(item.value > 0) {
-      let pct = Math.round((item.value / statusTotal) * 100);
-      let valStr = item.value < 10 ? '0'+item.value : item.value;
-      legendHtml += `
-        <div class="legend-item">
-          <div class="legend-color" style="background:${item.color};"></div>
-          <div class="legend-label">${item.label}</div>
-          <div class="legend-value">${valStr}</div>
-          <div class="legend-pct">(${pct}%)</div>
-        </div>
-      `;
-    }
-  });
+  if (statusTotal === 0) {
+      legendHtml = '<div class="text-center text-muted small mt-4">No records found</div>';
+  } else {
+      labels.forEach((label, index) => {
+        let val = rawData[index];
+        let pct = Math.round((val / statusTotal) * 100);
+        let valStr = val < 10 ? '0'+val : val;
+        let color = backgroundColors[index];
+        legendHtml += `
+          <div class="legend-item">
+            <div class="legend-color" style="background:${color};"></div>
+            <div class="legend-label">${label}</div>
+            <div class="legend-value">${valStr}</div>
+            <div class="legend-pct">(${pct}%)</div>
+          </div>
+        `;
+      });
+  }
   document.getElementById('customLegend').innerHTML = legendHtml;
 
   new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['New', 'Interview', 'Offered', 'Rejected', 'Other'],
+      labels: labels,
       datasets: [{
-        data: [dataMap.new, dataMap.interview, dataMap.offered, dataMap.rejected, dataMap.other],
-        backgroundColor: [
-          '#8b5cf6', // violet (new)
-          '#3b82f6', // blue (interview)
-          '#10b981', // green (offered)
-          '#ef4444', // red (rejected)
-          '#f59e0b'  // yellow (other)
-        ],
+        data: statusTotal === 0 ? [1] : rawData,
+        backgroundColor: statusTotal === 0 ? ['rgba(255,255,255,0.05)'] : backgroundColors,
         borderWidth: 0,
-        hoverOffset: 4
+        hoverOffset: statusTotal === 0 ? 0 : 4
       }]
     },
     options: {
@@ -526,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
       cutout: '75%',
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true }
+        tooltip: { enabled: statusTotal > 0 }
       }
     }
   });

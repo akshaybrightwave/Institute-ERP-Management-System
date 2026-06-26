@@ -3,7 +3,7 @@
 {% block title %}Employee Directory | HR Portal{% endblock %}
 
 {% block content %}
-<div class="external-section-heading mt-0">
+<div class="external-section-heading mt-0 mb-4">
   <div>
     <h2>Employee Directory</h2>
     <p class="hr-muted mb-0">View and manage employee details</p>
@@ -11,7 +11,7 @@
 </div>
 
 <div class="hr-panel">
-  <form class="external-toolbar d-flex justify-content-between w-100 mb-3 align-items-center" method="get">
+  <form class="external-toolbar d-flex justify-content-between w-100 align-items-center px-4 pt-4 pb-3" method="get">
     <div class="d-flex gap-2 align-items-center">
       <div class="hr-search" style="max-width: 242px;">
         <i class="bi bi-search"></i>
@@ -100,7 +100,7 @@
     </table>
   </div>
 
-  <div class="d-flex align-items-center justify-content-between p-3 border-top flex-wrap gap-2">
+  <div class="d-flex align-items-center justify-content-between px-4 py-3 border-top flex-wrap gap-2">
     <div class="small hr-muted">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ total_rows }} entries</div>
     <div class="d-flex gap-2 align-items-center">
       {% if page_obj.has_previous %}

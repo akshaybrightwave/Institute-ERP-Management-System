@@ -45,8 +45,8 @@
           <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">PROJECT</th>
           <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ROLE</th>
           <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">SENT</th>
-          <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">APPEARED</th>
           <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">SELECTED</th>
+          <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ALLOCATED</th>
           <th class="text-center text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">STATUS</th>
           <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ACTION</th>
         </tr>
@@ -59,8 +59,8 @@
           <td class="fw-medium text-info">{{ drive.project_name|default:"--" }}</td>
           <td class="text-muted">{{ drive.role_required|default:"--" }}</td>
           <td class="text-center fw-bold text-white fs-6">{{ drive.assignments_count }}</td>
-          <td class="text-center fw-bold text-warning fs-6">{{ drive.appeared_count }}</td>
-          <td class="text-center fw-bold text-success fs-6">{{ drive.selected_count }}</td>
+          <td class="text-center fw-bold text-warning fs-6">{{ drive.selected_count }}</td>
+          <td class="text-center fw-bold text-success fs-6">{{ drive.allocated_count }}</td>
           <td class="text-center"><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></td>
           <td>
             <div class="d-flex align-items-center gap-2">

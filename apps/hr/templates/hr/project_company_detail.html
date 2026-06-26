@@ -2,6 +2,220 @@
 
 {% block title %}{{ company }} | HR Portal{% endblock %}
 
+{% block style %}
+<style>
+  .hr-kpi {
+    background: #2a2a2a;
+    transition: all 0.3s ease;
+  }
+
+  .hr-kpi:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.05);
+    filter: brightness(1.1);
+  }
+
+  .hr-kpi.tone-violet { background: linear-gradient(to right, #4a148c, #7b1fa2) !important; }
+  .hr-kpi.tone-emerald { background: linear-gradient(to right, #00838f, #00acc1) !important; }
+  .hr-kpi.tone-teal { background: linear-gradient(to right, #2e7d32, #4caf50) !important; }
+  .hr-kpi.tone-red { background: linear-gradient(to right, #c2185b, #e91e63) !important; }
+  .hr-kpi.tone-blue { background: linear-gradient(to right, #1565c0, #1e88e5) !important; }
+  .hr-kpi.tone-amber { background: linear-gradient(to right, #f57f17, #ffb300) !important; }
+  .hr-kpi.tone-orange { background: linear-gradient(to right, #e65100, #fb8c00) !important; }
+  .hr-kpi.tone-green { background: linear-gradient(to right, #047857, #10b981) !important; }
+  .hr-kpi.tone-crimson { background: linear-gradient(to right, #991b1b, #ef4444) !important; }
+  .hr-kpi.tone-indigo { background: linear-gradient(to right, #6a1b9a, #ab47bc) !important; }
+
+  .company-profile-name {
+    overflow-wrap: anywhere;
+    line-height: 1.2;
+  }
+
+  .company-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .company-info-row {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-height: 39px;
+    padding: 9px 12px;
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.035);
+  }
+
+  .company-info-label {
+    color: var(--hr-muted);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .company-info-value {
+    min-width: 0;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: right;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .company-info-value.is-long {
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .company-info-value a {
+    overflow-wrap: anywhere;
+  }
+
+  .company-detail-grid {
+    display: grid;
+    grid-template-columns: 242px minmax(0, 1fr);
+    align-items: start;
+    gap: 24px;
+  }
+
+  .company-profile-panel {
+    min-height: 430px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.24);
+  }
+
+  .company-main-column {
+    min-width: 0;
+  }
+
+  .company-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(128px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .company-kpi-card {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 130px;
+    border: 1px solid rgba(255,255,255,0.45);
+    border-radius: 8px;
+  }
+
+  .company-kpi-icon {
+    position: absolute;
+    right: 14px;
+    top: 18px;
+    z-index: 1;
+    color: rgba(255,255,255,0.4);
+    font-size: 42px;
+    line-height: 1;
+  }
+
+  .company-kpi-body {
+    position: relative;
+    z-index: 2;
+    flex-grow: 1;
+    padding: 16px 14px 10px;
+  }
+
+  .company-kpi-label {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 6px;
+    max-width: 70%;
+    overflow-wrap: break-word;
+  }
+
+  .company-kpi-value {
+    color: #ffffff;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .company-kpi-footer {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 8px 14px;
+    border-top: 1px solid rgba(255,255,255,0.32);
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .company-employees-panel {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .company-employees-title {
+    margin-bottom: 16px;
+    line-height: 1.25;
+  }
+
+  .company-assignment-table {
+    min-width: 820px;
+    table-layout: fixed;
+  }
+
+  .company-assignment-table th {
+    vertical-align: bottom;
+    white-space: normal;
+    line-height: 1.25;
+    padding: 12px 12px;
+  }
+
+  .company-assignment-table td {
+    vertical-align: middle;
+    line-height: 1.35;
+    padding: 12px 12px;
+  }
+
+  .company-assignment-table .text-wrap-safe {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .company-assignment-actions {
+    justify-content: flex-start;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 991.98px) {
+    .company-detail-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .company-profile-panel {
+      min-height: auto;
+    }
+
+    .company-metrics {
+      grid-template-columns: repeat(2, minmax(150px, 1fr));
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="hr-page-title">
   <div>
@@ -17,84 +231,134 @@
   </div>
 </div>
 
-<div class="row g-4">
-  <div class="col-xl-4">
-    <div class="hr-panel p-4" style="border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
+<div class="company-detail-grid">
+  <div>
+    <div class="hr-panel p-4 company-profile-panel">
       <div class="text-center border-bottom pb-4 mb-4" style="border-color: rgba(255,255,255,0.1) !important;">
         {% if company.logo %}<img class="candidate-avatar mb-3 rounded-circle" style="width: 84px; height:84px; object-fit: cover; border: 3px solid rgba(255,255,255,0.1);" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<div class="candidate-avatar mx-auto mb-3 d-grid align-items-center rounded-circle" style="width: 84px; height:84px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1);"><i class="bi bi-building fs-1 text-white"></i></div>{% endif %}
-        <h4 class="fw-bold mb-1 text-white" style="letter-spacing: 0.5px;">{{ company }}</h4>
+        <h4 class="fw-bold mb-1 text-white company-profile-name" style="letter-spacing: 0.5px;">{{ company }}</h4>
         <div class="small text-info fw-medium">{{ company.city|default:"City not set" }}</div>
       </div>
-      
-      <div class="d-flex flex-column gap-2">
-        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-          <span class="small hr-muted fw-semibold">Contact</span>
-          <span class="small text-white fw-bold">{{ company.contact_person|default:"--" }}</span>
+
+      <div class="company-info-list">
+        <div class="company-info-row">
+          <span class="company-info-label">Contact</span>
+          <span class="company-info-value">{{ company.contact_person|default:"--" }}</span>
         </div>
-        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-          <span class="small hr-muted fw-semibold">Designation</span>
-          <span class="small text-white fw-bold">{{ company.designation|default:"--" }}</span>
+        <div class="company-info-row">
+          <span class="company-info-label">Designation</span>
+          <span class="company-info-value">{{ company.designation|default:"--" }}</span>
         </div>
-        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-          <span class="small hr-muted fw-semibold">Mobile</span>
-          <span class="small text-white fw-bold">{{ company.mobile|default:"--" }}</span>
+        <div class="company-info-row">
+          <span class="company-info-label">Mobile</span>
+          <span class="company-info-value">{{ company.mobile|default:"--" }}</span>
         </div>
-        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-          <span class="small hr-muted fw-semibold">Email</span>
-          <span class="small text-white fw-bold">{{ company.email|default:"--" }}</span>
+        <div class="company-info-row">
+          <span class="company-info-label">Email</span>
+          <span class="company-info-value is-long">{{ company.email|default:"--" }}</span>
         </div>
-        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-          <span class="small hr-muted fw-semibold">Website</span>
-          <span class="small text-info fw-bold">{% if company.website %}<a href="{{ company.website }}" target="_blank" class="text-info text-decoration-none">Open Link</a>{% else %}--{% endif %}</span>
+        <div class="company-info-row">
+          <span class="company-info-label">Website</span>
+          <span class="company-info-value text-info">{% if company.website %}<a href="{{ company.website }}" target="_blank" class="text-info text-decoration-none">Open Link</a>{% else %}--{% endif %}</span>
         </div>
-        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-          <span class="small hr-muted fw-semibold">Value</span>
-          <span class="small text-success fw-bold">{{ company.project_value|default:"--" }}</span>
+        <div class="company-info-row">
+          <span class="company-info-label">Value</span>
+          <span class="company-info-value text-success">{{ company.project_value|default:"--" }}</span>
         </div>
-        <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-          <span class="small hr-muted fw-semibold">Address</span>
-          <span class="small text-white fw-bold text-end" style="max-width: 60%;">{{ company.address|default:"--" }}</span>
+        <div class="company-info-row">
+          <span class="company-info-label">Address</span>
+          <span class="company-info-value">{{ company.address|default:"--" }}</span>
         </div>
       </div>
     </div>
   </div>
-  <div class="col-xl-8">
-    <div class="row g-3 mb-4">
-      <div class="col-md">
-        <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #4a148c, #7b1fa2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Total Drives</div>
-          <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ company.drives.count }}</div>
+  <div class="company-main-column">
+    <div class="company-metrics">
+
+      <div>
+        <div class="hr-kpi tone-emerald company-kpi-card">
+          <i class="bi bi-megaphone company-kpi-icon"></i>
+          <div class="company-kpi-body">
+            <div class="company-kpi-label">Total Drives</div>
+            <div class="company-kpi-value">{{ company.drives.count }}</div>
+          </div>
+          <div class="company-kpi-footer">
+            <i class="bi bi-list-task"></i>
+            <span>View List</span>
+          </div>
         </div>
       </div>
-      <div class="col-md">
-        <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #00838f, #00acc1); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Employees Sent</div>
-          <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ company.employees_sent_count }}</div>
+
+      <div>
+        <div class="hr-kpi tone-blue company-kpi-card">
+          <i class="bi bi-people company-kpi-icon"></i>
+          <div class="company-kpi-body">
+            <div class="company-kpi-label">Employees Sent</div>
+            <div class="company-kpi-value">{{ company.employees_sent_count }}</div>
+          </div>
+          <div class="company-kpi-footer">
+            <i class="bi bi-list-task"></i>
+            <span>View List</span>
+          </div>
         </div>
       </div>
-      <div class="col-md">
-        <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #1565c0, #1e88e5); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Selected</div>
-          <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ company.selected_count }}</div>
+
+      <div>
+        <div class="hr-kpi tone-green company-kpi-card">
+          <i class="bi bi-person-check company-kpi-icon"></i>
+          <div class="company-kpi-body">
+            <div class="company-kpi-label">Selected</div>
+            <div class="company-kpi-value">{{ company.selected_count }}</div>
+          </div>
+          <div class="company-kpi-footer">
+            <i class="bi bi-list-task"></i>
+            <span>View List</span>
+          </div>
         </div>
       </div>
-      <div class="col-md">
-        <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #c62828, #e53935); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Rejected</div>
-          <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ company.rejected_count }}</div>
+
+      <div>
+        <div class="hr-kpi tone-crimson company-kpi-card">
+          <i class="bi bi-person-x company-kpi-icon"></i>
+          <div class="company-kpi-body">
+            <div class="company-kpi-label">Rejected</div>
+            <div class="company-kpi-value">{{ company.rejected_count }}</div>
+          </div>
+          <div class="company-kpi-footer">
+            <i class="bi bi-list-task"></i>
+            <span>View List</span>
+          </div>
         </div>
       </div>
-      <div class="col-md">
-        <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #2e7d32, #4caf50); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-          <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Allocated</div>
-          <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ company.allocated_count }}</div>
+
+      <div>
+        <div class="hr-kpi tone-teal company-kpi-card">
+          <i class="bi bi-person-check-fill company-kpi-icon"></i>
+          <div class="company-kpi-body">
+            <div class="company-kpi-label">Allocated</div>
+            <div class="company-kpi-value">{{ company.allocated_count }}</div>
+          </div>
+          <div class="company-kpi-footer">
+            <i class="bi bi-list-task"></i>
+            <span>View List</span>
+          </div>
         </div>
       </div>
+
     </div>
-    <div class="hr-panel p-3">
-      <h5 class="fw-bold mb-3">Employees Sent to this Company</h5>
+    <div class="hr-panel company-employees-panel">
+      <h5 class="fw-bold company-employees-title">Employees Sent to this Company</h5>
       <div class="table-responsive">
-        <table class="table table-hover hr-table">
+        <table class="table table-hover hr-table company-assignment-table">
+          <colgroup>
+            <col style="width: 15%;">
+            <col style="width: 12%;">
+            <col style="width: 16%;">
+            <col style="width: 17%;">
+            <col style="width: 15%;">
+            <col style="width: 14%;">
+            <col style="width: 11%;">
+          </colgroup>
           <thead>
             <tr>
               <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">EMPLOYEE</th>
@@ -109,10 +373,10 @@
           <tbody>
             {% for item in assignments %}
             <tr class="align-middle">
-              <td class="fw-bold text-white">{{ item.display_name|title }}</td>
+              <td class="fw-bold text-white text-wrap-safe">{{ item.display_name|title }}</td>
               <td class="text-muted">{% if item.employee %}{{ item.employee.employee_id }}{% else %}{{ item.employee_code|default:"--" }}{% endif %}</td>
-              <td class="text-muted">{{ item.display_designation|default:"--" }}</td>
-              <td class="fw-medium text-warning">{{ item.drive.project_name|default:"--" }}</td>
+              <td class="text-muted text-wrap-safe">{{ item.display_designation|default:"--" }}</td>
+              <td class="fw-medium text-warning text-wrap-safe">{{ item.drive.project_name|default:"--" }}</td>
               <td>
                 {% if item.get_interview_status_display == 'Selected' %}
                   <span class="badge" style="background-color: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); font-weight: 600;">{{ item.get_interview_status_display }}</span>
@@ -132,7 +396,7 @@
                 {% endif %}
               </td>
               <td>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 company-assignment-actions">
                   <a class="text-info" href="{% url 'hr:project_assignment_detail' item.id %}" title="View" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(13,202,240,0.4);box-shadow:0 0 8px rgba(13,202,240,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(13,202,240,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-eye"></i></a>
                   <a class="text-warning" href="{% url 'hr:project_assignment_edit' item.id %}" title="Edit" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(255,193,7,0.4);box-shadow:0 0 8px rgba(255,193,7,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,193,7,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-pencil"></i></a>
                   <a class="text-danger" href="{% url 'hr:project_assignment_delete' item.id  %}" title="Delete" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(220,53,69,0.4);box-shadow:0 0 8px rgba(220,53,69,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(220,53,69,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-trash"></i></a>

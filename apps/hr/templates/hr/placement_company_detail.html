@@ -2,6 +2,32 @@
 
 {% block title %}{{ company }} | HR Portal{% endblock %}
 
+{% block style %}
+<style>
+  .hr-kpi {
+    background: #2a2a2a;
+    transition: all 0.3s ease;
+  }
+
+  .hr-kpi:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4), 0 0 20px rgba(255,255,255,0.05);
+    filter: brightness(1.1);
+  }
+
+  .hr-kpi.tone-violet { background: linear-gradient(to right, #4a148c, #7b1fa2) !important; }
+  .hr-kpi.tone-emerald { background: linear-gradient(to right, #00838f, #00acc1) !important; }
+  .hr-kpi.tone-teal { background: linear-gradient(to right, #2e7d32, #4caf50) !important; }
+  .hr-kpi.tone-red { background: linear-gradient(to right, #c2185b, #e91e63) !important; }
+  .hr-kpi.tone-blue { background: linear-gradient(to right, #1565c0, #1e88e5) !important; }
+  .hr-kpi.tone-amber { background: linear-gradient(to right, #f57f17, #ffb300) !important; }
+  .hr-kpi.tone-orange { background: linear-gradient(to right, #e65100, #fb8c00) !important; }
+  .hr-kpi.tone-green { background: linear-gradient(to right, #047857, #10b981) !important; }
+  .hr-kpi.tone-crimson { background: linear-gradient(to right, #991b1b, #ef4444) !important; }
+  .hr-kpi.tone-indigo { background: linear-gradient(to right, #6a1b9a, #ab47bc) !important; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="hr-page-title">
   <div>

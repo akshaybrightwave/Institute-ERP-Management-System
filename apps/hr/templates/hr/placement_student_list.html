@@ -14,7 +14,7 @@
 
 <div class="hr-panel p-4 mb-4" style="border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
   <form class="row g-3 align-items-end" method="get">
-    <div class="col-md-7">
+    <div class="col-md-5">
       <label class="form-label small hr-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">Search</label>
       <div class="position-relative">
         <input class="form-control text-white" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding-left: 15px; height: 48px; border-radius: 8px;" name="q" value="{{ query }}" placeholder="Employee, ID or company...">
@@ -31,6 +31,11 @@
     </div>
     <div class="col-md-2">
       <button class="btn w-100 fw-bold text-white shadow" style="background: linear-gradient(to right, #4a148c, #7b1fa2); height: 48px; border: none; border-radius: 8px;" type="submit">Filter</button>
+    </div>
+    <div class="col-md-2">
+      <a class="btn w-100 fw-bold d-flex align-items-center justify-content-center shadow" style="background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); height: 48px; border-radius: 8px;" href="{% url 'hr:export_placement_report' %}?{{ request.GET.urlencode }}">
+        <i class="bi bi-filetype-csv me-2 fs-5"></i> Export
+      </a>
     </div>
   </form>
 </div>

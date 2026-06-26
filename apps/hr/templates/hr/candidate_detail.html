@@ -128,19 +128,45 @@
   <div class="col-xl-3">
     <div class="hr-panel p-3">
       <h6 class="fw-bold mb-3">Activity Timeline</h6>
-      <div class="timeline">
-        {% for activity in candidate.activities.all %}
-        <div class="timeline-item">
-          <span class="timeline-dot"></span>
-          <div class="small fw-semibold">{{ activity.title }}</div>
-          <div class="small text-secondary mb-1">{{ activity.created_at|date:"d M Y, h:i A" }}</div>
-          {% if activity.description %}<div class="small">{{ activity.description }}</div>{% endif %}
+      <div style="max-height: 400px; overflow-y: auto; padding-right: 12px; margin-right: -4px;">
+        <div class="timeline">
+          {% for activity in candidate.activities.all %}
+          <div class="timeline-item">
+            <span class="timeline-dot"></span>
+            <div class="small fw-semibold">{{ activity.title }}</div>
+            <div class="small text-secondary mb-1">{{ activity.created_at|date:"d M Y, h:i A" }}</div>
+            {% if activity.description %}<div class="small">{{ activity.description }}</div>{% endif %}
+          </div>
+          {% empty %}
+          <p class="small text-secondary mb-1">No activity yet.</p>
+          {% endfor %}
         </div>
-        {% empty %}
-        <p class="small text-secondary mb-1">No activity yet.</p>
-        {% endfor %}
       </div>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function() {
+    var STORE_KEY = 'candidate_page_scroll';
+    
+    // Restore scroll position instantly
+    var scrollPos = sessionStorage.getItem(STORE_KEY);
+    if (scrollPos) {
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, parseInt(scrollPos, 10));
+      document.documentElement.style.scrollBehavior = '';
+      sessionStorage.removeItem(STORE_KEY);
+    }
+
+    // Save scroll position when clicking tab links
+    document.querySelectorAll('.nav-pills .nav-link').forEach(function(link) {
+      link.addEventListener('click', function() {
+        sessionStorage.setItem(STORE_KEY, window.scrollY || document.documentElement.scrollTop);
+      });
+    });
+  })();
+</script>
 {% endblock %}
