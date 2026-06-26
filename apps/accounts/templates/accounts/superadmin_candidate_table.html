@@ -1,0 +1,56 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}HR Candidates | Super Admin{% endblock %}
+{% block crumb %}HR Candidates{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Candidate Table</h1>
+    <p class="text-muted mb-0">Search, filter, paginate, and export HR candidates.</p>
+  </div>
+  <a href="?q={{ query }}&status={{ status }}&export=csv" class="btn btn-outline-primary"><i class="bi bi-download me-1"></i>Export</a>
+</div>
+
+<div class="sa-card p-3 mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label">Search</label>
+      <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Name, email, mobile, position">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">All statuses</option>
+        {% for value, label in status_choices %}
+          <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2 d-grid"><button class="btn btn-primary">Apply</button></div>
+  </form>
+</div>
+
+<div class="sa-card p-3">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Name</th><th>Email</th><th>Mobile</th><th>Position</th><th>Status</th><th>Assigned HR</th></tr></thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td class="fw-semibold">{{ item.full_name }}</td>
+          <td>{{ item.email|default:"-" }}</td>
+          <td>{{ item.mobile }}</td>
+          <td>{{ item.applying_position }}</td>
+          <td><span class="badge bg-primary">{{ item.get_status_display }}</span></td>
+          <td>{{ item.assigned_hr.username|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="empty-state"><i class="bi bi-briefcase"></i><p class="mb-0 mt-2">No candidates found.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'accounts/superadmin_pagination.html' %}
+</div>
+{% endblock %}

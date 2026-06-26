@@ -74,4 +74,18 @@ urlpatterns = [
     path('admissions/<int:pk>/', views.admission_detail, name='admission_detail'),
     path('admissions/<int:pk>/edit/', views.admission_edit, name='admission_edit'),
     path('admissions/report/', views.admission_report, name='admission_report'),
+
+    # ── Phase 2 Enterprise Analytics ──────────────────────────────────
+    path('analytics/leaderboard/', views.leaderboard, name='leaderboard'),
+    path('analytics/user-performance/', views.user_performance, name='user_performance'),
+    path('analytics/executive-reports/', views.executive_reports, name='executive_reports'),
+    path('analytics/search/', views.global_search, name='global_search'),
+
+    # ── Phase 2 Export Endpoints ──────────────────────────────────────
+    path('export/leads/csv/', views.export_leads_csv, name='export_leads_csv'),
+    path('export/telecaller/csv/', views.export_telecaller_csv, name='export_telecaller_csv'),
+    path('export/counselor/csv/', views.export_counselor_csv, name='export_counselor_csv'),
+    path('export/leaderboard/csv/', views.export_leaderboard_csv, name='export_leaderboard_csv'),
+    path('export/user-performance/csv/', views.export_user_performance_csv, name='export_user_performance_csv'),
+    path('export/executive/csv/', views.export_executive_csv, name='export_executive_csv'),
 ]

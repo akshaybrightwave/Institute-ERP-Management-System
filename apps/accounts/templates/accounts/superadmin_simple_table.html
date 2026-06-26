@@ -1,0 +1,59 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}{{ title }} | Super Admin{% endblock %}
+{% block crumb %}{{ title }}{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">{{ title }}</h1>
+    <p class="text-muted mb-0">Operational table with pagination and empty states.</p>
+  </div>
+  <a href="{% url 'superadmin_reports' %}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-bar-graph me-1"></i>Reports</a>
+</div>
+
+<div class="sa-card p-3">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>{% for col in columns %}<th>{{ col }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          {% if kind == 'interviews' %}
+            <td class="fw-semibold">{{ item.candidate.full_name }}</td>
+            <td>{{ item.date|date:"d M Y" }} {{ item.time|time:"H:i" }}</td>
+            <td>{{ item.interviewer }}</td>
+            <td><span class="badge bg-primary">{{ item.get_decision_display }}</span></td>
+          {% elif kind == 'followups' %}
+            <td class="fw-semibold">{{ item.lead.inquiry.full_name }}</td>
+            <td>{{ item.followup_date|date:"d M Y" }}</td>
+            <td><span class="badge bg-primary">{{ item.status }}</span></td>
+            <td>{{ item.created_by.username|default:"-" }}</td>
+          {% elif kind == 'admissions' %}
+            <td class="fw-semibold">{{ item.student_name }}</td>
+            <td>{{ item.admission_number }}</td>
+            <td><span class="badge bg-primary">{{ item.get_admission_status_display }}</span></td>
+            <td>{{ item.counselor.username|default:"-" }}</td>
+          {% elif kind == 'calls' %}
+            <td class="fw-semibold">{{ item.lead.inquiry.full_name }}</td>
+            <td><span class="badge bg-primary">{{ item.call_status }}</span></td>
+            <td>{{ item.call_duration }}s</td>
+            <td>{{ item.created_by.username|default:"-" }}</td>
+          {% elif kind == 'appointments' %}
+            <td class="fw-semibold">{{ item.lead.inquiry.full_name }}</td>
+            <td>{{ item.visit_date|date:"d M Y" }} {{ item.visit_time|time:"H:i" }}</td>
+            <td><span class="badge bg-primary">{{ item.get_status_display }}</span></td>
+            <td>{{ item.counselor.username|default:"-" }}</td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="{{ columns|length }}"><div class="empty-state"><i class="bi bi-table"></i><p class="mb-0 mt-2">No records found.</p></div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'accounts/superadmin_pagination.html' %}
+</div>
+{% endblock %}

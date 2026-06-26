@@ -1,0 +1,29 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}Global Search | Super Admin{% endblock %}
+{% block crumb %}Global Search{% endblock %}
+
+{% block superadmin_content %}
+<div class="mb-4">
+  <h1 class="h3 fw-bold mb-1">Global Search</h1>
+  <p class="text-muted mb-0">Grouped results across users, candidates, leads, phone numbers, and emails.</p>
+</div>
+
+<div class="sa-card p-3 mb-4">
+  <form method="get" class="d-flex gap-2">
+    <input type="search" name="q" value="{{ query }}" class="form-control" placeholder="Search by name, email, or phone">
+    <button class="btn btn-primary">Search</button>
+  </form>
+</div>
+
+{% if query %}
+<div class="row g-4">
+  <div class="col-lg-6"><div class="sa-card p-3"><h2 class="h5 fw-bold">Users</h2>{% for item in users %}<div class="border-bottom py-2"><a href="{% url 'superadmin_user_detail' item.id %}" class="fw-semibold">{{ item.username }}</a><div class="small text-muted">{{ item.email }} - {{ item.get_role_display }}</div></div>{% empty %}<div class="empty-state py-3">No users found.</div>{% endfor %}</div></div>
+  <div class="col-lg-6"><div class="sa-card p-3"><h2 class="h5 fw-bold">Candidates</h2>{% for item in candidates %}<div class="border-bottom py-2"><div class="fw-semibold">{{ item.full_name }}</div><div class="small text-muted">{{ item.email }} - {{ item.mobile }}</div></div>{% empty %}<div class="empty-state py-3">No candidates found.</div>{% endfor %}</div></div>
+  <div class="col-lg-6"><div class="sa-card p-3"><h2 class="h5 fw-bold">Leads</h2>{% for item in leads %}<div class="border-bottom py-2"><div class="fw-semibold">{{ item.inquiry.full_name }}</div><div class="small text-muted">{{ item.inquiry.email }} - {{ item.inquiry.mobile_number }}</div></div>{% empty %}<div class="empty-state py-3">No leads found.</div>{% endfor %}</div></div>
+  <div class="col-lg-6"><div class="sa-card p-3"><h2 class="h5 fw-bold">Inquiries</h2>{% for item in inquiries %}<div class="border-bottom py-2"><div class="fw-semibold">{{ item.full_name }}</div><div class="small text-muted">{{ item.email }} - {{ item.mobile_number }}</div></div>{% empty %}<div class="empty-state py-3">No inquiries found.</div>{% endfor %}</div></div>
+</div>
+{% else %}
+<div class="empty-state sa-card"><i class="bi bi-search"></i><p class="mb-0 mt-2">Enter a query to search the system.</p></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends 'management/base.html' %}
+{% block title %}Performance Leaderboard | ERP{% endblock %}
+{% block extra_style %}{% include 'management/premium_theme_css.html' %}{% endblock %}
+
+{% block management_content %}
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+  <div>
+    <h2 class="fw-bold text-white mb-1"><i class="bi bi-trophy-fill me-2" style="color:#f59e0b;"></i>Performance Leaderboard</h2>
+    <p class="text-muted small mb-0">Ranked performance across Telecallers and Counselors based on weighted activity scores.</p>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <a href="{% url 'management_super_admin_dashboard' %}" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
+    <a href="{% url 'export_leaderboard_csv' %}?date_filter={{ request.GET.date_filter|default:'this_month' }}" class="btn-export btn-export-csv"><i class="bi bi-download"></i> Export CSV</a>
+  </div>
+</div>
+
+<!-- Global Filter Bar -->
+<div class="global-filter-bar mb-4">
+  <span class="filter-label"><i class="bi bi-funnel me-1"></i> Period</span>
+  {% with df=request.GET.date_filter|default:"this_month" %}
+  <a href="?date_filter=today"       class="filter-pill {% if df == 'today' %}active{% endif %}">Today</a>
+  <a href="?date_filter=this_week"   class="filter-pill {% if df == 'this_week' %}active{% endif %}">This Week</a>
+  <a href="?date_filter=this_month"  class="filter-pill {% if df == 'this_month' %}active{% endif %}">This Month</a>
+  <a href="?date_filter=this_quarter" class="filter-pill {% if df == 'this_quarter' %}active{% endif %}">This Quarter</a>
+  <a href="?date_filter=this_year"   class="filter-pill {% if df == 'this_year' %}active{% endif %}">This Year</a>
+  {% endwith %}
+  <div class="filter-divider"></div>
+  <div class="last-updated"><span class="dot"></span><span>Period: <strong>{{ period_label }}</strong></span></div>
+  <div class="ms-auto" style="min-width: 200px;">
+    <form method="GET" action="" class="position-relative">
+      <input type="hidden" name="date_filter" value="{{ request.GET.date_filter|default:'this_month' }}">
+      <i class="bi bi-search position-absolute text-muted" style="left:12px;top:50%;transform:translateY(-50%);"></i>
+      <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm border-0" style="padding-left:36px; background:rgba(255,255,255,0.05); color:#fff;" placeholder="Search users...">
+    </form>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Telecaller Leaderboard -->
+  <div class="col-lg-6">
+    <div class="m-card" style="padding:0!important;overflow:hidden;">
+      <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);background:linear-gradient(135deg,rgba(91,95,239,0.08),transparent);">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="fw-bold text-white mb-1"><i class="bi bi-telephone-fill me-2" style="color:#38bdf8;"></i>Telecaller Leaderboard</h5>
+            <p class="text-muted small mb-0">Ranked by weighted performance score</p>
+          </div>
+          <span class="badge-premium bg-info">{{ telecaller_board|length }} Telecallers</span>
+        </div>
+      </div>
+      {% if telecaller_board %}
+        <div class="table-responsive">
+          <table class="table m-table align-middle" style="min-width:540px;" role="table" aria-label="Telecaller Leaderboard">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Telecaller</th>
+                <th>Inquiries</th>
+                <th>Calls</th>
+                <th>Follow-ups</th>
+                <th>Qualified</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in telecaller_board %}
+              <tr>
+                <td>
+                  <div class="rank-badge {% if telecaller_board.start_index|add:forloop.counter0 == 1 %}rank-1{% elif telecaller_board.start_index|add:forloop.counter0 == 2 %}rank-2{% elif telecaller_board.start_index|add:forloop.counter0 == 3 %}rank-3{% else %}rank-n{% endif %}">
+                    {% if telecaller_board.start_index|add:forloop.counter0 <= 3 %}{% if telecaller_board.start_index|add:forloop.counter0 == 1 %}🥇{% elif telecaller_board.start_index|add:forloop.counter0 == 2 %}🥈{% else %}🥉{% endif %}{% else %}{{ telecaller_board.start_index|add:forloop.counter0 }}{% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <span style="width:30px;height:30px;border-radius:8px;background:#5b5fef;color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">{{ row.telecaller|slice:":1"|upper }}</span>
+                    <span class="fw-semibold" style="color:#f1f5f9;">{{ row.telecaller }}</span>
+                  </div>
+                </td>
+                <td class="text-center"><span class="badge-premium bg-info">{{ row.total_inquiries }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-primary">{{ row.calls_made }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-success">{{ row.followups_completed }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-violet">{{ row.qualified_leads }}</span></td>
+                <td>
+                  <span class="perf-score {% if row.score >= 80 %}excellent{% elif row.score >= 50 %}good{% elif row.score >= 25 %}average{% else %}poor{% endif %}">
+                    <i class="bi bi-star-fill"></i> {{ row.score|floatformat:1 }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if telecaller_board.has_other_pages %}
+        <div class="d-flex justify-content-between align-items-center mt-3" style="padding:0 24px 20px;">
+          <small class="text-muted">Showing {{ telecaller_board.start_index }} to {{ telecaller_board.end_index }} of {{ telecaller_board.paginator.count }}</small>
+          <ul class="pagination pagination-sm mb-0 m-pagination">
+            {% if telecaller_board.has_previous %}
+            <li class="page-item"><a class="page-link" href="?t_page={{ telecaller_board.previous_page_number }}&c_page={{ request.GET.c_page }}&q={{ q }}&date_filter={{ date_filter }}">Prev</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ telecaller_board.number }}</span></li>
+            {% if telecaller_board.has_next %}
+            <li class="page-item"><a class="page-link" href="?t_page={{ telecaller_board.next_page_number }}&c_page={{ request.GET.c_page }}&q={{ q }}&date_filter={{ date_filter }}">Next</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-enterprise">
+          <div class="empty-icon-wrap"><i class="bi bi-telephone"></i></div>
+          <h6>No Telecaller Data</h6>
+          {% if q %}
+          <p>No telecallers match your search query "<strong>{{ q }}</strong>".</p>
+          {% else %}
+          <p>No telecaller activity found for this period. Try changing the date filter.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Counselor Leaderboard -->
+  <div class="col-lg-6">
+    <div class="m-card" style="padding:0!important;overflow:hidden;">
+      <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);background:linear-gradient(135deg,rgba(16,185,129,0.08),transparent);">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="fw-bold text-white mb-1"><i class="bi bi-person-badge-fill me-2" style="color:#34d399;"></i>Counselor Leaderboard</h5>
+            <p class="text-muted small mb-0">Ranked by admissions & conversion rate</p>
+          </div>
+          <span class="badge-premium bg-success">{{ counselor_board|length }} Counselors</span>
+        </div>
+      </div>
+      {% if counselor_board %}
+        <div class="table-responsive">
+          <table class="table m-table align-middle" style="min-width:540px;" role="table" aria-label="Counselor Leaderboard">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Counselor</th>
+                <th>Sessions</th>
+                <th>Admissions</th>
+                <th>Conversion</th>
+                <th>Follow-ups</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in counselor_board %}
+              <tr>
+                <td>
+                  <div class="rank-badge {% if counselor_board.start_index|add:forloop.counter0 == 1 %}rank-1{% elif counselor_board.start_index|add:forloop.counter0 == 2 %}rank-2{% elif counselor_board.start_index|add:forloop.counter0 == 3 %}rank-3{% else %}rank-n{% endif %}">
+                    {% if counselor_board.start_index|add:forloop.counter0 <= 3 %}{% if counselor_board.start_index|add:forloop.counter0 == 1 %}🥇{% elif counselor_board.start_index|add:forloop.counter0 == 2 %}🥈{% else %}🥉{% endif %}{% else %}{{ counselor_board.start_index|add:forloop.counter0 }}{% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <span style="width:30px;height:30px;border-radius:8px;background:#10b981;color:#fff;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">{{ row.counselor|slice:":1"|upper }}</span>
+                    <span class="fw-semibold" style="color:#f1f5f9;">{{ row.counselor }}</span>
+                  </div>
+                </td>
+                <td class="text-center"><span class="badge-premium bg-info">{{ row.sessions }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-success">{{ row.admissions }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-warning">{{ row.conversion_pct|floatformat:1 }}%</span></td>
+                <td class="text-center"><span class="badge-premium bg-violet">{{ row.followups_completed }}</span></td>
+                <td>
+                  <span class="perf-score {% if row.score >= 80 %}excellent{% elif row.score >= 50 %}good{% elif row.score >= 25 %}average{% else %}poor{% endif %}">
+                    <i class="bi bi-star-fill"></i> {{ row.score|floatformat:1 }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        {% if counselor_board.has_other_pages %}
+        <div class="d-flex justify-content-between align-items-center mt-3" style="padding:0 24px 20px;">
+          <small class="text-muted">Showing {{ counselor_board.start_index }} to {{ counselor_board.end_index }} of {{ counselor_board.paginator.count }}</small>
+          <ul class="pagination pagination-sm mb-0 m-pagination">
+            {% if counselor_board.has_previous %}
+            <li class="page-item"><a class="page-link" href="?c_page={{ counselor_board.previous_page_number }}&t_page={{ request.GET.t_page }}&q={{ q }}&date_filter={{ date_filter }}">Prev</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ counselor_board.number }}</span></li>
+            {% if counselor_board.has_next %}
+            <li class="page-item"><a class="page-link" href="?c_page={{ counselor_board.next_page_number }}&t_page={{ request.GET.t_page }}&q={{ q }}&date_filter={{ date_filter }}">Next</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-enterprise">
+          <div class="empty-icon-wrap"><i class="bi bi-person-badge"></i></div>
+          <h6>No Counselor Data</h6>
+          {% if q %}
+          <p>No counselors match your search query "<strong>{{ q }}</strong>".</p>
+          {% else %}
+          <p>No counselor activity found for this period. Try changing the date filter.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Performance Formula Info -->
+<div class="m-card mt-4">
+  <div class="d-flex align-items-center gap-3">
+    <div style="width:40px;height:40px;border-radius:10px;background:rgba(91,95,239,0.15);color:#818cf8;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;"><i class="bi bi-info-circle"></i></div>
+    <div>
+      <div class="fw-bold text-white" style="font-size:.9rem;">Performance Score Formula</div>
+      <div class="text-muted small">Telecaller: Inquiries×1 + Calls×0.5 + Follow-ups×2 + Qualified Leads×5 &nbsp;|&nbsp; Counselor: Sessions×3 + Admissions×10 + Follow-ups×2</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

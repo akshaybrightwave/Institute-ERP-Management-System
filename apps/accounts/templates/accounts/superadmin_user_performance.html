@@ -1,0 +1,83 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}User Performance Center | Super Admin{% endblock %}
+{% block crumb %}User Performance Center{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">User Performance Center</h1>
+    <p class="text-muted mb-0">Cross-department leaderboard for HR, Counsellor, and Telecaller users.</p>
+  </div>
+  <a href="{% url 'superadmin_exports' %}?download=user-performance" class="btn btn-primary"><i class="bi bi-download me-1"></i>Export</a>
+</div>
+
+<div class="sa-card p-3 mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label">Search</label>
+      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Employee name, email, or department">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Department</label>
+      <select class="form-select" name="department">
+        <option value="">All departments</option>
+        {% for item in departments %}
+        <option value="{{ item|lower }}" {% if department == item|lower %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-grid">
+      <button class="btn btn-outline-primary"><i class="bi bi-filter me-1"></i>Apply Filters</button>
+    </div>
+  </form>
+</div>
+
+<div class="sa-card p-3">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Employee Name</th>
+          <th>Department</th>
+          <th>Role</th>
+          <th>Activities Completed</th>
+          <th>Conversion Rate</th>
+          <th>Performance Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in page_obj %}
+        <tr>
+          <td><span class="badge bg-primary">#{{ item.rank }}</span></td>
+          <td>
+            <div class="fw-semibold">{{ item.user.get_full_name|default:item.user.username }}</div>
+            <div class="small text-muted">{{ item.user.email }}</div>
+          </td>
+          <td>{{ item.department }}</td>
+          <td>{{ item.user.get_role_display }}</td>
+          <td>{{ item.activities }}</td>
+          <td>{{ item.conversion_rate }}%</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="progress flex-grow-1" style="height: 8px; min-width: 120px;">
+                <div class="progress-bar" style="width: {{ item.score }}%"></div>
+              </div>
+              <strong>{{ item.score }}%</strong>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">
+            <div class="empty-state"><i class="bi bi-trophy"></i><p class="mb-0 mt-2">No performance data found.</p></div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% include 'accounts/superadmin_pagination.html' %}
+</div>
+{% endblock %}

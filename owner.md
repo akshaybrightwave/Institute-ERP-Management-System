@@ -1,0 +1,6 @@
+
+
+OWNER_NAME=System Owner
+SUPER_ADMIN_EMAIL=superadmin@gmail.com
+SUPER_ADMIN_PASSWORD=dcodetech!12345
+ROLE=SUPER_ADMIN

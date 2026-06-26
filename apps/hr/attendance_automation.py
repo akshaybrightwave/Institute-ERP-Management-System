@@ -48,7 +48,7 @@ def employee_for_user(user):
     return employee
 
 
-def attendance_values(check_in, check_out):
+def attendance_values(check_in, check_out, employee=None):
     working_hours = None
     if check_in and check_out:
         start = datetime.combine(timezone.localdate(), check_in)
@@ -58,8 +58,8 @@ def attendance_values(check_in, check_out):
             working_hours = round(Decimal(minutes) / Decimal(60), 2)
 
     late_minutes = 0
-    office_start = time(9, 0)
-    late_cutoff = time(9, 15)
+    office_start = getattr(employee, 'scheduled_login_time', None) or time(9, 0)
+    late_cutoff = office_start if getattr(employee, 'scheduled_login_time', None) else time(9, 15)
     if check_in and check_in > late_cutoff:
         check_in_dt = datetime.combine(timezone.localdate(), check_in)
         start_dt = datetime.combine(timezone.localdate(), office_start)
@@ -97,7 +97,7 @@ def mark_external_check_in(sender, request, user, **kwargs):
     if 'Auto marked' not in (log.notes or ''):
         log.notes = (log.notes + '\n' if log.notes else '') + 'Auto marked from login.'
         changed_fields.append('notes')
-    working_hours, late_minutes = attendance_values(log.check_in, log.check_out)
+    working_hours, late_minutes = attendance_values(log.check_in, log.check_out, employee)
     log.working_hours = working_hours
     log.late_minutes = late_minutes
     changed_fields.extend(['working_hours', 'late_minutes'])
@@ -129,7 +129,7 @@ def mark_external_check_out(sender, request, user, **kwargs):
     log.marked_by = user
     if 'logout' not in (log.notes or '').lower():
         log.notes = (log.notes + '\n' if log.notes else '') + 'Auto marked from logout.'
-    log.working_hours, log.late_minutes = attendance_values(log.check_in, log.check_out)
+    log.working_hours, log.late_minutes = attendance_values(log.check_in, log.check_out, employee)
     log.save(update_fields=[
         'status',
         'check_out',

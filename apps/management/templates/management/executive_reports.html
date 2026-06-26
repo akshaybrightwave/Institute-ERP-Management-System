@@ -1,0 +1,195 @@
+{% extends 'management/base.html' %}
+{% block title %}Executive Reports Dashboard | ERP{% endblock %}
+{% block extra_style %}{% include 'management/premium_theme_css.html' %}{% endblock %}
+
+{% block management_content %}
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+  <div>
+    <h2 class="fw-bold text-white mb-1"><i class="bi bi-graph-up-arrow me-2" style="color:#34d399;"></i>Executive Reports Dashboard</h2>
+    <p class="text-muted small mb-0">High-level business KPIs and operational summary for executive decision-making.</p>
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <a href="{% url 'management_super_admin_dashboard' %}" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
+    <div class="export-btn-group">
+      <a href="{% url 'export_executive_csv' %}?date_filter={{ request.GET.date_filter|default:'this_month' }}" class="btn-export btn-export-csv"><i class="bi bi-filetype-csv"></i> Export CSV</a>
+    </div>
+  </div>
+</div>
+
+<!-- Filter -->
+<div class="global-filter-bar mb-4">
+  <span class="filter-label"><i class="bi bi-funnel me-1"></i> Period</span>
+  {% with df=request.GET.date_filter|default:"this_month" %}
+  <a href="?date_filter=today"        class="filter-pill {% if df == 'today' %}active{% endif %}">Today</a>
+  <a href="?date_filter=yesterday"    class="filter-pill {% if df == 'yesterday' %}active{% endif %}">Yesterday</a>
+  <a href="?date_filter=this_week"    class="filter-pill {% if df == 'this_week' %}active{% endif %}">This Week</a>
+  <a href="?date_filter=this_month"   class="filter-pill {% if df == 'this_month' %}active{% endif %}">This Month</a>
+  <a href="?date_filter=this_quarter" class="filter-pill {% if df == 'this_quarter' %}active{% endif %}">This Quarter</a>
+  <a href="?date_filter=this_year"    class="filter-pill {% if df == 'this_year' %}active{% endif %}">This Year</a>
+  {% endwith %}
+</div>
+
+<!-- Executive KPI Grid -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4 col-lg-2">
+    <div class="exec-stat">
+      <div class="exec-stat-label">Total Inquiries</div>
+      <div class="exec-stat-value">{{ total_inquiries }}</div>
+      <div class="exec-stat-sub">All time inbound</div>
+    </div>
+  </div>
+  <div class="col-md-4 col-lg-2">
+    <div class="exec-stat">
+      <div class="exec-stat-label">Total Leads</div>
+      <div class="exec-stat-value">{{ total_leads }}</div>
+      <div class="exec-stat-sub">Converted inquiries</div>
+    </div>
+  </div>
+  <div class="col-md-4 col-lg-2">
+    <div class="exec-stat">
+      <div class="exec-stat-label">Total Calls</div>
+      <div class="exec-stat-value">{{ total_calls }}</div>
+      <div class="exec-stat-sub">All call logs</div>
+    </div>
+  </div>
+  <div class="col-md-4 col-lg-2">
+    <div class="exec-stat">
+      <div class="exec-stat-label">Admissions</div>
+      <div class="exec-stat-value" style="color:#34d399;">{{ total_admissions }}</div>
+      <div class="exec-stat-sub">Confirmed only</div>
+    </div>
+  </div>
+  <div class="col-md-4 col-lg-2">
+    <div class="exec-stat">
+      <div class="exec-stat-label">Overdue F/U</div>
+      <div class="exec-stat-value" style="color:#f87171;">{{ total_overdue }}</div>
+      <div class="exec-stat-sub">Requires action</div>
+    </div>
+  </div>
+  <div class="col-md-4 col-lg-2">
+    <div class="exec-stat">
+      <div class="exec-stat-label">Overall Conversion</div>
+      <div class="exec-stat-value" style="color:#818cf8;">{{ conversion_rate|floatformat:1 }}%</div>
+      <div class="exec-stat-sub">Leads → Admissions</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Lead Pipeline Funnel -->
+  <div class="col-lg-5">
+    <div class="m-card h-100">
+      <h5 class="fw-bold text-white mb-4"><i class="bi bi-filter-circle me-2" style="color:#818cf8;"></i>Lead Pipeline Funnel</h5>
+      <div style="space-y:12px;">
+        {% for stage in pipeline %}
+        <div style="margin-bottom:16px;">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted small fw-bold">{{ stage.label }}</span>
+            <span class="fw-bold" style="color:#f1f5f9;font-size:.88rem;">{{ stage.count }}</span>
+          </div>
+          <div style="height:10px;background:#1e293b;border-radius:9999px;overflow:hidden;">
+            <div style="height:100%;width:{% if total_leads > 0 %}{% widthratio stage.count total_leads 100 %}{% else %}0{% endif %}%;background:{{ stage.color }};border-radius:9999px;transition:width 0.8s ease;"></div>
+          </div>
+          <div class="text-muted" style="font-size:.72rem;margin-top:3px;">{% if total_leads > 0 %}{% widthratio stage.count total_leads 100 %}%{% else %}0%{% endif %} of total leads</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Source Distribution -->
+  <div class="col-lg-3">
+    <div class="m-card h-100">
+      <h5 class="fw-bold text-white mb-4"><i class="bi bi-pie-chart me-2 text-info"></i>Lead Sources</h5>
+      {% if source_distribution %}
+        {% for src in source_distribution %}
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <span class="text-muted small">{{ src.source }}</span>
+          <span class="badge-premium bg-primary">{{ src.count }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-enterprise" style="padding:24px;">
+          <div class="empty-icon-wrap" style="width:48px;height:48px;font-size:1.4rem;margin-bottom:12px;"><i class="bi bi-pie-chart"></i></div>
+          <h6 style="font-size:.9rem;">No Source Data</h6>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Call Status Breakdown -->
+  <div class="col-lg-4">
+    <div class="m-card h-100">
+      <h5 class="fw-bold text-white mb-4"><i class="bi bi-telephone-fill me-2 text-warning"></i>Call Status Breakdown</h5>
+      <div class="row g-2">
+        {% for c in call_breakdown %}
+        <div class="col-6">
+          <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:1.4rem;font-weight:900;color:#f1f5f9;line-height:1;">{{ c.count }}</div>
+            <div style="font-size:.7rem;color:#64748b;font-weight:600;text-transform:uppercase;margin-top:4px;">{{ c.label }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Performing Telecallers -->
+  <div class="col-lg-6">
+    <div class="m-card" style="padding:0!important;overflow:hidden;">
+      <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-trophy me-2" style="color:#f59e0b;"></i>Top Telecallers</h5>
+      </div>
+      {% if top_telecallers %}
+        <div class="table-responsive">
+          <table class="table m-table align-middle">
+            <thead><tr><th>Rank</th><th>Telecaller</th><th>Inquiries</th><th>Calls</th><th>Conversion%</th></tr></thead>
+            <tbody>
+              {% for row in top_telecallers %}
+              <tr>
+                <td><div class="rank-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-n{% endif %}">{{ forloop.counter }}</div></td>
+                <td><span class="fw-semibold" style="color:#f1f5f9;">{{ row.telecaller }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-secondary">{{ row.total_inquiries }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-info">{{ row.calls_made }}</span></td>
+                <td class="text-center"><span class="badge-premium {% if row.conversion_pct >= 50 %}bg-success{% elif row.conversion_pct >= 25 %}bg-warning{% else %}bg-danger{% endif %}">{{ row.conversion_pct }}%</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-enterprise"><div class="empty-icon-wrap"><i class="bi bi-trophy"></i></div><h6>No Data</h6></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Top Performing Counselors -->
+  <div class="col-lg-6">
+    <div class="m-card" style="padding:0!important;overflow:hidden;">
+      <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-trophy me-2" style="color:#34d399;"></i>Top Counselors</h5>
+      </div>
+      {% if top_counselors %}
+        <div class="table-responsive">
+          <table class="table m-table align-middle">
+            <thead><tr><th>Rank</th><th>Counselor</th><th>Sessions</th><th>Admissions</th><th>Conversion%</th></tr></thead>
+            <tbody>
+              {% for row in top_counselors %}
+              <tr>
+                <td><div class="rank-badge {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% else %}rank-n{% endif %}">{{ forloop.counter }}</div></td>
+                <td><span class="fw-semibold" style="color:#f1f5f9;">{{ row.counselor }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-info">{{ row.sessions }}</span></td>
+                <td class="text-center"><span class="badge-premium bg-success">{{ row.admissions }}</span></td>
+                <td class="text-center"><span class="badge-premium {% if row.conversion_pct >= 50 %}bg-success{% elif row.conversion_pct >= 25 %}bg-warning{% else %}bg-danger{% endif %}">{{ row.conversion_pct|floatformat:1 }}%</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-enterprise"><div class="empty-icon-wrap"><i class="bi bi-person-badge"></i></div><h6>No Data</h6></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

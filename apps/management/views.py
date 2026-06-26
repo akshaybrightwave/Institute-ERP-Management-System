@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count, Avg
 import datetime
 from datetime import datetime, date, time, timedelta
 import json
+import csv
 from django.utils import timezone
 
 from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
@@ -88,18 +89,60 @@ def management_super_admin_dashboard(request):
 
     today = date.today()
 
-    # Global statistics (9 metrics)
-    total_leads = Lead.objects.count()
-    assigned_leads = Lead.objects.filter(assigned_telecaller__isnull=False).count()
-    contacted_leads = Lead.objects.filter(status='Contacted').count()
-    interested_leads = Lead.objects.filter(status='Interested').count()
-    qualified_leads = Lead.objects.filter(status='Qualified').count()
-    rejected_leads = Lead.objects.filter(status='Rejected').count()
+    # ── Date filter support ──
+    date_filter = request.GET.get('date_filter', 'all')
+    start_date = None
+    end_date = today
+
+    if date_filter == 'today':
+        start_date = today
+    elif date_filter == 'yesterday':
+        start_date = today - timedelta(days=1)
+        end_date = today - timedelta(days=1)
+    elif date_filter == 'this_week':
+        start_date = today - timedelta(days=today.weekday())
+    elif date_filter == 'this_month':
+        start_date = today.replace(day=1)
+    elif date_filter == 'this_quarter':
+        quarter_start_month = ((today.month - 1) // 3) * 3 + 1
+        start_date = today.replace(month=quarter_start_month, day=1)
+    elif date_filter == 'this_year':
+        start_date = today.replace(month=1, day=1)
+    elif date_filter == 'custom':
+        try:
+            s = request.GET.get('start_date', '')
+            e = request.GET.get('end_date', '')
+            if s: start_date = datetime.strptime(s, "%Y-%m-%d").date()
+            if e: end_date = datetime.strptime(e, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    # Base querysets (filtered)
+    leads_qs = Lead.objects.all()
+    calls_qs = CallLog.objects.all()
+    followups_qs = FollowUp.objects.all()
+
+    if start_date:
+        leads_qs = leads_qs.filter(created_at__date__gte=start_date)
+        calls_qs = calls_qs.filter(call_date__date__gte=start_date)
+        followups_qs = followups_qs.filter(followup_date__gte=start_date)
+    if end_date and date_filter not in ('all', ''):
+        leads_qs = leads_qs.filter(created_at__date__lte=end_date)
+        calls_qs = calls_qs.filter(call_date__date__lte=end_date)
+        followups_qs = followups_qs.filter(followup_date__lte=end_date)
+
+    # Global statistics
+    total_leads = leads_qs.count()
+    assigned_leads = leads_qs.filter(assigned_telecaller__isnull=False).count()
+    contacted_leads = leads_qs.filter(status='Contacted').count()
+    interested_leads = leads_qs.filter(status='Interested').count()
+    qualified_leads = leads_qs.filter(status='Qualified').count()
+    rejected_leads = leads_qs.filter(status='Rejected').count()
     today_calls = CallLog.objects.filter(call_date__date=today).count()
     pending_followups = FollowUp.objects.filter(status='Pending').count()
     overdue_followups = FollowUp.objects.filter(status='Pending', followup_date__lt=today).count()
 
-    # Call Outcomes
+    # Call Outcomes (unfiltered — always show totals)
     call_outcomes = {
         'accepted': Inquiry.objects.filter(call_status='ACCEPTED').count(),
         'busy': Inquiry.objects.filter(call_status='BUSY').count(),
@@ -117,10 +160,13 @@ def management_super_admin_dashboard(request):
     }
 
     # Tables
-    recent_leads = Lead.objects.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
+    recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
     recent_activities = LeadActivity.objects.all().order_by('-created_at')[:5]
     today_followups_list = FollowUp.objects.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
     overdue_followups_list = FollowUp.objects.filter(status='Pending', followup_date__lt=today).order_by('followup_date')[:5]
+
+    # Export history from session
+    export_history = request.session.get('export_history', [])
 
     context = {
         'total_leads': total_leads,
@@ -138,6 +184,9 @@ def management_super_admin_dashboard(request):
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
         'overdue_followups_list': overdue_followups_list,
+        'export_history': export_history,
+        'date_filter': date_filter,
+        'saved_view': request.GET.get('view', ''),
     }
     return render(request, 'management/admin_dashboard.html', context)
 
@@ -2629,3 +2678,466 @@ def admission_report(request):
         'by_counselor': by_counselor,
         'by_course': by_course,
     })
+
+
+# ============================================================
+# PHASE 2 ENTERPRISE ENHANCEMENT VIEWS
+# ============================================================
+
+def _get_date_range(request):
+    """Helper: parse date_filter from request.GET and return (start_date, end_date)."""
+    today = date.today()
+    date_filter = request.GET.get('date_filter', 'this_month')
+    start_date, end_date = None, today
+
+    if date_filter == 'today':
+        start_date = today
+    elif date_filter == 'yesterday':
+        start_date = today - timedelta(days=1)
+        end_date = today - timedelta(days=1)
+    elif date_filter == 'this_week':
+        start_date = today - timedelta(days=today.weekday())
+    elif date_filter == 'this_month':
+        start_date = today.replace(day=1)
+    elif date_filter == 'this_quarter':
+        quarter_start_month = ((today.month - 1) // 3) * 3 + 1
+        start_date = today.replace(month=quarter_start_month, day=1)
+    elif date_filter == 'this_year':
+        start_date = today.replace(month=1, day=1)
+    elif date_filter == 'custom':
+        try:
+            s = request.GET.get('start_date', '')
+            e = request.GET.get('end_date', '')
+            if s: start_date = datetime.strptime(s, "%Y-%m-%d").date()
+            if e: end_date = datetime.strptime(e, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+    else:
+        start_date = today.replace(day=1)  # default to this_month
+
+    PERIOD_LABELS = {
+        'today': 'Today',
+        'yesterday': 'Yesterday',
+        'this_week': 'This Week',
+        'this_month': 'This Month',
+        'this_quarter': 'This Quarter',
+        'this_year': 'This Year',
+        'custom': 'Custom Range',
+    }
+    period_label = PERIOD_LABELS.get(date_filter, 'This Month')
+    return start_date, end_date, date_filter, period_label
+
+
+def _compute_telecaller_board(start_date, end_date, date_filter):
+    """Compute leaderboard data for all telecallers."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
+    board = []
+    for tc in telecallers:
+        inq_qs = Inquiry.objects.filter(created_by=tc)
+        leads_qs = Lead.objects.filter(assigned_telecaller=tc)
+        calls_qs = CallLog.objects.filter(created_by=tc)
+        followups_qs = FollowUp.objects.filter(created_by=tc)
+        if start_date:
+            inq_qs = inq_qs.filter(created_at__date__gte=start_date)
+            leads_qs = leads_qs.filter(created_at__date__gte=start_date)
+            calls_qs = calls_qs.filter(call_date__date__gte=start_date)
+            followups_qs = followups_qs.filter(followup_date__gte=start_date)
+        if end_date and date_filter not in ('all', ''):
+            inq_qs = inq_qs.filter(created_at__date__lte=end_date)
+            leads_qs = leads_qs.filter(created_at__date__lte=end_date)
+            calls_qs = calls_qs.filter(call_date__date__lte=end_date)
+            followups_qs = followups_qs.filter(followup_date__lte=end_date)
+
+        total_inquiries = inq_qs.count()
+        total_leads = leads_qs.count()
+        calls_made = calls_qs.count()
+        followups_completed = followups_qs.filter(status='Completed').count()
+        qualified_leads = leads_qs.filter(status='Qualified').count()
+        rejected_leads = leads_qs.filter(status='Rejected').count()
+        pending_followups = followups_qs.filter(status='Pending').count()
+        conversion_pct = round((qualified_leads / total_leads * 100), 2) if total_leads > 0 else 0.0
+        # Weighted performance score
+        score = (total_inquiries * 1.0 + calls_made * 0.5 + followups_completed * 2.0 + qualified_leads * 5.0)
+        board.append({
+            'telecaller': tc.username,
+            'total_inquiries': total_inquiries,
+            'total_leads': total_leads,
+            'calls_made': calls_made,
+            'followups_completed': followups_completed,
+            'qualified_leads': qualified_leads,
+            'rejected_leads': rejected_leads,
+            'pending_followups': pending_followups,
+            'conversion_pct': conversion_pct,
+            'score': score,
+        })
+    return sorted(board, key=lambda x: x['score'], reverse=True)
+
+
+def _compute_counselor_board(start_date, end_date, date_filter):
+    """Compute leaderboard data for all counselors."""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    counselors = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
+    board = []
+    for c in counselors:
+        leads_qs = Lead.objects.filter(assigned_counselor=c)
+        sessions_qs = CounselingSession.objects.filter(counselor=c)
+        followups_qs = FollowUp.objects.filter(lead__assigned_counselor=c)
+        admissions_qs = AdmissionSheet.objects.filter(counselor=c)
+        visits_qs = VisitSheet.objects.filter(counselor=c)
+        if start_date:
+            sessions_qs = sessions_qs.filter(session_date__date__gte=start_date)
+            admissions_qs = admissions_qs.filter(admission_date__gte=start_date)
+            visits_qs = visits_qs.filter(visit_date__gte=start_date)
+        if end_date and date_filter not in ('all', ''):
+            sessions_qs = sessions_qs.filter(session_date__date__lte=end_date)
+            admissions_qs = admissions_qs.filter(admission_date__lte=end_date)
+            visits_qs = visits_qs.filter(visit_date__lte=end_date)
+
+        total_leads = leads_qs.count()
+        sessions = sessions_qs.count()
+        followups_completed = followups_qs.filter(status='Completed').count()
+        admissions = admissions_qs.filter(admission_status='CONFIRMED').count()
+        visits = visits_qs.count()
+        conversion_pct = round((admissions / total_leads * 100), 2) if total_leads > 0 else 0.0
+        score = (sessions * 3.0 + admissions * 10.0 + followups_completed * 2.0)
+        board.append({
+            'counselor': c.username,
+            'total_leads': total_leads,
+            'sessions': sessions,
+            'followups_completed': followups_completed,
+            'admissions': admissions,
+            'visits': visits,
+            'conversion_pct': conversion_pct,
+            'score': score,
+        })
+    return sorted(board, key=lambda x: x['score'], reverse=True)
+
+
+@login_required
+def leaderboard(request):
+    """Enterprise leaderboard for Telecallers and Counselors."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden("Access Denied: Admin only.")
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    telecaller_board = _compute_telecaller_board(start_date, end_date, date_filter)
+    counselor_board = _compute_counselor_board(start_date, end_date, date_filter)
+
+    # Search filter
+    q = request.GET.get('q', '').strip().lower()
+    if q:
+        telecaller_board = [x for x in telecaller_board if q in x['telecaller'].lower()]
+        counselor_board = [x for x in counselor_board if q in x['counselor'].lower()]
+
+    # Pagination
+    from django.core.paginator import Paginator
+    tc_page = Paginator(telecaller_board, 10).get_page(request.GET.get('t_page'))
+    c_page = Paginator(counselor_board, 10).get_page(request.GET.get('c_page'))
+
+    return render(request, 'management/leaderboard.html', {
+        'telecaller_board': tc_page,
+        'counselor_board': c_page,
+        'date_filter': date_filter,
+        'period_label': period_label,
+        'q': q,
+    })
+
+
+@login_required
+def user_performance(request):
+    """User Performance Center with per-user metrics and department comparison."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden("Access Denied: Admin only.")
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    telecaller_report_data = _compute_telecaller_board(start_date, end_date, date_filter)
+    counselor_report_data = _compute_counselor_board(start_date, end_date, date_filter)
+
+    avg_telecaller_score = sum(r['score'] for r in telecaller_report_data) / len(telecaller_report_data) if telecaller_report_data else 0
+    avg_counselor_score = sum(r['score'] for r in counselor_report_data) / len(counselor_report_data) if counselor_report_data else 0
+
+    # Search filter
+    q = request.GET.get('q', '').strip().lower()
+    if q:
+        telecaller_report_data = [x for x in telecaller_report_data if q in x['telecaller'].lower()]
+        counselor_report_data = [x for x in counselor_report_data if q in x['counselor'].lower()]
+
+    # Pagination
+    from django.core.paginator import Paginator
+    tc_page = Paginator(telecaller_report_data, 10).get_page(request.GET.get('t_page'))
+    c_page = Paginator(counselor_report_data, 10).get_page(request.GET.get('c_page'))
+
+    return render(request, 'management/user_performance.html', {
+        'telecaller_report': tc_page,
+        'counselor_report': c_page,
+        'total_telecallers': len(telecaller_report_data),
+        'total_counselors': len(counselor_report_data),
+        'avg_telecaller_score': avg_telecaller_score,
+        'avg_counselor_score': avg_counselor_score,
+        'date_filter': date_filter,
+        'period_label': period_label,
+    })
+
+
+@login_required
+def executive_reports(request):
+    """Executive Reports Dashboard — high-level business KPIs."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden("Access Denied: Admin only.")
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    today = date.today()
+
+    # Base querysets
+    inq_qs = Inquiry.objects.all()
+    leads_qs = Lead.objects.all()
+    calls_qs = CallLog.objects.all()
+    admissions_qs = AdmissionSheet.objects.filter(admission_status='CONFIRMED')
+
+    if start_date:
+        inq_qs = inq_qs.filter(created_at__date__gte=start_date)
+        leads_qs = leads_qs.filter(created_at__date__gte=start_date)
+        calls_qs = calls_qs.filter(call_date__date__gte=start_date)
+        admissions_qs = admissions_qs.filter(admission_date__gte=start_date)
+    if end_date and date_filter not in ('all', ''):
+        inq_qs = inq_qs.filter(created_at__date__lte=end_date)
+        leads_qs = leads_qs.filter(created_at__date__lte=end_date)
+        calls_qs = calls_qs.filter(call_date__date__lte=end_date)
+        admissions_qs = admissions_qs.filter(admission_date__lte=end_date)
+
+    total_inquiries = inq_qs.count()
+    total_leads = leads_qs.count()
+    total_calls = calls_qs.count()
+    total_admissions = admissions_qs.count()
+    total_overdue = FollowUp.objects.filter(status='Pending', followup_date__lt=today).count()
+    conversion_rate = round(total_admissions / total_leads * 100, 2) if total_leads > 0 else 0
+
+    # Pipeline funnel
+    pipeline = [
+        {'label': 'Total Leads', 'count': total_leads, 'color': '#5b5fef'},
+        {'label': 'Contacted', 'count': leads_qs.filter(status='Contacted').count(), 'color': '#38bdf8'},
+        {'label': 'Interested', 'count': leads_qs.filter(status='Interested').count(), 'color': '#818cf8'},
+        {'label': 'Qualified', 'count': leads_qs.filter(status='Qualified').count(), 'color': '#34d399'},
+        {'label': 'Admissions', 'count': total_admissions, 'color': '#10b981'},
+    ]
+
+    # Source distribution
+    source_distribution = inq_qs.values('source').annotate(count=Count('id')).order_by('-count')[:8]
+
+    # Call status breakdown
+    call_breakdown = [
+        {'label': 'Accepted', 'count': inq_qs.filter(call_status='ACCEPTED').count()},
+        {'label': 'Busy', 'count': inq_qs.filter(call_status='BUSY').count()},
+        {'label': 'Call Back', 'count': inq_qs.filter(call_status='CALL_BACK').count()},
+        {'label': 'Interested', 'count': inq_qs.filter(call_status='INTERESTED').count()},
+        {'label': 'Not Interested', 'count': inq_qs.filter(call_status='NOT_INTERESTED').count()},
+        {'label': 'No Answer', 'count': inq_qs.filter(call_status='NO_ANSWER').count()},
+    ]
+
+    top_telecallers = _compute_telecaller_board(start_date, end_date, date_filter)[:5]
+    top_counselors = _compute_counselor_board(start_date, end_date, date_filter)[:5]
+
+    return render(request, 'management/executive_reports.html', {
+        'total_inquiries': total_inquiries,
+        'total_leads': total_leads,
+        'total_calls': total_calls,
+        'total_admissions': total_admissions,
+        'total_overdue': total_overdue,
+        'conversion_rate': conversion_rate,
+        'pipeline': pipeline,
+        'source_distribution': source_distribution,
+        'call_breakdown': call_breakdown,
+        'top_telecallers': top_telecallers,
+        'top_counselors': top_counselors,
+        'date_filter': date_filter,
+        'period_label': period_label,
+    })
+
+
+@login_required
+def global_search(request):
+    """Global search returning JSON results for the omnibar."""
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Unauthorized'}, status=401)
+    q = request.GET.get('q', '').strip()
+    if not q or len(q) < 2:
+        return JsonResponse({'inquiries': [], 'leads': [], 'admissions': []})
+
+    # Scope: admins see all, others see their own
+    if request.user.role == 'admin':
+        inquiries = Inquiry.objects.filter(Q(full_name__icontains=q) | Q(mobile_number__icontains=q) | Q(email__icontains=q))[:6]
+        leads = Lead.objects.filter(Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)).select_related('inquiry')[:6]
+        admissions = AdmissionSheet.objects.filter(Q(student_name__icontains=q) | Q(mobile_number__icontains=q) | Q(admission_number__icontains=q))[:4]
+    elif request.user.role == 'telecaller':
+        inquiries = Inquiry.objects.filter(created_by=request.user).filter(Q(full_name__icontains=q) | Q(mobile_number__icontains=q))[:6]
+        leads = Lead.objects.filter(assigned_telecaller=request.user).filter(Q(inquiry__full_name__icontains=q)).select_related('inquiry')[:6]
+        admissions = []
+    else:
+        inquiries = []
+        leads = Lead.objects.filter(assigned_counselor=request.user).filter(Q(inquiry__full_name__icontains=q)).select_related('inquiry')[:6]
+        admissions = AdmissionSheet.objects.filter(counselor=request.user).filter(Q(student_name__icontains=q))[:4]
+
+    return JsonResponse({
+        'inquiries': [{'id': i.pk, 'name': i.full_name, 'phone': i.mobile_number, 'status': i.status} for i in inquiries],
+        'leads': [{'id': l.pk, 'name': l.inquiry.full_name, 'status': l.status, 'priority': l.priority} for l in leads],
+        'admissions': [{'id': a.pk, 'name': a.student_name, 'number': a.admission_number, 'status': a.admission_status} for a in admissions],
+    })
+
+
+# ─── CSV Export Views ───────────────────────────────────────
+
+@login_required
+def export_leads_csv(request):
+    """Export leads to CSV, respecting date filter."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden()
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    qs = Lead.objects.select_related('inquiry', 'assigned_telecaller').all()
+    if start_date:
+        qs = qs.filter(created_at__date__gte=start_date)
+    if end_date and date_filter not in ('all', ''):
+        qs = qs.filter(created_at__date__lte=end_date)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="leads_{period_label.replace(" ", "_")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Lead Name', 'Mobile', 'Email', 'Status', 'Priority', 'Assigned Telecaller', 'Created At'])
+    for lead in qs:
+        writer.writerow([
+            lead.inquiry.full_name, lead.inquiry.mobile_number,
+            lead.inquiry.email or '', lead.status, lead.priority,
+            lead.assigned_telecaller.username if lead.assigned_telecaller else '',
+            lead.created_at.strftime('%Y-%m-%d %H:%M'),
+        ])
+    # Track in session
+    history = request.session.get('export_history', [])
+    history.insert(0, {'name': f'Leads — {period_label}', 'type': 'csv', 'time': datetime.now().strftime('%I:%M %p')})
+    request.session['export_history'] = history[:5]
+    return response
+
+
+@login_required
+def export_telecaller_csv(request):
+    """Export telecaller performance report to CSV."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden()
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    board = _compute_telecaller_board(start_date, end_date, date_filter)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="telecaller_performance_{period_label.replace(" ", "_")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Rank', 'Telecaller', 'Inquiries', 'Calls Made', 'Follow-ups Done', 'Qualified', 'Rejected', 'Pending F/U', 'Conversion %', 'Score'])
+    for i, row in enumerate(board, 1):
+        writer.writerow([i, row['telecaller'], row['total_inquiries'], row['calls_made'], row['followups_completed'],
+                         row['qualified_leads'], row['rejected_leads'], row['pending_followups'],
+                         f"{row['conversion_pct']}%", f"{row['score']:.1f}"])
+    history = request.session.get('export_history', [])
+    history.insert(0, {'name': f'Telecaller Report — {period_label}', 'type': 'csv', 'time': datetime.now().strftime('%I:%M %p')})
+    request.session['export_history'] = history[:5]
+    return response
+
+
+@login_required
+def export_counselor_csv(request):
+    """Export counselor performance report to CSV."""
+    if request.user.role not in ('admin', 'counselor'):
+        return HttpResponseForbidden()
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    board = _compute_counselor_board(start_date, end_date, date_filter)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="counselor_performance_{period_label.replace(" ", "_")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Rank', 'Counselor', 'Leads Handled', 'Sessions', 'Follow-ups Done', 'Admissions', 'Conversion %', 'Visits', 'Score'])
+    for i, row in enumerate(board, 1):
+        writer.writerow([i, row['counselor'], row['total_leads'], row['sessions'], row['followups_completed'],
+                         row['admissions'], f"{row['conversion_pct']:.1f}%", row['visits'], f"{row['score']:.1f}"])
+    history = request.session.get('export_history', [])
+    history.insert(0, {'name': f'Counselor Report — {period_label}', 'type': 'csv', 'time': datetime.now().strftime('%I:%M %p')})
+    request.session['export_history'] = history[:5]
+    return response
+
+
+@login_required
+def export_leaderboard_csv(request):
+    """Export combined leaderboard to CSV."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden()
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    tc_board = _compute_telecaller_board(start_date, end_date, date_filter)
+    c_board = _compute_counselor_board(start_date, end_date, date_filter)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="leaderboard_{period_label.replace(" ", "_")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['=== TELECALLER LEADERBOARD ==='])
+    writer.writerow(['Rank', 'Telecaller', 'Inquiries', 'Calls', 'Followups', 'Qualified', 'Conversion%', 'Score'])
+    for i, row in enumerate(tc_board, 1):
+        writer.writerow([i, row['telecaller'], row['total_inquiries'], row['calls_made'], row['followups_completed'], row['qualified_leads'], f"{row['conversion_pct']}%", f"{row['score']:.1f}"])
+    writer.writerow([])
+    writer.writerow(['=== COUNSELOR LEADERBOARD ==='])
+    writer.writerow(['Rank', 'Counselor', 'Sessions', 'Admissions', 'Conversion%', 'Visits', 'Score'])
+    for i, row in enumerate(c_board, 1):
+        writer.writerow([i, row['counselor'], row['sessions'], row['admissions'], f"{row['conversion_pct']:.1f}%", row['visits'], f"{row['score']:.1f}"])
+    return response
+
+
+@login_required
+def export_user_performance_csv(request):
+    """Export user performance report to CSV."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden()
+    return export_leaderboard_csv(request)
+
+
+@login_required
+def export_executive_csv(request):
+    """Export executive summary to CSV."""
+    if request.user.role != 'admin':
+        return HttpResponseForbidden()
+
+    start_date, end_date, date_filter, period_label = _get_date_range(request)
+    today = date.today()
+
+    inq_qs = Inquiry.objects.all()
+    leads_qs = Lead.objects.all()
+    calls_qs = CallLog.objects.all()
+    admissions_qs = AdmissionSheet.objects.filter(admission_status='CONFIRMED')
+
+    if start_date:
+        inq_qs = inq_qs.filter(created_at__date__gte=start_date)
+        leads_qs = leads_qs.filter(created_at__date__gte=start_date)
+        calls_qs = calls_qs.filter(call_date__date__gte=start_date)
+        admissions_qs = admissions_qs.filter(admission_date__gte=start_date)
+    if end_date and date_filter not in ('all', ''):
+        inq_qs = inq_qs.filter(created_at__date__lte=end_date)
+        leads_qs = leads_qs.filter(created_at__date__lte=end_date)
+        calls_qs = calls_qs.filter(call_date__date__lte=end_date)
+        admissions_qs = admissions_qs.filter(admission_date__lte=end_date)
+
+    total_leads = leads_qs.count()
+    total_admissions = admissions_qs.count()
+    conversion_rate = round(total_admissions / total_leads * 100, 2) if total_leads > 0 else 0
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="executive_summary_{period_label.replace(" ", "_")}.csv"'
+    writer = csv.writer(response)
+    writer.writerow([f'Executive Summary — {period_label}'])
+    writer.writerow([])
+    writer.writerow(['Metric', 'Value'])
+    writer.writerow(['Total Inquiries', inq_qs.count()])
+    writer.writerow(['Total Leads', total_leads])
+    writer.writerow(['Total Calls', calls_qs.count()])
+    writer.writerow(['Confirmed Admissions', total_admissions])
+    writer.writerow(['Overall Conversion Rate', f'{conversion_rate}%'])
+    writer.writerow(['Overdue Follow-ups', FollowUp.objects.filter(status='Pending', followup_date__lt=today).count()])
+    return response
+

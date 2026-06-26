@@ -1,15 +1,60 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from .forms import AdminSignupForm, FeedbackForm
+from .forms import (
+    AdminSignupForm,
+    CenterEditForm,
+    CenterSignupForm,
+    FeedbackForm,
+    StudentEditForm,
+    StudentSignupForm,
+    SuperAdminUserCreationForm,
+    TeacherEditForm,
+    TeacherSignupForm,
+)
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages  
+from django.http import HttpResponseForbidden
+from functools import wraps
 
 from django.core.paginator import Paginator
 from django.db.models import Q
 from apps.exams.models import Exam
 from apps.teachers.models import TeacherProfile
+from .auth_logging import log_auth_activity
+from .models import AuthActivityLog, User, Feedback
 
 # Create your views here.
+
+REGISTRATION_DISABLED_MESSAGE = 'Public registration is disabled. Please contact the Super Admin for credentials.'
+
+
+def registration_disabled(request):
+    log_auth_activity(
+        'REGISTRATION_BLOCKED',
+        request=request,
+        username=request.POST.get('username', ''),
+        details='Public registration endpoint was accessed.',
+    )
+    return HttpResponseForbidden(REGISTRATION_DISABLED_MESSAGE)
+
+
+def is_super_admin_user(user):
+    return user.is_authenticated and user.role == 'SUPER_ADMIN'
+
+
+def super_admin_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if is_super_admin_user(request.user):
+            return view_func(request, *args, **kwargs)
+        log_auth_activity(
+            'UNAUTHORIZED_ACCESS',
+            request=request,
+            user=request.user if request.user.is_authenticated else None,
+            details='Non-Super Admin attempted to access the Super Admin panel.',
+        )
+        return HttpResponseForbidden("Access Denied: Super Admins only.")
+    return wrapper
 
 def home(request):
     exams = Exam.objects.order_by('-date', '-id')  # fallback by id if date same
@@ -19,28 +64,12 @@ def home(request):
     return render(request, 'accounts/home.html', {'page_obj': page_obj})
 
 def signup_admin(request):
-    if request.method == 'POST':
-        form = AdminSignupForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Admin account created successfully. Please log in.')
-            return redirect('login')
-    else:
-        form = AdminSignupForm()
-    return render(request, 'accounts/signup_admin.html', {'form': form})
+    return registration_disabled(request)
 
 
 
 def signup_teacher(request):
-    if request.method == 'POST':
-        form = TeacherSignupForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Teacher account created successfully. Please log in.')
-            return redirect('login')
-    else:
-        form = TeacherSignupForm()
-    return render(request, 'accounts/signup_teacher.html', {'form': form})
+    return registration_disabled(request)
 
 # from django.db import transaction
 # # def signup_teacher(request):
@@ -79,31 +108,31 @@ def signup_teacher(request):
 
 
 def signup_student(request):
-    if request.method == 'POST':
-        form = StudentSignupForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Student account created successfully. Please log in.')
-            return redirect('login')
-    else:
-        form = StudentSignupForm()
-    return render(request, 'accounts/signup_student.html', {'form': form})
+    return registration_disabled(request)
 
 
 
 def user_login(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        username = (request.POST.get('username') or '').strip()
         password = request.POST.get('password')
 
         if not username or not password:
             messages.error(request, 'Please enter both username and password')
             return redirect('login')
 
-        user = authenticate(request, username=username, password=password)
+        auth_username = username
+        lookup_user = User.all_objects.filter(email__iexact=username).first()
+        if lookup_user:
+            auth_username = lookup_user.username
+
+        user = authenticate(request, username=auth_username, password=password)
         if user:
+            log_auth_activity('LOGIN_SUCCESS', request=request, user=user, username=username)
             login(request, user)
-            if user.role == 'admin':
+            if user.role == 'SUPER_ADMIN':
+                return redirect('superadmin_dashboard')
+            elif user.role == 'admin':
                 return redirect('admin_dashboard')
             elif user.role == 'center':
                 return redirect('center_dashboard')
@@ -120,6 +149,12 @@ def user_login(request):
             else:
                 return redirect('login')
         else:
+            log_auth_activity(
+                'LOGIN_FAILED',
+                request=request,
+                username=username,
+                details='Invalid credentials or inactive/nonexistent account.',
+            )
             messages.error(request, 'Invalid credentials')
             return redirect('login')
 
@@ -128,6 +163,7 @@ def user_login(request):
 
 @login_required
 def user_logout(request):
+    log_auth_activity('LOGOUT', request=request, user=request.user, username=request.user.username)
     logout(request)
     messages.success(request, 'You have been logged out successfully.')
     return redirect('login')
@@ -135,9 +171,6 @@ def user_logout(request):
 
 
 #to restrict views to User Admins
-
-from django.http import HttpResponseForbidden
-from functools import wraps
 
 def admin_required(view_func):
     @wraps(view_func)
@@ -152,8 +185,71 @@ def admin_required(view_func):
 # Admin Dashboard and CRUD Views 
 
 from django.shortcuts import get_object_or_404
-from .models import User, Feedback
-from .forms import AdminSignupForm, TeacherSignupForm, StudentSignupForm, StudentEditForm, TeacherEditForm, CenterSignupForm, CenterEditForm
+
+
+@login_required
+@super_admin_required
+def superadmin_dashboard(request):
+    users = User.all_objects.exclude(role='SUPER_ADMIN')
+    context = {
+        'total_users': users.count(),
+        'admin_count': users.filter(role='admin').count(),
+        'hr_count': users.filter(role='hr').count(),
+        'telecaller_count': users.filter(role='telecaller').count(),
+        'counselor_count': users.filter(role='counselor').count(),
+        'active_users': users.filter(is_active=True, is_deleted=False).count(),
+        'recent_users': users.order_by('-date_joined')[:8],
+        'recent_logs': AuthActivityLog.objects.select_related('user').order_by('-created_at')[:10],
+    }
+    return render(request, 'accounts/superadmin_dashboard.html', context)
+
+
+@login_required
+@super_admin_required
+def superadmin_user_add(request):
+    if request.method == 'POST':
+        form = SuperAdminUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            log_auth_activity(
+                'USER_CREATED',
+                request=request,
+                user=request.user,
+                username=user.username,
+                details=f"Super Admin created {user.get_role_display()} credentials for {user.username}.",
+            )
+            messages.success(request, f"{user.get_role_display()} credentials created successfully.")
+            return redirect('superadmin_dashboard')
+    else:
+        form = SuperAdminUserCreationForm()
+    return render(request, 'accounts/superadmin_user_add.html', {'form': form})
+
+
+@login_required
+@super_admin_required
+def superadmin_activity_logs(request):
+    logs = AuthActivityLog.objects.select_related('user').order_by('-created_at')
+    query = request.GET.get('q', '').strip()
+    event = request.GET.get('event', '').strip()
+
+    if query:
+        logs = logs.filter(
+            Q(username__icontains=query) |
+            Q(details__icontains=query) |
+            Q(path__icontains=query) |
+            Q(ip_address__icontains=query)
+        )
+    if event:
+        logs = logs.filter(event_type=event)
+
+    paginator = Paginator(logs, 25)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'accounts/superadmin_activity_logs.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'event': event,
+        'event_choices': AuthActivityLog.EVENT_CHOICES,
+    })
 
 @admin_required
 def admin_dashboard(request):

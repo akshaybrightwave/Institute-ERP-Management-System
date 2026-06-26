@@ -1,0 +1,39 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}Notifications | Super Admin{% endblock %}
+{% block crumb %}Notifications{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Notification Center</h1>
+    <p class="text-muted mb-0">Read/unread alerts, system events, export updates, password resets, and overdue follow-ups.</p>
+  </div>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="mark_all_read"><button class="btn btn-primary">Mark All Read</button></form>
+</div>
+
+<div class="sa-card p-3">
+  <div class="d-flex justify-content-between mb-3">
+    <h2 class="h5 fw-bold mb-0">Unread Counter</h2>
+    <span class="badge bg-primary">{{ unread_count }} unread</span>
+  </div>
+  {% for note in notifications %}
+  <div class="d-flex justify-content-between gap-3 border-bottom py-3">
+    <div>
+      <div class="fw-semibold">{% if not note.is_read %}<span class="badge bg-success me-2">Unread</span>{% endif %}{{ note.title }}</div>
+      <div class="small text-muted">{{ note.message }}</div>
+      <div class="small text-muted">{{ note.get_notification_type_display }} - {{ note.created_at|date:"d M Y H:i" }}</div>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="notification_id" value="{{ note.id }}">
+      <button class="btn btn-sm btn-outline-danger">Delete</button>
+    </form>
+  </div>
+  {% empty %}
+  <div class="empty-state"><i class="bi bi-bell"></i><p class="mb-0 mt-2">No notifications yet.</p></div>
+  {% endfor %}
+  {% include 'accounts/superadmin_pagination.html' with page_obj=notifications %}
+</div>
+{% endblock %}

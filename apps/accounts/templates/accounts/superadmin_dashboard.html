@@ -1,0 +1,189 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}Enterprise Super Admin Dashboard{% endblock %}
+{% block crumb %}Dashboard{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Executive Overview</h1>
+    <p class="text-muted mb-0">Enterprise analytics across HR, Counsellor, and Telecaller performance.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'superadmin_reports' %}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-bar-graph me-1"></i>Generate Report</a>
+    <a href="{% url 'superadmin_exports' %}?download=executive-summary" class="btn btn-primary"><i class="bi bi-download me-1"></i>Export Report</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for item in kpis %}
+  <div class="col-sm-6 col-xl-4 col-xxl-3">
+    <a class="sa-card sa-kpi" href="{{ item.url }}">
+      <div class="d-flex align-items-start justify-content-between gap-3">
+        <div>
+          <div class="sa-stat-label">{{ item.title }}</div>
+          <div class="sa-stat-value mt-2">{{ item.value }}</div>
+        </div>
+        <div class="sa-stat-icon"><i class="bi {{ item.icon }}"></i></div>
+      </div>
+      <div class="sa-trend mt-3">
+        {% if item.trend == 'up' %}
+          <span class="sa-trend-up"><i class="bi bi-arrow-up-right"></i> {{ item.growth }}%</span>
+        {% elif item.trend == 'down' %}
+          <span class="sa-trend-down"><i class="bi bi-arrow-down-right"></i> {{ item.growth }}%</span>
+        {% else %}
+          <span><i class="bi bi-dash-lg"></i> {{ item.growth }}%</span>
+        {% endif %}
+        <span class="ms-1">vs previous: {{ item.previous }}</span>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4 mb-4">
+  {% for summary in department_summaries %}
+  <div class="col-lg-4">
+    <a class="sa-card p-4 h-100 d-block text-decoration-none text-reset" href="{{ summary.url }}">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="h5 fw-bold mb-0">{{ summary.title }}</h2>
+        <div class="sa-stat-icon"><i class="bi {{ summary.icon }}"></i></div>
+      </div>
+      {% for label, value in summary.metrics %}
+      <div class="d-flex justify-content-between border-bottom py-2 small">
+        <span class="text-muted">{{ label }}</span>
+        <strong>{{ value }}</strong>
+      </div>
+      {% endfor %}
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-xl-5">
+    <div class="sa-card p-4 h-100">
+      <h2 class="h5 fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Business Growth</h2>
+      {% for item in growth_cards %}
+      <div class="border rounded-3 p-3 mb-2">
+        <div class="d-flex justify-content-between">
+          <span class="fw-semibold">{{ item.label }}</span>
+          <strong>{{ item.value }}</strong>
+        </div>
+        <div class="small text-muted">{{ item.detail }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-xl-7">
+    <div class="sa-card p-4 h-100">
+      <h2 class="h5 fw-bold mb-3"><i class="bi bi-bar-chart text-primary me-2"></i>Department Comparison</h2>
+      {% for item in department_comparison %}
+      <div class="mb-3">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="fw-semibold">{{ item.department }}</span>
+          <span class="small text-muted">Score {{ item.performance_score }}%</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+          <div class="progress-bar" style="width: {{ item.performance_score }}%"></div>
+        </div>
+        <div class="small text-muted mt-1">Activities {{ item.activities }} - Conversions {{ item.conversions }} - Productivity {{ item.productivity }}%</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="sa-card p-3 h-100">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="h5 fw-bold mb-0"><i class="bi bi-activity text-primary me-2"></i>Recent Activities</h2>
+        <a href="{% url 'superadmin_activity_logs' %}" class="btn btn-sm btn-outline-primary">View Logs</a>
+      </div>
+      {% if recent_logs or recent_lead_activity or recent_candidate_activity %}
+        {% for log in recent_logs %}
+        <div class="border-bottom py-2">
+          <div class="d-flex justify-content-between gap-3">
+            <span class="fw-semibold">{{ log.get_event_type_display }}</span>
+            <span class="text-muted small">{{ log.created_at|date:"d M, H:i" }}</span>
+          </div>
+          <div class="small text-muted">{{ log.username|default:"anonymous" }}{% if log.details %} - {{ log.details }}{% endif %}</div>
+        </div>
+        {% endfor %}
+        {% for act in recent_lead_activity %}
+        <div class="border-bottom py-2">
+          <div class="d-flex justify-content-between gap-3">
+            <span class="fw-semibold">{{ act.get_activity_type_display }}</span>
+            <span class="text-muted small">{{ act.created_at|date:"d M, H:i" }}</span>
+          </div>
+          <div class="small text-muted">{{ act.description }}</div>
+        </div>
+        {% endfor %}
+        {% for act in recent_candidate_activity %}
+        <div class="border-bottom py-2">
+          <div class="d-flex justify-content-between gap-3">
+            <span class="fw-semibold">{{ act.title }}</span>
+            <span class="text-muted small">{{ act.created_at|date:"d M, H:i" }}</span>
+          </div>
+          <div class="small text-muted">{{ act.description|default:act.get_activity_type_display }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state"><i class="bi bi-activity"></i><p class="mb-0 mt-2">No activity has been logged yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="sa-card p-3 mb-4">
+      <h2 class="h5 fw-bold mb-3"><i class="bi bi-trophy text-primary me-2"></i>Top Performers</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="fw-semibold small text-muted mb-2">Top HR</div>
+          {% for user in top_performers.hr %}
+            <div class="d-flex justify-content-between small py-1"><span>{{ user.username }}</span><strong>{{ user.total }}</strong></div>
+          {% empty %}<div class="small text-muted">No HR data</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <div class="fw-semibold small text-muted mb-2">Top Counsellor</div>
+          {% for user in top_performers.counsellors %}
+            <div class="d-flex justify-content-between small py-1"><span>{{ user.username }}</span><strong>{{ user.total }}</strong></div>
+          {% empty %}<div class="small text-muted">No counsellor data</div>{% endfor %}
+        </div>
+        <div class="col-md-4">
+          <div class="fw-semibold small text-muted mb-2">Top Telecaller</div>
+          {% for user in top_performers.telecallers %}
+            <div class="d-flex justify-content-between small py-1"><span>{{ user.username }}</span><strong>{{ user.total }}</strong></div>
+          {% empty %}<div class="small text-muted">No telecaller data</div>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="sa-card p-3 mb-4">
+      <h2 class="h5 fw-bold mb-3"><i class="bi bi-lightning-charge text-primary me-2"></i>Quick Actions</h2>
+      <div class="d-grid gap-2">
+        <a href="{% url 'superadmin_user_add' %}" class="btn btn-primary text-start"><i class="bi bi-person-plus me-2"></i>Create User</a>
+        <a href="{% url 'superadmin_exports' %}?download=executive-report" class="btn btn-outline-primary text-start"><i class="bi bi-download me-2"></i>Export Report</a>
+        <a href="{% url 'superadmin_activity_logs' %}" class="btn btn-outline-primary text-start"><i class="bi bi-activity me-2"></i>View Logs</a>
+        <a href="{% url 'superadmin_reports' %}" class="btn btn-outline-primary text-start"><i class="bi bi-file-earmark-bar-graph me-2"></i>Generate Report</a>
+      </div>
+    </div>
+
+    <div class="sa-card p-3">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="h5 fw-bold mb-0"><i class="bi bi-bell text-primary me-2"></i>Notifications</h2>
+        <span class="badge bg-primary">{{ unread_count }} unread</span>
+      </div>
+      {% for note in notifications %}
+        <div class="border-bottom py-2">
+          <div class="fw-semibold">{{ note.title }}</div>
+          <div class="small text-muted">{{ note.message }}</div>
+        </div>
+      {% empty %}
+        <div class="empty-state py-3"><i class="bi bi-bell"></i><p class="mb-0 mt-2">No unread notifications.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

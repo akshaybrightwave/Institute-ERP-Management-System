@@ -1,0 +1,56 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}User Detail | Super Admin{% endblock %}
+{% block crumb %}User Detail{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">{{ user_obj.username }}</h1>
+    <p class="text-muted mb-0">{{ user_obj.get_role_display }} account details and activity.</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'superadmin_users' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Users</a>
+    <a href="{% url 'superadmin_user_edit' user_obj.id %}" class="btn btn-outline-primary">Edit</a>
+    <a href="{% url 'superadmin_user_reset_password' user_obj.id %}" class="btn btn-outline-primary">Reset Password</a>
+    {% if user_obj.is_active %}
+      <a href="{% url 'superadmin_user_action' user_obj.id 'deactivate' %}" class="btn btn-outline-warning">Deactivate</a>
+    {% else %}
+      <a href="{% url 'superadmin_user_action' user_obj.id 'activate' %}" class="btn btn-outline-success">Activate</a>
+    {% endif %}
+    <a href="{% url 'superadmin_user_action' user_obj.id 'block' %}" class="btn btn-outline-danger">Block</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="sa-card p-4">
+      <h2 class="h5 fw-bold mb-3">Profile</h2>
+      <dl class="row mb-0">
+        <dt class="col-5 text-muted">Email</dt><dd class="col-7">{{ user_obj.email|default:"-" }}</dd>
+        <dt class="col-5 text-muted">Role</dt><dd class="col-7">{{ user_obj.get_role_display }}</dd>
+        <dt class="col-5 text-muted">Active</dt><dd class="col-7">{{ user_obj.is_active }}</dd>
+        <dt class="col-5 text-muted">Deleted</dt><dd class="col-7">{{ user_obj.is_deleted }}</dd>
+        <dt class="col-5 text-muted">Joined</dt><dd class="col-7">{{ user_obj.date_joined|date:"d M Y H:i" }}</dd>
+        <dt class="col-5 text-muted">Last Login</dt><dd class="col-7">{{ user_obj.last_login|date:"d M Y H:i"|default:"-" }}</dd>
+      </dl>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="sa-card p-4">
+      <h2 class="h5 fw-bold mb-3">User Activity</h2>
+      {% for log in logs %}
+      <div class="border-bottom py-2">
+        <div class="d-flex justify-content-between">
+          <span class="fw-semibold">{{ log.get_event_type_display }}</span>
+          <span class="text-muted small">{{ log.created_at|date:"d M Y H:i" }}</span>
+        </div>
+        <div class="small text-muted">{{ log.details|default:log.path }}</div>
+      </div>
+      {% empty %}
+      <div class="empty-state py-3"><i class="bi bi-activity"></i><p class="mb-0 mt-2">No activity found for this user.</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

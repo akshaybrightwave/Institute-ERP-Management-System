@@ -1,0 +1,22 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}Settings | Super Admin{% endblock %}
+{% block crumb %}Settings{% endblock %}
+
+{% block superadmin_content %}
+<div class="mb-4">
+  <h1 class="h3 fw-bold mb-1">Settings</h1>
+  <p class="text-muted mb-0">General, notification, security, password, session, and profile policy review.</p>
+</div>
+
+<form method="post" class="row g-4">
+  {% csrf_token %}
+  <div class="col-lg-6"><div class="sa-card p-4"><h2 class="h5 fw-bold">General Settings</h2><input class="form-control mt-3" value="Institute ERP Management System"></div></div>
+  <div class="col-lg-6"><div class="sa-card p-4"><h2 class="h5 fw-bold">Notification Settings</h2><div class="form-check mt-3"><input class="form-check-input" type="checkbox" checked><label class="form-check-label">Enable Super Admin notifications</label></div></div></div>
+  <div class="col-lg-6"><div class="sa-card p-4"><h2 class="h5 fw-bold">Security Settings</h2><div class="form-check mt-3"><input class="form-check-input" type="checkbox" checked><label class="form-check-label">Log failed login attempts</label></div></div></div>
+  <div class="col-lg-6"><div class="sa-card p-4"><h2 class="h5 fw-bold">Password Policies</h2><input class="form-control mt-3" value="Django password validators enabled"></div></div>
+  <div class="col-lg-6"><div class="sa-card p-4"><h2 class="h5 fw-bold">Session Policies</h2><input class="form-control mt-3" value="Inactive/deleted sessions invalidated"></div></div>
+  <div class="col-lg-6"><div class="sa-card p-4"><h2 class="h5 fw-bold">Profile Settings</h2><input class="form-control mt-3" value="{{ request.user.email }}"></div></div>
+  <div class="col-12"><button class="btn btn-primary">Review Settings</button></div>
+</form>
+{% endblock %}

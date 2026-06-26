@@ -1,0 +1,32 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}Reports Center | Super Admin{% endblock %}
+{% block crumb %}Reports Center{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Reports Center</h1>
+    <p class="text-muted mb-0">HR, counsellor, telecaller, user, activity, and performance reports.</p>
+  </div>
+  <a href="?export=csv" class="btn btn-primary"><i class="bi bi-download me-1"></i>Export Reports</a>
+</div>
+
+<div class="sa-card p-3 mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-3"><label class="form-label">From</label><input type="date" name="from" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">To</label><input type="date" name="to" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label">Search</label><input type="text" name="q" class="form-control" placeholder="Report keyword"></div>
+    <div class="col-md-2 d-grid"><button class="btn btn-outline-primary">Apply Filters</button></div>
+  </form>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-4"><a class="sa-card sa-kpi" href="{% url 'superadmin_hr' %}"><div class="sa-stat-label">HR Reports</div><div class="sa-stat-value mt-2">Open</div><div class="sa-trend">Candidates, interviews, placements</div></a></div>
+  <div class="col-md-4"><a class="sa-card sa-kpi" href="{% url 'superadmin_counsellor' %}"><div class="sa-stat-label">Counsellor Reports</div><div class="sa-stat-value mt-2">Open</div><div class="sa-trend">Admissions and follow-ups</div></a></div>
+  <div class="col-md-4"><a class="sa-card sa-kpi" href="{% url 'superadmin_telecaller' %}"><div class="sa-stat-label">Telecaller Reports</div><div class="sa-stat-value mt-2">Open</div><div class="sa-trend">Calls and appointments</div></a></div>
+  <div class="col-md-4"><a class="sa-card sa-kpi" href="{% url 'superadmin_users' %}"><div class="sa-stat-label">User Reports</div><div class="sa-stat-value mt-2">{{ counts.kpis.0.value }}</div><div class="sa-trend">Role and activity status</div></a></div>
+  <div class="col-md-4"><a class="sa-card sa-kpi" href="{% url 'superadmin_activity_logs' %}"><div class="sa-stat-label">Activity Reports</div><div class="sa-stat-value mt-2">Logs</div><div class="sa-trend">Authentication and access events</div></a></div>
+  <div class="col-md-4"><a class="sa-card sa-kpi" href="{% url 'superadmin_exports' %}"><div class="sa-stat-label">Performance Reports</div><div class="sa-stat-value mt-2">Export</div><div class="sa-trend">Downloadable summaries</div></a></div>
+</div>
+{% endblock %}

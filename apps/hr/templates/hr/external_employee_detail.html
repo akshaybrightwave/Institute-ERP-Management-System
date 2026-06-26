@@ -93,6 +93,8 @@
         <div class="col-md-4"><div class="small text-secondary mb-1">Joining Date</div><div class="fw-semibold">{{ employee.joining_date }}</div></div>
         <div class="col-md-4"><div class="small text-secondary mb-1">Employment Type</div><div class="fw-semibold">{{ employee.employment_type }}</div></div>
         <div class="col-md-4"><div class="small text-secondary mb-1">Reporting Manager</div><div class="fw-semibold">{{ employee.reporting_manager|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Login Time</div><div class="fw-semibold">{{ employee.scheduled_login_time|time:"h:i A"|default:"--" }}</div></div>
+        <div class="col-md-4"><div class="small text-secondary mb-1">Logout Time</div><div class="fw-semibold">{{ employee.scheduled_logout_time|time:"h:i A"|default:"--" }}</div></div>
       </div>
     </section>
 

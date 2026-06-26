@@ -1,4 +1,6 @@
 from django.http import HttpResponseForbidden
+from django.contrib.auth import logout
+from apps.accounts.auth_logging import log_auth_activity
 
 class PortalAccessMiddleware:
     def __init__(self, get_response):
@@ -7,6 +9,17 @@ class PortalAccessMiddleware:
     def __call__(self, request):
         if not request.user.is_authenticated:
             return self.get_response(request)
+
+        if not request.user.is_active or getattr(request.user, 'is_deleted', False):
+            log_auth_activity(
+                'SESSION_INVALID',
+                request=request,
+                user=request.user,
+                username=request.user.username,
+                details='Authenticated session belonged to an inactive or deleted account.',
+            )
+            logout(request)
+            return HttpResponseForbidden("Access Denied: Your account session is no longer valid.")
 
         role = request.user.role
         path = request.path

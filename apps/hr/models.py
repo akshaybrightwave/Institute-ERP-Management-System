@@ -717,6 +717,8 @@ class ExternalEmployee(models.Model):
     employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPE_CHOICES, default='full_time')
     reporting_manager = models.CharField(max_length=160, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    scheduled_login_time = models.TimeField(null=True, blank=True)
+    scheduled_logout_time = models.TimeField(null=True, blank=True)
     dob = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
     address = models.TextField(blank=True)

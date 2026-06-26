@@ -1,6 +1,9 @@
 from django import forms 
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.password_validation import validate_password
 from .models import Feedback, User
+
+SUPER_ADMIN_MANAGED_ROLES = ('admin', 'hr', 'telecaller', 'counselor')
 
 class AdminSignupForm(UserCreationForm):
     class Meta:
@@ -19,6 +22,103 @@ class AdminSignupForm(UserCreationForm):
         if commit:
             user.save()
         return user
+
+
+class SuperAdminUserCreationForm(UserCreationForm):
+    role = forms.ChoiceField(
+        choices=tuple(choice for choice in User.ROLE_CHOICES if choice[0] in SUPER_ADMIN_MANAGED_ROLES),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'role', 'password1', 'password2']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
+            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        if User.all_objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError('An account with this username already exists.')
+        return username
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if email and User.all_objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = self.cleaned_data['role']
+        user.is_active = True
+        if commit:
+            user.save()
+        return user
+
+
+class SuperAdminUserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'first_name', 'last_name', 'role', 'is_active']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'role': forms.Select(attrs={'class': 'form-select'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['role'].choices = tuple(
+            choice for choice in User.ROLE_CHOICES if choice[0] != 'SUPER_ADMIN'
+        )
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        qs = User.all_objects.filter(username__iexact=username)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError('An account with this username already exists.')
+        return username
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if email:
+            qs = User.all_objects.filter(email__iexact=email)
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError('An account with this email already exists.')
+        return email
+
+
+class SuperAdminPasswordResetForm(forms.Form):
+    password1 = forms.CharField(
+        label='New Password',
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+    password2 = forms.CharField(
+        label='Confirm Password',
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get('password1')
+        password2 = cleaned_data.get('password2')
+        if password1:
+            validate_password(password1)
+        if password1 and password2 and password1 != password2:
+            self.add_error('password2', 'Passwords do not match.')
+        return cleaned_data
 
 # class TeacherSignupForm(UserCreationForm):
 #     class Meta:

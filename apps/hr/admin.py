@@ -50,7 +50,7 @@ admin.site.register(CandidateActivity)
 
 @admin.register(ExternalEmployee)
 class ExternalEmployeeAdmin(admin.ModelAdmin):
-    list_display = ('employee_id', 'full_name', 'branch', 'department', 'designation', 'user', 'status')
+    list_display = ('employee_id', 'full_name', 'branch', 'department', 'designation', 'scheduled_login_time', 'scheduled_logout_time', 'user', 'status')
     list_filter = ('branch', 'status', 'department')
     search_fields = ('employee_id', 'full_name', 'email', 'mobile', 'user__username')
 

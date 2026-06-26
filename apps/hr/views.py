@@ -22,6 +22,7 @@ except ImportError:
     pisa = None
 
 from apps.accounts.models import User
+from apps.accounts.auth_logging import log_auth_activity
 from .forms import (
     CandidateBasicForm,
     CandidateDocumentsForm,
@@ -68,7 +69,7 @@ from .models import (
     ProjectEmployeeAssignment,
     ProjectInterview,
 )
-from .attendance_automation import employee_for_user
+from .attendance_automation import attendance_values, employee_for_user
 
 EXTERNAL_BRANCHES = {
     'thane': {'slug': 'thane', 'name': 'Dcodetech Thane'},
@@ -87,20 +88,13 @@ def hr_required(view_func):
 
 
 def signup_hr(request):
-    if request.method == 'POST':
-        form = HRSignupForm(request.POST)
-        if form.is_valid():
-            try:
-                form.save()
-            except ValidationError:
-                messages.error(request, 'Please correct the highlighted signup details.')
-            else:
-                messages.success(request, 'HR account created successfully. Please log in.')
-                return redirect('login')
-    else:
-        form = HRSignupForm()
-
-    return render(request, 'hr/signup.html', {'form': form})
+    log_auth_activity(
+        'REGISTRATION_BLOCKED',
+        request=request,
+        username=request.POST.get('username', ''),
+        details='Public HR registration endpoint was accessed.',
+    )
+    return HttpResponseForbidden('Public registration is disabled. Please contact the Super Admin for credentials.')
 
 
 def add_activity(candidate, activity_type, title, request=None, description=''):
@@ -1059,9 +1053,14 @@ def project_dashboard(request):
     companies = hr_scope(ProjectCompany.objects.all(), request)
     drives = hr_scope(ProjectDrive.objects.select_related('company'), request)[:6]
     assignments = hr_scope(ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive'), request)
+    assignment_status_counts = {
+        item['final_status']: item['total']
+        for item in assignments.values('final_status').annotate(total=Count('id'))
+    }
     status_counts = {key: hr_scope(ProjectDrive.objects.filter(status=key), request).count() for key, _ in ProjectDrive.STATUS_CHOICES}
     total_drives = max(sum(status_counts.values()), 1)
     top_companies = sorted(companies, key=lambda c: c.allocated_count, reverse=True)[:5]
+    employee_list_url = reverse('hr:project_employee_list')
     context = {
         'recent_drives': drives,
         'top_companies': top_companies,
@@ -1070,12 +1069,14 @@ def project_dashboard(request):
         'activities': hr_scope(ProjectActivity.objects.all(), request)[:6],
         'upcoming_interviews': hr_scope(ProjectInterview.objects.select_related('company', 'drive', 'assignment'), request)[:5],
         'metrics': [
-            {'label': 'Total Companies', 'icon': 'bi-buildings-fill', 'color': 'violet', 'value': companies.count(), 'trend': '+2 this month', 'spark': [22, 55, 70]},
-            {'label': 'Total Drives', 'icon': 'bi-megaphone-fill', 'color': 'emerald', 'value': hr_scope(ProjectDrive.objects.all(), request).count(), 'trend': '+1 this month', 'spark': [30, 45, 68]},
-            {'label': 'Employees Assigned', 'icon': 'bi-people-fill', 'color': 'blue', 'value': assignments.count(), 'trend': '+8 this month', 'spark': [18, 55, 86]},
-            {'label': 'Employees Allocated', 'icon': 'bi-person-check-fill', 'color': 'teal', 'value': assignments.filter(final_status='allocated').count(), 'trend': '+4 this month', 'spark': [18, 42, 64]},
-            {'label': 'Employees Released', 'icon': 'bi-person-x-fill', 'color': 'red', 'value': assignments.filter(final_status='released').count(), 'trend': '+1 this month', 'spark': [12, 35, 40]},
-            {'label': 'Pending', 'icon': 'bi-hourglass-split', 'color': 'amber', 'value': assignments.filter(final_status='pending').count(), 'trend': '+2 this month', 'spark': [20, 58, 78]},
+            {'label': 'Total Companies', 'icon': 'bi-buildings-fill', 'color': 'violet', 'value': companies.count(), 'url': reverse('hr:project_company_list')},
+            {'label': 'Total Drives', 'icon': 'bi-megaphone-fill', 'color': 'emerald', 'value': hr_scope(ProjectDrive.objects.all(), request).count(), 'url': reverse('hr:project_drive_list')},
+            {'label': 'Employees Assigned', 'icon': 'bi-people-fill', 'color': 'blue', 'value': assignments.count(), 'url': employee_list_url},
+            {'label': 'Employees Selected', 'icon': 'bi-person-check', 'color': 'green', 'value': assignment_status_counts.get('selected', 0), 'url': f'{employee_list_url}?status=selected'},
+            {'label': 'Employees Rejected', 'icon': 'bi-person-x', 'color': 'crimson', 'value': assignment_status_counts.get('rejected', 0), 'url': f'{employee_list_url}?status=rejected'},
+            {'label': 'Employees Allocated', 'icon': 'bi-person-check-fill', 'color': 'teal', 'value': assignment_status_counts.get('allocated', 0), 'url': f'{employee_list_url}?status=allocated'},
+            {'label': 'Employees Released', 'icon': 'bi-person-x-fill', 'color': 'red', 'value': assignment_status_counts.get('released', 0), 'url': f'{employee_list_url}?status=released'},
+            {'label': 'Pending', 'icon': 'bi-hourglass-split', 'color': 'amber', 'value': assignment_status_counts.get('pending', 0), 'url': f'{employee_list_url}?status=pending'},
         ],
         'pipeline': {
             'scheduled': hr_scope(ProjectDrive.objects.exclude(status='cancelled'), request).count(),
@@ -1565,10 +1566,11 @@ def external_attendance_dashboard(request, branch_slug='thane'):
 @hr_required
 def external_attendance_create(request, branch_slug):
     branch = EXTERNAL_BRANCHES.get(branch_slug, EXTERNAL_BRANCHES['thane'])
-    form = ExternalAttendanceForm(request.POST or None, branch_slug=branch_slug)
+    form = ExternalAttendanceForm(request.POST or None, branch=branch_slug)
     if request.method == 'POST' and form.is_valid():
         log = form.save(commit=False)
         log.marked_by = request.user
+        log.working_hours, log.late_minutes = attendance_values(log.check_in, log.check_out, log.employee)
         log.save()
         messages.success(request, 'Attendance logged.')
         return redirect('hr:external_attendance', branch_slug=branch_slug)
@@ -1619,7 +1621,9 @@ def external_attendance_quick_update(request, branch_slug):
                         else:
                             log.check_out = None
                         update_fields.append('check_out')
-                        
+
+                    log.working_hours, log.late_minutes = attendance_values(log.check_in, log.check_out, emp)
+                    update_fields.extend(['working_hours', 'late_minutes'])
                     log.marked_by = request.user
                     log.save(update_fields=update_fields)
                     
@@ -1643,18 +1647,19 @@ def export_external_attendance(request, branch_slug):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="attendance-{branch_slug}.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Employee', 'ID', 'Date', 'Status', 'Check In', 'Check Out', 'Working Hours', 'Late Minutes'])
+    writer.writerow(['Employee', 'ID', 'Date', 'Login Time', 'Logout Time', 'Working Hours', 'Late', 'Status', 'Remarks'])
     base_employees = hr_scope(ExternalEmployee.objects.filter(branch=branch_slug), request)
     for log in ExternalAttendanceLog.objects.filter(employee__in=base_employees).select_related('employee').order_by('-date'):
         writer.writerow([
             log.employee.full_name,
             log.employee.employee_id,
-            log.date,
+            log.date.strftime('%d %b %Y') if log.date else '',
+            log.check_in.strftime('%I:%M %p') if log.check_in else '',
+            log.check_out.strftime('%I:%M %p') if log.check_out else '',
+            log.working_hours_display,
+            f'{log.late_minutes} min',
             log.get_status_display(),
-            log.check_in or '',
-            log.check_out or '',
-            log.working_hours or '',
-            log.late_minutes,
+            log.notes or '',
         ])
     return response
 

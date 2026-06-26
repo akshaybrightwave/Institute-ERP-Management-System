@@ -1132,6 +1132,29 @@
       <i class="bi bi-graph-up-arrow"></i> Counselor Reports
     </a>
     {% endif %}
+
+    {% if request.user.role == 'admin' %}
+    <div class="sidebar-section">Super Admin Analytics</div>
+    <a href="{% url 'leaderboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'leaderboard' %}active{% endif %}">
+      <i class="bi bi-trophy"></i> Leaderboard
+    </a>
+    <a href="{% url 'user_performance' %}" class="sidebar-item {% if request.resolver_match.url_name == 'user_performance' %}active{% endif %}">
+      <i class="bi bi-speedometer2"></i> User Performance
+    </a>
+    <a href="{% url 'executive_reports' %}" class="sidebar-item {% if request.resolver_match.url_name == 'executive_reports' %}active{% endif %}">
+      <i class="bi bi-graph-up-arrow"></i> Executive Reports
+    </a>
+    <div class="sidebar-section">Quick Exports</div>
+    <a href="{% url 'export_leads_csv' %}" class="sidebar-item">
+      <i class="bi bi-download"></i> Export Leads CSV
+    </a>
+    <a href="{% url 'export_telecaller_csv' %}" class="sidebar-item">
+      <i class="bi bi-download"></i> Export Telecaller CSV
+    </a>
+    <a href="{% url 'export_counselor_csv' %}" class="sidebar-item">
+      <i class="bi bi-download"></i> Export Counselor CSV
+    </a>
+    {% endif %}
   </aside>
 
   <div class="management-main">
@@ -1147,26 +1170,60 @@
         </span>
       </div>
 
-      <!-- Center: search -->
-      {% if request.user.role == 'counselor' %}
-      <form class="management-search" action="{% url 'counselor_lead_list' %}" method="get">
+      <!-- Center: Global Omnibar Search -->
+      <div class="management-search" style="position:relative;" id="omnibarWrap">
         <i class="bi bi-search"></i>
-        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search leads, follow-ups, visits...">
-      </form>
-      {% else %}
-      <form class="management-search" action="{% url 'lead_list' %}" method="get">
-        <i class="bi bi-search"></i>
-        <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search inquiries, leads, follow-ups...">
-      </form>
-      {% endif %}
+        <input type="search" id="omnibarInput" placeholder="Search leads, candidates, admissions..." autocomplete="off" aria-label="Global search" aria-autocomplete="list" aria-controls="omnibarResults">
+        <div class="omnibar-results" id="omnibarResults" role="listbox"></div>
+      </div>
 
       <!-- Right: actions + user -->
       <div class="topbar-actions">
+        <!-- Notification Bell -->
+        <div class="dropdown notif-btn-wrap">
+          <button class="topbar-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications" id="notifBell">
+            <i class="bi bi-bell"></i>
+            <span class="topbar-btn-label d-none d-lg-inline">Alerts</span>
+          </button>
+          {% if overdue_followups and overdue_followups > 0 %}
+          <span class="notif-count" id="notifCount">{{ overdue_followups }}</span>
+          {% endif %}
+          <div class="dropdown-menu dropdown-menu-end notif-dropdown p-0" aria-labelledby="notifBell">
+            <div class="notif-header">
+              <h6>Notifications</h6>
+              <span class="notif-mark-all" onclick="markAllRead()">Mark all read</span>
+            </div>
+            {% if overdue_followups and overdue_followups > 0 %}
+            <a href="{% url 'followup_list' %}?status=Pending" class="notif-item unread text-decoration-none">
+              <div class="notif-dot overdue"><i class="bi bi-exclamation-triangle"></i></div>
+              <div class="notif-body">
+                <div class="notif-title">{{ overdue_followups }} Overdue Follow-up{{ overdue_followups|pluralize }}</div>
+                <div class="notif-meta">Requires immediate attention</div>
+              </div>
+            </a>
+            {% endif %}
+            {% if pending_followups and pending_followups > 0 %}
+            <a href="{% url 'followup_list' %}?status=Pending" class="notif-item text-decoration-none">
+              <div class="notif-dot warning"><i class="bi bi-clock"></i></div>
+              <div class="notif-body">
+                <div class="notif-title">{{ pending_followups }} Pending Follow-up{{ pending_followups|pluralize }}</div>
+                <div class="notif-meta">Scheduled and waiting</div>
+              </div>
+            </a>
+            {% endif %}
+            {% if not overdue_followups and not pending_followups %}
+            <div class="notif-item" style="cursor:default;">
+              <div class="notif-dot success"><i class="bi bi-check-circle"></i></div>
+              <div class="notif-body">
+                <div class="notif-title">All clear!</div>
+                <div class="notif-meta">No pending notifications</div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
         {% if request.user.role == 'counselor' %}
-        <a class="topbar-icon-btn" href="{% url 'counselor_followup_list' %}" title="Follow-ups">
-          <i class="bi bi-bell"></i>
-          <span class="topbar-btn-label">Follow-ups</span>
-        </a>
         <a class="topbar-icon-btn" href="{% url 'counselor_visit_list' %}" title="Visits">
           <i class="bi bi-calendar-event"></i>
           <span class="topbar-btn-label">Visits</span>
@@ -1176,10 +1233,6 @@
           <span>Add Session</span>
         </a>
         {% else %}
-        <a class="topbar-icon-btn" href="{% url 'followup_list' %}" title="Follow-ups">
-          <i class="bi bi-bell"></i>
-          <span class="topbar-btn-label">Follow-ups</span>
-        </a>
         <a class="topbar-icon-btn" href="{% url 'call_log_list' %}" title="Call Logs">
           <i class="bi bi-telephone-inbound"></i>
           <span class="topbar-btn-label">Call Logs</span>
@@ -1483,4 +1536,106 @@
   });
 })();
 </script>
+
+<script>
+// ── Global Omnibar Search ──────────────────────────────────────────────
+(function() {
+  const input = document.getElementById('omnibarInput');
+  const results = document.getElementById('omnibarResults');
+  if (!input || !results) return;
+
+  let debounceTimer;
+  const SEARCH_URL = '{% url "global_search" %}';
+
+  // Role-based fallback URLs for Enter key
+  const fallbackUrl = {% if request.user.role == 'counselor' %}'{% url "counselor_lead_list" %}'{% else %}'{% url "lead_list" %}'{% endif %};
+
+  input.addEventListener('input', function() {
+    clearTimeout(debounceTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { results.classList.remove('show'); results.innerHTML = ''; return; }
+    debounceTimer = setTimeout(() => fetchResults(q), 280);
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') { results.classList.remove('show'); input.blur(); }
+    if (e.key === 'Enter') { window.location.href = fallbackUrl + '?q=' + encodeURIComponent(input.value.trim()); }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!document.getElementById('omnibarWrap').contains(e.target)) {
+      results.classList.remove('show');
+    }
+  });
+
+  function fetchResults(q) {
+    fetch(SEARCH_URL + '?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(data => renderResults(q, data))
+      .catch(() => { results.innerHTML = '<div class="omnibar-no-results">Search unavailable</div>'; results.classList.add('show'); });
+  }
+
+  function renderResults(q, data) {
+    let html = '';
+    const total = (data.inquiries || []).length + (data.leads || []).length + (data.admissions || []).length;
+
+    if (total === 0) {
+      html = '<div class="omnibar-no-results"><i class="bi bi-search me-2"></i>No results for "<strong>' + escHtml(q) + '</strong>"</div>';
+    } else {
+      if (data.inquiries && data.inquiries.length) {
+        html += '<div class="omnibar-section-label"><i class="bi bi-person-lines-fill me-1"></i>Inquiries</div>';
+        data.inquiries.forEach(i => {
+          html += `<a href="/management/inquiries/${i.id}/" class="omnibar-item"><i class="bi bi-person"></i><span><strong>${escHtml(i.name)}</strong> &mdash; ${escHtml(i.phone)}</span></a>`;
+        });
+      }
+      if (data.leads && data.leads.length) {
+        html += '<div class="omnibar-section-label"><i class="bi bi-funnel me-1"></i>Leads</div>';
+        data.leads.forEach(l => {
+          html += `<a href="/management/leads/${l.id}/" class="omnibar-item"><i class="bi bi-funnel"></i><span><strong>${escHtml(l.name)}</strong> &mdash; ${escHtml(l.status)}</span></a>`;
+        });
+      }
+      if (data.admissions && data.admissions.length) {
+        html += '<div class="omnibar-section-label"><i class="bi bi-mortarboard me-1"></i>Admissions</div>';
+        data.admissions.forEach(a => {
+          html += `<a href="/management/admissions/${a.id}/" class="omnibar-item"><i class="bi bi-mortarboard"></i><span><strong>${escHtml(a.name)}</strong> &mdash; ${escHtml(a.number || '')}</span></a>`;
+        });
+      }
+    }
+    results.innerHTML = html;
+    results.classList.add('show');
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+})();
+
+// ── Notification Center ──────────────────────────────────────────────
+function markAllRead() {
+  const badge = document.getElementById('notifCount');
+  if (badge) badge.style.display = 'none';
+  document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+}
+
+// ── Global Page Loader / Graceful Fallback ───────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  const forms = document.querySelectorAll('form:not(.no-loader)');
+  forms.forEach(f => f.addEventListener('submit', () => {
+    const loader = document.getElementById('page-loader');
+    if (loader) loader.classList.add('show');
+  }));
+
+  const links = document.querySelectorAll('.page-link, .filter-pill');
+  links.forEach(l => l.addEventListener('click', function(e) {
+    if (this.getAttribute('href') && this.getAttribute('href') !== '#') {
+      const loader = document.getElementById('page-loader');
+      if (loader) loader.classList.add('show');
+    }
+  }));
+});
+</script>
+
+<div id="page-loader"><div class="loader-spinner"></div></div>
 {% endblock %}
+

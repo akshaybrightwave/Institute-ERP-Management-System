@@ -1,0 +1,49 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}Activity Logs | Super Admin{% endblock %}
+{% block crumb %}Activity Logs{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Activity Logs</h1>
+    <p class="text-muted mb-0">Searchable authentication timeline with filters, pagination, and export.</p>
+  </div>
+  <a href="?q={{ query }}&event={{ event }}&export=csv" class="btn btn-primary"><i class="bi bi-download me-1"></i>Export Logs</a>
+</div>
+
+<div class="sa-card p-3 mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-5"><label class="form-label">Search</label><input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Username, path, IP, details"></div>
+    <div class="col-md-4">
+      <label class="form-label">Event</label>
+      <select name="event" class="form-select">
+        <option value="">All events</option>
+        {% for value, label in event_choices %}
+          <option value="{{ value }}" {% if event == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-grid"><button class="btn btn-outline-primary">Apply Filters</button></div>
+  </form>
+</div>
+
+<div class="sa-card p-3">
+  {% for log in page_obj %}
+  <div class="d-flex gap-3 border-bottom py-3">
+    <div class="sa-stat-icon"><i class="bi bi-activity"></i></div>
+    <div class="flex-grow-1">
+      <div class="d-flex flex-wrap justify-content-between gap-2">
+        <span class="fw-semibold">{{ log.get_event_type_display }}</span>
+        <span class="text-muted small">{{ log.created_at|date:"d M Y H:i" }}</span>
+      </div>
+      <div class="small text-muted">{{ log.username|default:"anonymous" }} - {{ log.ip_address|default:"no ip" }} - {{ log.path|default:"no path" }}</div>
+      {% if log.details %}<div class="small mt-1">{{ log.details }}</div>{% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state"><i class="bi bi-activity"></i><p class="mb-0 mt-2">No logs found.</p></div>
+  {% endfor %}
+  {% include 'accounts/superadmin_pagination.html' %}
+</div>
+{% endblock %}

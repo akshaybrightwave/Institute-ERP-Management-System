@@ -209,11 +209,8 @@
       </div>
 
       <div class="col-lg-3 col-md-12 d-flex gap-2 flex-wrap">
-        <button type="submit" name="export" value="csv" class="btn btn-outline-info flex-fill fw-bold">
-          <i class="bi bi-filetype-csv me-1"></i> CSV
-        </button>
-        <button type="submit" name="export" value="excel" class="btn btn-outline-success flex-fill fw-bold">
-          <i class="bi bi-file-earmark-spreadsheet me-1"></i> Excel
+        <button type="submit" name="export" value="csv" class="btn-export btn-export-csv w-100 justify-content-center" style="height:42px;">
+          <i class="bi bi-filetype-csv me-1"></i> Export CSV
         </button>
       </div>
     </form>
@@ -319,10 +316,12 @@
           </tbody>
         </table>
       {% else %}
-        <div class="tele-empty">
-          <i class="bi bi-bar-chart"></i>
+        <div class="empty-enterprise">
+          <div class="empty-icon-wrap">
+            <i class="bi bi-headset"></i>
+          </div>
           <h5>No report data</h5>
-          <p class="mb-0">No telecaller activity was found for the selected period.</p>
+          <p>No telecaller activity was found for the selected period.</p>
         </div>
       {% endif %}
     </div>

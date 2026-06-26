@@ -1,0 +1,102 @@
+{% extends 'accounts/superadmin_base.html' %}
+
+{% block title %}{{ page_title }} | Super Admin{% endblock %}
+{% block crumb %}{{ page_title }}{% endblock %}
+
+{% block superadmin_content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">{{ page_title }}</h1>
+    <p class="text-muted mb-0">Executive KPI overview, trend visualization, funnel summary, and performance ranking.</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if module == 'hr' %}
+      <a href="{% url 'superadmin_hr_recruitment' %}" class="btn btn-outline-primary">Recruitment</a>
+      <a href="{% url 'superadmin_hr_placement' %}" class="btn btn-outline-primary">Placement</a>
+      <a href="{% url 'superadmin_hr_performance' %}" class="btn btn-primary">Performance</a>
+    {% elif module == 'counsellor' %}
+      <a href="{% url 'superadmin_counsellor_leads' %}" class="btn btn-outline-primary">Leads</a>
+      <a href="{% url 'superadmin_counsellor_followup_analytics' %}" class="btn btn-outline-primary">Follow-ups</a>
+      <a href="{% url 'superadmin_counsellor_performance' %}" class="btn btn-primary">Performance</a>
+    {% else %}
+      <a href="{% url 'superadmin_telecaller_leads' %}" class="btn btn-outline-primary">Leads</a>
+      <a href="{% url 'superadmin_telecaller_call_analytics' %}" class="btn btn-outline-primary">Calls</a>
+      <a href="{% url 'superadmin_telecaller_performance' %}" class="btn btn-primary">Performance</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if kpis %}
+<div class="row g-3 mb-4">
+  {% for item in kpis %}
+  <div class="col-sm-6 col-xl-3">
+    <a class="sa-card sa-kpi" href="{{ item.url }}">
+      <div class="d-flex align-items-start justify-content-between">
+        <div>
+          <div class="sa-stat-label">{{ item.title }}</div>
+          <div class="sa-stat-value mt-2">{{ item.value }}</div>
+        </div>
+        <div class="sa-stat-icon"><i class="bi {{ item.icon }}"></i></div>
+      </div>
+      <div class="sa-trend mt-3"><i class="bi bi-arrow-up-right"></i> {{ item.growth }}% vs previous {{ item.previous }}</div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="sa-card p-4">
+      <h2 class="h5 fw-bold mb-3">{{ chart_title|default:"Analytics Snapshot" }}</h2>
+      <div class="row g-3">
+        {% for point in chart_pairs %}
+        <div class="col-md-6">
+          <div class="border rounded-3 p-3">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-semibold">{{ point.label }}</span>
+              <strong>{{ point.value }}</strong>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" style="width: {{ point.percent }}%"></div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-state"><i class="bi bi-bar-chart"></i><p class="mb-0 mt-2">No analytics data available.</p></div>
+        {% endfor %}
+      </div>
+      <div class="mt-4" aria-hidden="true">
+        <div class="loading-skeleton mb-2" style="width: 70%;"></div>
+        <div class="loading-skeleton mb-2" style="width: 92%;"></div>
+        <div class="loading-skeleton" style="width: 56%;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="sa-card p-4">
+      <h2 class="h5 fw-bold mb-3">{{ table_title }}</h2>
+      {% if table_rows %}
+      {% for row in table_rows %}
+      <div class="d-flex align-items-center justify-content-between border-bottom py-2 gap-3">
+        <div>
+          <div class="fw-semibold">{{ row.label }}</div>
+          <div class="small text-muted">{{ row.detail }}</div>
+        </div>
+        <span class="badge bg-primary">{{ row.badge|default:row.value }}</span>
+      </div>
+      {% endfor %}
+      {% else %}
+      {% for row in table_obj %}
+      <div class="d-flex align-items-center justify-content-between border-bottom py-2">
+        <span class="fw-semibold">{{ row.username|default:row }}</span>
+        <span class="badge bg-primary">{{ row.total|default:"-" }}</span>
+      </div>
+      {% empty %}
+      <div class="empty-state py-3"><i class="bi bi-trophy"></i><p class="mb-0 mt-2">No leaderboard data yet.</p></div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
