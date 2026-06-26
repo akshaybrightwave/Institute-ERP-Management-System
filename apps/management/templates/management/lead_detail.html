@@ -431,7 +431,7 @@
 
         <div class="lp-stat-row">
           <span class="lp-stat-label">Priority</span>
-          <span class="badge-premium {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+          <span class="badge-premium {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning{% else %}bg-secondary{% endif %}">
             {{ lead.priority }}
           </span>
         </div>
@@ -535,11 +535,17 @@
   </div>
 
   <!-- Admission History -->
-  {% if admission %}
   <div class="m-card mt-4">
-    <h6 class="fw-bold mb-3" style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">
-      <i class="bi bi-journal-check me-2" style="color:#4ade80;"></i>Admission History
-    </h6>
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h6 class="fw-bold mb-0" style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">
+        <i class="bi bi-journal-check me-2" style="color:#4ade80;"></i>Admission History
+      </h6>
+      {% if not admission and request.user.role in 'admin,superadmin' %}
+        <a href="{% url 'admission_create' lead.pk %}" class="btn btn-sm btn-success fw-bold"><i class="bi bi-plus-lg"></i> Create Admission</a>
+      {% endif %}
+    </div>
+
+    {% if admission %}
     <div class="row g-3">
       <div class="col-sm-3">
         <div class="lp-meta-label">Admission No</div>
@@ -554,7 +560,7 @@
         {% if admission.admission_status == 'CONFIRMED' %}
           <span class="badge-premium bg-success">Confirmed</span>
         {% elif admission.admission_status == 'PENDING' %}
-          <span class="badge-premium bg-warning">Pending</span>
+          <span class="badge-premium bg-warning text-dark">Pending</span>
         {% else %}
           <span class="badge-premium bg-danger">Cancelled</span>
         {% endif %}
@@ -564,10 +570,21 @@
         <a href="{% url 'admission_detail' admission.pk %}" class="btn btn-sm btn-outline-info">
           <i class="bi bi-eye me-1"></i> View
         </a>
+        {% if request.user.role in 'admin,superadmin' %}
+        <a href="{% url 'admission_edit' admission.pk %}" class="btn btn-sm btn-outline-warning ms-1">
+          <i class="bi bi-pencil"></i> Edit
+        </a>
+        {% endif %}
       </div>
     </div>
+    {% else %}
+    <div class="empty-state-premium mt-2">
+      <i class="bi bi-journal-x"></i>
+      <div class="empty-state-title">No Admission Record</div>
+      <div class="empty-state-desc">This lead has not been admitted yet.</div>
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
 
 </div>
 

@@ -4,6 +4,8 @@ from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Avg
+from django.db import transaction
+from django.urls import reverse
 import datetime
 from datetime import datetime, date, time, timedelta
 import json
@@ -12,7 +14,21 @@ from django.utils import timezone
 
 from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
 from .forms import InquiryForm, LeadConversionForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm
-from .decorators import telecaller_required, counselor_required
+from .decorators import superadmin_required, admin_required, telecaller_required, counselor_required, telecaller_counselor_admin_required
+
+ADMIN_ROLES = ('admin', 'superadmin')
+
+def is_admin_user(user):
+    return user.is_authenticated and user.role in ADMIN_ROLES
+
+def can_access_inquiry(user, inquiry):
+    if is_admin_user(user) or user.role == 'counselor':
+        return True
+    if user.role != 'telecaller':
+        return False
+    if inquiry.created_by_id == user.id:
+        return True
+    return Lead.objects.filter(inquiry=inquiry, assigned_telecaller=user).exists()
 
 def normalize_timestamp(value):
     if isinstance(value, date) and not isinstance(value, datetime):
@@ -24,27 +40,28 @@ def normalize_timestamp(value):
 @login_required
 @telecaller_required
 def management_dashboard(request):
-    if request.user.role == 'admin':
-        return redirect('management_super_admin_dashboard')
-        
+    if is_admin_user(request.user):
+        if request.user.role == 'superadmin':
+            return redirect('management_super_admin_dashboard')
+        return redirect('management_admin_dashboard')
+
     today = date.today()
-    
+
     # Base Querysets with Data Isolation (telecaller sees own data)
     inquiries_qs = Inquiry.objects.filter(created_by=request.user)
     leads_qs = Lead.objects.filter(assigned_telecaller=request.user)
     calls_qs = CallLog.objects.filter(created_by=request.user)
     followups_qs = FollowUp.objects.filter(created_by=request.user)
 
-    # Statistics Calculation (9 metrics)
-    total_leads = leads_qs.count()
-    assigned_leads = leads_qs.filter(assigned_telecaller__isnull=False).count()
-    contacted_leads = leads_qs.filter(status='Contacted').count()
-    interested_leads = leads_qs.filter(status='Interested').count()
-    qualified_leads = leads_qs.filter(status='Qualified').count()
-    rejected_leads = leads_qs.filter(status='Rejected').count()
-    today_calls = calls_qs.filter(call_date__date=today).count()
-    pending_followups = followups_qs.filter(status='Pending').count()
-    overdue_followups = followups_qs.filter(status='Pending', followup_date__lt=today).count()
+    # Statistics Calculation (Today vs Total)
+    total_leads = {'today': leads_qs.filter(created_at__date=today).count(), 'total': leads_qs.count()}
+    assigned_leads = {'today': leads_qs.filter(assigned_telecaller__isnull=False, assigned_at__date=today).count(), 'total': leads_qs.filter(assigned_telecaller__isnull=False).count()}
+    contacted_leads = {'today': leads_qs.filter(status='Contacted', updated_at__date=today).count(), 'total': leads_qs.filter(status='Contacted').count()}
+    interested_leads = {'today': leads_qs.filter(status='Interested', updated_at__date=today).count(), 'total': leads_qs.filter(status='Interested').count()}
+    qualified_leads = {'today': leads_qs.filter(status='Qualified', updated_at__date=today).count(), 'total': leads_qs.filter(status='Qualified').count()}
+    rejected_leads = {'today': leads_qs.filter(status='Rejected', updated_at__date=today).count(), 'total': leads_qs.filter(status='Rejected').count()}
+    calls_stats = {'today': calls_qs.filter(call_date__date=today).count(), 'total': calls_qs.count()}
+    followups_stats = {'pending': followups_qs.filter(status='Pending').count(), 'overdue': followups_qs.filter(status='Pending', followup_date__lt=today).count()}
 
     # Call Outcomes
     call_outcomes = {
@@ -68,24 +85,53 @@ def management_dashboard(request):
         'interested_leads': interested_leads,
         'qualified_leads': qualified_leads,
         'rejected_leads': rejected_leads,
-        'today_calls': today_calls,
-        'pending_followups': pending_followups,
-        'overdue_followups': overdue_followups,
+        'today_calls': calls_stats,
+        'pending_followups': followups_stats['pending'],
+        'overdue_followups': followups_stats['overdue'],
         'call_outcomes': call_outcomes,
         'recent_leads': recent_leads,
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
         'overdue_followups_list': overdue_followups_list,
     }
-    return render(request, 'management/dashboard.html', context)
+    return render(request, 'management/telecaller_dashboard.html', context)
 
 
 @login_required
+@admin_required
+def management_admin_dashboard(request):
+    today = date.today()
+
+    # Admin strictly manages leads and assignments. No calling features.
+    total_uploaded = {'today': Inquiry.objects.filter(created_at__date=today).count(), 'total': Inquiry.objects.count()}
+    total_assigned = {'today': Lead.objects.filter(assigned_at__date=today).count(), 'total': Lead.objects.count()}
+    unassigned_inquiries = {'today': Inquiry.objects.filter(lead__isnull=True, created_at__date=today).count(), 'total': Inquiry.objects.filter(lead__isnull=True).count()}
+    assigned_to_telecaller = {'today': Lead.objects.filter(assigned_telecaller__isnull=False, assigned_at__date=today).count(), 'total': Lead.objects.filter(assigned_telecaller__isnull=False).count()}
+    assigned_to_counselor = {'today': Lead.objects.filter(assigned_counselor__isnull=False, assigned_at__date=today).count(), 'total': Lead.objects.filter(assigned_counselor__isnull=False).count()}
+
+    # Tables for Admin (Uploads, Assignments)
+    recent_inquiries = Inquiry.objects.order_by('-created_at')[:5]
+    recent_leads = Lead.objects.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').order_by('-assigned_at')[:5]
+    pending_admissions = Lead.objects.filter(counselor_status='ADMISSION').select_related('inquiry', 'assigned_counselor')
+
+    context = {
+        'total_uploaded': total_uploaded,
+        'total_assigned': total_assigned,
+        'unassigned_inquiries': unassigned_inquiries,
+        'assigned_to_telecaller': assigned_to_telecaller,
+        'assigned_to_counselor': assigned_to_counselor,
+        'recent_inquiries': recent_inquiries,
+        'recent_leads': recent_leads,
+        'pending_admissions': pending_admissions,
+    }
+    return render(request, 'management/admin_dashboard.html', context)
+
+
+@login_required
+@admin_required
 def management_super_admin_dashboard(request):
-    if request.user.role != 'admin':
-        if request.user.role == 'telecaller':
-            return redirect('management_dashboard')
-        return HttpResponseForbidden("Access Denied: Admin access only.")
+    if request.user.role == 'admin':
+        return redirect('management_admin_dashboard')
 
     today = date.today()
 
@@ -112,8 +158,10 @@ def management_super_admin_dashboard(request):
         try:
             s = request.GET.get('start_date', '')
             e = request.GET.get('end_date', '')
-            if s: start_date = datetime.strptime(s, "%Y-%m-%d").date()
-            if e: end_date = datetime.strptime(e, "%Y-%m-%d").date()
+            if s:
+                start_date = datetime.strptime(s, "%Y-%m-%d").date()
+            if e:
+                end_date = datetime.strptime(e, "%Y-%m-%d").date()
         except ValueError:
             pass
 
@@ -131,16 +179,38 @@ def management_super_admin_dashboard(request):
         calls_qs = calls_qs.filter(call_date__date__lte=end_date)
         followups_qs = followups_qs.filter(followup_date__lte=end_date)
 
-    # Global statistics
-    total_leads = leads_qs.count()
-    assigned_leads = leads_qs.filter(assigned_telecaller__isnull=False).count()
-    contacted_leads = leads_qs.filter(status='Contacted').count()
-    interested_leads = leads_qs.filter(status='Interested').count()
-    qualified_leads = leads_qs.filter(status='Qualified').count()
-    rejected_leads = leads_qs.filter(status='Rejected').count()
-    today_calls = CallLog.objects.filter(call_date__date=today).count()
-    pending_followups = FollowUp.objects.filter(status='Pending').count()
-    overdue_followups = FollowUp.objects.filter(status='Pending', followup_date__lt=today).count()
+    total_leads = {
+        'today': Lead.objects.filter(created_at__date=today).count(),
+        'total': leads_qs.count(),
+    }
+    assigned_leads = {
+        'today': Lead.objects.filter(assigned_telecaller__isnull=False, assigned_at__date=today).count(),
+        'total': leads_qs.filter(assigned_telecaller__isnull=False).count(),
+    }
+    contacted_leads = {
+        'today': Lead.objects.filter(status='Contacted', updated_at__date=today).count(),
+        'total': leads_qs.filter(status='Contacted').count(),
+    }
+    interested_leads = {
+        'today': Lead.objects.filter(status='Interested', updated_at__date=today).count(),
+        'total': leads_qs.filter(status='Interested').count(),
+    }
+    qualified_leads = {
+        'today': Lead.objects.filter(status='Qualified', updated_at__date=today).count(),
+        'total': leads_qs.filter(status='Qualified').count(),
+    }
+    rejected_leads = {
+        'today': Lead.objects.filter(status='Rejected', updated_at__date=today).count(),
+        'total': leads_qs.filter(status='Rejected').count(),
+    }
+    calls_stats = {
+        'today': CallLog.objects.filter(call_date__date=today).count(),
+        'total': calls_qs.count(),
+    }
+    followups_stats = {
+        'pending': followups_qs.filter(status='Pending').count(),
+        'overdue': followups_qs.filter(status='Pending', followup_date__lt=today).count(),
+    }
 
     # Call Outcomes (unfiltered — always show totals)
     call_outcomes = {
@@ -179,9 +249,9 @@ def management_super_admin_dashboard(request):
         'interested_leads': interested_leads,
         'qualified_leads': qualified_leads,
         'rejected_leads': rejected_leads,
-        'today_calls': today_calls,
-        'pending_followups': pending_followups,
-        'overdue_followups': overdue_followups,
+        'today_calls': calls_stats,
+        'pending_followups': followups_stats['pending'],
+        'overdue_followups': followups_stats['overdue'],
         'call_outcomes': call_outcomes,
         'admission_metrics': admission_metrics,
         'recent_leads': recent_leads,
@@ -194,7 +264,7 @@ def management_super_admin_dashboard(request):
         'counseling_done': counseling_done,
         'today_visits': today_visits,
     }
-    return render(request, 'management/admin_dashboard.html', context)
+    return render(request, 'management/super_admin_dashboard.html', context)
 
 
 # ==================================================
@@ -202,12 +272,14 @@ def management_super_admin_dashboard(request):
 # ==================================================
 
 @login_required
-@telecaller_required
+@telecaller_counselor_admin_required
 def inquiry_list(request):
-    if request.user.role == 'admin':
-        inquiries = Inquiry.objects.all()
+    if request.user.role == 'telecaller':
+        inquiries = Inquiry.objects.filter(
+            Q(created_by=request.user) | Q(lead__assigned_telecaller=request.user)
+        ).distinct()
     else:
-        inquiries = Inquiry.objects.filter(created_by=request.user)
+        inquiries = Inquiry.objects.all()
 
     # Search
     q = request.GET.get('q', '').strip()
@@ -229,6 +301,11 @@ def inquiry_list(request):
     if call_status:
         inquiries = inquiries.filter(call_status=call_status)
 
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
+        inquiries = inquiries.filter(created_at__date=date_filter)
+
+    inquiries = inquiries.order_by('-created_at')
     paginator = Paginator(inquiries, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -240,6 +317,7 @@ def inquiry_list(request):
         'status': status,
         'source': source,
         'call_status': call_status,
+        'date_filter': date_filter,
         'status_choices': Inquiry.STATUS_CHOICES,
         'source_choices': Inquiry.SOURCE_CHOICES,
         'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
@@ -247,14 +325,20 @@ def inquiry_list(request):
 
 
 @login_required
-@telecaller_required
+@telecaller_counselor_admin_required
 def inquiry_add(request):
     if request.method == 'POST':
         form = InquiryForm(request.POST)
         if form.is_valid():
             inquiry = form.save(commit=False)
             inquiry.created_by = request.user
-            inquiry.save()
+            with transaction.atomic():
+                inquiry.save()
+                # Auto-create Lead tied to this Inquiry
+                Lead.objects.create(
+                    inquiry=inquiry,
+                    assigned_by=request.user if request.user.role in ['admin', 'superadmin'] else None
+                )
             messages.success(request, f"Inquiry for {inquiry.full_name} created successfully.")
             return redirect('inquiry_list')
     else:
@@ -263,22 +347,20 @@ def inquiry_add(request):
 
 
 @login_required
-@telecaller_required
+@telecaller_counselor_admin_required
 def inquiry_detail(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
-    # Security Data Isolation
-    if request.user.role != 'admin' and inquiry.created_by != request.user:
+    if not can_access_inquiry(request.user, inquiry):
         return HttpResponseForbidden("Access Denied: You do not own this record.")
-        
     return render(request, 'management/inquiry_detail.html', {'inquiry': inquiry})
 
 
 @login_required
-@telecaller_required
+@telecaller_counselor_admin_required
 def inquiry_edit(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
     # Security Data Isolation
-    if request.user.role != 'admin' and inquiry.created_by != request.user:
+    if not can_access_inquiry(request.user, inquiry):
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     if request.method == 'POST':
@@ -293,11 +375,11 @@ def inquiry_edit(request, pk):
 
 
 @login_required
-@telecaller_required
+@telecaller_counselor_admin_required
 def inquiry_delete(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
     # Security Data Isolation
-    if request.user.role != 'admin' and inquiry.created_by != request.user:
+    if not can_access_inquiry(request.user, inquiry):
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     if request.method == 'POST':
@@ -309,32 +391,50 @@ def inquiry_delete(request, pk):
 
 
 @login_required
-@telecaller_required
+@telecaller_counselor_admin_required
 def inquiry_convert(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
 
-    # Security: telecaller can only convert their own inquiries
-    if request.user.role != 'admin' and inquiry.created_by != request.user:
+    # Security: telecaller can only convert inquiries they created or were assigned.
+    if not can_access_inquiry(request.user, inquiry):
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     # Guard: prevent duplicate lead creation
     if hasattr(inquiry, 'lead'):
         messages.warning(request, "This inquiry has already been converted to a Lead.")
+        if request.user.role == 'counselor':
+            return redirect('counselor_lead_detail', pk=inquiry.lead.pk)
         return redirect('lead_detail', pk=inquiry.lead.pk)
 
+    auto_assign_to_self = request.user.role in ('telecaller', 'counselor')
     form = LeadConversionForm(request.POST or None)
 
     if request.method == 'POST':
-        if form.is_valid():
-            assigned_counselor = form.cleaned_data['assigned_counselor']
+        telecaller = None
+        assigned_counselor = None
 
-            # Create Lead with counselor assigned at conversion time
+        if request.user.role == 'telecaller':
+            telecaller = request.user
+            is_valid = True
+        elif request.user.role == 'counselor':
+            assigned_counselor = request.user
+            if inquiry.created_by and getattr(inquiry.created_by, 'role', '') == 'telecaller':
+                telecaller = inquiry.created_by
+            is_valid = True
+        else:
+            is_valid = form.is_valid()
+            if is_valid:
+                assigned_counselor = form.cleaned_data['assigned_counselor']
+            if inquiry.created_by and getattr(inquiry.created_by, 'role', '') == 'telecaller':
+                telecaller = inquiry.created_by
+
+        if is_valid:
             lead = Lead.objects.create(
                 inquiry=inquiry,
-                assigned_telecaller=request.user,
+                assigned_telecaller=telecaller,
                 assigned_counselor=assigned_counselor,
                 status='New',
-                priority='Medium',
+                priority='Warm',
                 assigned_by=request.user,
                 assigned_at=timezone.now(),
             )
@@ -345,20 +445,33 @@ def inquiry_convert(request, pk):
 
             # Audit trail
             log_lead_activity(lead, 'LEAD_CREATED', f"Lead created from inquiry conversion by {request.user.username}.", request.user)
-            log_lead_activity(lead, 'ASSIGNED', f"Telecaller {request.user.username} assigned upon conversion.", request.user)
-            log_lead_activity(lead, 'ASSIGNED', f"Counselor {assigned_counselor.username} assigned during conversion by {request.user.username}.", request.user)
+            if telecaller:
+                log_lead_activity(lead, 'ASSIGNED', f"Telecaller {telecaller.username} assigned upon conversion.", request.user)
+            if assigned_counselor:
+                log_lead_activity(lead, 'ASSIGNED', f"Counselor {assigned_counselor.username} assigned during conversion by {request.user.username}.", request.user)
 
-            messages.success(
-                request,
-                f"Inquiry for {inquiry.full_name} converted to Lead and assigned to counselor {assigned_counselor.username}."
-            )
-            return redirect('lead_detail', pk=lead.pk)
+            if request.user.role == 'telecaller':
+                messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to you.")
+            elif assigned_counselor:
+                messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to counselor {assigned_counselor.username}.")
+            else:
+                messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead.")
 
-    return render(request, 'management/inquiry_convert.html', {'inquiry': inquiry, 'form': form})
+            # Redirect appropriately
+            if request.user.role == 'counselor':
+                return redirect('counselor_lead_detail', pk=lead.pk)
+            else:
+                return redirect('lead_detail', pk=lead.pk)
+
+    return render(request, 'management/inquiry_convert.html', {
+        'inquiry': inquiry,
+        'form': form,
+        'auto_assign_to_self': auto_assign_to_self,
+    })
 
 
 @login_required
-@telecaller_required
+@telecaller_counselor_admin_required
 def update_call_status(request, pk):
     """AJAX endpoint to update call status inline from Inquiry Directory."""
     if request.method != 'POST':
@@ -366,9 +479,8 @@ def update_call_status(request, pk):
 
     inquiry = get_object_or_404(Inquiry, pk=pk)
 
-    # Access control: Tele Caller can update own inquiries, Admin can update any
-    if request.user.role != 'admin' and inquiry.created_by != request.user:
-        return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
+    # Access control: All allowed roles can update call status
+    # (Removed created_by check as Inquiries are shared in the directory)
 
     try:
         data = json.loads(request.body)
@@ -398,7 +510,7 @@ def update_call_status(request, pk):
 @login_required
 @telecaller_required
 def lead_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_telecaller=request.user)
@@ -419,6 +531,10 @@ def lead_list(request):
     if priority:
         leads = leads.filter(priority=priority)
 
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
+        leads = leads.filter(created_at__date=date_filter)
+
     paginator = Paginator(leads, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -428,6 +544,7 @@ def lead_list(request):
         'q': q,
         'status': status,
         'priority': priority,
+        'date_filter': date_filter,
         'status_choices': Lead.STATUS_CHOICES,
         'priority_choices': Lead.PRIORITY_CHOICES,
     })
@@ -438,7 +555,7 @@ def lead_list(request):
 def lead_detail(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
     # Security Data Isolation
-    if request.user.role != 'admin' and lead.assigned_telecaller != request.user:
+    if not is_admin_user(request.user) and lead.assigned_telecaller != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     call_logs = lead.call_logs.all().order_by('-call_date')
@@ -466,7 +583,7 @@ def lead_detail(request, pk):
 def lead_edit(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
     # Security Data Isolation
-    if request.user.role != 'admin' and lead.assigned_telecaller != request.user:
+    if not is_admin_user(request.user) and lead.assigned_telecaller != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     if request.method == 'POST':
@@ -490,7 +607,7 @@ def lead_edit(request, pk):
 @login_required
 @telecaller_required
 def call_log_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         call_logs = CallLog.objects.all()
     else:
         call_logs = CallLog.objects.filter(created_by=request.user)
@@ -499,10 +616,10 @@ def call_log_list(request):
     if lead_id:
         call_logs = call_logs.filter(lead_id=lead_id)
 
-    date_str = request.GET.get('date', '').strip()
-    if date_str:
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
         try:
-            date_val = datetime.strptime(date_str, "%Y-%m-%d").date()
+            date_val = datetime.strptime(date_filter, "%Y-%m-%d").date()
             call_logs = call_logs.filter(call_date__date=date_val)
         except ValueError:
             pass
@@ -514,7 +631,7 @@ def call_log_list(request):
     return render(request, 'management/calllog_list.html', {
         'page_obj': page_obj,
         'lead_id': lead_id,
-        'date_str': date_str,
+        'date_filter': date_filter,
     })
 
 
@@ -525,15 +642,15 @@ def call_log_add(request):
     lead = None
     if lead_id:
         lead = get_object_or_404(Lead, pk=lead_id)
-        if request.user.role != 'admin' and lead.assigned_telecaller != request.user:
+        if not is_admin_user(request.user) and lead.assigned_telecaller != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
     if request.method == 'POST':
         form = CallLogForm(request.POST)
         selected_lead_id = request.POST.get('lead')
         selected_lead = get_object_or_404(Lead, pk=selected_lead_id)
-        
-        if request.user.role != 'admin' and selected_lead.assigned_telecaller != request.user:
+
+        if not is_admin_user(request.user) and selected_lead.assigned_telecaller != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
         if form.is_valid():
@@ -549,7 +666,7 @@ def call_log_add(request):
         form = CallLogForm()
 
     # Get available leads for selection
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_telecaller=request.user)
@@ -568,7 +685,7 @@ def call_log_add(request):
 @login_required
 @telecaller_required
 def followup_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         followups = FollowUp.objects.all()
     else:
         followups = FollowUp.objects.filter(created_by=request.user)
@@ -577,6 +694,10 @@ def followup_list(request):
     if status:
         followups = followups.filter(status=status)
 
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
+        followups = followups.filter(followup_date=date_filter)
+
     paginator = Paginator(followups, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -584,6 +705,7 @@ def followup_list(request):
     return render(request, 'management/followup_list.html', {
         'page_obj': page_obj,
         'status': status,
+        'date_filter': date_filter,
     })
 
 
@@ -594,7 +716,7 @@ def followup_add(request):
     lead = None
     if lead_id:
         lead = get_object_or_404(Lead, pk=lead_id)
-        if request.user.role != 'admin' and lead.assigned_telecaller != request.user:
+        if not is_admin_user(request.user) and lead.assigned_telecaller != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
     if request.method == 'POST':
@@ -602,7 +724,7 @@ def followup_add(request):
         selected_lead_id = request.POST.get('lead')
         selected_lead = get_object_or_404(Lead, pk=selected_lead_id)
 
-        if request.user.role != 'admin' and selected_lead.assigned_telecaller != request.user:
+        if not is_admin_user(request.user) and selected_lead.assigned_telecaller != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
         if form.is_valid():
@@ -610,7 +732,7 @@ def followup_add(request):
             followup.lead = selected_lead
             followup.created_by = request.user
             followup.save()
-            
+
             # Update Lead next follow up date
             selected_lead.next_followup_date = followup.followup_date
             selected_lead.save()
@@ -623,7 +745,7 @@ def followup_add(request):
     else:
         form = FollowUpForm()
 
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_telecaller=request.user)
@@ -640,14 +762,14 @@ def followup_add(request):
 @telecaller_required
 def followup_edit(request, pk):
     followup = get_object_or_404(FollowUp, pk=pk)
-    if request.user.role != 'admin' and followup.created_by != request.user:
+    if not is_admin_user(request.user) and followup.created_by != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     if request.method == 'POST':
         form = FollowUpForm(request.POST, instance=followup)
         if form.is_valid():
             form.save()
-            
+
             # Sync next followup date on the lead if updated
             lead = followup.lead
             if followup.next_followup_date:
@@ -670,7 +792,7 @@ def followup_edit(request, pk):
 @telecaller_required
 def followup_complete(request, pk):
     followup = get_object_or_404(FollowUp, pk=pk)
-    if request.user.role != 'admin' and followup.created_by != request.user:
+    if not is_admin_user(request.user) and followup.created_by != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     followup.status = 'Completed'
@@ -687,35 +809,35 @@ def map_header(raw_header):
     h = str(raw_header).strip().lower().replace('_', ' ').replace('-', ' ')
     # Normalize multiple whitespace to single space
     h = ' '.join(h.split())
-    
+
     # Full Name mapping
     if h in ['full_name', 'fullname', 'full name', 'name', 'student name', 'candidate name']:
         return 'full_name'
-    
+
     # Mobile Number mapping
     if h in ['mobile_number', 'mobilenumber', 'mobile number', 'mobile', 'phone', 'phone_number', 'phone number', 'contact number', 'contact_number']:
         return 'mobile_number'
-    
+
     # Email mapping
     if h in ['email', 'email_address', 'email address']:
         return 'email'
-    
+
     # City mapping
     if h in ['city', 'location']:
         return 'city'
-    
+
     # Course interest mapping
     if h in ['course_interest', 'course interest', 'course']:
         return 'course_interest'
-        
+
     # Source mapping
     if h in ['source']:
         return 'source'
-        
+
     # Remarks mapping
     if h in ['remarks']:
         return 'remarks'
-        
+
     return None
 
 
@@ -749,7 +871,7 @@ def inquiry_import(request):
         if not file_data:
             messages.error(request, "Please select a file to upload.")
             return render(request, 'management/import.html')
-            
+
         filename = file_data.name.lower()
         if not (filename.endswith('.csv') or filename.endswith('.xlsx')):
             messages.error(request, "Only CSV and Excel files are allowed.")
@@ -766,12 +888,12 @@ def inquiry_import(request):
                 if not header_row:
                     messages.error(request, "The uploaded CSV file is empty.")
                     return render(request, 'management/import.html')
-                
+
                 mapped_headers = [map_header(h) for h in header_row]
                 if 'full_name' not in mapped_headers or 'mobile_number' not in mapped_headers:
                     messages.error(request, "Missing required columns: full_name and mobile_number.")
                     return render(request, 'management/import.html')
-                
+
                 name_idx = mapped_headers.index('full_name')
                 mobile_idx = mapped_headers.index('mobile_number')
                 email_idx = mapped_headers.index('email') if 'email' in mapped_headers else -1
@@ -800,12 +922,12 @@ def inquiry_import(request):
                         continue
                     while len(row) < len(mapped_headers):
                         row.append(None)
-                        
+
                     row_idx += 1
                     total += 1
                     full_name = format_cell_value(row[name_idx]).strip() if name_idx != -1 else ''
                     mobile_number = format_cell_value(row[mobile_idx]).strip() if mobile_idx != -1 else ''
-                    
+
                     if not full_name:
                         failed += 1
                         ImportErrorLog.objects.create(
@@ -823,7 +945,7 @@ def inquiry_import(request):
                             error_message="Missing Mobile Number"
                         )
                         continue
-                        
+
                     if not mobile_number.isdigit() or len(mobile_number) < 10:
                         failed += 1
                         ImportErrorLog.objects.create(
@@ -866,17 +988,22 @@ def inquiry_import(request):
                         else:
                             matched_source = 'Other'
 
-                    Inquiry.objects.create(
-                        full_name=full_name,
-                        mobile_number=mobile_number,
-                        email=email or None,
-                        city=city,
-                        course_interest=course_interest,
-                        source=matched_source,
-                        remarks=remarks,
-                        status='New',
-                        created_by=request.user
-                    )
+                    with transaction.atomic():
+                        inq = Inquiry.objects.create(
+                            full_name=full_name,
+                            mobile_number=mobile_number,
+                            email=email or None,
+                            city=city,
+                            course_interest=course_interest,
+                            source=matched_source,
+                            remarks=remarks,
+                            status='New',
+                            created_by=request.user
+                        )
+                        Lead.objects.create(
+                            inquiry=inq,
+                            assigned_by=request.user if request.user.role in ['admin', 'superadmin'] else None
+                        )
                     success += 1
 
                 lead_import.total_records = total
@@ -907,12 +1034,12 @@ def inquiry_import(request):
                 if not header_row:
                     messages.error(request, "The uploaded Excel file is empty.")
                     return render(request, 'management/import.html')
-                
+
                 mapped_headers = [map_header(h) for h in header_row]
                 if 'full_name' not in mapped_headers or 'mobile_number' not in mapped_headers:
                     messages.error(request, "Missing required columns: full_name and mobile_number.")
                     return render(request, 'management/import.html')
-                
+
                 name_idx = mapped_headers.index('full_name')
                 mobile_idx = mapped_headers.index('mobile_number')
                 email_idx = mapped_headers.index('email') if 'email' in mapped_headers else -1
@@ -941,10 +1068,10 @@ def inquiry_import(request):
                         continue
                     row_idx += 1
                     total += 1
-                    
+
                     full_name = format_cell_value(row[name_idx]).strip() if name_idx != -1 else ''
                     mobile_number = format_cell_value(row[mobile_idx]).strip() if mobile_idx != -1 else ''
-                    
+
                     if not full_name:
                         failed += 1
                         ImportErrorLog.objects.create(
@@ -962,7 +1089,7 @@ def inquiry_import(request):
                             error_message="Missing Mobile Number"
                         )
                         continue
-                        
+
                     if not mobile_number.isdigit() or len(mobile_number) < 10:
                         failed += 1
                         ImportErrorLog.objects.create(
@@ -1005,17 +1132,22 @@ def inquiry_import(request):
                         else:
                             matched_source = 'Other'
 
-                    Inquiry.objects.create(
-                        full_name=full_name,
-                        mobile_number=mobile_number,
-                        email=email or None,
-                        city=city,
-                        course_interest=course_interest,
-                        source=matched_source,
-                        remarks=remarks,
-                        status='New',
-                        created_by=request.user
-                    )
+                    with transaction.atomic():
+                        inq = Inquiry.objects.create(
+                            full_name=full_name,
+                            mobile_number=mobile_number,
+                            email=email or None,
+                            city=city,
+                            course_interest=course_interest,
+                            source=matched_source,
+                            remarks=remarks,
+                            status='New',
+                            created_by=request.user
+                        )
+                        Lead.objects.create(
+                            inquiry=inq,
+                            assigned_by=request.user if request.user.role in ['admin', 'superadmin'] else None
+                        )
                     success += 1
 
                 lead_import.total_records = total
@@ -1073,7 +1205,7 @@ def download_sample_excel(request):
 @login_required
 @telecaller_required
 def import_history(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         imports = LeadImport.objects.all()
     else:
         imports = LeadImport.objects.filter(uploaded_by=request.user)
@@ -1091,9 +1223,9 @@ def import_history(request):
 @telecaller_required
 def lead_notes_list(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
-    if request.user.role != 'admin' and lead.assigned_telecaller != request.user:
+    if not is_admin_user(request.user) and lead.assigned_telecaller != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this lead.")
-        
+
     notes = lead.notes_timeline.all().order_by('created_at')
     return render(request, 'management/lead_notes.html', {
         'lead': lead,
@@ -1105,13 +1237,13 @@ def lead_notes_list(request, pk):
 @telecaller_required
 def lead_note_add(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
-    if request.user.role != 'admin' and lead.assigned_telecaller != request.user:
+    if not is_admin_user(request.user) and lead.assigned_telecaller != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
     if request.method == 'POST':
         note_text = request.POST.get('note', '').strip()
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
-        
+
         if note_text:
             note_obj = LeadNote.objects.create(
                 lead=lead,
@@ -1120,15 +1252,15 @@ def lead_note_add(request, pk):
             )
             # Log activity
             log_lead_activity(lead, 'NOTE_ADDED', f"Note added: '{note_text[:50]}...'", request.user)
-            
+
             # Broadcast via Channels
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
             from django.utils import timezone
-            
+
             channel_layer = get_channel_layer()
             role_display = 'Telecaller' if request.user.role == 'telecaller' else ('Counselor' if request.user.role == 'counselor' else 'Admin')
-            
+
             payload = {
                 "note_id": note_obj.pk,
                 "lead_id": lead.pk,
@@ -1137,11 +1269,14 @@ def lead_note_add(request, pk):
                 "remark": note_text,
                 "timestamp": timezone.localtime(note_obj.created_at).strftime("%d %b %Y %I:%M %p")
             }
-            async_to_sync(channel_layer.group_send)(
-                f"lead_remarks_{lead.pk}",
-                {"type": "remark_message", "payload": payload}
-            )
-            print("BROADCAST SENT", lead.pk)
+            if channel_layer:
+                try:
+                    async_to_sync(channel_layer.group_send)(
+                        f"lead_remarks_{lead.pk}",
+                        {"type": "remark_message", "payload": payload}
+                    )
+                except Exception:
+                    pass
 
             if is_ajax:
                 return JsonResponse({"status": "success", "message": "Note added successfully."})
@@ -1151,8 +1286,8 @@ def lead_note_add(request, pk):
             if is_ajax:
                 return JsonResponse({"status": "error", "message": "Note content cannot be empty."}, status=400)
             messages.error(request, "Note content cannot be empty.")
-            
-        return redirect(request.META.get('HTTP_REFERER', 'lead_detail'))
+
+        return redirect(request.META.get('HTTP_REFERER') or reverse('lead_detail', kwargs={'pk': lead.pk}))
 
     return render(request, 'management/lead_note_form.html', {'lead': lead})
 
@@ -1160,7 +1295,7 @@ def lead_note_add(request, pk):
 @login_required
 @telecaller_required
 def activities_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         activities = LeadActivity.objects.all()
     else:
         activities = LeadActivity.objects.filter(lead__assigned_telecaller=request.user)
@@ -1169,11 +1304,11 @@ def activities_list(request):
     q = request.GET.get('q', '').strip()
     if q:
         activities = activities.filter(
-            Q(lead__inquiry__full_name__icontains=q) | 
+            Q(lead__inquiry__full_name__icontains=q) |
             Q(description__icontains=q) |
             Q(activity_type__icontains=q)
         )
-    
+
     paginator = Paginator(activities, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1191,11 +1326,11 @@ def import_errors(request):
     lead_import = None
     if import_id:
         lead_import = get_object_or_404(LeadImport, pk=import_id)
-        if request.user.role != 'admin' and lead_import.uploaded_by != request.user:
+        if not is_admin_user(request.user) and lead_import.uploaded_by != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this record.")
         errors = ImportErrorLog.objects.filter(lead_import=lead_import)
     else:
-        if request.user.role == 'admin':
+        if is_admin_user(request.user):
             errors = ImportErrorLog.objects.all()
         else:
             errors = ImportErrorLog.objects.filter(lead_import__uploaded_by=request.user)
@@ -1231,70 +1366,257 @@ def import_errors(request):
 
 
 @login_required
-@telecaller_required
+@admin_required
 def lead_assign(request):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admin role required.")
 
     from django.contrib.auth import get_user_model
     User = get_user_model()
     telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
 
-    if request.method == 'POST':
-        telecaller_id = request.POST.get('telecaller')
-        lead_ids = request.POST.getlist('leads')
-        
-        # Or a single lead_id
-        lead_id = request.POST.get('lead_id')
-        if lead_id:
-            lead_ids = [lead_id]
+    # Calculate workload for dashboard
+    from datetime import date
+    from django.db.models import Count, Q
+    from django.db import transaction
+    from django.http import JsonResponse
+    import json
 
-        if not telecaller_id:
-            messages.error(request, "Please select a telecaller.")
-        elif not lead_ids:
-            messages.error(request, "Please select at least one lead.")
-        else:
-            telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
-            updated_count = 0
-            for lid in lead_ids:
-                lead = get_object_or_404(Lead, pk=lid)
-                lead.assigned_telecaller = telecaller
-                lead.assigned_by = request.user
-                lead.assigned_at = timezone.now()
-                lead.save()
-                
-                # Log assignment activity
-                log_lead_activity(lead, 'ASSIGNED', f"Lead assigned to {telecaller.username} by admin {request.user.username}.", request.user)
-                updated_count += 1
-            
-            messages.success(request, f"Successfully assigned {updated_count} lead(s) to {telecaller.username}.")
-            return redirect('lead_assign')
+    today = date.today()
+    workload_data = []
+    for tc in telecallers:
+        stats = Lead.objects.filter(assigned_telecaller=tc).aggregate(
+            active=Count('id', filter=Q(status__in=['New', 'Contacted', 'Interested', 'Follow Up'])),
+            today=Count('id', filter=Q(assigned_at__date=today)),
+            total=Count('id')
+        )
+        workload_data.append({
+            'id': tc.id,
+            'username': tc.username,
+            'active': stats['active'],
+            'today': stats['today'],
+            'total': stats['total'],
+        })
 
-    leads = Lead.objects.all()
-    
+    # Base filters
+    leads = Lead.objects.select_related('inquiry', 'assigned_telecaller')
+
     q = request.GET.get('q', '').strip()
     if q:
         leads = leads.filter(
             Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
         )
-    
+
     status = request.GET.get('status', '').strip()
     if status:
         leads = leads.filter(status=status)
-        
-    assigned_status = request.GET.get('assigned', '').strip()
+
+    assigned_status = request.GET.get('assigned', 'no').strip() # Default to unassigned
     if assigned_status == 'yes':
         leads = leads.filter(assigned_telecaller__isnull=False)
     elif assigned_status == 'no':
         leads = leads.filter(assigned_telecaller__isnull=True)
+    elif assigned_status == 'all':
+        pass # don't filter
+
+    # Handling AJAX APIs (Workload & Preview)
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        action = request.POST.get('action') or request.GET.get('action')
+        if action == 'workload':
+            return JsonResponse({'workload': workload_data})
+
+        if action == 'preview':
+            mode = request.POST.get('mode', 'manual')
+            quantity = int(request.POST.get('quantity', 0) or 0)
+            assign_source = request.POST.get('assign_source', 'unassigned')
+
+            target_leads = leads
+            if assign_source == 'unassigned':
+                target_leads = Lead.objects.filter(assigned_telecaller__isnull=True)
+
+            if mode == 'quantity':
+                available = target_leads.count()
+                will_assign = min(quantity, available)
+                return JsonResponse({
+                    'requested': quantity,
+                    'eligible': available,
+                    'will_assign': will_assign,
+                    'remaining': available - will_assign
+                })
+            elif mode == 'all_filtered':
+                available = leads.count() # all_filtered always uses filtered scope
+                return JsonResponse({
+                    'requested': available,
+                    'eligible': available,
+                    'will_assign': available,
+                    'remaining': 0
+                })
+            elif mode == 'auto_distribute':
+                user_ids = request.POST.getlist('telecallers[]')
+                available = target_leads.count()
+                return JsonResponse({
+                    'requested': 'Auto',
+                    'eligible': available,
+                    'will_assign': available,
+                    'remaining': 0,
+                    'users_count': len(user_ids)
+                })
+
+    if request.method == 'POST':
+        mode = request.POST.get('mode', 'manual')
+
+        if mode == 'manual':
+            telecaller_id = request.POST.get('telecaller')
+            lead_ids = request.POST.getlist('leads')
+
+            lead_id = request.POST.get('lead_id')
+            if lead_id:
+                lead_ids = [lead_id]
+
+            if not telecaller_id:
+                messages.error(request, "Please select a telecaller.")
+            elif not lead_ids:
+                messages.error(request, "Please select at least one lead.")
+            else:
+                telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
+                with transaction.atomic():
+                    Lead.objects.filter(pk__in=lead_ids).update(
+                        assigned_telecaller=telecaller,
+                        assigned_by=request.user,
+                        assigned_at=timezone.now()
+                    )
+                    activities = [
+                        LeadActivity(
+                            lead_id=int(lid),
+                            activity_type='ASSIGNED',
+                            description=f"Lead assigned to {telecaller.username} by admin {request.user.username}.",
+                            created_by=request.user
+                        ) for lid in lead_ids
+                    ]
+                    LeadActivity.objects.bulk_create(activities)
+                messages.success(request, f"Successfully assigned {len(lead_ids)} lead(s) to {telecaller.username}.")
+                return redirect(request.get_full_path())
+
+        elif mode == 'quantity':
+            telecaller_id = request.POST.get('telecaller')
+            quantity = int(request.POST.get('quantity', 0) or 0)
+            assign_source = request.POST.get('assign_source', 'unassigned')
+
+            if not telecaller_id or quantity <= 0:
+                messages.error(request, "Invalid telecaller or quantity.")
+            else:
+                telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
+                target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(assigned_telecaller__isnull=True)
+
+                with transaction.atomic():
+                    lead_ids = list(target_leads.select_for_update().values_list('id', flat=True)[:quantity])
+                    if lead_ids:
+                        Lead.objects.filter(pk__in=lead_ids).update(
+                            assigned_telecaller=telecaller,
+                            assigned_by=request.user,
+                            assigned_at=timezone.now()
+                        )
+                        activities = [
+                            LeadActivity(
+                                lead_id=lid,
+                                activity_type='ASSIGNED',
+                                description=f"Lead assigned to {telecaller.username} by admin {request.user.username}.",
+                                created_by=request.user
+                            ) for lid in lead_ids
+                        ]
+                        LeadActivity.objects.bulk_create(activities)
+                        messages.success(request, f"Successfully assigned {len(lead_ids)} lead(s) to {telecaller.username}.")
+                    else:
+                        messages.warning(request, "No eligible leads found to assign.")
+                return redirect(request.get_full_path())
+
+        elif mode == 'all_filtered':
+            telecaller_id = request.POST.get('telecaller')
+            if not telecaller_id:
+                messages.error(request, "Please select a telecaller.")
+            else:
+                telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
+                with transaction.atomic():
+                    lead_ids = list(leads.select_for_update().values_list('id', flat=True))
+                    if lead_ids:
+                        Lead.objects.filter(pk__in=lead_ids).update(
+                            assigned_telecaller=telecaller,
+                            assigned_by=request.user,
+                            assigned_at=timezone.now()
+                        )
+                        activities = [
+                            LeadActivity(
+                                lead_id=lid,
+                                activity_type='ASSIGNED',
+                                description=f"Lead assigned to {telecaller.username} by admin {request.user.username}.",
+                                created_by=request.user
+                            ) for lid in lead_ids
+                        ]
+                        LeadActivity.objects.bulk_create(activities)
+                        messages.success(request, f"Successfully assigned {len(lead_ids)} lead(s) to {telecaller.username}.")
+                    else:
+                        messages.warning(request, "No leads matched the filters.")
+                return redirect(request.get_full_path())
+
+        elif mode == 'auto_distribute':
+            user_ids = request.POST.getlist('telecallers')
+            assign_source = request.POST.get('assign_source', 'unassigned')
+
+            if not user_ids:
+                messages.error(request, "Please select at least one telecaller for auto-distribution.")
+            else:
+                selected_users = list(User.objects.filter(id__in=user_ids, role='telecaller', is_active=True))
+                if not selected_users:
+                    messages.error(request, "Invalid telecallers selected.")
+                else:
+                    target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(assigned_telecaller__isnull=True)
+
+                    with transaction.atomic():
+                        lead_ids = list(target_leads.select_for_update().values_list('id', flat=True))
+                        if not lead_ids:
+                            messages.warning(request, "No eligible leads found for auto distribution.")
+                        else:
+                            pool_size = len(lead_ids)
+                            num_users = len(selected_users)
+
+                            # Sort users by current workload (active leads) ascending
+                            # We can use the pre-calculated workload_data for sorting
+                            workload_map = {w['id']: w['active'] for w in workload_data}
+                            selected_users.sort(key=lambda u: workload_map.get(u.id, 0))
+
+                            base_count = pool_size // num_users
+                            remainder = pool_size % num_users
+
+                            current_idx = 0
+                            activities = []
+                            for i, tc in enumerate(selected_users):
+                                count_for_tc = base_count + (1 if i < remainder else 0)
+                                if count_for_tc > 0:
+                                    chunk_ids = lead_ids[current_idx:current_idx+count_for_tc]
+                                    Lead.objects.filter(pk__in=chunk_ids).update(
+                                        assigned_telecaller=tc,
+                                        assigned_by=request.user,
+                                        assigned_at=timezone.now()
+                                    )
+                                    for lid in chunk_ids:
+                                        activities.append(LeadActivity(
+                                            lead_id=lid,
+                                            activity_type='ASSIGNED',
+                                            description=f"Lead assigned to {tc.username} via auto-distribution by admin.",
+                                            created_by=request.user
+                                        ))
+                                    current_idx += count_for_tc
+
+                            LeadActivity.objects.bulk_create(activities)
+                            messages.success(request, f"Successfully distributed {pool_size} lead(s) among {num_users} telecaller(s).")
+                    return redirect(request.get_full_path())
 
     paginator = Paginator(leads, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'management/lead_assignment.html', {
+    return render(request, 'management/telecaller_assignment.html', {
         'page_obj': page_obj,
         'telecallers': telecallers,
+        'workload_data': workload_data,
         'q': q,
         'status': status,
         'assigned': assigned_status,
@@ -1321,7 +1643,7 @@ def lead_bulk_action(request):
         if not action or action not in action_map:
             messages.error(request, "Invalid action selected.")
             return redirect('lead_list')
-        
+
         if not lead_ids:
             messages.error(request, "No leads selected.")
             return redirect('lead_list')
@@ -1331,7 +1653,7 @@ def lead_bulk_action(request):
 
         for lid in lead_ids:
             lead = get_object_or_404(Lead, pk=lid)
-            if request.user.role != 'admin' and lead.assigned_telecaller != request.user:
+            if not is_admin_user(request.user) and lead.assigned_telecaller != request.user:
                 continue
 
             old_status = lead.status
@@ -1344,7 +1666,7 @@ def lead_bulk_action(request):
         messages.success(request, f"Successfully executed '{action}' on {success_count} lead(s).")
         return redirect('lead_list')
 
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_telecaller=request.user)
@@ -1353,7 +1675,7 @@ def lead_bulk_action(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'management/bulk_actions.html', {
+    return render(request, 'management/lead_bulk_actions.html', {
         'page_obj': page_obj,
     })
 
@@ -1362,7 +1684,7 @@ def lead_bulk_action(request):
 @telecaller_required
 def reports_dashboard(request):
     sources = [choice[0] for choice in Inquiry.SOURCE_CHOICES]
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads_qs = Lead.objects.select_related('inquiry')
     else:
         leads_qs = Lead.objects.filter(assigned_telecaller=request.user).select_related('inquiry')
@@ -1377,7 +1699,7 @@ def reports_dashboard(request):
         total_leads = source_leads.count()
         qualified_leads = source_leads.filter(status='Qualified').count()
         rejected_leads = source_leads.filter(status='Rejected').count()
-        
+
         conversion_rate = 0.0
         if total_leads > 0:
             conversion_rate = round((qualified_leads / total_leads) * 100, 2)
@@ -1396,7 +1718,7 @@ def reports_dashboard(request):
     conversion_by_source_data = [stat['conversion_rate'] for stat in source_stats]
     best_source = max(source_stats, key=lambda item: item['conversion_rate']) if total_leads_all > 0 else None
 
-    return render(request, 'management/source_analytics.html', {
+    return render(request, 'management/lead_source_analytics.html', {
         'source_stats': source_stats,
         'chart_labels': chart_labels,
         'source_distribution_data': source_distribution_data,
@@ -1414,40 +1736,13 @@ def reports_dashboard(request):
 def telecaller_report(request):
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    
-    if request.user.role == 'admin':
+
+    if is_admin_user(request.user):
         telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
     else:
         telecallers = User.objects.filter(pk=request.user.pk, is_deleted=False, is_active=True)
 
-    date_filter = request.GET.get('date_filter', 'this_month')
-    start_date = None
-    end_date = None
-    today = date.today()
-
-    if date_filter == 'today':
-        start_date = today
-        end_date = today
-    elif date_filter == 'this_week':
-        start_date = today - timedelta(days=today.weekday())
-        end_date = today
-    elif date_filter == 'this_month':
-        start_date = today.replace(day=1)
-        end_date = today
-    elif date_filter == 'custom':
-        start_date_str = request.GET.get('start_date', '')
-        end_date_str = request.GET.get('end_date', '')
-        try:
-            if start_date_str:
-                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            if end_date_str:
-                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        except ValueError:
-            pass
-    else:
-        date_filter = 'this_month'
-        start_date = today.replace(day=1)
-        end_date = today
+    date_filter = request.GET.get('date', '').strip()
 
     report_data = []
     for tc in telecallers:
@@ -1456,16 +1751,11 @@ def telecaller_report(request):
         calls_qs = CallLog.objects.filter(created_by=tc)
         followups_qs = FollowUp.objects.filter(created_by=tc)
 
-        if start_date:
-            inquiries_qs = inquiries_qs.filter(created_at__date__gte=start_date)
-            leads_qs = leads_qs.filter(created_at__date__gte=start_date)
-            calls_qs = calls_qs.filter(call_date__date__gte=start_date)
-            followups_qs = followups_qs.filter(followup_date__gte=start_date)
-        if end_date:
-            inquiries_qs = inquiries_qs.filter(created_at__date__lte=end_date)
-            leads_qs = leads_qs.filter(created_at__date__lte=end_date)
-            calls_qs = calls_qs.filter(call_date__date__lte=end_date)
-            followups_qs = followups_qs.filter(followup_date__lte=end_date)
+        if date_filter:
+            inquiries_qs = inquiries_qs.filter(created_at__date=date_filter)
+            leads_qs = leads_qs.filter(created_at__date=date_filter)
+            calls_qs = calls_qs.filter(call_date__date=date_filter)
+            followups_qs = followups_qs.filter(followup_date=date_filter)
 
         total_inquiries = inquiries_qs.count()
         total_leads = leads_qs.count()
@@ -1557,8 +1847,6 @@ def telecaller_report(request):
         'report_data': report_data,
         'totals': totals,
         'date_filter': date_filter,
-        'start_date': request.GET.get('start_date', ''),
-        'end_date': request.GET.get('end_date', ''),
     })
 
 
@@ -1569,40 +1857,43 @@ def telecaller_report(request):
 @login_required
 @counselor_required
 def counselor_dashboard(request):
+    if is_admin_user(request.user):
+        if request.user.role == 'superadmin':
+            return redirect('management_super_admin_dashboard')
+        return redirect('management_admin_dashboard')
+
     today = date.today()
-    
-    # Base Lead Queryset Scoping
-    if request.user.role == 'admin':
+
+    # Base Lead Queryset Scoping (Strict Isolation)
+    if request.user.role == 'superadmin':
         leads_qs = Lead.objects.all()
         calls_qs = CallLog.objects.all()
         followups_qs = FollowUp.objects.all()
         activities_qs = LeadActivity.objects.all()
+        visits_qs = VisitSheet.objects.all()
+        admissions_qs = AdmissionSheet.objects.all()
     else:
         leads_qs = Lead.objects.filter(assigned_counselor=request.user)
         calls_qs = CallLog.objects.filter(lead__assigned_counselor=request.user)
         followups_qs = FollowUp.objects.filter(lead__assigned_counselor=request.user)
         activities_qs = LeadActivity.objects.filter(lead__assigned_counselor=request.user)
+        visits_qs = VisitSheet.objects.filter(counselor=request.user)
+        admissions_qs = AdmissionSheet.objects.filter(counselor=request.user)
 
     # Counselor Status Counts
-    total_assigned = leads_qs.count()
-    new_leads = leads_qs.filter(counselor_status='NEW').count()
-    contacted_leads = leads_qs.filter(counselor_status='CONTACTED').count()
-    counseling_done = leads_qs.filter(counselor_status='COUNSELING_DONE').count()
-    followup_req = leads_qs.filter(counselor_status='FOLLOW_UP_REQUIRED').count()
-    interested_leads = leads_qs.filter(counselor_status='INTERESTED').count()
-    converted_leads = leads_qs.filter(counselor_status='CONVERTED').count()
-    not_interested = leads_qs.filter(counselor_status='NOT_INTERESTED').count()
-    lost_leads = leads_qs.filter(counselor_status='LOST').count()
-    
+    total_assigned = {'today': leads_qs.filter(assigned_at__date=today).count(), 'total': leads_qs.count()}
+    new_leads = {'today': leads_qs.filter(counselor_status='NEW', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='NEW').count()}
+    contacted_leads = {'today': leads_qs.filter(counselor_status='CONTACTED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='CONTACTED').count()}
+    counseling_done = {'today': leads_qs.filter(counselor_status='COUNSELING_DONE', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='COUNSELING_DONE').count()}
+    followup_req = {'today': leads_qs.filter(counselor_status='FOLLOW_UP_REQUIRED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='FOLLOW_UP_REQUIRED').count()}
+    interested_leads = {'today': leads_qs.filter(counselor_status='INTERESTED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='INTERESTED').count()}
+    converted_leads = {'today': leads_qs.filter(counselor_status__in=['CONVERTED', 'ADMISSION'], counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status__in=['CONVERTED', 'ADMISSION']).count()}
+    not_interested = {'today': leads_qs.filter(counselor_status='NOT_INTERESTED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='NOT_INTERESTED').count()}
+    lost_leads = {'today': leads_qs.filter(counselor_status='LOST', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='LOST').count()}
+
     # Followup statistics
     pending_followups = followups_qs.filter(status='Pending').count()
     overdue_followups = followups_qs.filter(status='Pending', followup_date__lt=today).count()
-
-    # Visit statistics
-    if request.user.role == 'admin':
-        visits_qs = VisitSheet.objects.all()
-    else:
-        visits_qs = VisitSheet.objects.filter(counselor=request.user)
 
     today_visits = visits_qs.filter(visit_date=today).count()
     upcoming_visits = visits_qs.filter(visit_date__gt=today, status='Scheduled').count()
@@ -1610,17 +1901,13 @@ def counselor_dashboard(request):
     no_shows = visits_qs.filter(status='No Show').count()
 
     # Admission statistics
-    if request.user.role == 'admin':
-        admissions_qs = AdmissionSheet.objects.all()
-    else:
-        admissions_qs = AdmissionSheet.objects.filter(counselor=request.user)
     admission_metrics = {
         'total': admissions_qs.count(),
         'confirmed': admissions_qs.filter(admission_status='CONFIRMED').count(),
         'pending': admissions_qs.filter(admission_status='PENDING').count(),
         'cancelled': admissions_qs.filter(admission_status='CANCELLED').count(),
     }
-    
+
     # Table Contexts
     recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').order_by('-created_at')[:5]
     today_followups_list = followups_qs.filter(status='Pending', followup_date=today).order_by('followup_date')[:5]
@@ -1655,7 +1942,7 @@ def counselor_dashboard(request):
 @login_required
 @counselor_required
 def counselor_lead_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_counselor=request.user)
@@ -1676,6 +1963,10 @@ def counselor_lead_list(request):
     if priority:
         leads = leads.filter(priority=priority)
 
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
+        leads = leads.filter(created_at__date=date_filter)
+
     paginator = Paginator(leads, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1685,6 +1976,7 @@ def counselor_lead_list(request):
         'q': q,
         'status': status,
         'priority': priority,
+        'date_filter': date_filter,
         'status_choices': Lead.COUNSELOR_STATUS_CHOICES,
         'priority_choices': Lead.PRIORITY_CHOICES,
     })
@@ -1694,7 +1986,7 @@ def counselor_lead_list(request):
 @counselor_required
 def counselor_lead_detail(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
-    if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+    if not is_admin_user(request.user) and lead.assigned_counselor != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this lead record.")
 
     sessions = lead.counseling_sessions.all().order_by('-session_date')
@@ -1747,7 +2039,7 @@ def counselor_lead_detail(request, pk):
 @counselor_required
 def counselor_lead_status_update(request, pk):
     lead = get_object_or_404(Lead, pk=pk)
-    if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+    if not is_admin_user(request.user) and lead.assigned_counselor != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this lead record.")
 
     if request.method == 'POST':
@@ -1757,7 +2049,7 @@ def counselor_lead_status_update(request, pk):
             updated_lead = form.save(commit=False)
             updated_lead.counselor_status_updated_at = timezone.now()
             updated_lead.save()
-            
+
             if old_status != updated_lead.counselor_status:
                 remark = updated_lead.notes.strip() if updated_lead.notes else ''
                 activity_msg = f"Counselor status updated from {old_status} to {updated_lead.counselor_status}."
@@ -1769,7 +2061,7 @@ def counselor_lead_status_update(request, pk):
                     activity_msg,
                     request.user
                 )
-            
+
             messages.success(request, f"Counselor status updated successfully to {updated_lead.counselor_status}.")
             return redirect('counselor_lead_detail', pk=lead.pk)
     else:
@@ -1782,11 +2074,41 @@ def counselor_lead_status_update(request, pk):
 
 @login_required
 @counselor_required
+def counselor_mark_admission(request, pk):
+    lead = get_object_or_404(Lead, pk=pk)
+    if not is_admin_user(request.user) and lead.assigned_counselor != request.user:
+        return HttpResponseForbidden("Access Denied: You do not own this lead record.")
+
+    if request.method == 'POST':
+        old_status = lead.counselor_status
+        lead.counselor_status = 'ADMISSION'
+        lead.counselor_status_updated_at = timezone.now()
+        lead.save()
+
+        if old_status != 'ADMISSION':
+            log_lead_activity(
+                lead,
+                'STATUS_CHANGED',
+                f"Counselor requested Admission. Status updated from {old_status} to ADMISSION.",
+                request.user
+            )
+
+        messages.success(request, "Lead successfully marked for Admission. It has been sent to the Admin queue.")
+
+    return redirect('counselor_lead_detail', pk=lead.pk)
+
+
+@login_required
+@counselor_required
 def counselor_session_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         sessions = CounselingSession.objects.all()
     else:
         sessions = CounselingSession.objects.filter(counselor=request.user)
+
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
+        sessions = sessions.filter(session_date__date=date_filter)
 
     paginator = Paginator(sessions, 15)
     page_number = request.GET.get('page')
@@ -1794,6 +2116,7 @@ def counselor_session_list(request):
 
     return render(request, 'management/counselor_session_list.html', {
         'page_obj': page_obj,
+        'date_filter': date_filter,
     })
 
 
@@ -1804,15 +2127,15 @@ def counselor_session_add(request):
     lead = None
     if lead_id:
         lead = get_object_or_404(Lead, pk=lead_id)
-        if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+        if not is_admin_user(request.user) and lead.assigned_counselor != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
     if request.method == 'POST':
         form = CounselingSessionForm(request.POST)
         selected_lead_id = request.POST.get('lead')
         selected_lead = get_object_or_404(Lead, pk=selected_lead_id)
-        
-        if request.user.role != 'admin' and selected_lead.assigned_counselor != request.user:
+
+        if not is_admin_user(request.user) and selected_lead.assigned_counselor != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
         if form.is_valid():
@@ -1828,16 +2151,16 @@ def counselor_session_add(request):
                 selected_lead.counselor_status_updated_at = timezone.now()
                 selected_lead.save()
                 log_lead_activity(
-                    selected_lead, 
-                    'STATUS_CHANGED', 
-                    f"Counselor status updated from {old_status} to COUNSELING_DONE upon recording session.", 
+                    selected_lead,
+                    'STATUS_CHANGED',
+                    f"Counselor status updated from {old_status} to COUNSELING_DONE upon recording session.",
                     request.user
                 )
 
             log_lead_activity(
-                selected_lead, 
-                'STATUS_CHANGED', 
-                f"Counseling session recorded by {request.user.username}.", 
+                selected_lead,
+                'STATUS_CHANGED',
+                f"Counseling session recorded by {request.user.username}.",
                 request.user
             )
             messages.success(request, f"Counseling session recorded successfully for {selected_lead.inquiry.full_name}.")
@@ -1845,7 +2168,7 @@ def counselor_session_add(request):
     else:
         form = CounselingSessionForm(initial={'lead': lead})
 
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_counselor=request.user)
@@ -1861,7 +2184,7 @@ def counselor_session_add(request):
 @counselor_required
 def counselor_session_detail(request, pk):
     session = get_object_or_404(CounselingSession, pk=pk)
-    if request.user.role != 'admin' and session.counselor != request.user:
+    if not is_admin_user(request.user) and session.counselor != request.user:
         return HttpResponseForbidden("Access Denied: You did not record this counseling session.")
 
     return render(request, 'management/counselor_session_detail.html', {
@@ -1872,7 +2195,7 @@ def counselor_session_detail(request, pk):
 @login_required
 @counselor_required
 def counselor_followup_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         followups = FollowUp.objects.all()
     else:
         followups = FollowUp.objects.filter(lead__assigned_counselor=request.user)
@@ -1881,6 +2204,10 @@ def counselor_followup_list(request):
     if status:
         followups = followups.filter(status=status)
 
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
+        followups = followups.filter(followup_date=date_filter)
+
     paginator = Paginator(followups, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1888,6 +2215,7 @@ def counselor_followup_list(request):
     return render(request, 'management/counselor_followup_list.html', {
         'page_obj': page_obj,
         'status': status,
+        'date_filter': date_filter,
     })
 
 
@@ -1898,7 +2226,7 @@ def counselor_followup_add(request):
     lead = None
     if lead_id:
         lead = get_object_or_404(Lead, pk=lead_id)
-        if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+        if not is_admin_user(request.user) and lead.assigned_counselor != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
     if request.method == 'POST':
@@ -1906,7 +2234,7 @@ def counselor_followup_add(request):
         selected_lead_id = request.POST.get('lead')
         selected_lead = get_object_or_404(Lead, pk=selected_lead_id)
 
-        if request.user.role != 'admin' and selected_lead.assigned_counselor != request.user:
+        if not is_admin_user(request.user) and selected_lead.assigned_counselor != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
         if form.is_valid():
@@ -1923,9 +2251,9 @@ def counselor_followup_add(request):
                 selected_lead.counselor_status = 'FOLLOW_UP_REQUIRED'
                 selected_lead.counselor_status_updated_at = timezone.now()
                 log_lead_activity(
-                    selected_lead, 
-                    'STATUS_CHANGED', 
-                    f"Counselor status updated from {old_status} to FOLLOW_UP_REQUIRED upon scheduling follow-up.", 
+                    selected_lead,
+                    'STATUS_CHANGED',
+                    f"Counselor status updated from {old_status} to FOLLOW_UP_REQUIRED upon scheduling follow-up.",
                     request.user
                 )
             selected_lead.save()
@@ -1936,7 +2264,7 @@ def counselor_followup_add(request):
     else:
         form = CounselorFollowUpForm(initial={'lead': lead})
 
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_counselor=request.user)
@@ -1952,14 +2280,14 @@ def counselor_followup_add(request):
 @counselor_required
 def counselor_followup_edit(request, pk):
     followup = get_object_or_404(FollowUp, pk=pk)
-    if request.user.role != 'admin' and followup.lead.assigned_counselor != request.user:
+    if not is_admin_user(request.user) and followup.lead.assigned_counselor != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this followup record.")
 
     if request.method == 'POST':
         form = CounselorFollowUpForm(request.POST, instance=followup)
         if form.is_valid():
             fp = form.save()
-            
+
             lead = fp.lead
             if fp.next_followup_date:
                 lead.next_followup_date = fp.next_followup_date
@@ -1981,7 +2309,7 @@ def counselor_followup_edit(request, pk):
 @counselor_required
 def counselor_followup_complete(request, pk):
     followup = get_object_or_404(FollowUp, pk=pk)
-    if request.user.role != 'admin' and followup.lead.assigned_counselor != request.user:
+    if not is_admin_user(request.user) and followup.lead.assigned_counselor != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     followup.status = 'Completed'
@@ -1995,7 +2323,7 @@ def counselor_followup_complete(request, pk):
 @counselor_required
 def counselor_followup_miss(request, pk):
     followup = get_object_or_404(FollowUp, pk=pk)
-    if request.user.role != 'admin' and followup.lead.assigned_counselor != request.user:
+    if not is_admin_user(request.user) and followup.lead.assigned_counselor != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     followup.status = 'Missed'
@@ -2009,13 +2337,13 @@ def counselor_followup_miss(request, pk):
 @counselor_required
 def counselor_note_add(request, lead_pk):
     lead = get_object_or_404(Lead, pk=lead_pk)
-    if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+    if not is_admin_user(request.user) and lead.assigned_counselor != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this lead record.")
 
     if request.method == 'POST':
         note_text = request.POST.get('note', '').strip()
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'application/json' in request.headers.get('Accept', '')
-        
+
         if note_text:
             note_obj = LeadNote.objects.create(
                 lead=lead,
@@ -2023,15 +2351,15 @@ def counselor_note_add(request, lead_pk):
                 created_by=request.user
             )
             log_lead_activity(lead, 'NOTE_ADDED', f"Counselor note added: '{note_text[:50]}...'", request.user)
-            
+
             # Broadcast via Channels
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
             from django.utils import timezone
-            
+
             channel_layer = get_channel_layer()
             role_display = 'Telecaller' if request.user.role == 'telecaller' else ('Counselor' if request.user.role == 'counselor' else 'Admin')
-            
+
             payload = {
                 "note_id": note_obj.pk,
                 "lead_id": lead.pk,
@@ -2040,21 +2368,24 @@ def counselor_note_add(request, lead_pk):
                 "remark": note_text,
                 "timestamp": timezone.localtime(note_obj.created_at).strftime("%d %b %Y %I:%M %p")
             }
-            async_to_sync(channel_layer.group_send)(
-                f"lead_remarks_{lead.pk}",
-                {"type": "remark_message", "payload": payload}
-            )
-            print("BROADCAST SENT", lead.pk)
+            if channel_layer:
+                try:
+                    async_to_sync(channel_layer.group_send)(
+                        f"lead_remarks_{lead.pk}",
+                        {"type": "remark_message", "payload": payload}
+                    )
+                except Exception:
+                    pass
 
             if is_ajax:
                 return JsonResponse({"status": "success", "message": "Note added successfully."})
-            
+
             messages.success(request, "Counselor note timeline updated successfully.")
         else:
             if is_ajax:
                 return JsonResponse({"status": "error", "message": "Note content cannot be empty."}, status=400)
             messages.error(request, "Note content cannot be empty.")
-            
+
     return redirect('counselor_lead_detail', pk=lead.pk)
 
 
@@ -2063,36 +2394,13 @@ def counselor_note_add(request, lead_pk):
 def counselor_reports_dashboard(request):
     from django.contrib.auth import get_user_model
     User = get_user_model()
-    
-    if request.user.role == 'admin':
+
+    if is_admin_user(request.user):
         counselors = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
     else:
         counselors = User.objects.filter(pk=request.user.pk, is_deleted=False, is_active=True)
 
-    date_filter = request.GET.get('date_filter', 'this_month')
-    start_date = None
-    end_date = None
-    today = date.today()
-
-    if date_filter == 'today':
-        start_date = today
-        end_date = today
-    elif date_filter == 'this_week':
-        start_date = today - timedelta(days=today.weekday())
-        end_date = today
-    elif date_filter == 'this_month':
-        start_date = today.replace(day=1)
-        end_date = today
-    elif date_filter == 'custom':
-        start_date_str = request.GET.get('start_date', '')
-        end_date_str = request.GET.get('end_date', '')
-        try:
-            if start_date_str:
-                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
-            if end_date_str:
-                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        except ValueError:
-            pass
+    date_filter = request.GET.get('date', '').strip()
 
     report_type = request.GET.get('report_type', 'performance').strip()
     report_data = []
@@ -2104,15 +2412,13 @@ def counselor_reports_dashboard(request):
     total_admissions_visit = 0
 
     if report_type == 'visit':
-        if request.user.role == 'admin':
+        if is_admin_user(request.user):
             visits_qs = VisitSheet.objects.all()
         else:
             visits_qs = VisitSheet.objects.filter(counselor=request.user)
 
-        if start_date:
-            visits_qs = visits_qs.filter(visit_date__gte=start_date)
-        if end_date:
-            visits_qs = visits_qs.filter(visit_date__lte=end_date)
+        if date_filter:
+            visits_qs = visits_qs.filter(visit_date=date_filter)
 
         total_scheduled = visits_qs.filter(status='Scheduled').count()
         total_completed = visits_qs.filter(status='Visited').count()
@@ -2137,14 +2443,10 @@ def counselor_reports_dashboard(request):
             sessions_qs = CounselingSession.objects.filter(counselor=cs)
             followups_qs = FollowUp.objects.filter(created_by=cs)
 
-            if start_date:
-                leads_qs = leads_qs.filter(created_at__date__gte=start_date)
-                sessions_qs = sessions_qs.filter(created_at__date__gte=start_date)
-                followups_qs = followups_qs.filter(created_at__date__gte=start_date)
-            if end_date:
-                leads_qs = leads_qs.filter(created_at__date__lte=end_date)
-                sessions_qs = sessions_qs.filter(created_at__date__lte=end_date)
-                followups_qs = followups_qs.filter(created_at__date__lte=end_date)
+            if date_filter:
+                leads_qs = leads_qs.filter(created_at__date=date_filter)
+                sessions_qs = sessions_qs.filter(created_at__date=date_filter)
+                followups_qs = followups_qs.filter(created_at__date=date_filter)
 
             total_leads = leads_qs.count()
             sessions_conducted = sessions_qs.count()
@@ -2167,15 +2469,13 @@ def counselor_reports_dashboard(request):
             })
 
     elif report_type == 'conversion':
-        if request.user.role == 'admin':
+        if is_admin_user(request.user):
             leads = Lead.objects.all()
         else:
             leads = Lead.objects.filter(assigned_counselor=request.user)
 
-        if start_date:
-            leads = leads.filter(created_at__date__gte=start_date)
-        if end_date:
-            leads = leads.filter(created_at__date__lte=end_date)
+        if date_filter:
+            leads = leads.filter(created_at__date=date_filter)
 
         for l in leads:
             report_data.append({
@@ -2187,15 +2487,13 @@ def counselor_reports_dashboard(request):
             })
 
     elif report_type == 'followup':
-        if request.user.role == 'admin':
+        if is_admin_user(request.user):
             followups = FollowUp.objects.all()
         else:
             followups = FollowUp.objects.filter(lead__assigned_counselor=request.user)
 
-        if start_date:
-            followups = followups.filter(followup_date__gte=start_date)
-        if end_date:
-            followups = followups.filter(followup_date__lte=end_date)
+        if date_filter:
+            followups = followups.filter(followup_date=date_filter)
 
         for fp in followups:
             report_data.append({
@@ -2207,15 +2505,13 @@ def counselor_reports_dashboard(request):
             })
 
     elif report_type == 'lost':
-        if request.user.role == 'admin':
+        if is_admin_user(request.user):
             leads = Lead.objects.filter(counselor_status='LOST')
         else:
             leads = Lead.objects.filter(assigned_counselor=request.user, counselor_status='LOST')
 
-        if start_date:
-            leads = leads.filter(counselor_status_updated_at__date__gte=start_date)
-        if end_date:
-            leads = leads.filter(counselor_status_updated_at__date__lte=end_date)
+        if date_filter:
+            leads = leads.filter(counselor_status_updated_at__date=date_filter)
 
         for l in leads:
             report_data.append({
@@ -2288,8 +2584,6 @@ def counselor_reports_dashboard(request):
         'report_data': report_data,
         'report_type': report_type,
         'date_filter': date_filter,
-        'start_date': request.GET.get('start_date', ''),
-        'end_date': request.GET.get('end_date', ''),
         'total_scheduled': total_scheduled,
         'total_completed': total_completed,
         'total_no_shows': total_no_shows,
@@ -2298,55 +2592,258 @@ def counselor_reports_dashboard(request):
 
 
 @login_required
+@admin_required
 def lead_assign_counselor(request):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admins only.")
 
     from django.contrib.auth import get_user_model
     User = get_user_model()
     counselors = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
 
-    if request.method == 'POST':
-        counselor_id = request.POST.get('counselor')
-        lead_ids = request.POST.getlist('leads')
-        lead_id = request.POST.get('lead_id')
-        if lead_id:
-            lead_ids = [lead_id]
+    # Calculate workload for dashboard
+    from datetime import date
+    from django.db.models import Count, Q
+    from django.db import transaction
+    from django.http import JsonResponse
 
-        if not counselor_id:
-            messages.error(request, "Please select a counselor.")
-        elif not lead_ids:
-            messages.error(request, "Please select at least one lead.")
-        else:
-            counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
-            updated_count = 0
-            for lid in lead_ids:
-                lead = get_object_or_404(Lead, pk=lid)
-                lead.assigned_counselor = counselor
-                lead.save()
-                
-                log_lead_activity(lead, 'ASSIGNED', f"Lead assigned to Counselor {counselor.username} by admin {request.user.username}.", request.user)
-                updated_count += 1
-            
-            messages.success(request, f"Successfully assigned {updated_count} lead(s) to Counselor {counselor.username}.")
-            return redirect('lead_assign_counselor')
+    today = date.today()
+    workload_data = []
+    for c in counselors:
+        stats = Lead.objects.filter(assigned_counselor=c).aggregate(
+            active=Count('id', filter=Q(counselor_status__in=['NEW', 'CONTACTED', 'FOLLOW_UP_REQUIRED', 'INTERESTED'])),
+            today=Count('id', filter=Q(assigned_at__date=today)),
+            total=Count('id')
+        )
+        workload_data.append({
+            'id': c.id,
+            'username': c.username,
+            'active': stats['active'],
+            'today': stats['today'],
+            'total': stats['total'],
+        })
 
-    leads = Lead.objects.all()
+    # Base filters
+    # Default to counseling-ready leads
+    counseling_ready_statuses = ['Qualified', 'Interested', 'Follow Up']
+    leads = Lead.objects.select_related('inquiry', 'assigned_counselor')
+
+    # Check if user overrode default status
+    override_ready = request.GET.get('all_leads', 'no') == 'yes'
+    if not override_ready:
+        leads = leads.filter(status__in=counseling_ready_statuses)
+
     q = request.GET.get('q', '').strip()
     if q:
         leads = leads.filter(
             Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
         )
-    
+
     status = request.GET.get('status', '').strip()
     if status:
         leads = leads.filter(counselor_status=status)
-        
-    assigned_status = request.GET.get('assigned', '').strip()
+
+    assigned_status = request.GET.get('assigned', 'no').strip() # Default to unassigned
     if assigned_status == 'yes':
         leads = leads.filter(assigned_counselor__isnull=False)
     elif assigned_status == 'no':
         leads = leads.filter(assigned_counselor__isnull=True)
+    elif assigned_status == 'all':
+        pass
+
+    # Handling AJAX APIs (Workload & Preview)
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        action = request.POST.get('action') or request.GET.get('action')
+        if action == 'workload':
+            return JsonResponse({'workload': workload_data})
+
+        if action == 'preview':
+            mode = request.POST.get('mode', 'manual')
+            quantity = int(request.POST.get('quantity', 0) or 0)
+            assign_source = request.POST.get('assign_source', 'unassigned')
+
+            target_leads = leads
+            if assign_source == 'unassigned':
+                target_leads = Lead.objects.filter(assigned_counselor__isnull=True)
+                if not override_ready:
+                    target_leads = target_leads.filter(status__in=counseling_ready_statuses)
+
+            if mode == 'quantity':
+                available = target_leads.count()
+                will_assign = min(quantity, available)
+                return JsonResponse({
+                    'requested': quantity,
+                    'eligible': available,
+                    'will_assign': will_assign,
+                    'remaining': available - will_assign
+                })
+            elif mode == 'all_filtered':
+                available = leads.count()
+                return JsonResponse({
+                    'requested': available,
+                    'eligible': available,
+                    'will_assign': available,
+                    'remaining': 0
+                })
+            elif mode == 'auto_distribute':
+                user_ids = request.POST.getlist('counselors[]')
+                available = target_leads.count()
+                return JsonResponse({
+                    'requested': 'Auto',
+                    'eligible': available,
+                    'will_assign': available,
+                    'remaining': 0,
+                    'users_count': len(user_ids)
+                })
+
+    if request.method == 'POST':
+        mode = request.POST.get('mode', 'manual')
+
+        if mode == 'manual':
+            counselor_id = request.POST.get('counselor')
+            lead_ids = request.POST.getlist('leads')
+
+            lead_id = request.POST.get('lead_id')
+            if lead_id:
+                lead_ids = [lead_id]
+
+            if not counselor_id:
+                messages.error(request, "Please select a counselor.")
+            elif not lead_ids:
+                messages.error(request, "Please select at least one lead.")
+            else:
+                counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
+                with transaction.atomic():
+                    Lead.objects.filter(pk__in=lead_ids).update(
+                        assigned_counselor=counselor,
+                        assigned_by=request.user,
+                        assigned_at=timezone.now()
+                    )
+                    activities = [
+                        LeadActivity(
+                            lead_id=int(lid),
+                            activity_type='ASSIGNED',
+                            description=f"Lead assigned to Counselor {counselor.username} by admin {request.user.username}.",
+                            created_by=request.user
+                        ) for lid in lead_ids
+                    ]
+                    LeadActivity.objects.bulk_create(activities)
+                messages.success(request, f"Successfully assigned {len(lead_ids)} lead(s) to Counselor {counselor.username}.")
+                return redirect(request.get_full_path())
+
+        elif mode == 'quantity':
+            counselor_id = request.POST.get('counselor')
+            quantity = int(request.POST.get('quantity', 0) or 0)
+            assign_source = request.POST.get('assign_source', 'unassigned')
+
+            if not counselor_id or quantity <= 0:
+                messages.error(request, "Invalid counselor or quantity.")
+            else:
+                counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
+                target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(assigned_counselor__isnull=True)
+                if assign_source != 'filtered' and not override_ready:
+                    target_leads = target_leads.filter(status__in=counseling_ready_statuses)
+
+                with transaction.atomic():
+                    lead_ids = list(target_leads.select_for_update().values_list('id', flat=True)[:quantity])
+                    if lead_ids:
+                        Lead.objects.filter(pk__in=lead_ids).update(
+                            assigned_counselor=counselor,
+                            assigned_by=request.user,
+                            assigned_at=timezone.now()
+                        )
+                        activities = [
+                            LeadActivity(
+                                lead_id=lid,
+                                activity_type='ASSIGNED',
+                                description=f"Lead assigned to Counselor {counselor.username} by admin {request.user.username}.",
+                                created_by=request.user
+                            ) for lid in lead_ids
+                        ]
+                        LeadActivity.objects.bulk_create(activities)
+                        messages.success(request, f"Successfully assigned {len(lead_ids)} lead(s) to Counselor {counselor.username}.")
+                    else:
+                        messages.warning(request, "No eligible leads found to assign.")
+                return redirect(request.get_full_path())
+
+        elif mode == 'all_filtered':
+            counselor_id = request.POST.get('counselor')
+            if not counselor_id:
+                messages.error(request, "Please select a counselor.")
+            else:
+                counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
+                with transaction.atomic():
+                    lead_ids = list(leads.select_for_update().values_list('id', flat=True))
+                    if lead_ids:
+                        Lead.objects.filter(pk__in=lead_ids).update(
+                            assigned_counselor=counselor,
+                            assigned_by=request.user,
+                            assigned_at=timezone.now()
+                        )
+                        activities = [
+                            LeadActivity(
+                                lead_id=lid,
+                                activity_type='ASSIGNED',
+                                description=f"Lead assigned to Counselor {counselor.username} by admin {request.user.username}.",
+                                created_by=request.user
+                            ) for lid in lead_ids
+                        ]
+                        LeadActivity.objects.bulk_create(activities)
+                        messages.success(request, f"Successfully assigned {len(lead_ids)} lead(s) to Counselor {counselor.username}.")
+                    else:
+                        messages.warning(request, "No leads matched the filters.")
+                return redirect(request.get_full_path())
+
+        elif mode == 'auto_distribute':
+            user_ids = request.POST.getlist('counselors')
+            assign_source = request.POST.get('assign_source', 'unassigned')
+
+            if not user_ids:
+                messages.error(request, "Please select at least one counselor for auto-distribution.")
+            else:
+                selected_users = list(User.objects.filter(id__in=user_ids, role='counselor', is_active=True))
+                if not selected_users:
+                    messages.error(request, "Invalid counselors selected.")
+                else:
+                    target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(assigned_counselor__isnull=True)
+                    if assign_source != 'filtered' and not override_ready:
+                        target_leads = target_leads.filter(status__in=counseling_ready_statuses)
+
+                    with transaction.atomic():
+                        lead_ids = list(target_leads.select_for_update().values_list('id', flat=True))
+                        if not lead_ids:
+                            messages.warning(request, "No eligible leads found for auto distribution.")
+                        else:
+                            pool_size = len(lead_ids)
+                            num_users = len(selected_users)
+
+                            workload_map = {w['id']: w['active'] for w in workload_data}
+                            selected_users.sort(key=lambda u: workload_map.get(u.id, 0))
+
+                            base_count = pool_size // num_users
+                            remainder = pool_size % num_users
+
+                            current_idx = 0
+                            activities = []
+                            for i, c in enumerate(selected_users):
+                                count_for_c = base_count + (1 if i < remainder else 0)
+                                if count_for_c > 0:
+                                    chunk_ids = lead_ids[current_idx:current_idx+count_for_c]
+                                    Lead.objects.filter(pk__in=chunk_ids).update(
+                                        assigned_counselor=c,
+                                        assigned_by=request.user,
+                                        assigned_at=timezone.now()
+                                    )
+                                    for lid in chunk_ids:
+                                        activities.append(LeadActivity(
+                                            lead_id=lid,
+                                            activity_type='ASSIGNED',
+                                            description=f"Lead assigned to Counselor {c.username} via auto-distribution by admin.",
+                                            created_by=request.user
+                                        ))
+                                    current_idx += count_for_c
+
+                            LeadActivity.objects.bulk_create(activities)
+                            messages.success(request, f"Successfully distributed {pool_size} lead(s) among {num_users} counselor(s).")
+                    return redirect(request.get_full_path())
 
     paginator = Paginator(leads, 15)
     page_number = request.GET.get('page')
@@ -2355,9 +2852,11 @@ def lead_assign_counselor(request):
     return render(request, 'management/counselor_assignment.html', {
         'page_obj': page_obj,
         'counselors': counselors,
+        'workload_data': workload_data,
         'q': q,
         'status': status,
         'assigned': assigned_status,
+        'all_leads': 'yes' if override_ready else 'no',
         'status_choices': Lead.COUNSELOR_STATUS_CHOICES,
     })
 
@@ -2365,7 +2864,7 @@ def lead_assign_counselor(request):
 @login_required
 @counselor_required
 def counselor_visit_list(request):
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         visits = VisitSheet.objects.all()
     elif request.user.role == 'counselor':
         visits = VisitSheet.objects.filter(counselor=request.user)
@@ -2386,16 +2885,10 @@ def counselor_visit_list(request):
     if status:
         visits = visits.filter(status=status)
 
-    start_date = request.GET.get('start_date', '').strip()
-    end_date = request.GET.get('end_date', '').strip()
-    if start_date:
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
         try:
-            visits = visits.filter(visit_date__gte=datetime.strptime(start_date, "%Y-%m-%d").date())
-        except ValueError:
-            pass
-    if end_date:
-        try:
-            visits = visits.filter(visit_date__lte=datetime.strptime(end_date, "%Y-%m-%d").date())
+            visits = visits.filter(visit_date=datetime.strptime(date_filter, "%Y-%m-%d").date())
         except ValueError:
             pass
 
@@ -2407,8 +2900,7 @@ def counselor_visit_list(request):
         'page_obj': page_obj,
         'q': q,
         'status': status,
-        'start_date': start_date,
-        'end_date': end_date,
+        'date_filter': date_filter,
         'status_choices': VisitSheet.STATUS_CHOICES,
     })
 
@@ -2420,7 +2912,7 @@ def counselor_visit_add(request):
     lead = None
     if lead_id:
         lead = get_object_or_404(Lead, pk=lead_id)
-        if request.user.role != 'admin' and lead.assigned_counselor != request.user:
+        if not is_admin_user(request.user) and lead.assigned_counselor != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead record.")
 
     if request.method == 'POST':
@@ -2428,7 +2920,7 @@ def counselor_visit_add(request):
         selected_lead_id = request.POST.get('lead')
         selected_lead = get_object_or_404(Lead, pk=selected_lead_id)
 
-        if request.user.role != 'admin' and selected_lead.assigned_counselor != request.user:
+        if not is_admin_user(request.user) and selected_lead.assigned_counselor != request.user:
             return HttpResponseForbidden("Access Denied: You do not own this lead record.")
 
         if form.is_valid():
@@ -2441,8 +2933,8 @@ def counselor_visit_add(request):
             # Log activity
             log_lead_activity(
                 selected_lead,
-                'FOLLOWUP_CREATED',
-                f"Visit scheduled for {visit.visit_date} at {visit.visit_time}.",
+                'NOTE_ADDED',
+                f"Counselor scheduled candidate visit for {visit.visit_date} at {visit.visit_time}.",
                 request.user
             )
 
@@ -2451,7 +2943,7 @@ def counselor_visit_add(request):
     else:
         form = VisitSheetForm(initial={'lead': lead}, user=request.user)
 
-    if request.user.role == 'admin':
+    if is_admin_user(request.user):
         leads = Lead.objects.all()
     else:
         leads = Lead.objects.filter(assigned_counselor=request.user)
@@ -2468,7 +2960,7 @@ def counselor_visit_add(request):
 @counselor_required
 def counselor_visit_edit(request, pk):
     visit = get_object_or_404(VisitSheet, pk=pk)
-    if request.user.role != 'admin' and visit.counselor != request.user:
+    if not is_admin_user(request.user) and visit.counselor != request.user:
         return HttpResponseForbidden("Access Denied: You do not own this visit record.")
 
     if request.method == 'POST':
@@ -2503,13 +2995,10 @@ def counselor_visit_edit(request, pk):
 # ==================================================
 
 @login_required
-@counselor_required
+@admin_required
 def admission_list(request):
     """List all admissions with search, filters, and pagination."""
-    if request.user.role == 'admin':
-        admissions = AdmissionSheet.objects.all()
-    else:
-        admissions = AdmissionSheet.objects.filter(counselor=request.user)
+    admissions = AdmissionSheet.objects.all()
 
     # Search
     q = request.GET.get('q', '').strip()
@@ -2524,16 +3013,12 @@ def admission_list(request):
         admissions = admissions.filter(admission_status=status)
 
     counselor_id = request.GET.get('counselor', '').strip()
-    if counselor_id and request.user.role == 'admin':
+    if counselor_id:
         admissions = admissions.filter(counselor_id=counselor_id)
 
-    date_from = request.GET.get('date_from', '').strip()
-    if date_from:
-        admissions = admissions.filter(admission_date__gte=date_from)
-
-    date_to = request.GET.get('date_to', '').strip()
-    if date_to:
-        admissions = admissions.filter(admission_date__lte=date_to)
+    date_filter = request.GET.get('date', '').strip()
+    if date_filter:
+        admissions = admissions.filter(admission_date=date_filter)
 
     # Counselor choices for filter (admin only)
     from django.contrib.auth import get_user_model
@@ -2549,20 +3034,17 @@ def admission_list(request):
         'q': q,
         'status': status,
         'counselor_id': counselor_id,
-        'date_from': date_from,
-        'date_to': date_to,
+        'date_filter': date_filter,
         'status_choices': AdmissionSheet.ADMISSION_STATUS_CHOICES,
         'counselor_choices': counselor_choices,
     })
 
 
 @login_required
-@counselor_required
+@admin_required
 def admission_create(request, lead_pk):
     """Create admission from a lead. Auto-populates student info."""
     lead = get_object_or_404(Lead, pk=lead_pk)
-    if request.user.role != 'admin' and lead.assigned_counselor != request.user:
-        return HttpResponseForbidden("Access Denied: You do not own this lead.")
 
     # Check duplicate
     if AdmissionSheet.objects.filter(lead=lead).exists():
@@ -2570,7 +3052,7 @@ def admission_create(request, lead_pk):
         return redirect('counselor_lead_detail', pk=lead.pk)
 
     if request.method == 'POST':
-        form = AdmissionSheetForm(request.POST)
+        form = AdmissionSheetForm(request.POST, user=request.user)
         if form.is_valid():
             admission = form.save(commit=False)
             admission.lead = lead
@@ -2605,7 +3087,7 @@ def admission_create(request, lead_pk):
             'course_name': inquiry.course_interest or '',
             'admission_date': date.today(),
         }
-        form = AdmissionSheetForm(initial=initial)
+        form = AdmissionSheetForm(initial=initial, user=request.user)
 
     return render(request, 'management/admission_form.html', {
         'form': form,
@@ -2615,21 +3097,19 @@ def admission_create(request, lead_pk):
 
 
 @login_required
-@counselor_required
+@admin_required
 def admission_edit(request, pk):
     """Edit an existing admission."""
     admission = get_object_or_404(AdmissionSheet, pk=pk)
-    if request.user.role != 'admin' and admission.counselor != request.user:
-        return HttpResponseForbidden("Access Denied: You do not own this admission record.")
 
     if request.method == 'POST':
-        form = AdmissionSheetForm(request.POST, instance=admission)
+        form = AdmissionSheetForm(request.POST, instance=admission, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, f"Admission {admission.admission_number} updated successfully.")
             return redirect('admission_detail', pk=admission.pk)
     else:
-        form = AdmissionSheetForm(instance=admission)
+        form = AdmissionSheetForm(instance=admission, user=request.user)
 
     return render(request, 'management/admission_form.html', {
         'form': form,
@@ -2640,12 +3120,10 @@ def admission_edit(request, pk):
 
 
 @login_required
-@counselor_required
+@admin_required
 def admission_detail(request, pk):
     """View admission details."""
     admission = get_object_or_404(AdmissionSheet, pk=pk)
-    if request.user.role != 'admin' and admission.counselor != request.user:
-        return HttpResponseForbidden("Access Denied: You do not own this admission record.")
 
     return render(request, 'management/admission_detail.html', {
         'admission': admission,
@@ -2653,13 +3131,10 @@ def admission_detail(request, pk):
 
 
 @login_required
-@counselor_required
+@admin_required
 def admission_report(request):
     """Simple admission report with tabular data."""
-    if request.user.role == 'admin':
-        admissions = AdmissionSheet.objects.all()
-    else:
-        admissions = AdmissionSheet.objects.filter(counselor=request.user)
+    admissions = AdmissionSheet.objects.all()
 
     # Aggregate metrics
     from django.db.models import Count

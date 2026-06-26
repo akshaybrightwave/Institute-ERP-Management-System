@@ -183,23 +183,8 @@
   <div class="m-card tele-filter-card mb-4">
     <form method="GET" id="report-filter-form" class="row g-3 align-items-end">
       <div class="col-lg-3 col-md-6">
-        <label class="form-label">Date Preset</label>
-        <select name="date_filter" id="date-filter-select" class="form-select">
-          <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
-          <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
-          <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
-          <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
-        </select>
-      </div>
-
-      <div class="col-lg-2 col-md-6 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-        <label class="form-label">From Date</label>
-        <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
-      </div>
-
-      <div class="col-lg-2 col-md-6 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-        <label class="form-label">To Date</label>
-        <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" value="{{ date_filter }}" class="form-control">
       </div>
 
       <div class="col-lg-2 col-md-6">
@@ -335,12 +320,6 @@
 </div>
 
 <script>
-  document.getElementById('date-filter-select').addEventListener('change', function() {
-    const customGroups = document.querySelectorAll('.custom-date-group');
-    const displayValue = this.value === 'custom' ? 'block' : 'none';
-    customGroups.forEach(el => el.style.display = displayValue);
-  });
-
   /* ── Scroll fade: hide right gradient + hint when fully scrolled ── */
   (function() {
     var wrapper = document.getElementById('teleScrollWrapper');

@@ -78,7 +78,7 @@
           </li>
 
           <!-- Dashboard Links -->
-          {% if request.user.role == 'admin' %}
+          {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
           <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' and 'management' not in request.path %}active{% endif %}"
               href="{% url 'admin_dashboard' %}">Admin Dashboard</a>
@@ -107,7 +107,7 @@
                 ERP
               </a>
               <a class="portal-switcher-link {% if 'management' in request.path %}active{% endif %}"
-                href="{% url 'management_super_admin_dashboard' %}">
+                href="{% if request.user.role == 'superadmin' %}{% url 'management_super_admin_dashboard' %}{% else %}{% url 'management_admin_dashboard' %}{% endif %}">
                 <i class="bi bi-headset"></i>
                 Management
               </a>
@@ -133,7 +133,7 @@
           <li class="nav-item ms-lg-2 my-2 my-lg-0">
             <span class="role-badge">
               <i class="bi bi-person-circle"></i>
-              {% if request.user.role == 'admin' %}Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'hr' %}HR{% elif request.user.role == 'telecaller' %}Telecaller{% elif request.user.role == 'counselor' %}Counselor{% else %}Student{% endif %}
+              {% if request.user.role == 'superadmin' %}Super Admin{% elif request.user.role == 'admin' %}Admin{% elif request.user.role == 'center' %}Center{% elif request.user.role == 'teacher' %}Teacher{% elif request.user.role == 'hr' %}HR{% elif request.user.role == 'telecaller' %}Telecaller{% elif request.user.role == 'counselor' %}Counselor{% else %}Student{% endif %}
               &middot; {{ request.user.username }}
             </span>
           </li>

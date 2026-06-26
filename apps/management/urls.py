@@ -3,8 +3,9 @@ from . import views
 
 urlpatterns = [
     # Dashboard
-    path('', views.management_super_admin_dashboard, name='management_super_admin_dashboard'),
-    path('dashboard/', views.management_dashboard, name='management_dashboard'),
+    path('super-admin/dashboard/', views.management_super_admin_dashboard, name='management_super_admin_dashboard'),
+    path('admin/dashboard/', views.management_admin_dashboard, name='management_admin_dashboard'),
+    path('telecaller/dashboard/', views.management_dashboard, name='management_dashboard'),
 
     # Inquiry CRUD
     path('inquiries/', views.inquiry_list, name='inquiry_list'),
@@ -53,6 +54,7 @@ urlpatterns = [
     path('counselor/leads/', views.counselor_lead_list, name='counselor_lead_list'),
     path('counselor/leads/<int:pk>/', views.counselor_lead_detail, name='counselor_lead_detail'),
     path('counselor/leads/<int:pk>/status/', views.counselor_lead_status_update, name='counselor_lead_status_update'),
+    path('counselor/leads/<int:pk>/mark-admission/', views.counselor_mark_admission, name='counselor_mark_admission'),
     path('counselor/sessions/', views.counselor_session_list, name='counselor_session_list'),
     path('counselor/sessions/add/', views.counselor_session_add, name='counselor_session_add'),
     path('counselor/sessions/<int:pk>/', views.counselor_session_detail, name='counselor_session_detail'),

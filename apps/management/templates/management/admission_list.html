@@ -37,7 +37,7 @@
         {% endfor %}
       </select>
     </div>
-    {% if request.user.role == 'admin' %}
+    {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
     <div class="col-md-2">
       <label class="form-label text-muted small fw-bold">Counselor</label>
       <select name="counselor" class="form-select bg-dark border-secondary text-white">
@@ -49,17 +49,13 @@
     </div>
     {% endif %}
     <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">From Date</label>
-      <input type="date" name="date_from" value="{{ date_from }}" class="form-control bg-dark border-secondary text-white">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">To Date</label>
-      <input type="date" name="date_to" value="{{ date_to }}" class="form-control bg-dark border-secondary text-white">
+      <label class="form-label text-muted small fw-bold">Date</label>
+      <input type="date" name="date" value="{{ date_filter }}" class="form-control bg-dark border-secondary text-white">
     </div>
     <div class="col-md-1">
       <button type="submit" class="btn btn-info text-white fw-bold w-100"><i class="bi bi-funnel"></i></button>
     </div>
-    {% if q or status or counselor_id or date_from or date_to %}
+    {% if q or status or counselor_id or date_filter %}
     <div class="col-12">
       <a href="{% url 'admission_list' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-circle me-1"></i> Clear filters</a>
     </div>
@@ -85,6 +81,10 @@
           <th>Course</th>
           <th>Batch Name</th>
           <th>Status</th>
+          {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
+          <th>Docs</th>
+          <th>Fee</th>
+          {% endif %}
           <th class="text-end">Actions</th>
         </tr>
       </thead>
@@ -106,6 +106,26 @@
               <span class="badge bg-danger">Cancelled</span>
             {% endif %}
           </td>
+          {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
+          <td>
+            {% if adm.document_status == 'VERIFIED' %}
+              <span class="badge bg-success" title="Verified"><i class="bi bi-check-circle"></i></span>
+            {% elif adm.document_status == 'RECEIVED' %}
+              <span class="badge bg-info" title="Received"><i class="bi bi-inbox-fill"></i></span>
+            {% else %}
+              <span class="badge bg-warning text-dark" title="Pending"><i class="bi bi-hourglass-split"></i></span>
+            {% endif %}
+          </td>
+          <td>
+            {% if adm.fee_status == 'PAID' %}
+              <span class="badge bg-success" title="Paid"><i class="bi bi-cash-stack"></i></span>
+            {% elif adm.fee_status == 'PARTIAL' %}
+              <span class="badge bg-warning text-dark" title="Partial"><i class="bi bi-pie-chart-fill"></i></span>
+            {% else %}
+              <span class="badge bg-danger" title="Pending"><i class="bi bi-exclamation-circle-fill"></i></span>
+            {% endif %}
+          </td>
+          {% endif %}
           <td class="text-end">
             <a href="{% url 'admission_detail' adm.pk %}" class="btn btn-sm btn-outline-info me-1" title="View"><i class="bi bi-eye"></i></a>
             <a href="{% url 'admission_edit' adm.pk %}" class="btn btn-sm btn-outline-warning me-1" title="Edit"><i class="bi bi-pencil"></i></a>
@@ -120,13 +140,13 @@
   <nav class="mt-4">
     <ul class="pagination justify-content-center flex-wrap gap-1">
       {% if page_obj.has_previous %}
-        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if counselor_id %}&counselor={{ counselor_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">&laquo;</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if counselor_id %}&counselor={{ counselor_id }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">&laquo;</a></li>
       {% endif %}
       {% for i in page_obj.paginator.page_range %}
-        <li class="page-item {% if page_obj.number == i %}active{% endif %}"><a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if counselor_id %}&counselor={{ counselor_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a></li>
+        <li class="page-item {% if page_obj.number == i %}active{% endif %}"><a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if counselor_id %}&counselor={{ counselor_id }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ i }}</a></li>
       {% endfor %}
       {% if page_obj.has_next %}
-        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if counselor_id %}&counselor={{ counselor_id }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">&raquo;</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if counselor_id %}&counselor={{ counselor_id }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">&raquo;</a></li>
       {% endif %}
     </ul>
   </nav>

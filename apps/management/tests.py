@@ -96,6 +96,23 @@ class TelecallerModuleTests(TestCase):
         self.assertContains(response, 'John Doe')
         self.assertContains(response, 'Jane Smith')
 
+    def test_assigned_lead_inquiry_shows_in_telecaller_directory(self):
+        Lead.objects.create(
+            inquiry=self.inquiry2,
+            assigned_telecaller=self.tele1,
+            assigned_by=self.admin,
+            status='New'
+        )
+
+        response = self.client_tele1.get(reverse('inquiry_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'John Doe')
+        self.assertContains(response, 'Jane Smith')
+
+        response = self.client_tele1.get(reverse('inquiry_detail', kwargs={'pk': self.inquiry2.pk}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Jane Smith')
+
     def test_unauthorized_record_details_access(self):
         # Tele1 tries to view details of tele2's inquiry
         response = self.client_tele1.get(reverse('inquiry_detail', kwargs={'pk': self.inquiry2.pk}))
@@ -612,6 +629,8 @@ class CounselorModuleTests(TestCase):
 
         self.lead1.refresh_from_db()
         self.assertEqual(self.lead1.assigned_counselor, self.counselor2)
+        self.assertEqual(self.lead1.assigned_by, self.admin)
+        self.assertIsNotNone(self.lead1.assigned_at)
 
     def test_counselor_reports_dashboard_and_exports(self):
         # Record counseling session & followup to populate reports
@@ -721,5 +740,3 @@ class CounselorModuleTests(TestCase):
             'export': 'excel'
         })
         self.assertEqual(response.status_code, 403)
-
-

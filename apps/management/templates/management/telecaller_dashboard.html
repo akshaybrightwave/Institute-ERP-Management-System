@@ -11,7 +11,7 @@
 <!-- Header -->
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div>
-    <h2 class="fw-bold text-white mb-1">Telecaller Dashboard</h2>
+    <h2 class="dashboard-title text-white mb-1">Telecaller Dashboard</h2>
     <p class="text-muted small mb-0">Welcome back, {{ request.user.username }} &middot; Role: Telecaller</p>
   </div>
   <div>
@@ -28,8 +28,9 @@
   <div class="col">
     <div class="erp-card bg-g-blue">
       <div class="erp-card-body">
-        <div class="erp-card-title">Assigned Leads</div>
-        <div class="erp-card-number">{{ assigned_leads }}</div>
+        <div class="erp-card-title">Assigned Enquiries</div>
+        <div class="erp-card-number">{{ assigned_leads.total }}</div>
+        <div class="text-white-50 small mt-1">Today: <strong>{{ assigned_leads.today }}</strong></div>
         <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
       </div>
       <a href="{% url 'lead_list' %}" class="erp-card-footer">
@@ -43,8 +44,9 @@
   <div class="col">
     <div class="erp-card bg-g-orange">
       <div class="erp-card-body">
-        <div class="erp-card-title">Today's Calls</div>
-        <div class="erp-card-number">{{ today_calls }}</div>
+        <div class="erp-card-title">Calls</div>
+        <div class="erp-card-number">{{ today_calls.total }}</div>
+        <div class="text-white-50 small mt-1">Today: <strong>{{ today_calls.today }}</strong></div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
       </div>
       <a href="{% url 'call_log_list' %}" class="erp-card-footer">
@@ -95,57 +97,61 @@
 
       <div class="table-responsive">
         {% if recent_leads %}
-          <table class="table m-table align-middle">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Status</th>
-                <th>Priority</th>
-                <th>Next Follow-Up</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for lead in recent_leads %}
-                <tr>
-                  <td>
-                    <span class="fw-semibold" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</span>
-                  </td>
-                  <td>
-                    <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
-                      {{ lead.status }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="badge-premium {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">
-                      {{ lead.priority }}
-                    </span>
-                  </td>
-                  <td>
-                    {% if lead.next_followup_date %}
-                      <span class="d-inline-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.82rem;">
-                        <i class="bi bi-calendar3" style="color:#818cf8;"></i>
-                        {{ lead.next_followup_date|date:"d M Y" }}
-                      </span>
-                    {% else %}
-                      <span class="text-muted small">—</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <div class="d-flex gap-1">
-                      <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i class="bi bi-eye"></i> Profile</a>
-                      <a href="{% url 'lead_notes_list' lead.pk %}" class="btn btn-sm btn-outline-info" title="Notes"><i class="bi bi-chat-left-text"></i> Notes</a>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <table class="table m-table align-middle">
+          <thead>
+            <tr>
+              <th>Lead</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Next Follow-Up</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lead in recent_leads %}
+            <tr>
+              <td>
+                <span class="fw-semibold" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</span>
+              </td>
+              <td>
+                <span
+                  class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
+                  {{ lead.status }}
+                </span>
+              </td>
+              <td>
+                <span
+                  class="badge-premium {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning{% else %}bg-secondary{% endif %}">
+                  {{ lead.priority }}
+                </span>
+              </td>
+              <td>
+                {% if lead.next_followup_date %}
+                <span class="d-inline-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.82rem;">
+                  <i class="bi bi-calendar3" style="color:#818cf8;"></i>
+                  {{ lead.next_followup_date|date:"d M Y" }}
+                </span>
+                {% else %}
+                <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i
+                      class="bi bi-eye"></i> Profile</a>
+                  <a href="{% url 'lead_notes_list' lead.pk %}" class="btn btn-sm btn-outline-info" title="Notes"><i
+                      class="bi bi-chat-left-text"></i> Notes</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
         {% else %}
-          <div class="empty-state-premium">
-            <i class="bi bi-funnel"></i>
-            <p>No leads assigned or converted yet.</p>
-          </div>
+        <div class="empty-state-premium">
+          <i class="bi bi-funnel"></i>
+          <p>No leads assigned or converted yet.</p>
+        </div>
         {% endif %}
       </div>
     </div>
@@ -153,42 +159,45 @@
     <!-- Today's Follow Ups -->
     <div class="m-card mb-4">
       <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-calendar-check text-success me-2"></i>Today's Follow-Ups</h5>
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-calendar-check text-success me-2"></i>Today's Follow-Ups
+        </h5>
         <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-success">View All</a>
       </div>
 
       <div class="table-responsive">
         {% if today_followups_list %}
-          <table class="table m-table align-middle">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Scheduled Date</th>
-                <th>Response / Notes</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for fp in today_followups_list %}
-                <tr>
-                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
-                  <td><span class="badge-premium bg-success">Today</span></td>
-                  <td class="small">{{ fp.response|default:"-" }}</td>
-                  <td>
-                    <div class="d-flex gap-1">
-                      <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i class="bi bi-eye"></i></a>
-                      <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <table class="table m-table align-middle">
+          <thead>
+            <tr>
+              <th>Lead</th>
+              <th>Scheduled Date</th>
+              <th>Response / Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fp in today_followups_list %}
+            <tr>
+              <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
+              <td><span class="badge-premium bg-success">Today</span></td>
+              <td class="small">{{ fp.response|default:"-" }}</td>
+              <td>
+                <div class="d-flex gap-1">
+                  <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i
+                      class="bi bi-eye"></i></a>
+                  <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i
+                      class="bi bi-check-lg"></i> Complete</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
         {% else %}
-          <div class="empty-state-premium">
-            <i class="bi bi-calendar2-check"></i>
-            <p>No follow-ups due today.</p>
-          </div>
+        <div class="empty-state-premium">
+          <i class="bi bi-calendar2-check"></i>
+          <p>No follow-ups due today.</p>
+        </div>
         {% endif %}
       </div>
     </div>
@@ -196,45 +205,48 @@
     <!-- Overdue Follow Ups -->
     <div class="m-card mb-4">
       <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Overdue Follow-Ups</h5>
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Overdue
+          Follow-Ups</h5>
         <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-danger">View All</a>
       </div>
 
       <div class="table-responsive">
         {% if overdue_followups_list %}
-          <table class="table m-table align-middle">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Follow-Up Date</th>
-                <th>Days Overdue</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for fp in overdue_followups_list %}
-                <tr>
-                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
-                  <td>
-                    {{ fp.followup_date|date:"d M Y" }}
-                    <span class="badge-premium bg-danger ms-1">⚠ Overdue</span>
-                  </td>
-                  <td class="text-danger fw-bold">{{ fp.days_overdue }} days</td>
-                  <td>
-                    <div class="d-flex gap-1">
-                      <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i class="bi bi-eye"></i></a>
-                      <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <table class="table m-table align-middle">
+          <thead>
+            <tr>
+              <th>Lead</th>
+              <th>Follow-Up Date</th>
+              <th>Days Overdue</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for fp in overdue_followups_list %}
+            <tr>
+              <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
+              <td>
+                {{ fp.followup_date|date:"d M Y" }}
+                <span class="badge-premium bg-danger ms-1">⚠ Overdue Follow-Up</span>
+              </td>
+              <td class="text-danger fw-bold">{{ fp.days_overdue }} days</td>
+              <td>
+                <div class="d-flex gap-1">
+                  <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i
+                      class="bi bi-eye"></i></a>
+                  <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i
+                      class="bi bi-check-lg"></i> Complete</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
         {% else %}
-          <div class="empty-state-premium">
-            <i class="bi bi-clipboard-check"></i>
-            <p>You have no overdue follow-ups.</p>
-          </div>
+        <div class="empty-state-premium">
+          <i class="bi bi-clipboard-check"></i>
+          <p>You have no overdue follow-ups.</p>
+        </div>
         {% endif %}
       </div>
     </div>
@@ -244,7 +256,8 @@
   <div class="col-xxl-3">
     <!-- Quick Actions -->
     <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions
+      </h5>
       <div class="d-flex flex-column gap-2">
         <a href="{% url 'inquiry_add' %}" class="action-btn">
           <div class="action-icon-box"><i class="bi bi-person-plus"></i></div> Add New Inquiry

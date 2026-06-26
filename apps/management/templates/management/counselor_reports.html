@@ -97,27 +97,27 @@
   <!-- Report Type Tabs -->
   <ul class="nav nav-tabs modern-tabs">
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'performance' %}active{% endif %}" href="?report_type=performance&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'performance' %}active{% endif %}" href="?report_type=performance&date={{ date_filter }}">
         <i class="bi bi-bar-chart-steps me-1"></i> Performance Summary
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'conversion' %}active{% endif %}" href="?report_type=conversion&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'conversion' %}active{% endif %}" href="?report_type=conversion&date={{ date_filter }}">
         <i class="bi bi-person-check-fill me-1"></i> Conversion Details
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'followup' %}active{% endif %}" href="?report_type=followup&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'followup' %}active{% endif %}" href="?report_type=followup&date={{ date_filter }}">
         <i class="bi bi-calendar-check me-1"></i> Follow-up Outcomes
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'lost' %}active{% endif %}" href="?report_type=lost&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'lost' %}active{% endif %}" href="?report_type=lost&date={{ date_filter }}">
         <i class="bi bi-x-octagon-fill me-1"></i> Lost Candidates
       </a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if report_type == 'visit' %}active{% endif %}" href="?report_type=visit&date_filter={{ date_filter }}&start_date={{ start_date }}&end_date={{ end_date }}">
+      <a class="nav-link {% if report_type == 'visit' %}active{% endif %}" href="?report_type=visit&date={{ date_filter }}">
         <i class="bi bi-geo-alt me-1"></i> Visit Sheets
       </a>
     </li>
@@ -129,23 +129,8 @@
       <input type="hidden" name="report_type" value="{{ report_type }}">
 
       <div class="col-md-3">
-        <label class="form-label">Date Preset</label>
-        <select name="date_filter" id="date-filter-select" class="form-select form-select-sm">
-          <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
-          <option value="this_week" {% if date_filter == 'this_week' %}selected{% endif %}>This Week</option>
-          <option value="this_month" {% if date_filter == 'this_month' %}selected{% endif %}>This Month</option>
-          <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Custom Date Range</option>
-        </select>
-      </div>
-
-      <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-        <label class="form-label">From Date</label>
-        <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm">
-      </div>
-
-      <div class="col-md-2 custom-date-group" style="{% if date_filter != 'custom' %}display: none;{% endif %}">
-        <label class="form-label">To Date</label>
-        <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" value="{{ date_filter }}" class="form-control form-control-sm">
       </div>
 
       <div class="col-md-2">
@@ -221,7 +206,7 @@
                 </span>
               </td>
               <td>
-                <span class="badge {% if row.priority == 'High' %}bg-soft-danger{% elif row.priority == 'Medium' %}bg-soft-warning{% else %}bg-soft-secondary{% endif %}">
+                <span class="badge {% if row.priority == 'Hot' %}bg-soft-danger{% elif row.priority == 'Warm' %}bg-soft-warning{% else %}bg-soft-secondary{% endif %}">
                   {{ row.priority }}
                 </span>
               </td>
@@ -374,14 +359,4 @@
   </div>
 </div>
 
-<script>
-  document.getElementById('date-filter-select').addEventListener('change', function() {
-    const customGroups = document.querySelectorAll('.custom-date-group');
-    if (this.value === 'custom') {
-      customGroups.forEach(el => el.style.display = 'block');
-    } else {
-      customGroups.forEach(el => el.style.display = 'none');
-    }
-  });
-</script>
 {% endblock %}

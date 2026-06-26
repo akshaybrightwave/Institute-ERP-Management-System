@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth import get_user_model
 from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet, AdmissionSheet
 
+ADMIN_ROLES = ('admin', 'superadmin')
+
 class InquiryForm(forms.ModelForm):
     class Meta:
         model = Inquiry
@@ -112,7 +114,7 @@ class CounselingSessionForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if user:
-            if user.role == 'admin':
+            if user.role in ADMIN_ROLES:
                 self.fields['lead'].queryset = Lead.objects.all()
             else:
                 self.fields['lead'].queryset = Lead.objects.filter(assigned_counselor=user)
@@ -135,7 +137,7 @@ class CounselorFollowUpForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if user:
-            if user.role == 'admin':
+            if user.role in ADMIN_ROLES:
                 self.fields['lead'].queryset = Lead.objects.all()
             else:
                 self.fields['lead'].queryset = Lead.objects.filter(assigned_counselor=user)
@@ -174,7 +176,7 @@ class VisitSheetForm(forms.ModelForm):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if user:
-            if user.role == 'admin':
+            if user.role in ADMIN_ROLES:
                 self.fields['lead'].queryset = Lead.objects.all()
             else:
                 self.fields['lead'].queryset = Lead.objects.filter(assigned_counselor=user)
@@ -188,7 +190,7 @@ class AdmissionSheetForm(forms.ModelForm):
             'student_name', 'mobile_number', 'email_id', 'parent_name', 'parent_mobile',
             'college_name', 'university_name', 'department', 'academic_year',
             'course_name', 'batch_name', 'admission_source',
-            'seat_status', 'remarks',
+            'seat_status', 'remarks', 'document_status', 'fee_status'
         ]
         widgets = {
             'admission_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -206,6 +208,17 @@ class AdmissionSheetForm(forms.ModelForm):
             'batch_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Batch Name'}),
             'admission_source': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Source'}),
             'seat_status': forms.Select(attrs={'class': 'form-select'}),
+            'document_status': forms.Select(attrs={'class': 'form-select'}),
+            'fee_status': forms.Select(attrs={'class': 'form-select'}),
             'remarks': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Remarks...'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user and user.role not in ADMIN_ROLES:
+            if 'document_status' in self.fields:
+                del self.fields['document_status']
+            if 'fee_status' in self.fields:
+                del self.fields['fee_status']
 

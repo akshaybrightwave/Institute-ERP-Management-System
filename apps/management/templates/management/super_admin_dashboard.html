@@ -1,0 +1,388 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Super Admin Dashboard | Examly{% endblock %}
+
+{% block extra_style %}
+{# All dark theme CSS (topbar, sidebar, cards, erp-card, gradients) comes from the shared include #}
+{% include 'management/premium_theme_css.html' %}
+{% endblock %}
+
+{% block management_content %}
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h2 class="dashboard-title text-white mb-1">Super Admin Dashboard</h2>
+    <p class="text-muted small mb-0">Overview of all system statistics across telecallers and counselors.</p>
+  </div>
+  <div>
+    <span class="badge-premium bg-dark border border-secondary py-2 px-3">
+      <i class="bi bi-calendar3 me-1"></i> Today: {% now "d M Y" %}
+    </span>
+  </div>
+</div>
+
+<!-- Stats Row — uses shared erp-card component from premium_theme_css.html -->
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
+  <!-- Total Leads -->
+  <div class="col">
+    <div class="erp-card bg-g-blue">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Total Leads</div>
+        <div class="erp-card-number">{{ total_leads.total }}</div>
+        <div class="small fw-bold text-white-50 mt-1">Today: {{ total_leads.today }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-lines-fill"></i></div>
+      </div>
+      <a href="{% url 'lead_list' %}" class="erp-card-footer">
+        <i class="bi bi-eye"></i> View all
+      </a>
+    </div>
+  </div>
+
+  <!-- Assigned Leads -->
+  <div class="col">
+    <div class="erp-card bg-g-teal">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Assigned Leads</div>
+        <div class="erp-card-number">{{ assigned_leads.total }}</div>
+        <div class="small fw-bold text-white-50 mt-1">Today: {{ assigned_leads.today }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
+      </div>
+      <a href="{% url 'lead_assign' %}" class="erp-card-footer">
+        <i class="bi bi-gear"></i> Assign leads
+      </a>
+    </div>
+  </div>
+
+
+  <!-- Today's Calls -->
+  <div class="col">
+    <div class="erp-card bg-g-orange">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Today's Calls</div>
+        <div class="erp-card-number">{{ today_calls.today }}</div>
+        <div class="small fw-bold text-white-50 mt-1">Total: {{ today_calls.total }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+      </div>
+      <a href="{% url 'call_log_list' %}" class="erp-card-footer">
+        <i class="bi bi-clock-history"></i> Call logs
+      </a>
+    </div>
+  </div>
+
+  <!-- Pending Follow-ups -->
+  <div class="col">
+    <div class="erp-card bg-g-pink">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Pending Follow-ups</div>
+        <div class="erp-card-number">{{ pending_followups }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event-fill"></i></div>
+      </div>
+      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
+        <i class="bi bi-eye"></i> View pending
+      </a>
+    </div>
+  </div>
+
+  <!-- Overdue Follow-ups -->
+  <div class="col">
+    <div class="erp-card bg-g-dred">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Overdue Follow-ups</div>
+        <div class="erp-card-number">{{ overdue_followups }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      </div>
+      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
+        <i class="bi bi-exclamation-circle"></i> Handle overdue
+      </a>
+    </div>
+  </div>
+  <!-- Counseling Completed -->
+  <div class="col">
+    <div class="erp-card bg-g-navy">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Counseling Completed</div>
+        <div class="erp-card-number">{{ counseling_done }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-video3"></i></div>
+      </div>
+      <a href="{% url 'lead_list' %}?counselor_status=COUNSELING_DONE" class="erp-card-footer">
+        <i class="bi bi-person-video3"></i> View counseling
+      </a>
+    </div>
+  </div>
+
+  <!-- Today's Visits -->
+  <div class="col">
+    <div class="erp-card bg-g-teal">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Today's Visits</div>
+        <div class="erp-card-number">{{ today_visits }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
+      </div>
+      <a href="{% url 'counselor_visit_list' %}?date={% now 'Y-m-d' %}" class="erp-card-footer">
+        <i class="bi bi-calendar2-day"></i> View today's
+      </a>
+    </div>
+  </div>
+
+  <!-- Total Admissions -->
+  <div class="col">
+    <div class="erp-card bg-g-purple">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Total Admissions</div>
+        <div class="erp-card-number">{{ admission_metrics.total }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-journal-check"></i></div>
+      </div>
+      <a href="{% url 'admission_list' %}" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View admissions
+      </a>
+    </div>
+  </div>
+
+  <!-- Pending Admissions -->
+  <div class="col">
+    <div class="erp-card bg-g-orange">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Pending Admissions</div>
+        <div class="erp-card-number">{{ admission_metrics.pending }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-clock-history"></i></div>
+      </div>
+      <a href="{% url 'admission_list' %}?status=PENDING" class="erp-card-footer">
+        <i class="bi bi-clock"></i> View pending
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Content Grid -->
+<div class="row g-4 mb-4">
+  <!-- Left Side: Data Tables -->
+  <div class="col-xxl-9">
+    <!-- Recent Leads -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-funnel-fill me-2 text-info"></i>Recent Leads</h5>
+        <a href="{% url 'lead_list' %}" class="btn btn-sm btn-outline-info">View All</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if recent_leads %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Next Follow-Up</th>
+                <th>Assigned Telecaller</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for lead in recent_leads %}
+                <tr>
+                  <td>
+                    <span class="fw-semibold" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</span>
+                  </td>
+                  <td>
+                    <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
+                      {{ lead.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge-premium {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning{% else %}bg-secondary{% endif %}">
+                      {{ lead.priority }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if lead.next_followup_date %}
+                      <span class="d-inline-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.82rem;">
+                        <i class="bi bi-calendar3" style="color:#818cf8;"></i>
+                        {{ lead.next_followup_date|date:"d M Y" }}
+                      </span>
+                    {% else %}
+                      <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if lead.assigned_telecaller %}
+                      <div class="d-inline-flex align-items-center gap-2">
+                        <span style="width:26px;height:26px;border-radius:6px;background:#5b5fef;color:#fff;font-size:0.7rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">{{ lead.assigned_telecaller.username|slice:":1"|upper }}</span>
+                        <span style="color:#e2e8f0;font-size:0.82rem;font-weight:600;">{{ lead.assigned_telecaller.username }}</span>
+                      </div>
+                    {% else %}
+                      <span class="text-muted small">—</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i class="bi bi-eye"></i></a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-4">
+            <i class="bi bi-funnel"></i>
+            <p>No leads assigned or converted yet.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Today's Follow Ups -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-calendar-check text-success me-2"></i>Today's Follow-Ups</h5>
+        <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-success">View All</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if today_followups_list %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Scheduled Date</th>
+                <th>Response / Notes</th>
+                <th>Assigned Telecaller</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in today_followups_list %}
+                <tr>
+                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
+                  <td><span class="badge-premium bg-success">Today</span></td>
+                  <td class="small">{{ fp.response|default:"-" }}</td>
+                  <td class="small text-muted">{{ fp.created_by.username }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state py-3">
+            <i class="bi bi-calendar2-check text-muted"></i>
+            <p class="small text-muted mb-0">No follow-ups due today.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Overdue Follow Ups -->
+    <div class="m-card mb-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Overdue Follow-Ups</h5>
+        <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+
+      <div class="table-responsive">
+        {% if overdue_followups_list %}
+          <table class="table m-table align-middle">
+            <thead>
+              <tr>
+                <th>Lead</th>
+                <th>Follow-Up Date</th>
+                <th>Days Overdue</th>
+                <th>Assigned Telecaller</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fp in overdue_followups_list %}
+                <tr>
+                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
+                  <td>
+                    {{ fp.followup_date|date:"d M Y" }}
+                    <span class="badge-overdue ms-1">⚠ Overdue Follow-Up</span>
+                  </td>
+                  <td class="text-danger fw-bold">{{ fp.days_overdue }} days</td>
+                  <td class="small text-info fw-bold">{{ fp.lead.assigned_telecaller.username|default:"Unassigned" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state-premium">
+            <i class="bi bg-transparent bi-clipboard-check"></i>
+            <p>You have no overdue follow-ups.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar: Quick Actions & Activities -->
+  <div class="col-xxl-3">
+    <!-- Quick Actions -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'inquiry_list' %}" class="action-btn">
+          <div class="action-icon-box"><i class="bi bi-person-lines-fill"></i></div> View All Inquiries
+        </a>
+        <a href="{% url 'lead_list' %}" class="action-btn">
+          <div class="action-icon-box"><i class="bi bi-funnel"></i></div> View All Leads
+        </a>
+        <a href="{% url 'lead_assign' %}" class="action-btn">
+          <div class="action-icon-box"><i class="bi bi-person-check"></i></div> Manage Lead Assignments
+        </a>
+        <a href="{% url 'reports_dashboard' %}" class="action-btn">
+          <div class="action-icon-box"><i class="bi bi-bar-chart-line"></i></div> View Marketing Analytics
+        </a>
+        <a href="{% url 'telecaller_report' %}" class="action-btn">
+          <div class="action-icon-box"><i class="bi bi-file-earmark-bar-graph"></i></div> View Performance Reports
+        </a>
+      </div>
+    </div>
+
+    <!-- Call Outcomes Card -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-telephone-outbound-fill me-2 text-info"></i>Call Outcomes</h5>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Accepted: {{ call_outcomes.accepted }}</span>
+        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Busy: {{ call_outcomes.busy }}</span>
+        <span class="badge-premium bg-primary"><i class="bi bi-arrow-repeat me-1"></i>Call Back: {{ call_outcomes.call_back }}</span>
+        <span class="badge-premium bg-info"><i class="bi bi-heart-fill me-1"></i>Interested: {{ call_outcomes.interested }}</span>
+        <span class="badge-premium bg-danger"><i class="bi bi-hand-thumbs-down me-1"></i>Not Interested: {{ call_outcomes.not_interested }}</span>
+      </div>
+    </div>
+
+    <!-- Admission Metrics Card -->
+    <div class="m-card mb-4">
+      <h5 class="fw-bold text-white mb-3"><i class="bi bi-journal-check me-2 text-success"></i>Admissions</h5>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="badge-premium bg-primary"><i class="bi bi-journal me-1"></i>Total: {{ admission_metrics.total }}</span>
+        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Confirmed: {{ admission_metrics.confirmed }}</span>
+        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Pending: {{ admission_metrics.pending }}</span>
+        <span class="badge-premium bg-danger"><i class="bi bi-x-circle me-1"></i>Cancelled: {{ admission_metrics.cancelled }}</span>
+      </div>
+    </div>
+
+    <!-- Recent Activities Timeline -->
+    <div class="m-card">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-white mb-0"><i class="bi bi-activity text-info me-2"></i>Recent Activities</h5>
+        <a href="{% url 'activities_list' %}" class="btn btn-sm btn-outline-info">View All</a>
+      </div>
+      
+      {% if recent_activities %}
+        <div class="list-group list-group-flush bg-transparent">
+          {% for act in recent_activities %}
+            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-bold text-info small">{{ act.get_activity_type_display }}</span>
+                <span class="text-muted small" style="font-size: 0.7rem;">{{ act.created_at|date:"d M, H:i" }}</span>
+              </div>
+              <p class="small mb-0 text-muted">{{ act.description }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state py-3">
+          <p class="small text-muted mb-0">No activities logged yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

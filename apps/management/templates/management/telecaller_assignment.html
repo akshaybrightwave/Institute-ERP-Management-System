@@ -1,6 +1,6 @@
 {% extends 'management/base.html' %}
 
-{% block title %}Counselor Lead Assignment | Examly{% endblock %}
+{% block title %}Lead Assignment | Examly{% endblock %}
 
 {% block extra_style %}
 {% include 'management/premium_theme_css.html' %}
@@ -17,19 +17,19 @@
 
 {% block management_content %}
 <div class="mb-4">
-  <h2 class="fw-bold text-white mb-1">Counselor Assignment Management</h2>
-  <p class="text-muted small">Distribute candidate leads among registered counselors for counseling sessions.</p>
+  <h2 class="fw-bold text-white mb-1">Lead Assignment Management</h2>
+  <p class="text-muted small">Distribute inquiries and leads among registered telecallers.</p>
 </div>
 
 <!-- Workload Dashboard -->
 <div class="m-card mb-4">
-  <h6 class="text-info fw-bold mb-3"><i class="bi bi-speedometer2"></i> Counselor Workload Dashboard</h6>
+  <h6 class="text-info fw-bold mb-3"><i class="bi bi-speedometer2"></i> Telecaller Workload Dashboard</h6>
   <div class="table-responsive">
     <table class="table table-dark table-sm workload-table mb-0">
       <thead>
         <tr>
-          <th>Counselor</th>
-          <th>Active Leads (New/Contacted/Follow-up)</th>
+          <th>Telecaller</th>
+          <th>Active Leads (New/Contacted/Interested)</th>
           <th>Assigned Today</th>
           <th>Total Assigned Ever</th>
         </tr>
@@ -37,13 +37,13 @@
       <tbody>
         {% for w in workload_data %}
         <tr>
-          <td class="text-white fw-bold"><i class="bi bi-person-badge-fill text-muted"></i> {{ w.username }}</td>
+          <td class="text-white fw-bold"><i class="bi bi-person-fill text-muted"></i> {{ w.username }}</td>
           <td><span class="badge bg-primary rounded-pill">{{ w.active }}</span></td>
           <td><span class="badge bg-success rounded-pill">{{ w.today }}</span></td>
           <td class="text-muted">{{ w.total }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" class="text-muted text-center">No active counselors found.</td></tr>
+        <tr><td colspan="4" class="text-muted text-center">No active telecallers found.</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -53,19 +53,12 @@
 <!-- Filters -->
 <div class="m-card mb-4">
   <form method="GET" class="row g-3 align-items-end" id="filter-form">
-    <div class="col-md-3">
+    <div class="col-md-4">
       <label class="form-label text-muted small fw-bold">Search Candidate</label>
       <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white form-control-sm" placeholder="Name or Mobile...">
     </div>
-    <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">Assignment Scope</label>
-      <select name="all_leads" class="form-select bg-dark border-secondary text-white form-select-sm">
-        <option value="no" {% if all_leads == 'no' %}selected{% endif %}>Counseling-Ready Only</option>
-        <option value="yes" {% if all_leads == 'yes' %}selected{% endif %}>All System Leads</option>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">Counselor Status</label>
+    <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Status</label>
       <select name="status" class="form-select bg-dark border-secondary text-white form-select-sm">
         <option value="">All Statuses</option>
         {% for choice in status_choices %}
@@ -110,11 +103,11 @@
         <input type="hidden" name="mode" value="quantity">
         <div class="row g-3 align-items-end">
           <div class="col-md-3">
-            <label class="form-label text-muted small fw-bold">Counselor</label>
-            <select name="counselor" class="form-select bg-dark border-secondary text-white form-select-sm" required>
-              <option value="">-- Select Counselor --</option>
-              {% for c in counselors %}
-              <option value="{{ c.id }}">{{ c.username }}</option>
+            <label class="form-label text-muted small fw-bold">Telecaller</label>
+            <select name="telecaller" class="form-select bg-dark border-secondary text-white form-select-sm" required>
+              <option value="">-- Select Telecaller --</option>
+              {% for tc in telecallers %}
+              <option value="{{ tc.id }}">{{ tc.username }}</option>
               {% endfor %}
             </select>
           </div>
@@ -147,11 +140,11 @@
         <input type="hidden" name="mode" value="all_filtered">
         <div class="row g-3 align-items-end">
           <div class="col-md-4">
-            <label class="form-label text-muted small fw-bold">Counselor</label>
-            <select name="counselor" class="form-select bg-dark border-secondary text-white form-select-sm" required>
-              <option value="">-- Select Counselor --</option>
-              {% for c in counselors %}
-              <option value="{{ c.id }}">{{ c.username }}</option>
+            <label class="form-label text-muted small fw-bold">Telecaller</label>
+            <select name="telecaller" class="form-select bg-dark border-secondary text-white form-select-sm" required>
+              <option value="">-- Select Telecaller --</option>
+              {% for tc in telecallers %}
+              <option value="{{ tc.id }}">{{ tc.username }}</option>
               {% endfor %}
             </select>
           </div>
@@ -174,12 +167,12 @@
         <input type="hidden" name="mode" value="auto_distribute">
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label text-muted small fw-bold">Select Counselors for Distribution</label>
+            <label class="form-label text-muted small fw-bold">Select Telecallers for Distribution</label>
             <div class="bg-dark border border-secondary rounded p-2" style="max-height: 120px; overflow-y: auto;">
-              {% for c in counselors %}
+              {% for tc in telecallers %}
               <div class="form-check">
-                <input class="form-check-input c-auto-check" type="checkbox" name="counselors" value="{{ c.id }}" id="c_{{ c.id }}">
-                <label class="form-check-label text-white small" for="c_{{ c.id }}">{{ c.username }}</label>
+                <input class="form-check-input tc-auto-check" type="checkbox" name="telecallers" value="{{ tc.id }}" id="tc_{{ tc.id }}">
+                <label class="form-check-label text-white small" for="tc_{{ tc.id }}">{{ tc.username }}</label>
               </div>
               {% endfor %}
             </div>
@@ -221,38 +214,36 @@
           <th>Lead / Candidate</th>
           <th>Mobile</th>
           <th>City</th>
-          <th>Priority</th>
-          <th>Counselor Status</th>
-          <th>Assigned Counselor</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Assigned Telecaller</th>
+          <th>Assigned Date</th>
         </tr>
       </thead>
       <tbody>
         {% for lead in page_obj %}
         <tr>
           <td>
-            <a href="{% url 'counselor_lead_detail' lead.pk %}" class="text-info fw-bold text-decoration-none">
+            <a href="{% url 'lead_detail' lead.pk %}" class="text-info fw-bold text-decoration-none">
               {{ lead.inquiry.full_name }}
             </a>
           </td>
           <td>{{ lead.inquiry.mobile_number }}</td>
           <td>{{ lead.inquiry.city }}</td>
+          <td><span class="badge bg-secondary">{{ lead.inquiry.source }}</span></td>
           <td>
-            <span class="badge {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-              {{ lead.priority }}
+            <span class="badge {% if lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% else %}bg-primary{% endif %}">
+              {{ lead.status }}
             </span>
           </td>
           <td>
-            <span class="badge {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info text-white{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if lead.counselor_status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif lead.counselor_status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
-              {{ lead.get_counselor_status_display }}
-            </span>
-          </td>
-          <td>
-            {% if lead.assigned_counselor %}
-            <span class="text-success fw-bold"><i class="bi bi-person-badge-fill"></i> {{ lead.assigned_counselor.username }}</span>
+            {% if lead.assigned_telecaller %}
+            <span class="text-success fw-bold"><i class="bi bi-person-fill"></i> {{ lead.assigned_telecaller.username }}</span>
             {% else %}
             <span class="text-muted italic">Unassigned</span>
             {% endif %}
           </td>
+          <td class="small text-muted">{{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -265,10 +256,10 @@
     <ul class="pagination pagination-sm justify-content-center">
       {% if page_obj.has_previous %}
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">&laquo; First</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">&laquo; First</a>
       </li>
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">Previous</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Previous</a>
       </li>
       {% endif %}
 
@@ -278,10 +269,10 @@
 
       {% if page_obj.has_next %}
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">Next</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Next</a>
       </li>
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">Last &raquo;</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Last &raquo;</a>
       </li>
       {% endif %}
     </ul>
@@ -308,7 +299,7 @@
       <div class="modal-body">
         <table class="table table-dark table-borderless table-sm mb-0">
           <tbody>
-            <tr><th style="width: 50%" class="text-muted">Target Counselor(s):</th><td id="prv-user" class="fw-bold"></td></tr>
+            <tr><th style="width: 50%" class="text-muted">Target User(s):</th><td id="prv-user" class="fw-bold"></td></tr>
             <tr><th class="text-muted">Requested Quantity:</th><td id="prv-req"></td></tr>
             <tr><th class="text-muted">Available Eligible:</th><td id="prv-elig"></td></tr>
             <tr class="border-top border-secondary"><th class="text-success pt-2">Will Assign:</th><td id="prv-assign" class="text-success fw-bold fs-5 pt-2"></td></tr>
@@ -329,11 +320,11 @@
   
   document.getElementById('auto-select-all').addEventListener('click', function(e) {
     e.preventDefault();
-    document.querySelectorAll('.c-auto-check').forEach(cb => cb.checked = true);
+    document.querySelectorAll('.tc-auto-check').forEach(cb => cb.checked = true);
   });
   document.getElementById('auto-select-none').addEventListener('click', function(e) {
     e.preventDefault();
-    document.querySelectorAll('.c-auto-check').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.tc-auto-check').forEach(cb => cb.checked = false);
   });
 
   document.querySelectorAll('.preview-btn').forEach(btn => {
@@ -374,9 +365,9 @@
         
         let targetText = "";
         if (activeFormId === 'form-auto') {
-          targetText = data.users_count + " Counselors (Auto-Distribute)";
+          targetText = data.users_count + " Telecallers (Auto-Distribute)";
         } else {
-          const selectEl = form.querySelector('select[name="counselor"]');
+          const selectEl = form.querySelector('select[name="telecaller"]');
           targetText = selectEl.options[selectEl.selectedIndex].text;
         }
 

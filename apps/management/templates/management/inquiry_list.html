@@ -901,8 +901,13 @@
         </button>
       </div>
 
-      {% if q or status or source or call_status %}
-        <div class="col-12">
+      <div class="col-lg-2 col-md-6 mt-2">
+        <label class="form-label">Date</label>
+        <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+      </div>
+
+      {% if q or status or source or call_status or date_filter %}
+        <div class="col-12 mt-2">
           <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-x-circle me-1"></i> Clear filters
           </a>
@@ -927,6 +932,7 @@
         <table class="table m-table inquiry-table align-middle">
           <thead>
             <tr>
+              <th>ID</th>
               <th>Student</th>
               <th>Interest</th>
               <th>Source</th>
@@ -939,6 +945,9 @@
           <tbody>
             {% for inquiry in page_obj %}
               <tr>
+                <td data-label="ID">
+                  <span class="fw-bold text-muted">#{{ inquiry.pk }}</span>
+                </td>
                 <td data-label="Student">
                   <div class="candidate-name">{{ inquiry.full_name }}</div>
                 </td>
@@ -987,14 +996,16 @@
                     <button type="button" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#editInquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    {% if not inquiry.lead %}
-                      <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
-                        <i class="bi bi-arrow-right-circle"></i> Convert to Lead
-                      </a>
-                    {% else %}
-                      <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
-                        <i class="bi bi-check2-circle"></i> View Lead
-                      </a>
+                    {% if request.user.role not in 'admin,superadmin' %}
+                      {% if not inquiry.lead %}
+                        <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                          <i class="bi bi-arrow-right-circle"></i> Convert to Lead
+                        </a>
+                      {% else %}
+                        <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
+                          <i class="bi bi-check2-circle"></i> View Lead
+                        </a>
+                      {% endif %}
                     {% endif %}
                     <button type="button" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#deleteInquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-trash"></i>
@@ -1012,17 +1023,17 @@
           <ul class="pagination justify-content-center flex-wrap gap-1">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Previous page">&laquo;</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}" aria-label="Previous page">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}">{{ i }}</a>
+                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}" aria-label="Next page">&raquo;</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}" aria-label="Next page">&raquo;</a>
               </li>
             {% endif %}
           </ul>
@@ -1033,7 +1044,7 @@
         <h4>No Inquiries Found</h4>
         <p class="text-muted">No records match your search or filters.</p>
         <div class="d-flex justify-content-center gap-2 flex-wrap">
-          {% if q or status or source or call_status %}
+          {% if q or status or source or call_status or date_filter %}
             <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
           {% endif %}
           <button type="button" class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">Add Inquiry</button>

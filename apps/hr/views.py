@@ -1738,18 +1738,18 @@ def external_employee_detail(request, branch_slug, employee_code):
     today = timezone.localdate()
     selected_month = int(request.GET.get('month', today.month))
     selected_year = int(request.GET.get('year', today.year))
-    start_date_str = request.GET.get('start_date')
-    end_date_str = request.GET.get('end_date')
+    selected_date_str = request.GET.get('date')
 
-    if start_date_str and end_date_str:
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+    if selected_date_str:
+        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+        selected_month = selected_date.month
+        selected_year = selected_date.year
+        logs = employee.attendance_logs.filter(date=selected_date).order_by('-date')
     else:
         start_date = date(selected_year, selected_month, 1)
         _, last_day = calendar.monthrange(selected_year, selected_month)
         end_date = date(selected_year, selected_month, last_day)
-
-    logs = employee.attendance_logs.filter(date__gte=start_date, date__lte=end_date).order_by('-date')
+        logs = employee.attendance_logs.filter(date__gte=start_date, date__lte=end_date).order_by('-date')
 
     present = logs.filter(status='present').count()
     absent = logs.filter(status='absent').count()
@@ -1805,8 +1805,7 @@ def external_employee_detail(request, branch_slug, employee_code):
         'logs': logs,
         'selected_month': selected_month,
         'selected_year': selected_year,
-        'start_date': start_date_str or start_date.strftime('%Y-%m-%d'),
-        'end_date': end_date_str or end_date.strftime('%Y-%m-%d'),
+        'selected_date': selected_date_str or '',
         'history_summary': history_summary,
         'calendar_weeks': calendar_weeks,
         'month_name': calendar.month_name[selected_month],

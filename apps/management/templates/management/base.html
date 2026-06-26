@@ -596,6 +596,11 @@
     font-weight: 800 !important;
   }
 
+  .management-content h2.dashboard-title {
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+  }
+
   .management-content .text-muted { color: var(--mg-muted) !important; }
 
   .m-card,
@@ -1031,57 +1036,41 @@
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
-    {% if request.user.role == 'admin' %}
+    {% if request.user.role == 'superadmin' %}
     <a class="management-brand" href="{% url 'management_super_admin_dashboard' %}">
+      <span class="management-brand-icon"><i class="bi bi-building-fill"></i></span>
+      Super Admin
+    </a>
+    <div class="sidebar-section">Analytics Portal</div>
+    <a href="{% url 'management_super_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    <div class="sidebar-section">Reports</div>
+    <a href="{% url 'reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
+      <i class="bi bi-bar-chart-line"></i> Source Analytics
+    </a>
+    <a href="{% url 'telecaller_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'telecaller_report' %}active{% endif %}">
+      <i class="bi bi-file-earmark-bar-graph"></i> Performance Reports
+    </a>
+    <a href="{% url 'admission_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admission_report' %}active{% endif %}">
+      <i class="bi bi-mortarboard-fill"></i> Admission Report
+    </a>
+    <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
+      <i class="bi bi-graph-up-arrow"></i> Counselor Reports
+    </a>
+
+    {% elif request.user.role == 'admin' %}
+    <a class="management-brand" href="{% url 'management_admin_dashboard' %}">
       <span class="management-brand-icon"><i class="bi bi-building-fill"></i></span>
       ERP Admin
     </a>
     <div class="sidebar-section">Admin Portal</div>
-    {% elif request.user.role == 'telecaller' %}
-    <a class="management-brand" href="{% url 'management_dashboard' %}">
-      <span class="management-brand-icon"><i class="bi bi-telephone-fill"></i></span>
-      Telecaller CRM
-    </a>
-    <div class="sidebar-section">Telecaller Portal</div>
-    {% elif request.user.role == 'counselor' %}
-    <a class="management-brand" href="{% url 'counselor_dashboard' %}">
-      <span class="management-brand-icon"><i class="bi bi-person-badge-fill"></i></span>
-      Counselor CRM
-    </a>
-    <div class="sidebar-section">Counselor Portal</div>
-    {% endif %}
-    {% if request.user.role == 'admin' %}
-    <a href="{% url 'management_super_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
+    <a href="{% url 'management_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_admin_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
-    {% elif request.user.role == 'telecaller' %}
-    <a href="{% url 'management_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}">
-      <i class="bi bi-grid-1x2"></i> Dashboard
-    </a>
-    {% elif request.user.role == 'counselor' %}
-    <a href="{% url 'counselor_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
-      <i class="bi bi-grid-1x2"></i> Dashboard
-    </a>
-    {% endif %}
-
-    {% if request.user.role == 'admin' or request.user.role == 'telecaller' %}
-    <div class="sidebar-section">Telecaller Module</div>
-    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_list' or request.resolver_match.url_name == 'inquiry_detail' or request.resolver_match.url_name == 'inquiry_add' or request.resolver_match.url_name == 'inquiry_edit' %}active{% endif %}">
-      <i class="bi bi-person-plus"></i> Inquiries
-    </a>
-    <a href="{% url 'lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_edit' %}active{% endif %}">
-      <i class="bi bi-funnel"></i> Leads
-    </a>
-    {% if request.user.role == 'admin' %}
-    <a href="{% url 'lead_assign' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign' %}active{% endif %}">
-      <i class="bi bi-person-check"></i> Lead Assignment
-    </a>
-    {% endif %}
-    <a href="{% url 'call_log_list' %}" class="sidebar-item {% if 'call_log' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-telephone-outbound"></i> Call Logs
-    </a>
-    <a href="{% url 'followup_list' %}" class="sidebar-item {% if 'followup' in request.resolver_match.url_name and 'counselor' not in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-clock-history"></i> Follow-Ups
+    <div class="sidebar-section">Lead Management</div>
+    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-person-plus"></i> Inquiries (Upload)
     </a>
     <a href="{% url 'inquiry_import' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_import' %}active{% endif %}">
       <i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import
@@ -1092,26 +1081,54 @@
     <a href="{% url 'import_errors' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_errors' %}active{% endif %}">
       <i class="bi bi-exclamation-triangle"></i> Import Errors
     </a>
-
-    <div class="sidebar-section">Reports & Analytics</div>
-    <a href="{% url 'reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
-      <i class="bi bi-bar-chart-line"></i> Source Analytics
+    <a href="{% url 'lead_assign' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign' %}active{% endif %}">
+      <i class="bi bi-person-check"></i> Telecaller Assignment
     </a>
-    <a href="{% url 'telecaller_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'telecaller_report' %}active{% endif %}">
-      <i class="bi bi-file-earmark-bar-graph"></i> Performance Reports
-    </a>
-    {% endif %}
-
-    {% if request.user.role == 'admin' or request.user.role == 'counselor' %}
-    <div class="sidebar-section">Counselor Module</div>
-    <a href="{% url 'counselor_lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
-      <i class="bi bi-people-fill"></i> Assigned Leads
-    </a>
-    {% if request.user.role == 'admin' %}
     <a href="{% url 'lead_assign_counselor' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign_counselor' %}active{% endif %}">
       <i class="bi bi-person-check-fill"></i> Counselor Assignment
     </a>
-    {% endif %}
+    <div class="sidebar-section">Backend Operations</div>
+    <a href="{% url 'admission_list' %}" class="sidebar-item {% if 'admission' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-mortarboard"></i> Admissions & Docs
+    </a>
+
+    {% elif request.user.role == 'telecaller' %}
+    <a class="management-brand" href="{% url 'management_dashboard' %}">
+      <span class="management-brand-icon"><i class="bi bi-telephone-fill"></i></span>
+      Telecaller CRM
+    </a>
+    <div class="sidebar-section">Telecaller Portal</div>
+    <a href="{% url 'management_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-person-lines-fill"></i> Inquiry Directory
+    </a>
+    <a href="{% url 'lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_edit' %}active{% endif %}">
+      <i class="bi bi-funnel"></i> Assigned Leads
+    </a>
+    <a href="{% url 'call_log_list' %}" class="sidebar-item {% if 'call_log' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-telephone-outbound"></i> Call Logs
+    </a>
+    <a href="{% url 'followup_list' %}" class="sidebar-item {% if 'followup' in request.resolver_match.url_name and 'counselor' not in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-clock-history"></i> Follow-Ups
+    </a>
+
+    {% elif request.user.role == 'counselor' %}
+    <a class="management-brand" href="{% url 'counselor_dashboard' %}">
+      <span class="management-brand-icon"><i class="bi bi-person-badge-fill"></i></span>
+      Counselor CRM
+    </a>
+    <div class="sidebar-section">Counselor Portal</div>
+    <a href="{% url 'counselor_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
+      <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-person-lines-fill"></i> Inquiry Directory
+    </a>
+    <a href="{% url 'counselor_lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
+      <i class="bi bi-people-fill"></i> Assigned Leads
+    </a>
     <a href="{% url 'counselor_session_list' %}" class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-chat-dots"></i> Counseling Sessions
     </a>
@@ -1120,16 +1137,6 @@
     </a>
     <a href="{% url 'counselor_visit_list' %}" class="sidebar-item {% if 'counselor_visit' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-geo-alt"></i> Visit Sheets
-    </a>
-    <a href="{% url 'admission_list' %}" class="sidebar-item {% if 'admission' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-mortarboard"></i> Admissions
-    </a>
-    <div class="sidebar-section">Reports & Analytics</div>
-    <a href="{% url 'admission_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admission_report' %}active{% endif %}">
-      <i class="bi bi-file-earmark-bar-graph"></i> Admission Report
-    </a>
-    <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
-      <i class="bi bi-graph-up-arrow"></i> Counselor Reports
     </a>
     {% endif %}
 
@@ -1259,8 +1266,10 @@
               <div class="text-muted" style="font-size:0.72rem;">{{ request.user.role|title }}</div>
             </li>
             <li class="d-sm-none"><hr class="dropdown-divider"></li>
-            {% if request.user.role == 'admin' %}
+            {% if request.user.role == 'superadmin' %}
             <li><a class="dropdown-item" href="{% url 'management_super_admin_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            {% elif request.user.role == 'admin' %}
+            <li><a class="dropdown-item" href="{% url 'management_admin_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'telecaller' %}
             <li><a class="dropdown-item" href="{% url 'management_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'counselor' %}

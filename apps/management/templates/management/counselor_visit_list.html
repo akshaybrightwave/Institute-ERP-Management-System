@@ -41,22 +41,15 @@
       </select>
     </div>
 
-    <!-- Date From -->
     <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">From Date</label>
-      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white">
-    </div>
-
-    <!-- Date To -->
-    <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">To Date</label>
-      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white">
+      <label class="form-label text-muted small fw-bold">Date</label>
+      <input type="date" name="date" value="{{ date_filter }}" class="form-control bg-dark border-secondary text-white">
     </div>
 
     <!-- Submit -->
     <div class="col-md-2 d-flex gap-1 align-items-end">
       <button type="submit" class="btn btn-info text-white w-150 fw-bold"><i class="bi bi-funnel me-1"></i> Filter</button>
-      {% if q or status or start_date or end_date %}
+      {% if q or status or date_filter %}
         <a href="{% url 'counselor_visit_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
       {% endif %}
     </div>
@@ -70,7 +63,7 @@
       <table class="table m-table align-middle">
         <thead>
           <tr>
-            <th>SR No</th>
+            <th>ID</th>
             <th>Student Name</th>
             <th>Mobile Number</th>
             <th>Interested Course</th>
@@ -85,7 +78,7 @@
         <tbody>
           {% for visit in page_obj %}
             <tr>
-              <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+              <td class="fw-bold text-muted">#{{ visit.pk }}</td>
               <td class="fw-bold text-white">{{ visit.lead.inquiry.full_name }}</td>
               <td>{{ visit.lead.inquiry.mobile_number }}</td>
               <td>{{ visit.lead.inquiry.course_interest }}</td>
@@ -115,17 +108,17 @@
           <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">&laquo;</a>
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ i }}</a>
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">&raquo;</a>
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">&raquo;</a>
               </li>
             {% endif %}
           </ul>

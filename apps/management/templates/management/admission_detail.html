@@ -230,6 +230,41 @@
     </div>
   </div>
 
+  {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
+  <!-- Admin: Document & Fee Tracking -->
+  <div class="col-lg-12">
+    <div class="m-card border-info">
+      <h5 class="m-card-title text-info"><i class="bi bi-shield-lock-fill"></i> Admin: Document & Fee Tracking</h5>
+      <div class="row g-4 mt-1">
+        <div class="col-sm-6">
+          <div class="info-group mb-0">
+            <span class="info-label">Document Status</span>
+            {% if admission.document_status == 'VERIFIED' %}
+              <span class="badge status-badge bg-soft-success"><i class="bi bi-check-circle me-1"></i> Verified</span>
+            {% elif admission.document_status == 'RECEIVED' %}
+              <span class="badge status-badge bg-soft-info"><i class="bi bi-inbox-fill me-1"></i> Received</span>
+            {% else %}
+              <span class="badge status-badge bg-soft-warning text-dark"><i class="bi bi-hourglass-split me-1"></i> Pending</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="info-group mb-0">
+            <span class="info-label">Fee Status</span>
+            {% if admission.fee_status == 'PAID' %}
+              <span class="badge status-badge bg-soft-success"><i class="bi bi-cash-stack me-1"></i> Paid</span>
+            {% elif admission.fee_status == 'PARTIAL' %}
+              <span class="badge status-badge bg-soft-warning text-dark"><i class="bi bi-pie-chart-fill me-1"></i> Partial</span>
+            {% else %}
+              <span class="badge status-badge bg-soft-danger"><i class="bi bi-exclamation-circle-fill me-1"></i> Pending</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Remarks -->
   {% if admission.remarks %}
   <div class="col-12">

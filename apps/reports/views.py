@@ -365,8 +365,6 @@ def attendance_report(request):
     selected_batch = request.GET.get('batch')
     selected_student = request.GET.get('student')
     selected_date = request.GET.get('date')
-    selected_start_date = request.GET.get('start_date')
-    selected_end_date = request.GET.get('end_date')
 
     if is_center:
         center = request.user.center
@@ -411,10 +409,6 @@ def attendance_report(request):
         records = records.filter(student_id=selected_student)
     if selected_date:
         records = records.filter(date=selected_date)
-    if selected_start_date:
-        records = records.filter(date__gte=selected_start_date)
-    if selected_end_date:
-        records = records.filter(date__lte=selected_end_date)
 
     records = records.select_related('student', 'batch', 'batch__course', 'marked_by').order_by('-date', 'student__full_name')
 
@@ -454,8 +448,6 @@ def attendance_report(request):
         'selected_batch': selected_batch,
         'selected_student': selected_student,
         'selected_date': selected_date,
-        'selected_start_date': selected_start_date,
-        'selected_end_date': selected_end_date
     })
 
 

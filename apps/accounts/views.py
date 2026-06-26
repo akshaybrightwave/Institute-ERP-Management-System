@@ -27,6 +27,18 @@ from .models import AuthActivityLog, User, Feedback
 
 REGISTRATION_DISABLED_MESSAGE = 'Public registration is disabled. Please contact the Super Admin for credentials.'
 
+ROLE_DASHBOARD_URLS = {
+    'SUPER_ADMIN': 'superadmin_dashboard',
+    'superadmin': 'management_super_admin_dashboard',
+    'admin': 'admin_dashboard',
+    'center': 'center_dashboard',
+    'teacher': 'teacher_dashboard',
+    'student': 'student_dashboard',
+    'hr': 'hr:dashboard',
+    'telecaller': 'management_dashboard',
+    'counselor': 'counselor_dashboard',
+}
+
 
 def registration_disabled(request):
     log_auth_activity(
@@ -55,6 +67,13 @@ def super_admin_required(view_func):
         )
         return HttpResponseForbidden("Access Denied: Super Admins only.")
     return wrapper
+
+
+def role_dashboard_name(user):
+    return ROLE_DASHBOARD_URLS.get(getattr(user, 'role', None), 'login')
+
+def redirect_to_role_dashboard(user):
+    return redirect(role_dashboard_name(user))
 
 def home(request):
     exams = Exam.objects.order_by('-date', '-id')  # fallback by id if date same
@@ -113,6 +132,9 @@ def signup_student(request):
 
 
 def user_login(request):
+    if request.user.is_authenticated:
+        return redirect_to_role_dashboard(request.user)
+
     if request.method == 'POST':
         username = (request.POST.get('username') or '').strip()
         password = request.POST.get('password')
@@ -130,24 +152,7 @@ def user_login(request):
         if user:
             log_auth_activity('LOGIN_SUCCESS', request=request, user=user, username=username)
             login(request, user)
-            if user.role == 'SUPER_ADMIN':
-                return redirect('superadmin_dashboard')
-            elif user.role == 'admin':
-                return redirect('admin_dashboard')
-            elif user.role == 'center':
-                return redirect('center_dashboard')
-            elif user.role == 'teacher':
-                return redirect('teacher_dashboard')
-            elif user.role == 'student':
-                return redirect('student_dashboard')
-            elif user.role == 'hr':
-                return redirect('hr:dashboard')
-            elif user.role == 'telecaller':
-                return redirect('management_dashboard')
-            elif user.role == 'counselor':
-                return redirect('counselor_dashboard')
-            else:
-                return redirect('login')
+            return redirect_to_role_dashboard(user)
         else:
             log_auth_activity(
                 'LOGIN_FAILED',
@@ -159,6 +164,11 @@ def user_login(request):
             return redirect('login')
 
     return render(request, 'accounts/login.html')
+
+
+@login_required
+def dashboard_redirect(request):
+    return redirect_to_role_dashboard(request.user)
 
 
 @login_required
@@ -175,7 +185,7 @@ def user_logout(request):
 def admin_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.role == 'admin':
+        if request.user.is_authenticated and request.user.role in ('admin', 'superadmin'):
             return view_func(request, *args, **kwargs)
         return HttpResponseForbidden("Access Denied: Admins only.")
     return wrapper

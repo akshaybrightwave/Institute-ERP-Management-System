@@ -61,7 +61,7 @@
             <td>{{ lead.inquiry.city }}</td>
             <td><span class="badge bg-secondary">{{ lead.inquiry.source }}</span></td>
             <td>
-              <span class="badge {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+              <span class="badge {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                 {{ lead.priority }}
               </span>
             </td>

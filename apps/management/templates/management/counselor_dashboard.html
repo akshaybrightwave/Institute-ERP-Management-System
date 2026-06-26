@@ -54,7 +54,7 @@
   <!-- Header -->
   <div class="counselor-page-title d-flex align-items-center justify-content-between flex-wrap gap-3">
     <div>
-      <h2 class="fw-bold text-white mb-1">Counselor Dashboard</h2>
+      <h2 class="dashboard-title text-white mb-1">Counselor Dashboard</h2>
       <p class="text-muted small mb-0">Welcome back, {{ request.user.username }} &middot; Role: Counselor</p>
     </div>
     <div>
@@ -71,7 +71,8 @@
       <div class="erp-card bg-g-blue">
         <div class="erp-card-body">
           <div class="erp-card-title">Assigned Leads</div>
-          <div class="erp-card-number">{{ total_assigned }}</div>
+          <div class="erp-card-number">{{ total_assigned.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
+          <div class="text-white-50 small mt-1">Today: <strong>{{ total_assigned.today }}</strong></div>
           <div class="erp-card-bg-icon"><i class="bi bi-people-fill"></i></div>
         </div>
         <a href="{% url 'counselor_lead_list' %}" class="erp-card-footer">
@@ -116,7 +117,7 @@
           <div class="erp-card-number">{{ today_visits }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
         </div>
-        <a href="{% url 'counselor_visit_list' %}?start_date={% now 'Y-m-d' %}&end_date={% now 'Y-m-d' %}" class="erp-card-footer">
+        <a href="{% url 'counselor_visit_list' %}?date={% now 'Y-m-d' %}" class="erp-card-footer">
           <i class="bi bi-list-ul"></i> View today's
         </a>
       </div>
@@ -127,7 +128,8 @@
       <div class="erp-card bg-g-violet">
         <div class="erp-card-body">
           <div class="erp-card-title">Interested Leads</div>
-          <div class="erp-card-number">{{ interested_leads }}</div>
+          <div class="erp-card-number">{{ interested_leads.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
+          <div class="text-white-50 small mt-1">Today: <strong>{{ interested_leads.today }}</strong></div>
           <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
         </div>
         <a href="{% url 'counselor_lead_list' %}?status=INTERESTED" class="erp-card-footer">
@@ -141,7 +143,8 @@
       <div class="erp-card bg-g-navy">
         <div class="erp-card-body">
           <div class="erp-card-title">Counseling Completed</div>
-          <div class="erp-card-number">{{ counseling_done }}</div>
+          <div class="erp-card-number">{{ counseling_done.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
+          <div class="text-white-50 small mt-1">Today: <strong>{{ counseling_done.today }}</strong></div>
           <div class="erp-card-bg-icon"><i class="bi bi-person-video3"></i></div>
         </div>
         <a href="{% url 'counselor_lead_list' %}?status=COUNSELING_DONE" class="erp-card-footer">
@@ -170,8 +173,8 @@
         <div class="erp-card-body">
           <div class="erp-card-title">Conversion Rate</div>
           <div class="erp-card-number">
-            {% if counseling_done > 0 %}
-              {% widthratio admission_metrics.confirmed counseling_done 100 %}%
+            {% if counseling_done.total > 0 %}
+              {% widthratio admission_metrics.confirmed counseling_done.total 100 %}%
             {% else %}
               N/A
             {% endif %}
@@ -195,20 +198,20 @@
         </div>
         <div class="list-group list-group-flush bg-transparent">
           <a href="{% url 'counselor_lead_list' %}?status=NEW" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
-            <span>New Leads</span> <span class="badge bg-primary rounded-pill">{{ new_leads }}</span>
+            <span>New Leads</span> <span><span class="badge bg-primary rounded-pill">{{ new_leads.total }}</span> <span class="text-muted small">Today: {{ new_leads.today }}</span></span>
           </a>
           <a href="{% url 'counselor_lead_list' %}?status=CONTACTED" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
-            <span>Contacted</span> <span class="badge bg-info rounded-pill">{{ contacted_leads }}</span>
+            <span>Contacted</span> <span><span class="badge bg-info rounded-pill">{{ contacted_leads.total }}</span> <span class="text-muted small">Today: {{ contacted_leads.today }}</span></span>
           </a>
           <a href="{% url 'counselor_lead_list' %}?status=FOLLOW_UP_REQUIRED" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
-            <span>Follow-up Req.</span> <span class="badge bg-warning text-dark rounded-pill">{{ followup_req }}</span>
+            <span>Follow-up Req.</span> <span><span class="badge bg-warning text-dark rounded-pill">{{ followup_req.total }}</span> <span class="text-muted small">Today: {{ followup_req.today }}</span></span>
           </a>
           <a href="{% url 'counselor_lead_list' %}?status=CONVERTED" class="list-group-item bg-transparent text-white border-secondary d-flex justify-content-between align-items-center">
-            <span>Converted</span> <span class="badge bg-success rounded-pill">{{ converted_leads }}</span>
+            <span>Converted</span> <span><span class="badge bg-success rounded-pill">{{ converted_leads.total }}</span> <span class="text-muted small">Today: {{ converted_leads.today }}</span></span>
           </a>
           <div class="list-group-item bg-transparent border-secondary text-muted small d-flex justify-content-between">
-            <span>Not Interested: {{ not_interested }}</span>
-            <span>Lost: {{ lost_leads }}</span>
+            <span>Not Interested: {{ not_interested.total }} total</span>
+            <span>Lost: {{ lost_leads.total }} total</span>
           </div>
         </div>
       </div>
@@ -375,7 +378,7 @@
                       </span>
                     </td>
                     <td>
-                      <span class="badge-premium {% if lead.priority == 'High' %}bg-danger{% elif lead.priority == 'Medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+                      <span class="badge-premium {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning{% else %}bg-secondary{% endif %}">
                         {{ lead.priority }}
                       </span>
                     </td>

@@ -75,13 +75,14 @@ class Lead(SoftDeleteModel):
         ('FOLLOW_UP_REQUIRED', 'Follow Up Required'),
         ('INTERESTED', 'Interested'),
         ('CONVERTED', 'Converted'),
+        ('ADMISSION', 'Admission'),
         ('NOT_INTERESTED', 'Not Interested'),
         ('LOST', 'Lost'),
     )
     PRIORITY_CHOICES = (
-        ('Low', 'Low'),
-        ('Medium', 'Medium'),
-        ('High', 'High'),
+        ('Cold', 'Cold'),
+        ('Warm', 'Warm'),
+        ('Hot', 'Hot'),
     )
 
     inquiry = models.OneToOneField(Inquiry, on_delete=models.CASCADE, related_name='lead')
@@ -117,7 +118,7 @@ class Lead(SoftDeleteModel):
     counselor_status_updated_at = models.DateTimeField(null=True, blank=True)
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='New', db_index=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='Medium', db_index=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='Warm', db_index=True)
     next_followup_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -351,6 +352,16 @@ class AdmissionSheet(SoftDeleteModel):
         ('CONFIRMED', 'Confirmed'),
         ('CANCELLED', 'Cancelled'),
     )
+    DOCUMENT_STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('RECEIVED', 'Received'),
+        ('VERIFIED', 'Verified'),
+    )
+    FEE_STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('PARTIAL', 'Partial'),
+        ('PAID', 'Paid'),
+    )
 
 
     # Admission Information
@@ -388,6 +399,14 @@ class AdmissionSheet(SoftDeleteModel):
     # Seat Information
     seat_status = models.CharField(
         max_length=20, choices=SEAT_STATUS_CHOICES, default='BOOKED', db_index=True
+    )
+
+    # Document & Fee Tracking
+    document_status = models.CharField(
+        max_length=20, choices=DOCUMENT_STATUS_CHOICES, default='PENDING', db_index=True
+    )
+    fee_status = models.CharField(
+        max_length=20, choices=FEE_STATUS_CHOICES, default='PENDING', db_index=True
     )
 
     # Remarks

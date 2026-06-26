@@ -20,6 +20,26 @@
   </div>
 </div>
 
+<!-- Filters -->
+<div class="m-card mb-4">
+  <form method="GET" class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label text-muted small fw-bold">Date</label>
+      <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <button type="submit" class="btn btn-info text-white w-100 fw-bold"><i class="bi bi-funnel me-1"></i> Filter</button>
+    </div>
+  </form>
+  {% if date_filter %}
+  <div class="mt-3">
+    <a href="{% url 'counselor_session_list' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-x-circle me-1"></i> Clear filters
+    </a>
+  </div>
+  {% endif %}
+</div>
+
 <!-- Sessions Table -->
 <div class="m-card">
   <div class="table-responsive">
@@ -27,6 +47,7 @@
       <table class="table m-table align-middle">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Candidate Name</th>
             <th>Counselor</th>
             <th>Session Date</th>
@@ -38,6 +59,7 @@
         <tbody>
           {% for session in page_obj %}
             <tr>
+              <td class="fw-bold text-muted">#{{ session.pk }}</td>
               <td class="fw-bold text-white">{{ session.lead.inquiry.full_name }}</td>
               <td>{{ session.counselor.username }}</td>
               <td>{{ session.session_date|date:"d M Y, H:i" }}</td>
@@ -59,17 +81,17 @@
           <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}">{{ i }}</a>
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if date_filter %}&date={{ date_filter }}{% endif %}">&raquo;</a>
               </li>
             {% endif %}
           </ul>
