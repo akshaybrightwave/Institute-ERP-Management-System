@@ -631,6 +631,32 @@
 </style>
 
   {% block style %}{% endblock %}
+  <style>
+    .hr-content .hr-page-title h1,
+    .hr-content .external-title-row h1,
+    .hr-content .page-header h1 {
+      font-size: 26px !important;
+      line-height: 1.25 !important;
+      font-weight: 500 !important;
+      letter-spacing: 0 !important;
+      text-shadow: none !important;
+    }
+
+    .hr-content .hr-page-title .fw-bold,
+    .hr-content .external-title-row .fw-bold,
+    .hr-content .page-header .fw-bold {
+      font-weight: 500 !important;
+      text-shadow: none !important;
+    }
+
+    @media (max-width: 767.98px) {
+      .hr-content .hr-page-title h1,
+      .hr-content .external-title-row h1,
+      .hr-content .page-header h1 {
+        font-size: 22px !important;
+      }
+    }
+  </style>
 </head>
 
 <body class="{% if 'external' in request.resolver_match.url_name %}external-shell{% endif %}">
