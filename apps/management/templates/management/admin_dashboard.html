@@ -162,6 +162,8 @@
       <span class="erp-card-footer"><i class="bi bi-arrow-right-circle"></i> View rejected</span>
     </a>
   </div>
+
+  <!-- Today's Calls -->
   <div class="col">
     <a href="{% url 'call_log_list' %}" class="erp-card bg-g-orange" aria-label="Today's Calls: {{ today_calls }}">
       <div class="erp-card-body"><div class="erp-card-title">Today's Calls</div><div class="erp-card-number">{{ today_calls }}</div><div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div></div>
@@ -201,6 +203,61 @@
       </div>
       <span class="erp-card-footer"><i class="bi bi-arrow-right-circle"></i> View analytics</span>
     </a>
+  </div>
+  <!-- Counseling Completed -->
+  <div class="col">
+    <div class="erp-card bg-g-navy">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Counseling Completed</div>
+        <div class="erp-card-number">{{ counseling_done }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-video3"></i></div>
+      </div>
+      <a href="{% url 'lead_list' %}?counselor_status=COUNSELING_DONE" class="erp-card-footer">
+        <i class="bi bi-person-video3"></i> View counseling
+      </a>
+    </div>
+  </div>
+
+  <!-- Today's Visits -->
+  <div class="col">
+    <div class="erp-card bg-g-teal">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Today's Visits</div>
+        <div class="erp-card-number">{{ today_visits }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
+      </div>
+      <a href="{% url 'counselor_visit_list' %}?start_date={% now 'Y-m-d' %}&end_date={% now 'Y-m-d' %}" class="erp-card-footer">
+        <i class="bi bi-calendar2-day"></i> View today's
+      </a>
+    </div>
+  </div>
+
+  <!-- Total Admissions -->
+  <div class="col">
+    <div class="erp-card bg-g-purple">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Total Admissions</div>
+        <div class="erp-card-number">{{ admission_metrics.total }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-journal-check"></i></div>
+      </div>
+      <a href="{% url 'admission_list' %}" class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View admissions
+      </a>
+    </div>
+  </div>
+
+  <!-- Pending Admissions -->
+  <div class="col">
+    <div class="erp-card bg-g-orange">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Pending Admissions</div>
+        <div class="erp-card-number">{{ admission_metrics.pending }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-clock-history"></i></div>
+      </div>
+      <a href="{% url 'admission_list' %}?status=PENDING" class="erp-card-footer">
+        <i class="bi bi-clock"></i> View pending
+      </a>
+    </div>
   </div>
 </div>
 
