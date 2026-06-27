@@ -112,7 +112,10 @@ class CandidateProfessionalForm(HRModelFormMixin, forms.ModelForm):
             'expected_salary',
         ]
         widgets = {
+            'experience': forms.TextInput(attrs={'placeholder': 'e.g. Fresher, 2 years, 1.5 years'}),
             'skills': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Python, Excel, Communication...'}),
+            'current_salary': forms.TextInput(attrs={'placeholder': 'e.g. 3 LPA, 25000, Negotiable'}),
+            'expected_salary': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 35000, Negotiable'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -173,7 +176,10 @@ class CandidateQuickForm(
         widgets = {
             'dob': forms.DateInput(attrs={'type': 'date'}),
             'address': forms.Textarea(attrs={'rows': 3}),
+            'experience': forms.TextInput(attrs={'placeholder': 'e.g. Fresher, 2 years, 1.5 years'}),
             'skills': forms.Textarea(attrs={'rows': 3}),
+            'current_salary': forms.TextInput(attrs={'placeholder': 'e.g. 3 LPA, 25000, Negotiable'}),
+            'expected_salary': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 35000, Negotiable'}),
         }
 
 
