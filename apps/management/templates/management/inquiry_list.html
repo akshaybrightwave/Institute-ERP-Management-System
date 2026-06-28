@@ -184,6 +184,46 @@
     letter-spacing: -0.02em;
   }
 
+  .inquiry-bulk-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 2px 14px;
+  }
+
+  .inquiry-bulk-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mg-muted);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .inquiry-bulk-delete {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .inquiry-select-cell {
+    width: 44px;
+    min-width: 44px;
+    text-align: center !important;
+  }
+
+  .inquiry-row-checkbox,
+  #selectAllInquiries {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
   .inquiry-table-shell {
     border: 1px solid var(--mg-line);
     border-radius: 8px;
@@ -928,10 +968,28 @@
         </div>
       </div>
 
+      {% if can_delete_inquiries %}
+        <form method="POST" action="{% url 'inquiry_bulk_delete' %}" id="bulkDeleteInquiryForm">
+          {% csrf_token %}
+          <div class="inquiry-bulk-toolbar">
+            <label class="inquiry-bulk-select" for="selectAllInquiries">
+              <input type="checkbox" class="form-check-input m-0" id="selectAllInquiries">
+              <span>Select all on this page</span>
+            </label>
+            <button type="button" class="btn btn-danger inquiry-bulk-delete" id="bulkDeleteButton" data-bs-toggle="modal" data-bs-target="#bulkDeleteInquiryModal" disabled>
+              <i class="bi bi-trash"></i>
+              Delete Selected
+            </button>
+          </div>
+      {% endif %}
+
       <div class="table-responsive inquiry-table-shell">
         <table class="table m-table inquiry-table align-middle">
           <thead>
             <tr>
+              {% if can_delete_inquiries %}
+                <th class="inquiry-select-cell">Select</th>
+              {% endif %}
               <th>ID</th>
               <th>Student</th>
               <th>Interest</th>
@@ -945,6 +1003,11 @@
           <tbody>
             {% for inquiry in page_obj %}
               <tr>
+                {% if can_delete_inquiries %}
+                  <td class="inquiry-select-cell" data-label="Select">
+                    <input type="checkbox" name="inquiries" value="{{ inquiry.pk }}" class="form-check-input m-0 inquiry-row-checkbox" aria-label="Select {{ inquiry.full_name }}">
+                  </td>
+                {% endif %}
                 <td data-label="ID">
                   <span class="fw-bold text-muted">#{{ inquiry.pk }}</span>
                 </td>
@@ -1007,9 +1070,11 @@
                         </a>
                       {% endif %}
                     {% endif %}
-                    <button type="button" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#deleteInquiryModal{{ inquiry.pk }}">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                    {% if can_delete_inquiries %}
+                      <button type="button" class="inquiry-icon-btn delete" title="Delete inquiry" aria-label="Delete {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#deleteInquiryModal{{ inquiry.pk }}">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    {% endif %}
                   </div>
                 </td>
               </tr>
@@ -1017,6 +1082,9 @@
           </tbody>
         </table>
       </div>
+      {% if can_delete_inquiries %}
+        </form>
+      {% endif %}
 
       {% if page_obj.has_other_pages %}
         <nav class="mt-4 inquiry-pagination" aria-label="Inquiry pagination">
@@ -1250,34 +1318,65 @@
   </div>
 </div>
 
-<div class="modal fade inquiry-modal" id="deleteInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="deleteInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+{% if can_delete_inquiries %}
+  <div class="modal fade inquiry-modal" id="deleteInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="deleteInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="POST" action="{% url 'inquiry_delete' inquiry.pk %}" class="modal-content">
+          {% csrf_token %}
+          <div class="modal-header">
+            <div>
+              <h5 class="modal-title fw-bold text-white" id="deleteInquiryModalLabel{{ inquiry.pk }}">
+                <i class="bi bi-trash me-2"></i>Delete Inquiry
+              </h5>
+              <p class="mb-0 small text-white-50">Please confirm before removing this record.</p>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="mb-3" style="color:#94a3b8;">Are you sure you want to permanently delete this inquiry? This cannot be undone.</p>
+            <div class="inquiry-delete-info">
+              <div class="fw-semibold" style="color:#f1f5f9;">{{ inquiry.full_name }}</div>
+              <div class="small mt-1" style="color:#64748b;">{{ inquiry.mobile_number }}{% if inquiry.course_interest %} &mdash; {{ inquiry.course_interest }}{% endif %}</div>
+            </div>
+          </div>
+          <div class="modal-footer inquiry-delete-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-danger fw-bold"><i class="bi bi-trash me-1"></i>Delete Inquiry</button>
+          </div>
+        </form>
+    </div>
+  </div>
+{% endif %}
+{% endfor %}
+
+{% if can_delete_inquiries %}
+<div class="modal fade inquiry-modal" id="bulkDeleteInquiryModal" tabindex="-1" aria-labelledby="bulkDeleteInquiryModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form method="POST" action="{% url 'inquiry_delete' inquiry.pk %}" class="modal-content">
-        {% csrf_token %}
-        <div class="modal-header">
-          <div>
-            <h5 class="modal-title fw-bold text-white" id="deleteInquiryModalLabel{{ inquiry.pk }}">
-              <i class="bi bi-trash me-2"></i>Delete Inquiry
-            </h5>
-            <p class="mb-0 small text-white-50">Please confirm before removing this record.</p>
-          </div>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title fw-bold text-white" id="bulkDeleteInquiryModalLabel">
+            <i class="bi bi-trash me-2"></i>Delete Selected Inquiries
+          </h5>
+          <p class="mb-0 small text-white-50">Please confirm before removing these records.</p>
         </div>
-        <div class="modal-body p-4">
-          <p class="mb-3" style="color:#94a3b8;">Are you sure you want to permanently delete this inquiry? This cannot be undone.</p>
-          <div class="inquiry-delete-info">
-            <div class="fw-semibold" style="color:#f1f5f9;">{{ inquiry.full_name }}</div>
-            <div class="small mt-1" style="color:#64748b;">{{ inquiry.mobile_number }}{% if inquiry.course_interest %} &mdash; {{ inquiry.course_interest }}{% endif %}</div>
-          </div>
-        </div>
-        <div class="modal-footer inquiry-delete-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-danger fw-bold"><i class="bi bi-trash me-1"></i>Delete Inquiry</button>
-        </div>
-      </form>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-3" style="color:#94a3b8;">
+          Are you sure you want to delete <strong id="bulkDeleteCount">0</strong> selected inquiry records? This cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer inquiry-delete-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" form="bulkDeleteInquiryForm" class="btn btn-danger fw-bold" id="bulkDeleteConfirm" disabled>
+          <i class="bi bi-trash me-1"></i>Delete Selected
+        </button>
+      </div>
+    </div>
   </div>
 </div>
-{% endfor %}
+{% endif %}
 
 <!-- Toast Notification -->
 <div class="cs-toast" id="csToast"></div>
@@ -1316,6 +1415,46 @@ const badgeIcons = {
   'WRONG_NUMBER': '<i class="bi bi-x-circle"></i>',
   'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>'
 };
+
+const selectAllInquiries = document.getElementById('selectAllInquiries');
+const inquiryCheckboxes = Array.from(document.querySelectorAll('.inquiry-row-checkbox'));
+const bulkDeleteButton = document.getElementById('bulkDeleteButton');
+const bulkDeleteConfirm = document.getElementById('bulkDeleteConfirm');
+const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+
+function updateBulkDeleteState() {
+  const selectedCount = inquiryCheckboxes.filter(cb => cb.checked).length;
+
+  if (bulkDeleteButton) {
+    bulkDeleteButton.disabled = selectedCount === 0;
+    bulkDeleteButton.innerHTML = selectedCount > 0
+      ? '<i class="bi bi-trash"></i> Delete Selected (' + selectedCount + ')'
+      : '<i class="bi bi-trash"></i> Delete Selected';
+  }
+
+  if (bulkDeleteConfirm) {
+    bulkDeleteConfirm.disabled = selectedCount === 0;
+  }
+
+  if (bulkDeleteCount) {
+    bulkDeleteCount.textContent = selectedCount;
+  }
+
+  if (selectAllInquiries) {
+    selectAllInquiries.checked = inquiryCheckboxes.length > 0 && selectedCount === inquiryCheckboxes.length;
+    selectAllInquiries.indeterminate = selectedCount > 0 && selectedCount < inquiryCheckboxes.length;
+  }
+}
+
+if (selectAllInquiries) {
+  selectAllInquiries.addEventListener('change', function() {
+    inquiryCheckboxes.forEach(cb => cb.checked = this.checked);
+    updateBulkDeleteState();
+  });
+}
+
+inquiryCheckboxes.forEach(cb => cb.addEventListener('change', updateBulkDeleteState));
+updateBulkDeleteState();
 
 function updateCallStatus(selectEl) {
   const inquiryId = selectEl.dataset.inquiryId;

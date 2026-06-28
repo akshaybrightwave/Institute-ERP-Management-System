@@ -321,6 +321,7 @@ def inquiry_list(request):
         'status_choices': Inquiry.STATUS_CHOICES,
         'source_choices': Inquiry.SOURCE_CHOICES,
         'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
+        'can_delete_inquiries': is_admin_user(request.user),
     })
 
 
@@ -375,12 +376,9 @@ def inquiry_edit(request, pk):
 
 
 @login_required
-@telecaller_counselor_admin_required
+@admin_required
 def inquiry_delete(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
-    # Security Data Isolation
-    if not can_access_inquiry(request.user, inquiry):
-        return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     if request.method == 'POST':
         name = inquiry.full_name
@@ -388,6 +386,32 @@ def inquiry_delete(request, pk):
         messages.success(request, f"Inquiry for {name} deleted successfully.")
         return redirect('inquiry_list')
     return render(request, 'management/inquiry_confirm_delete.html', {'inquiry': inquiry})
+
+
+@login_required
+@admin_required
+def inquiry_bulk_delete(request):
+    if request.method != 'POST':
+        return HttpResponseForbidden("Bulk delete requires a POST request.")
+
+    inquiry_ids = request.POST.getlist('inquiries')
+    if not inquiry_ids:
+        messages.warning(request, "Please select at least one inquiry to delete.")
+        return redirect('inquiry_list')
+
+    inquiries = Inquiry.objects.filter(pk__in=inquiry_ids)
+    selected_count = inquiries.count()
+
+    if selected_count == 0:
+        messages.warning(request, "No valid inquiries were selected.")
+        return redirect('inquiry_list')
+
+    with transaction.atomic():
+        inquiries.delete()
+
+    label = "inquiry" if selected_count == 1 else "inquiries"
+    messages.success(request, f"{selected_count} {label} deleted successfully.")
+    return redirect('inquiry_list')
 
 
 @login_required
@@ -406,8 +430,8 @@ def inquiry_convert(request, pk):
             return redirect('counselor_lead_detail', pk=inquiry.lead.pk)
         return redirect('lead_detail', pk=inquiry.lead.pk)
 
-    auto_assign_to_self = request.user.role in ('telecaller', 'counselor')
     form = LeadConversionForm(request.POST or None)
+    has_active_counselors = form.fields['assigned_counselor'].queryset.exists()
 
     if request.method == 'POST':
         telecaller = None
@@ -415,7 +439,9 @@ def inquiry_convert(request, pk):
 
         if request.user.role == 'telecaller':
             telecaller = request.user
-            is_valid = True
+            is_valid = form.is_valid()
+            if is_valid:
+                assigned_counselor = form.cleaned_data['assigned_counselor']
         elif request.user.role == 'counselor':
             assigned_counselor = request.user
             if inquiry.created_by and getattr(inquiry.created_by, 'role', '') == 'telecaller':
@@ -451,7 +477,7 @@ def inquiry_convert(request, pk):
                 log_lead_activity(lead, 'ASSIGNED', f"Counselor {assigned_counselor.username} assigned during conversion by {request.user.username}.", request.user)
 
             if request.user.role == 'telecaller':
-                messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to you.")
+                messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to you and counselor {assigned_counselor.username}.")
             elif assigned_counselor:
                 messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to counselor {assigned_counselor.username}.")
             else:
@@ -466,7 +492,7 @@ def inquiry_convert(request, pk):
     return render(request, 'management/inquiry_convert.html', {
         'inquiry': inquiry,
         'form': form,
-        'auto_assign_to_self': auto_assign_to_self,
+        'has_active_counselors': has_active_counselors,
     })
 
 

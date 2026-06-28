@@ -185,8 +185,31 @@
               <div class="text-white fw-bold">
                 <i class="bi bi-check-circle-fill text-success me-1"></i> You ({{ request.user.username }})
               </div>
-              <div class="text-muted small mt-1">This lead will be automatically assigned to you. Admin can assign a counselor later.</div>
+              <div class="text-muted small mt-1">This lead will be automatically assigned to you.</div>
             </div>
+            {% if has_active_counselors %}
+              <div class="counselor-field-wrap {% if form.assigned_counselor.errors %}has-error{% endif %}">
+                <div class="counselor-field-label">
+                  <i class="bi bi-person-badge-fill"></i>
+                  Select Counselor
+                  <span class="counselor-required-star">*</span>
+                </div>
+                {{ form.assigned_counselor }}
+                {% if form.assigned_counselor.errors %}
+                  <div class="counselor-field-error">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    {{ form.assigned_counselor.errors|first }}
+                  </div>
+                {% endif %}
+                <div class="text-muted small mt-2">Selected counselor will receive this lead in the counselor module.</div>
+              </div>
+            {% else %}
+              <div class="no-counselors-alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>No active counselors available.</strong>
+                Please ask your administrator to add an active counselor before converting this inquiry.
+              </div>
+            {% endif %}
           {% elif request.user.role == 'counselor' %}
             <div class="counselor-field-wrap">
               <div class="counselor-field-label">
@@ -229,7 +252,7 @@
             <li>Create a new Lead record for <strong>{{ inquiry.full_name }}</strong>.</li>
             {% if request.user.role == 'telecaller' %}
               <li>Assign the Lead immediately to you as telecaller (<strong>{{ request.user.username }}</strong>).</li>
-              <li>Leave counselor assignment open for Admin assignment or reassignment.</li>
+              <li>Assign the Lead immediately to the selected <strong>Counselor</strong>.</li>
             {% elif request.user.role == 'counselor' %}
               <li>Assign the Lead immediately to you (<strong>{{ request.user.username }}</strong>).</li>
             {% else %}
@@ -248,7 +271,7 @@
             </a>
             <button type="submit"
                     class="btn btn-success fw-bold"
-                    {% if not auto_assign_to_self and not form.assigned_counselor.field.queryset.exists %}disabled{% endif %}>
+                    {% if request.user.role != 'counselor' and not has_active_counselors %}disabled{% endif %}>
               <i class="bi bi-check-lg me-1"></i> Convert to Lead
             </button>
           </div>
