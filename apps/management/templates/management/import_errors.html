@@ -17,7 +17,7 @@
     {% endif %}
   </div>
   
-  <div>
+  <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
     <a href="?export=csv{% if import_id %}&import_id={{ import_id }}{% endif %}" class="btn btn-outline-danger btn-sm fw-bold">
       <i class="bi bi-filetype-csv me-1"></i> Download Error Report (CSV)
     </a>
@@ -26,25 +26,58 @@
 
 <div class="m-card">
   {% if page_obj %}
+  {% if can_delete_import_errors %}
+  <form method="POST" action="{% url 'import_error_bulk_delete' %}" id="bulkImportErrorDeleteForm">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  </form>
+  <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+    <label class="d-inline-flex align-items-center gap-2 small fw-bold text-muted mb-0" for="selectAllImportErrors">
+      <input type="checkbox" class="form-check-input m-0" id="selectAllImportErrors">
+      <span>Select all on this page</span>
+    </label>
+    <button type="submit" form="bulkImportErrorDeleteForm" class="btn btn-sm btn-danger fw-bold" id="bulkImportErrorDeleteBtn" disabled>
+      <i class="bi bi-trash me-1"></i> Delete Selected
+    </button>
+  </div>
+  {% endif %}
   <div class="table-responsive">
     <table class="table m-table table-hover">
       <thead>
         <tr>
+          {% if can_delete_import_errors %}<th class="text-center">Select</th>{% endif %}
           <th>Import ID</th>
           <th>Spreadsheet File</th>
           <th>Row #</th>
           <th>Error Message</th>
           <th>Timestamp</th>
+          {% if can_delete_import_errors %}<th class="text-end">Actions</th>{% endif %}
         </tr>
       </thead>
       <tbody>
         {% for err in page_obj %}
         <tr>
+          {% if can_delete_import_errors %}
+          <td class="text-center">
+            <input type="checkbox" class="form-check-input import-error-row-checkbox" name="errors" value="{{ err.pk }}" form="bulkImportErrorDeleteForm" aria-label="Select import error {{ err.pk }}">
+          </td>
+          {% endif %}
           <td><span class="badge bg-secondary">{{ err.lead_import.id }}</span></td>
           <td class="text-info">{{ err.lead_import.file.name }}</td>
           <td class="fw-bold text-warning">{{ err.row_number }}</td>
           <td class="text-white fw-bold">{{ err.error_message }}</td>
           <td class="small text-muted">{{ err.created_at|date:"Y-m-d H:i:s" }}</td>
+          {% if can_delete_import_errors %}
+          <td class="text-end">
+            <form method="POST" action="{% url 'import_error_delete' err.pk %}" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </form>
+          </td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
@@ -88,4 +121,31 @@
   </div>
   {% endif %}
 </div>
+
+{% if can_delete_import_errors %}
+<script>
+  const selectAllImportErrors = document.getElementById('selectAllImportErrors');
+  const importErrorCheckboxes = Array.from(document.querySelectorAll('.import-error-row-checkbox'));
+  const bulkImportErrorDeleteBtn = document.getElementById('bulkImportErrorDeleteBtn');
+
+  function updateImportErrorBulkState() {
+    const selectedCount = importErrorCheckboxes.filter(cb => cb.checked).length;
+    bulkImportErrorDeleteBtn.disabled = selectedCount === 0;
+    if (selectAllImportErrors) {
+      selectAllImportErrors.checked = importErrorCheckboxes.length > 0 && selectedCount === importErrorCheckboxes.length;
+      selectAllImportErrors.indeterminate = selectedCount > 0 && selectedCount < importErrorCheckboxes.length;
+    }
+  }
+
+  if (selectAllImportErrors) {
+    selectAllImportErrors.addEventListener('change', function () {
+      importErrorCheckboxes.forEach(cb => cb.checked = this.checked);
+      updateImportErrorBulkState();
+    });
+  }
+
+  importErrorCheckboxes.forEach(cb => cb.addEventListener('change', updateImportErrorBulkState));
+  updateImportErrorBulkState();
+</script>
+{% endif %}
 {% endblock %}

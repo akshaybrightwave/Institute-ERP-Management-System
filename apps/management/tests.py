@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from apps.management.models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet
 import datetime
 
@@ -96,6 +97,39 @@ class TelecallerModuleTests(TestCase):
         self.assertContains(response, 'John Doe')
         self.assertContains(response, 'Jane Smith')
 
+    def test_inquiry_directory_date_filter_matches_local_day(self):
+        tz = timezone.get_current_timezone()
+        selected_date = datetime.date(2026, 6, 25)
+        other_date = datetime.date(2026, 6, 24)
+        Inquiry.objects.filter(pk=self.inquiry1.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(selected_date, datetime.time(10, 30)), tz)
+        )
+        Inquiry.objects.filter(pk=self.inquiry2.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(other_date, datetime.time(16, 45)), tz)
+        )
+
+        response = self.client_admin.get(reverse('inquiry_list'), {'date': '2026-06-25'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'John Doe')
+        self.assertNotContains(response, 'Jane Smith')
+
+    def test_inquiry_directory_date_filter_accepts_display_format(self):
+        tz = timezone.get_current_timezone()
+        selected_date = datetime.date(2026, 6, 25)
+        other_date = datetime.date(2026, 6, 24)
+        Inquiry.objects.filter(pk=self.inquiry1.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(selected_date, datetime.time(10, 30)), tz)
+        )
+        Inquiry.objects.filter(pk=self.inquiry2.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(other_date, datetime.time(16, 45)), tz)
+        )
+
+        response = self.client_admin.get(reverse('inquiry_list'), {'date': '25-06-2026'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'John Doe')
+        self.assertNotContains(response, 'Jane Smith')
+        self.assertContains(response, 'value="2026-06-25"')
+
     def test_assigned_lead_inquiry_shows_in_telecaller_directory(self):
         Lead.objects.create(
             inquiry=self.inquiry2,
@@ -123,13 +157,19 @@ class TelecallerModuleTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_inquiry_to_lead_conversion_workflow(self):
+        counselor = User.objects.create_user(username='counselor_user', password='password', role='counselor')
+
         # Convert inquiry1 to lead
-        response = self.client_tele1.post(reverse('inquiry_convert', kwargs={'pk': self.inquiry1.pk}))
+        response = self.client_tele1.post(
+            reverse('inquiry_convert', kwargs={'pk': self.inquiry1.pk}),
+            {'assigned_counselor': counselor.pk}
+        )
         self.assertEqual(response.status_code, 302) # Redirect to lead detail
 
         # Verify Lead creation
         lead = Lead.objects.get(inquiry=self.inquiry1)
         self.assertEqual(lead.assigned_telecaller, self.tele1)
+        self.assertEqual(lead.assigned_counselor, counselor)
         self.assertEqual(lead.status, 'New')
 
         # Verify Inquiry status auto updated to Qualified
@@ -139,6 +179,40 @@ class TelecallerModuleTests(TestCase):
         # Prevent duplicate conversion
         response = self.client_tele1.post(reverse('inquiry_convert', kwargs={'pk': self.inquiry1.pk}))
         self.assertEqual(response.status_code, 302)
+
+    def test_telecaller_added_inquiry_remains_convertible(self):
+        response = self.client_tele1.post(reverse('inquiry_add'), {
+            'full_name': 'Fresh Tele Inquiry',
+            'mobile_number': '7777777777',
+            'email': 'fresh.tele@example.com',
+            'city': 'Mumbai',
+            'course_interest': 'Python',
+            'source': 'Website',
+            'remarks': 'Needs follow up',
+            'status': 'New',
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        inquiry = Inquiry.objects.get(full_name='Fresh Tele Inquiry')
+        self.assertFalse(Lead.objects.filter(inquiry=inquiry).exists())
+        self.assertContains(response, 'Fresh Tele Inquiry')
+        self.assertContains(response, 'Convert to Lead')
+
+    def test_admin_added_inquiry_still_creates_lead(self):
+        response = self.client_admin.post(reverse('inquiry_add'), {
+            'full_name': 'Fresh Admin Inquiry',
+            'mobile_number': '7777777778',
+            'email': 'fresh.admin@example.com',
+            'city': 'Thane',
+            'course_interest': 'Java',
+            'source': 'Website',
+            'remarks': 'Admin entry',
+            'status': 'New',
+        }, follow=True)
+
+        self.assertEqual(response.status_code, 200)
+        inquiry = Inquiry.objects.get(full_name='Fresh Admin Inquiry')
+        self.assertTrue(Lead.objects.filter(inquiry=inquiry, assigned_by=self.admin).exists())
 
     def test_csv_import_workflow(self):
         # Create in-memory CSV file
@@ -373,6 +447,107 @@ class TelecallerModuleTests(TestCase):
         self.assertContains(response, "Missing Full Name")
         self.assertContains(response, "Duplicate Mobile Number")
 
+    def test_admin_can_delete_import_history_record(self):
+        from apps.management.models import LeadImport, ImportErrorLog
+        lead_import = LeadImport.objects.create(
+            uploaded_by=self.tele1,
+            file='lead_imports/delete_test.csv',
+            total_records=1,
+            failed_records=1
+        )
+        error = ImportErrorLog.objects.create(
+            lead_import=lead_import,
+            row_number=2,
+            error_message='Invalid Mobile Number'
+        )
+
+        response = self.client_admin.post(reverse('import_history_delete', kwargs={'pk': lead_import.pk}))
+        self.assertRedirects(response, reverse('import_history'))
+        self.assertFalse(LeadImport.objects.filter(pk=lead_import.pk).exists())
+        self.assertFalse(ImportErrorLog.objects.filter(pk=error.pk).exists())
+
+    def test_admin_import_pages_show_delete_controls(self):
+        from apps.management.models import LeadImport, ImportErrorLog
+        lead_import = LeadImport.objects.create(uploaded_by=self.tele1, file='lead_imports/render_test.csv')
+        ImportErrorLog.objects.create(
+            lead_import=lead_import,
+            row_number=2,
+            error_message='Invalid Mobile Number'
+        )
+
+        response = self.client_admin.get(reverse('import_history'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Delete Selected')
+        self.assertContains(response, reverse('import_history_delete', kwargs={'pk': lead_import.pk}))
+
+        response = self.client_admin.get(reverse('import_errors'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Delete Selected')
+        self.assertContains(response, 'bulkImportErrorDeleteForm')
+
+    def test_admin_can_bulk_delete_import_history_records(self):
+        from apps.management.models import LeadImport
+        import_one = LeadImport.objects.create(uploaded_by=self.tele1, file='lead_imports/one.csv')
+        import_two = LeadImport.objects.create(uploaded_by=self.tele2, file='lead_imports/two.csv')
+
+        response = self.client_admin.post(reverse('import_history_bulk_delete'), {
+            'imports': [import_one.pk, import_two.pk],
+        })
+
+        self.assertRedirects(response, reverse('import_history'))
+        self.assertFalse(LeadImport.objects.filter(pk__in=[import_one.pk, import_two.pk]).exists())
+
+    def test_admin_can_delete_import_error_record(self):
+        from apps.management.models import LeadImport, ImportErrorLog
+        lead_import = LeadImport.objects.create(uploaded_by=self.tele1, file='lead_imports/error_delete.csv')
+        error = ImportErrorLog.objects.create(
+            lead_import=lead_import,
+            row_number=3,
+            error_message='Missing Full Name'
+        )
+
+        response = self.client_admin.post(reverse('import_error_delete', kwargs={'pk': error.pk}))
+        self.assertRedirects(response, reverse('import_errors'))
+        self.assertFalse(ImportErrorLog.objects.filter(pk=error.pk).exists())
+        self.assertTrue(LeadImport.objects.filter(pk=lead_import.pk).exists())
+
+    def test_admin_can_bulk_delete_import_error_records(self):
+        from apps.management.models import LeadImport, ImportErrorLog
+        lead_import = LeadImport.objects.create(uploaded_by=self.tele1, file='lead_imports/error_bulk.csv')
+        error_one = ImportErrorLog.objects.create(
+            lead_import=lead_import,
+            row_number=3,
+            error_message='Missing Full Name'
+        )
+        error_two = ImportErrorLog.objects.create(
+            lead_import=lead_import,
+            row_number=4,
+            error_message='Invalid Email'
+        )
+
+        response = self.client_admin.post(reverse('import_error_bulk_delete'), {
+            'errors': [error_one.pk, error_two.pk],
+        })
+
+        self.assertRedirects(response, reverse('import_errors'))
+        self.assertFalse(ImportErrorLog.objects.filter(pk__in=[error_one.pk, error_two.pk]).exists())
+
+    def test_telecaller_cannot_delete_import_records(self):
+        from apps.management.models import LeadImport, ImportErrorLog
+        lead_import = LeadImport.objects.create(uploaded_by=self.tele1, file='lead_imports/protected.csv')
+        error = ImportErrorLog.objects.create(
+            lead_import=lead_import,
+            row_number=5,
+            error_message='Protected'
+        )
+
+        response = self.client_tele1.post(reverse('import_history_delete', kwargs={'pk': lead_import.pk}))
+        self.assertEqual(response.status_code, 403)
+        response = self.client_tele1.post(reverse('import_error_delete', kwargs={'pk': error.pk}))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(LeadImport.objects.filter(pk=lead_import.pk).exists())
+        self.assertTrue(ImportErrorLog.objects.filter(pk=error.pk).exists())
+
     def test_lead_assignment_management(self):
         lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
 
@@ -412,6 +587,25 @@ class TelecallerModuleTests(TestCase):
         self.assertEqual(response.status_code, 302)
         lead2.refresh_from_db()
         self.assertEqual(lead2.status, 'New') 
+
+    def test_lead_list_date_filter_matches_local_day(self):
+        lead1 = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
+        lead2 = Lead.objects.create(inquiry=self.inquiry2, assigned_telecaller=self.tele1, status='New')
+        tz = timezone.get_current_timezone()
+        selected_date = datetime.date(2026, 6, 29)
+        other_date = datetime.date(2026, 6, 28)
+        Lead.objects.filter(pk=lead1.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(selected_date, datetime.time(9, 15)), tz)
+        )
+        Lead.objects.filter(pk=lead2.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(other_date, datetime.time(17, 20)), tz)
+        )
+
+        response = self.client_tele1.get(reverse('lead_list'), {'date': '29-06-2026'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'John Doe')
+        self.assertNotContains(response, 'Jane Smith')
+        self.assertContains(response, 'value="2026-06-29"')
 
     def test_source_analytics_view(self):
         lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='Qualified')
@@ -537,6 +731,23 @@ class CounselorModuleTests(TestCase):
         # Counselor 1 cannot view Counselor 2's lead detail
         response = self.client_counselor1.get(reverse('counselor_lead_detail', kwargs={'pk': self.lead2.pk}))
         self.assertEqual(response.status_code, 403)
+
+    def test_counselor_lead_list_date_filter_matches_local_day(self):
+        tz = timezone.get_current_timezone()
+        selected_date = datetime.date(2026, 6, 29)
+        other_date = datetime.date(2026, 6, 28)
+        Lead.objects.filter(pk=self.lead1.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(selected_date, datetime.time(11, 0)), tz)
+        )
+        Lead.objects.filter(pk=self.lead2.pk).update(
+            created_at=timezone.make_aware(datetime.datetime.combine(other_date, datetime.time(14, 30)), tz)
+        )
+
+        response = self.client_admin.get(reverse('counselor_lead_list'), {'date': '29-06-2026'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Alice Candidate')
+        self.assertNotContains(response, 'Bob Candidate')
+        self.assertContains(response, 'value="2026-06-29"')
 
     def test_record_counseling_session_transition(self):
         # Counselor 1 records a session for Lead 1

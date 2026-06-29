@@ -35,6 +35,8 @@ urlpatterns = [
     # Bulk Inquiry Import
     path('import/', views.inquiry_import, name='inquiry_import'),
     path('import/history/', views.import_history, name='import_history'),
+    path('import/history/<int:pk>/delete/', views.import_history_delete, name='import_history_delete'),
+    path('import/history/bulk-delete/', views.import_history_bulk_delete, name='import_history_bulk_delete'),
     path('import/sample-csv/', views.download_sample_csv, name='download_sample_csv'),
     path('import/sample-excel/', views.download_sample_excel, name='download_sample_excel'),
 
@@ -45,6 +47,8 @@ urlpatterns = [
     # Phase 11.3 Enhancements
     path('activities/', views.activities_list, name='activities_list'),
     path('import/errors/', views.import_errors, name='import_errors'),
+    path('import/errors/<int:pk>/delete/', views.import_error_delete, name='import_error_delete'),
+    path('import/errors/bulk-delete/', views.import_error_bulk_delete, name='import_error_bulk_delete'),
     path('leads/assign/', views.lead_assign, name='lead_assign'),
     path('leads/bulk-action/', views.lead_bulk_action, name='lead_bulk_action'),
     path('reports/', views.reports_dashboard, name='reports_dashboard'),
