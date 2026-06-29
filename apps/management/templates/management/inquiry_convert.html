@@ -249,7 +249,11 @@
 
           <!-- ── What will happen ── -->
           <ul class="conversion-checklist list-unstyled text-start">
-            <li>Create a new Lead record for <strong>{{ inquiry.full_name }}</strong>.</li>
+            {% if existing_lead %}
+              <li>Use the assigned Lead record for <strong>{{ inquiry.full_name }}</strong>.</li>
+            {% else %}
+              <li>Create a new Lead record for <strong>{{ inquiry.full_name }}</strong>.</li>
+            {% endif %}
             {% if request.user.role == 'telecaller' %}
               <li>Assign the Lead immediately to you as telecaller (<strong>{{ request.user.username }}</strong>).</li>
               <li>Assign the Lead immediately to the selected <strong>Counselor</strong>.</li>

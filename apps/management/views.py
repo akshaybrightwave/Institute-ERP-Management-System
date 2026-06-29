@@ -68,7 +68,7 @@ def management_dashboard(request):
             return redirect('management_super_admin_dashboard')
         return redirect('management_admin_dashboard')
 
-    today = date.today()
+    today = timezone.localdate()
 
     # Base Querysets with Data Isolation (telecaller sees own data)
     inquiries_qs = Inquiry.objects.filter(created_by=request.user)
@@ -123,7 +123,7 @@ def management_dashboard(request):
 @login_required
 @admin_required
 def management_admin_dashboard(request):
-    today = date.today()
+    today = timezone.localdate()
 
     # Admin strictly manages leads and assignments. No calling features.
     total_uploaded = {'today': Inquiry.objects.filter(created_at__date=today).count(), 'total': Inquiry.objects.count()}
@@ -156,7 +156,7 @@ def management_super_admin_dashboard(request):
     if request.user.role == 'admin':
         return redirect('management_admin_dashboard')
 
-    today = date.today()
+    today = timezone.localdate()
 
     # ── Date filter support ──
     date_filter = request.GET.get('date_filter', 'all')
@@ -445,12 +445,103 @@ def inquiry_convert(request, pk):
     if not can_access_inquiry(request.user, inquiry):
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
+    existing_lead = getattr(inquiry, 'lead', None)
+
+    assigned_lead_needs_conversion = (
+        existing_lead
+        and request.user.role == 'telecaller'
+        and existing_lead.assigned_telecaller_id == request.user.id
+        and (not existing_lead.assigned_counselor_id or inquiry.status != 'Qualified')
+    )
+    counselor_lead_needs_conversion = (
+        existing_lead
+        and request.user.role == 'counselor'
+        and (
+            not existing_lead.assigned_counselor_id
+            or (existing_lead.assigned_counselor_id == request.user.id and inquiry.status != 'Qualified')
+        )
+    )
+
+    # Admin telecaller assignment creates a Lead first. The assigned telecaller
+    # should see the conversion screen until counselor assignment is completed.
+    if assigned_lead_needs_conversion:
+        form = LeadConversionForm(
+            request.POST or None,
+            initial={'assigned_counselor': existing_lead.assigned_counselor_id},
+        )
+        has_active_counselors = form.fields['assigned_counselor'].queryset.exists()
+
+        if request.method == 'POST' and form.is_valid():
+            assigned_counselor = form.cleaned_data['assigned_counselor']
+            existing_lead.assigned_telecaller = request.user
+            existing_lead.assigned_counselor = assigned_counselor
+            existing_lead.assigned_by = existing_lead.assigned_by or request.user
+            existing_lead.assigned_at = existing_lead.assigned_at or timezone.now()
+            existing_lead.status = existing_lead.status or 'New'
+            existing_lead.save()
+
+            inquiry.status = 'Qualified'
+            inquiry.save()
+
+            log_lead_activity(
+                existing_lead,
+                'ASSIGNED',
+                f"Counselor {assigned_counselor.username} assigned during conversion by {request.user.username}.",
+                request.user,
+            )
+            messages.success(
+                request,
+                f"Inquiry for {inquiry.full_name} converted to Lead and assigned to counselor {assigned_counselor.username}.",
+            )
+            return redirect('lead_detail', pk=existing_lead.pk)
+
+        return render(request, 'management/inquiry_convert.html', {
+            'inquiry': inquiry,
+            'form': form,
+            'has_active_counselors': has_active_counselors,
+            'existing_lead': existing_lead,
+        })
+
+    # Counselors can claim an unassigned existing lead from Inquiry Directory.
+    if counselor_lead_needs_conversion:
+        form = LeadConversionForm(request.POST or None)
+        has_active_counselors = form.fields['assigned_counselor'].queryset.exists()
+
+        if request.method == 'POST':
+            existing_lead.assigned_counselor = request.user
+            existing_lead.assigned_by = existing_lead.assigned_by or request.user
+            existing_lead.assigned_at = existing_lead.assigned_at or timezone.now()
+            existing_lead.status = existing_lead.status or 'New'
+            existing_lead.save()
+
+            inquiry.status = 'Qualified'
+            inquiry.save()
+
+            log_lead_activity(
+                existing_lead,
+                'ASSIGNED',
+                f"Counselor {request.user.username} self-assigned during inquiry conversion.",
+                request.user,
+            )
+            messages.success(
+                request,
+                f"Inquiry for {inquiry.full_name} converted to Lead and assigned to you.",
+            )
+            return redirect('counselor_lead_detail', pk=existing_lead.pk)
+
+        return render(request, 'management/inquiry_convert.html', {
+            'inquiry': inquiry,
+            'form': form,
+            'has_active_counselors': has_active_counselors,
+            'existing_lead': existing_lead,
+        })
+
     # Guard: prevent duplicate lead creation
-    if hasattr(inquiry, 'lead'):
+    if existing_lead:
         messages.warning(request, "This inquiry has already been converted to a Lead.")
         if request.user.role == 'counselor':
-            return redirect('counselor_lead_detail', pk=inquiry.lead.pk)
-        return redirect('lead_detail', pk=inquiry.lead.pk)
+            return redirect('counselor_lead_detail', pk=existing_lead.pk)
+        return redirect('lead_detail', pk=existing_lead.pk)
 
     form = LeadConversionForm(request.POST or None)
     has_active_counselors = form.fields['assigned_counselor'].queryset.exists()
@@ -584,6 +675,16 @@ def lead_list(request):
     if selected_date:
         leads = filter_datetime_field_by_local_date(leads, 'created_at', selected_date)
         date_filter = selected_date.isoformat()
+
+    status_date_filter = request.GET.get('status_date', '').strip()
+    selected_status_date = parse_filter_date(status_date_filter)
+    if selected_status_date:
+        leads = filter_datetime_field_by_local_date(leads, 'counselor_status_updated_at', selected_status_date)
+
+    assigned_date_filter = request.GET.get('assigned_date', '').strip()
+    selected_assigned_date = parse_filter_date(assigned_date_filter)
+    if selected_assigned_date:
+        leads = filter_datetime_field_by_local_date(leads, 'assigned_at', selected_assigned_date)
 
     paginator = Paginator(leads, 10)
     page_number = request.GET.get('page')
@@ -1502,7 +1603,7 @@ def lead_assign(request):
     from django.http import JsonResponse
     import json
 
-    today = date.today()
+    today = timezone.localdate()
     workload_data = []
     for tc in telecallers:
         stats = Lead.objects.filter(assigned_telecaller=tc).aggregate(
@@ -1984,7 +2085,7 @@ def counselor_dashboard(request):
             return redirect('management_super_admin_dashboard')
         return redirect('management_admin_dashboard')
 
-    today = date.today()
+    today = timezone.localdate()
 
     # Base Lead Queryset Scoping (Strict Isolation)
     if request.user.role == 'superadmin':
@@ -2025,7 +2126,7 @@ def counselor_dashboard(request):
     # Admission statistics
     admission_metrics = {
         'total': admissions_qs.count(),
-        'confirmed': admissions_qs.filter(admission_status='CONFIRMED').count(),
+        'confirmed': leads_qs.filter(counselor_status='ADMISSION').count(),
         'pending': admissions_qs.filter(admission_status='PENDING').count(),
         'cancelled': admissions_qs.filter(admission_status='CANCELLED').count(),
     }
@@ -2090,6 +2191,16 @@ def counselor_lead_list(request):
     if selected_date:
         leads = filter_datetime_field_by_local_date(leads, 'created_at', selected_date)
         date_filter = selected_date.isoformat()
+
+    status_date_filter = request.GET.get('status_date', '').strip()
+    selected_status_date = parse_filter_date(status_date_filter)
+    if selected_status_date:
+        leads = filter_datetime_field_by_local_date(leads, 'counselor_status_updated_at', selected_status_date)
+
+    assigned_date_filter = request.GET.get('assigned_date', '').strip()
+    selected_assigned_date = parse_filter_date(assigned_date_filter)
+    if selected_assigned_date:
+        leads = filter_datetime_field_by_local_date(leads, 'assigned_at', selected_assigned_date)
 
     paginator = Paginator(leads, 15)
     page_number = request.GET.get('page')
@@ -2729,7 +2840,7 @@ def lead_assign_counselor(request):
     from django.db import transaction
     from django.http import JsonResponse
 
-    today = date.today()
+    today = timezone.localdate()
     workload_data = []
     for c in counselors:
         stats = Lead.objects.filter(assigned_counselor=c).aggregate(
@@ -3291,7 +3402,7 @@ def admission_report(request):
 
 def _get_date_range(request):
     """Helper: parse date_filter from request.GET and return (start_date, end_date)."""
-    today = date.today()
+    today = timezone.localdate()
     date_filter = request.GET.get('date_filter', 'this_month')
     start_date, end_date = None, today
 
@@ -3494,7 +3605,7 @@ def executive_reports(request):
         return HttpResponseForbidden("Access Denied: Admin only.")
 
     start_date, end_date, date_filter, period_label = _get_date_range(request)
-    today = date.today()
+    today = timezone.localdate()
 
     # Base querysets
     inq_qs = Inquiry.objects.all()
@@ -3710,7 +3821,7 @@ def export_executive_csv(request):
         return HttpResponseForbidden()
 
     start_date, end_date, date_filter, period_label = _get_date_range(request)
-    today = date.today()
+    today = timezone.localdate()
 
     inq_qs = Inquiry.objects.all()
     leads_qs = Lead.objects.all()

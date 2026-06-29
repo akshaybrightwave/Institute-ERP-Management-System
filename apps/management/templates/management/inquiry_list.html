@@ -1059,11 +1059,31 @@
                     <button type="button" class="inquiry-icon-btn edit" title="Edit inquiry" aria-label="Edit {{ inquiry.full_name }}" data-bs-toggle="modal" data-bs-target="#editInquiryModal{{ inquiry.pk }}">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    {% if request.user.role not in 'admin,superadmin' %}
+                    {% if request.user.role != 'admin' and request.user.role != 'superadmin' %}
                       {% if not inquiry.lead %}
                         <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
                           <i class="bi bi-arrow-right-circle"></i> Convert to Lead
                         </a>
+                      {% elif request.user.role == 'telecaller' %}
+                        {% if not inquiry.lead.assigned_counselor_id or inquiry.status != 'Qualified' %}
+                          <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                            <i class="bi bi-arrow-right-circle"></i> Convert to Lead
+                          </a>
+                        {% else %}
+                          <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
+                            <i class="bi bi-check2-circle"></i> View Lead
+                          </a>
+                        {% endif %}
+                      {% elif request.user.role == 'counselor' %}
+                        {% if not inquiry.lead.assigned_counselor_id or inquiry.lead.assigned_counselor_id == request.user.id and inquiry.status != 'Qualified' %}
+                          <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                            <i class="bi bi-arrow-right-circle"></i> Convert to Lead
+                          </a>
+                        {% else %}
+                          <a href="{% url 'counselor_lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
+                            <i class="bi bi-check2-circle"></i> View Lead
+                          </a>
+                        {% endif %}
                       {% else %}
                         <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
                           <i class="bi bi-check2-circle"></i> View Lead
