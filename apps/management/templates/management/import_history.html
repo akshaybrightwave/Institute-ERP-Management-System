@@ -20,9 +20,25 @@
 <div class="m-card">
   <div class="table-responsive">
     {% if page_obj %}
+      {% if can_delete_imports %}
+        <form method="POST" action="{% url 'import_history_bulk_delete' %}" id="bulkImportDeleteForm">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        </form>
+        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mb-3">
+          <label class="d-inline-flex align-items-center gap-2 small fw-bold text-muted mb-0" for="selectAllImports">
+            <input type="checkbox" class="form-check-input m-0" id="selectAllImports">
+            <span>Select all on this page</span>
+          </label>
+          <button type="submit" form="bulkImportDeleteForm" class="btn btn-sm btn-danger fw-bold" id="bulkImportDeleteBtn" disabled>
+            <i class="bi bi-trash me-1"></i> Delete Selected
+          </button>
+        </div>
+      {% endif %}
       <table class="table m-table align-middle">
         <thead>
           <tr>
+            {% if can_delete_imports %}<th class="text-center">Select</th>{% endif %}
             <th>Upload Date</th>
             <th>Uploaded By</th>
             <th>File Name</th>
@@ -30,11 +46,17 @@
             <th class="text-center">Imported</th>
             <th class="text-center">Duplicates</th>
             <th class="text-center">Failed</th>
+            {% if can_delete_imports %}<th class="text-end">Actions</th>{% endif %}
           </tr>
         </thead>
         <tbody>
           {% for imp in page_obj %}
             <tr>
+              {% if can_delete_imports %}
+              <td class="text-center">
+                <input type="checkbox" class="form-check-input import-row-checkbox" name="imports" value="{{ imp.pk }}" form="bulkImportDeleteForm" aria-label="Select import {{ imp.pk }}">
+              </td>
+              {% endif %}
               <td class="text-white fw-bold">{{ imp.created_at|date:"d M Y, H:i" }}</td>
               <td class="small">{{ imp.uploaded_by.username|default:"System" }}</td>
               <td class="text-info small">
@@ -45,6 +67,17 @@
               <td class="text-center"><span class="badge bg-success">{{ imp.successful_records }}</span></td>
               <td class="text-center"><span class="badge bg-warning text-dark">{{ imp.duplicate_records }}</span></td>
               <td class="text-center"><span class="badge bg-danger">{{ imp.failed_records }}</span></td>
+              {% if can_delete_imports %}
+              <td class="text-end">
+                <form method="POST" action="{% url 'import_history_delete' imp.pk %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">
+                    <i class="bi bi-trash"></i> Delete
+                  </button>
+                </form>
+              </td>
+              {% endif %}
             </tr>
           {% endfor %}
         </tbody>
@@ -82,4 +115,31 @@
     {% endif %}
   </div>
 </div>
+
+{% if can_delete_imports %}
+<script>
+  const selectAllImports = document.getElementById('selectAllImports');
+  const importCheckboxes = Array.from(document.querySelectorAll('.import-row-checkbox'));
+  const bulkImportDeleteBtn = document.getElementById('bulkImportDeleteBtn');
+
+  function updateImportBulkState() {
+    const selectedCount = importCheckboxes.filter(cb => cb.checked).length;
+    bulkImportDeleteBtn.disabled = selectedCount === 0;
+    if (selectAllImports) {
+      selectAllImports.checked = importCheckboxes.length > 0 && selectedCount === importCheckboxes.length;
+      selectAllImports.indeterminate = selectedCount > 0 && selectedCount < importCheckboxes.length;
+    }
+  }
+
+  if (selectAllImports) {
+    selectAllImports.addEventListener('change', function () {
+      importCheckboxes.forEach(cb => cb.checked = this.checked);
+      updateImportBulkState();
+    });
+  }
+
+  importCheckboxes.forEach(cb => cb.addEventListener('change', updateImportBulkState));
+  updateImportBulkState();
+</script>
+{% endif %}
 {% endblock %}

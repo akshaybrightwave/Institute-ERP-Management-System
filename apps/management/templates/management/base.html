@@ -73,7 +73,7 @@
     transition: left 0.3s ease;
     transform: none !important;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.08) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
   }
 
   .management-sidebar.sidebar-open {
@@ -149,6 +149,7 @@
     .management-sidebar {
       left: 0;
     }
+
     #sidebarClose {
       display: none !important;
     }
@@ -164,7 +165,7 @@
     padding: 18px !important;
   }
 
-  body.management-shell.modal-embedded .management-content > .mb-4:first-child {
+  body.management-shell.modal-embedded .management-content>.mb-4:first-child {
     margin-bottom: 16px !important;
   }
 
@@ -290,7 +291,10 @@
     padding: 0 6px;
   }
 
-  .management-brand:hover { color: #fff; text-decoration: none; }
+  .management-brand:hover {
+    color: #fff;
+    text-decoration: none;
+  }
 
   .management-brand-icon {
     width: 34px;
@@ -344,7 +348,9 @@
     border-left-color: rgba(91, 95, 239, 0.3);
   }
 
-  .sidebar-item:hover i { opacity: 1; }
+  .sidebar-item:hover i {
+    opacity: 1;
+  }
 
   .sidebar-item.active {
     color: #e2e8f0;
@@ -354,9 +360,14 @@
     text-decoration: none;
   }
 
-  .sidebar-item.active i { color: #818cf8; opacity: 1; }
+  .sidebar-item.active i {
+    color: #818cf8;
+    opacity: 1;
+  }
 
-  .management-main { min-width: 0; }
+  .management-main {
+    min-width: 0;
+  }
 
   .management-topbar {
     min-height: 68px;
@@ -387,7 +398,10 @@
     gap: 6px;
   }
 
-  .topbar-brand i { font-size: 18px; color: var(--mg-primary); }
+  .topbar-brand i {
+    font-size: 18px;
+    color: var(--mg-primary);
+  }
 
   .management-search {
     flex: 1;
@@ -453,7 +467,9 @@
     white-space: nowrap;
   }
 
-  .topbar-icon-btn i { font-size: 15px; }
+  .topbar-icon-btn i {
+    font-size: 15px;
+  }
 
   .topbar-icon-btn:hover {
     color: var(--mg-primary);
@@ -461,7 +477,9 @@
     background: rgba(91, 95, 239, 0.06);
   }
 
-  .topbar-btn-label { display: none; }
+  .topbar-btn-label {
+    display: none;
+  }
 
   .topbar-add-btn {
     display: inline-flex;
@@ -479,7 +497,9 @@
     white-space: nowrap;
   }
 
-  .topbar-add-btn i { font-size: 15px; }
+  .topbar-add-btn i {
+    font-size: 15px;
+  }
 
   .topbar-add-btn:hover {
     background: var(--mg-primary-dark);
@@ -527,7 +547,10 @@
     letter-spacing: 0;
   }
 
-  .user-info { line-height: 1; gap: 2px; }
+  .user-info {
+    line-height: 1;
+    gap: 2px;
+  }
 
   .user-name {
     font-size: 0.8rem;
@@ -571,10 +594,14 @@
     background: #f1f5f9;
   }
 
-  .topbar-dropdown .dropdown-divider { margin: 4px 0; }
+  .topbar-dropdown .dropdown-divider {
+    margin: 4px 0;
+  }
 
   @media (min-width: 768px) {
-    .topbar-btn-label { display: inline; }
+    .topbar-btn-label {
+      display: inline;
+    }
   }
 
   .management-content {
@@ -601,7 +628,9 @@
     letter-spacing: 0 !important;
   }
 
-  .management-content .text-muted { color: var(--mg-muted) !important; }
+  .management-content .text-muted {
+    color: var(--mg-muted) !important;
+  }
 
   .m-card,
   .stat-card {
@@ -612,7 +641,9 @@
     box-shadow: 0 18px 42px rgba(15, 23, 42, .06) !important;
   }
 
-  .m-card { padding: 18px !important; }
+  .m-card {
+    padding: 18px !important;
+  }
 
   .stat-card {
     min-height: 122px;
@@ -680,17 +711,47 @@
     font-weight: 500 !important;
   }
 
-  .stat-card-footer i { color: #047857; }
+  .stat-card-footer i {
+    color: #047857;
+  }
+
   .stat-card.bg-blue .stat-card-icon,
-  .stat-card.bg-indigo .stat-card-icon { background: rgba(91, 95, 239, .12); color: var(--mg-primary); }
+  .stat-card.bg-indigo .stat-card-icon {
+    background: rgba(91, 95, 239, .12);
+    color: var(--mg-primary);
+  }
+
   .stat-card.bg-teal .stat-card-icon,
-  .stat-card.bg-green .stat-card-icon { background: rgba(16, 185, 129, .12); color: var(--mg-emerald); }
-  .stat-card.bg-cyan .stat-card-icon { background: rgba(20, 184, 166, .12); color: #0f766e; }
-  .stat-card.bg-orange .stat-card-icon { background: rgba(249, 115, 22, .13); color: #ea580c; }
-  .stat-card.bg-red .stat-card-icon { background: rgba(239, 68, 68, .12); color: var(--mg-red); }
+  .stat-card.bg-green .stat-card-icon {
+    background: rgba(16, 185, 129, .12);
+    color: var(--mg-emerald);
+  }
+
+  .stat-card.bg-cyan .stat-card-icon {
+    background: rgba(20, 184, 166, .12);
+    color: #0f766e;
+  }
+
+  .stat-card.bg-orange .stat-card-icon {
+    background: rgba(249, 115, 22, .13);
+    color: #ea580c;
+  }
+
+  .stat-card.bg-red .stat-card-icon {
+    background: rgba(239, 68, 68, .12);
+    color: var(--mg-red);
+  }
+
   .stat-card.bg-purple .stat-card-icon,
-  .stat-card.bg-violet .stat-card-icon { background: rgba(124, 58, 237, .12); color: #6d28d9; }
-  .stat-card.bg-pink .stat-card-icon { background: rgba(236, 72, 153, .12); color: #be185d; }
+  .stat-card.bg-violet .stat-card-icon {
+    background: rgba(124, 58, 237, .12);
+    color: #6d28d9;
+  }
+
+  .stat-card.bg-pink .stat-card-icon {
+    background: rgba(236, 72, 153, .12);
+    color: #be185d;
+  }
 
   .m-table {
     margin: 0;
@@ -767,7 +828,9 @@
     background: #f5f3ff !important;
   }
 
-  .action-btn i { color: var(--mg-primary) !important; }
+  .action-btn i {
+    color: var(--mg-primary) !important;
+  }
 
   .badge {
     border-radius: 999px;
@@ -838,7 +901,11 @@
   }
 
   /* ── Nav Tabs ── */
-  .management-content .nav-tabs { border-color: var(--mg-line) !important; gap: 6px; }
+  .management-content .nav-tabs {
+    border-color: var(--mg-line) !important;
+    gap: 6px;
+  }
+
   .management-content .nav-tabs .nav-link {
     border: 1px solid transparent !important;
     border-radius: 8px 8px 0 0 !important;
@@ -847,11 +914,13 @@
     padding: 10px 18px;
     background: transparent !important;
   }
+
   .management-content .nav-tabs .nav-link:hover {
     background: #f5f3ff !important;
     border-color: #ddd6fe !important;
     color: var(--mg-primary-dark) !important;
   }
+
   .management-content .nav-tabs .nav-link.active,
   .management-content .nav-tabs .nav-link.bg-dark,
   .management-content .nav-tabs .nav-link.text-white {
@@ -860,9 +929,12 @@
     color: var(--mg-text) !important;
     box-shadow: 0 -1px 0 #fff inset, 0 10px 24px rgba(15, 23, 42, .05);
   }
+
   .management-content .nav-tabs .nav-link.active i,
   .management-content .nav-tabs .nav-link.bg-dark i,
-  .management-content .nav-tabs .nav-link.text-white i { color: var(--mg-primary) !important; }
+  .management-content .nav-tabs .nav-link.text-white i {
+    color: var(--mg-primary) !important;
+  }
 
   /* ── Content-area form controls (higher specificity) ── */
   .management-content .form-control,
@@ -874,6 +946,7 @@
     border-radius: 8px !important;
     box-shadow: none !important;
   }
+
   .management-content .form-control:focus,
   .management-content .form-select:focus,
   .management-content textarea.form-control:focus {
@@ -882,40 +955,92 @@
     color: var(--mg-text) !important;
     box-shadow: 0 0 0 .2rem rgba(91, 95, 239, .12) !important;
   }
+
   .management-content .form-control::placeholder,
-  .management-content textarea.form-control::placeholder { color: #64748b !important; opacity: 1; }
+  .management-content textarea.form-control::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+  }
+
   .management-content .input-group-text {
     background: #fff !important;
     border-color: var(--mg-line) !important;
     color: var(--mg-muted) !important;
   }
-  .management-content .form-select option { background: #fff; color: var(--mg-text); }
+
+  .management-content .form-select option {
+    background: #fff;
+    color: var(--mg-text);
+  }
+
   .management-content .form-control[readonly],
   .management-content .form-control:disabled,
-  .management-content .form-select:disabled { background-color: #f8fafc !important; color: #475569 !important; }
+  .management-content .form-select:disabled {
+    background-color: #f8fafc !important;
+    color: #475569 !important;
+  }
 
   /* ── Lead Profile Page ── */
-  .lead-profile-page > .d-flex:first-child {
+  .lead-profile-page>.d-flex:first-child {
     align-items: flex-start !important;
     gap: 16px;
     margin-bottom: 22px !important;
     flex-wrap: wrap;
   }
-  .lead-profile-page > .d-flex:first-child h2 { line-height: 1.12; }
-  .lead-profile-page > .d-flex:first-child .btn { min-height: 38px; }
-  .lead-profile-page > .row { --bs-gutter-x: 18px; --bs-gutter-y: 18px; }
-  .lead-profile-page .m-card { padding: 20px !important; }
-  .lead-profile-page .m-card h4 { color: var(--mg-text) !important; font-size: 22px; line-height: 1.2; }
-  .lead-profile-page .m-card h5 { display: flex; align-items: center; gap: 8px; color: var(--mg-text) !important; font-size: 18px; }
-  .lead-profile-page .m-card h5 i { margin-right: 0 !important; }
-  .lead-profile-page .lead-info-right { border-color: var(--mg-line) !important; }
-  .lead-profile-page .lead-info-right > div {
-    min-width: 112px; padding: 10px 12px;
-    border: 1px solid var(--mg-line); border-radius: 8px; background: #f8fafc;
+
+  .lead-profile-page>.d-flex:first-child h2 {
+    line-height: 1.12;
   }
+
+  .lead-profile-page>.d-flex:first-child .btn {
+    min-height: 38px;
+  }
+
+  .lead-profile-page>.row {
+    --bs-gutter-x: 18px;
+    --bs-gutter-y: 18px;
+  }
+
+  .lead-profile-page .m-card {
+    padding: 20px !important;
+  }
+
+  .lead-profile-page .m-card h4 {
+    color: var(--mg-text) !important;
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .lead-profile-page .m-card h5 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--mg-text) !important;
+    font-size: 18px;
+  }
+
+  .lead-profile-page .m-card h5 i {
+    margin-right: 0 !important;
+  }
+
+  .lead-profile-page .lead-info-right {
+    border-color: var(--mg-line) !important;
+  }
+
+  .lead-profile-page .lead-info-right>div {
+    min-width: 112px;
+    padding: 10px 12px;
+    border: 1px solid var(--mg-line);
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+
   .lead-profile-page .border-top,
   .lead-profile-page .border-bottom,
-  .lead-profile-page .border-secondary { border-color: var(--mg-line) !important; }
+  .lead-profile-page .border-secondary {
+    border-color: var(--mg-line) !important;
+  }
+
   .lead-profile-page .bg-dark-soft,
   .lead-profile-page .empty-state,
   .lead-profile-page .border-dashed {
@@ -941,7 +1066,7 @@
     color: var(--mg-text) !important;
   }
 
-  .lead-profile-page .list-group-item + .list-group-item {
+  .lead-profile-page .list-group-item+.list-group-item {
     border-top: 1px solid var(--mg-line) !important;
   }
 
@@ -991,21 +1116,21 @@
   }
 
   @media (max-width: 991.98px) {
-    .lead-profile-page > .d-flex:first-child {
+    .lead-profile-page>.d-flex:first-child {
       flex-direction: column;
     }
 
-    .lead-profile-page > .d-flex:first-child > .d-flex {
+    .lead-profile-page>.d-flex:first-child>.d-flex {
       width: 100%;
     }
 
-    .lead-profile-page > .d-flex:first-child > .d-flex .btn {
+    .lead-profile-page>.d-flex:first-child>.d-flex .btn {
       flex: 1;
     }
   }
 
   @media (max-width: 767.98px) {
-    .lead-profile-page .lead-info-right > div {
+    .lead-profile-page .lead-info-right>div {
       flex: 1 1 100%;
       text-align: left !important;
     }
@@ -1013,9 +1138,14 @@
 
   /* ── Inline color correction hacks (override hardcoded dark colors) ── */
   .management-content [style*="background-color: #16162a"],
-  .management-content [style*="background-color:#16162a"] { background-color: #f8fafc !important; }
+  .management-content [style*="background-color:#16162a"] {
+    background-color: #f8fafc !important;
+  }
+
   .management-content [style*="border-color: #2a2a4a"],
-  .management-content [style*="border-color:#2a2a4a"] { border-color: var(--mg-line) !important; }
+  .management-content [style*="border-color:#2a2a4a"] {
+    border-color: var(--mg-line) !important;
+  }
 </style>
 
 {% include 'management/premium_theme_css.html' %}
@@ -1032,7 +1162,8 @@
 <div class="management-layout">
   <aside class="management-sidebar" id="managementSidebar">
     <div class="d-flex justify-content-end mb-2">
-      <button class="hamburger-btn" id="sidebarClose" aria-label="Close sidebar" style="background:transparent;border-color:rgba(255,255,255,.2);color:#fff;">
+      <button class="hamburger-btn" id="sidebarClose" aria-label="Close sidebar"
+        style="background:transparent;border-color:rgba(255,255,255,.2);color:#fff;">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
@@ -1042,20 +1173,25 @@
       Super Admin
     </a>
     <div class="sidebar-section">Analytics Portal</div>
-    <a href="{% url 'management_super_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
+    <a href="{% url 'management_super_admin_dashboard' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
     <div class="sidebar-section">Reports</div>
-    <a href="{% url 'reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
+    <a href="{% url 'reports_dashboard' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'reports_dashboard' %}active{% endif %}">
       <i class="bi bi-bar-chart-line"></i> Source Analytics
     </a>
-    <a href="{% url 'telecaller_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'telecaller_report' %}active{% endif %}">
+    <a href="{% url 'telecaller_report' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'telecaller_report' %}active{% endif %}">
       <i class="bi bi-file-earmark-bar-graph"></i> Performance Reports
     </a>
-    <a href="{% url 'admission_report' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admission_report' %}active{% endif %}">
+    <a href="{% url 'admission_report' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'admission_report' %}active{% endif %}">
       <i class="bi bi-mortarboard-fill"></i> Admission Report
     </a>
-    <a href="{% url 'counselor_reports_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
+    <a href="{% url 'counselor_reports_dashboard' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'counselor_reports_dashboard' %}active{% endif %}">
       <i class="bi bi-graph-up-arrow"></i> Counselor Reports
     </a>
 
@@ -1065,30 +1201,38 @@
       ERP Admin
     </a>
     <div class="sidebar-section">Admin Portal</div>
-    <a href="{% url 'management_admin_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_admin_dashboard' %}active{% endif %}">
+    <a href="{% url 'management_admin_dashboard' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'management_admin_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
     <div class="sidebar-section">Lead Management</div>
-    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'inquiry_list' %}"
+      class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-person-plus"></i> Inquiries (Upload)
     </a>
-    <a href="{% url 'inquiry_import' %}" class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_import' %}active{% endif %}">
+    <a href="{% url 'inquiry_import' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'inquiry_import' %}active{% endif %}">
       <i class="bi bi-file-earmark-spreadsheet"></i> Bulk Import
     </a>
-    <a href="{% url 'import_history' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_history' %}active{% endif %}">
+    <a href="{% url 'import_history' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'import_history' %}active{% endif %}">
       <i class="bi bi-journal-text"></i> Import History
     </a>
-    <a href="{% url 'import_errors' %}" class="sidebar-item {% if request.resolver_match.url_name == 'import_errors' %}active{% endif %}">
+    <a href="{% url 'import_errors' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'import_errors' %}active{% endif %}">
       <i class="bi bi-exclamation-triangle"></i> Import Errors
     </a>
-    <a href="{% url 'lead_assign' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign' %}active{% endif %}">
+    <a href="{% url 'lead_assign' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign' %}active{% endif %}">
       <i class="bi bi-person-check"></i> Telecaller Assignment
     </a>
-    <a href="{% url 'lead_assign_counselor' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign_counselor' %}active{% endif %}">
+    <a href="{% url 'lead_assign_counselor' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'lead_assign_counselor' %}active{% endif %}">
       <i class="bi bi-person-check-fill"></i> Counselor Assignment
     </a>
     <div class="sidebar-section">Backend Operations</div>
-    <a href="{% url 'admission_list' %}" class="sidebar-item {% if 'admission' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'admission_list' %}"
+      class="sidebar-item {% if 'admission' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-mortarboard"></i> Admissions & Docs
     </a>
 
@@ -1098,19 +1242,24 @@
       Telecaller CRM
     </a>
     <div class="sidebar-section">Telecaller Portal</div>
-    <a href="{% url 'management_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}">
+    <a href="{% url 'management_dashboard' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'management_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
-    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'inquiry_list' %}"
+      class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-person-lines-fill"></i> Inquiry Directory
     </a>
-    <a href="{% url 'lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_edit' %}active{% endif %}">
-      <i class="bi bi-funnel"></i> Assigned Leads
+    <a href="{% url 'lead_list' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'lead_list' or request.resolver_match.url_name == 'lead_detail' or request.resolver_match.url_name == 'lead_edit' %}active{% endif %}">
+      <i class="bi bi-funnel"></i> Leads
     </a>
-    <a href="{% url 'call_log_list' %}" class="sidebar-item {% if 'call_log' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'call_log_list' %}"
+      class="sidebar-item {% if 'call_log' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-telephone-outbound"></i> Call Logs
     </a>
-    <a href="{% url 'followup_list' %}" class="sidebar-item {% if 'followup' in request.resolver_match.url_name and 'counselor' not in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'followup_list' %}"
+      class="sidebar-item {% if 'followup' in request.resolver_match.url_name and 'counselor' not in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-clock-history"></i> Follow-Ups
     </a>
 
@@ -1120,48 +1269,32 @@
       Counselor CRM
     </a>
     <div class="sidebar-section">Counselor Portal</div>
-    <a href="{% url 'counselor_dashboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
+    <a href="{% url 'counselor_dashboard' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
-    <a href="{% url 'inquiry_list' %}" class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'inquiry_list' %}"
+      class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-person-lines-fill"></i> Inquiry Directory
     </a>
-    <a href="{% url 'counselor_lead_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
+    <a href="{% url 'counselor_lead_list' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
       <i class="bi bi-people-fill"></i> Assigned Leads
     </a>
-    <a href="{% url 'counselor_session_list' %}" class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'counselor_session_list' %}"
+      class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-chat-dots"></i> Counseling Sessions
     </a>
-    <a href="{% url 'counselor_followup_list' %}" class="sidebar-item {% if 'counselor_followup' in request.resolver_match.url_name and 'counselor_followup_list' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'counselor_followup_list' %}"
+      class="sidebar-item {% if 'counselor_followup' in request.resolver_match.url_name and 'counselor_followup_list' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-clock-history"></i> Follow-Ups
     </a>
-    <a href="{% url 'counselor_visit_list' %}" class="sidebar-item {% if 'counselor_visit' in request.resolver_match.url_name %}active{% endif %}">
+    <a href="{% url 'counselor_visit_list' %}"
+      class="sidebar-item {% if 'counselor_visit' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-geo-alt"></i> Visit Sheets
     </a>
     {% endif %}
 
-    {% if request.user.role == 'admin' %}
-    <div class="sidebar-section">Super Admin Analytics</div>
-    <a href="{% url 'leaderboard' %}" class="sidebar-item {% if request.resolver_match.url_name == 'leaderboard' %}active{% endif %}">
-      <i class="bi bi-trophy"></i> Leaderboard
-    </a>
-    <a href="{% url 'user_performance' %}" class="sidebar-item {% if request.resolver_match.url_name == 'user_performance' %}active{% endif %}">
-      <i class="bi bi-speedometer2"></i> User Performance
-    </a>
-    <a href="{% url 'executive_reports' %}" class="sidebar-item {% if request.resolver_match.url_name == 'executive_reports' %}active{% endif %}">
-      <i class="bi bi-graph-up-arrow"></i> Executive Reports
-    </a>
-    <div class="sidebar-section">Quick Exports</div>
-    <a href="{% url 'export_leads_csv' %}" class="sidebar-item">
-      <i class="bi bi-download"></i> Export Leads CSV
-    </a>
-    <a href="{% url 'export_telecaller_csv' %}" class="sidebar-item">
-      <i class="bi bi-download"></i> Export Telecaller CSV
-    </a>
-    <a href="{% url 'export_counselor_csv' %}" class="sidebar-item">
-      <i class="bi bi-download"></i> Export Counselor CSV
-    </a>
-    {% endif %}
   </aside>
 
   <div class="management-main">
@@ -1180,7 +1313,8 @@
       <!-- Center: Global Omnibar Search -->
       <div class="management-search" style="position:relative;" id="omnibarWrap">
         <i class="bi bi-search"></i>
-        <input type="search" id="omnibarInput" placeholder="Search leads, candidates, admissions..." autocomplete="off" aria-label="Global search" aria-autocomplete="list" aria-controls="omnibarResults">
+        <input type="search" id="omnibarInput" placeholder="Search leads, candidates, admissions..." autocomplete="off"
+          aria-label="Global search" aria-autocomplete="list" aria-controls="omnibarResults">
         <div class="omnibar-results" id="omnibarResults" role="listbox"></div>
       </div>
 
@@ -1188,7 +1322,8 @@
       <div class="topbar-actions">
         <!-- Notification Bell -->
         <div class="dropdown notif-btn-wrap">
-          <button class="topbar-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notifications" id="notifBell">
+          <button class="topbar-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+            aria-label="Notifications" id="notifBell">
             <i class="bi bi-bell"></i>
             <span class="topbar-btn-label d-none d-lg-inline">Alerts</span>
           </button>
@@ -1204,7 +1339,8 @@
             <a href="{% url 'followup_list' %}?status=Pending" class="notif-item unread text-decoration-none">
               <div class="notif-dot overdue"><i class="bi bi-exclamation-triangle"></i></div>
               <div class="notif-body">
-                <div class="notif-title">{{ overdue_followups }} Overdue Follow-up{{ overdue_followups|pluralize }}</div>
+                <div class="notif-title">{{ overdue_followups }} Overdue Follow-up{{ overdue_followups|pluralize }}
+                </div>
                 <div class="notif-meta">Requires immediate attention</div>
               </div>
             </a>
@@ -1213,7 +1349,8 @@
             <a href="{% url 'followup_list' %}?status=Pending" class="notif-item text-decoration-none">
               <div class="notif-dot warning"><i class="bi bi-clock"></i></div>
               <div class="notif-body">
-                <div class="notif-title">{{ pending_followups }} Pending Follow-up{{ pending_followups|pluralize }}</div>
+                <div class="notif-title">{{ pending_followups }} Pending Follow-up{{ pending_followups|pluralize }}
+                </div>
                 <div class="notif-meta">Scheduled and waiting</div>
               </div>
             </a>
@@ -1265,40 +1402,41 @@
               <div class="fw-semibold" style="font-size:0.85rem;">{{ request.user.username }}</div>
               <div class="text-muted" style="font-size:0.72rem;">{{ request.user.role|title }}</div>
             </li>
-            <li class="d-sm-none"><hr class="dropdown-divider"></li>
+            <li class="d-sm-none">
+              <hr class="dropdown-divider">
+            </li>
             {% if request.user.role == 'superadmin' %}
-            <li><a class="dropdown-item" href="{% url 'management_super_admin_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            <li><a class="dropdown-item" href="{% url 'management_super_admin_dashboard' %}"><i
+                  class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'admin' %}
-            <li><a class="dropdown-item" href="{% url 'management_admin_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            <li><a class="dropdown-item" href="{% url 'management_admin_dashboard' %}"><i
+                  class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'telecaller' %}
-            <li><a class="dropdown-item" href="{% url 'management_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            <li><a class="dropdown-item" href="{% url 'management_dashboard' %}"><i
+                  class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'counselor' %}
-            <li><a class="dropdown-item" href="{% url 'counselor_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+            <li><a class="dropdown-item" href="{% url 'counselor_dashboard' %}"><i
+                  class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% endif %}
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i
+                  class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
           </ul>
         </div>
       </div>
     </header>
 
     <main class="management-content">
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-
       {% block management_content %}
       {% endblock %}
     </main>
   </div>
 </div>
 
-<div class="modal fade management-action-modal" id="managementActionModal" tabindex="-1" aria-labelledby="managementActionModalLabel" aria-hidden="true">
+<div class="modal fade management-action-modal" id="managementActionModal" tabindex="-1"
+  aria-labelledby="managementActionModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
@@ -1323,255 +1461,255 @@
 </div>
 
 <script>
-(function() {
-  if (window.self !== window.top) {
-    document.body.classList.add('modal-embedded');
+  (function () {
+    if (window.self !== window.top) {
+      document.body.classList.add('modal-embedded');
 
-    document.querySelectorAll('a.btn').forEach(function(button) {
-      if (button.querySelector('.bi-arrow-left')) {
-        button.style.display = 'none';
-      }
-    });
+      document.querySelectorAll('a.btn').forEach(function (button) {
+        if (button.querySelector('.bi-arrow-left')) {
+          button.style.display = 'none';
+        }
+      });
 
-    document.addEventListener('click', function(event) {
-      var link = event.target.closest('a[href]');
-      if (!link || link.target || link.hasAttribute('download') || link.dataset.bsToggle) return;
+      document.addEventListener('click', function (event) {
+        var link = event.target.closest('a[href]');
+        if (!link || link.target || link.hasAttribute('download') || link.dataset.bsToggle) return;
 
-      if (link.classList.contains('js-skip-action-modal')) {
+        if (link.classList.contains('js-skip-action-modal')) {
+          event.preventDefault();
+          window.parent.postMessage({
+            type: 'management-action-modal:close'
+          }, window.location.origin);
+          return;
+        }
+
+        var href = link.getAttribute('href') || '';
+        if (!href || href === '#' || href.indexOf('javascript:') === 0) return;
+
+        var url;
+        try {
+          url = new URL(href, window.location.href);
+        } catch (e) {
+          return;
+        }
+
+        if (url.origin !== window.location.origin || url.pathname.indexOf('/management/') === -1) return;
+
+        var path = url.pathname;
+        var isFormAction = /\/(add|edit|delete|status|convert|complete|miss|update-call-status)\/?$/.test(path);
+        var isNumericDetail = /\/\d+\/?$/.test(path);
+        var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
+
+        if (!looksLikeActionButton || (!isFormAction && !isNumericDetail)) return;
+
         event.preventDefault();
         window.parent.postMessage({
-          type: 'management-action-modal:close'
+          type: 'management-action-modal:navigate',
+          href: url.href,
+          title: link.getAttribute('title') || (link.textContent || '').replace(/\s+/g, ' ').trim() || 'Management Action'
         }, window.location.origin);
-        return;
-      }
+      });
+    }
+  })();
 
-      var href = link.getAttribute('href') || '';
-      if (!href || href === '#' || href.indexOf('javascript:') === 0) return;
+  (function () {
+    var sidebar = document.getElementById('managementSidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+    var toggleBtn = document.getElementById('sidebarToggle');
+    var closeBtn = document.getElementById('sidebarClose');
 
-      var url;
-      try {
-        url = new URL(href, window.location.href);
-      } catch (e) {
-        return;
-      }
+    function openSidebar() {
+      sidebar.classList.add('sidebar-open');
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
 
-      if (url.origin !== window.location.origin || url.pathname.indexOf('/management/') === -1) return;
+    function closeSidebar() {
+      sidebar.classList.remove('sidebar-open');
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';
+    }
 
-      var path = url.pathname;
-      var isFormAction = /\/(add|edit|delete|status|convert|complete|miss|update-call-status)\/?$/.test(path);
-      var isNumericDetail = /\/\d+\/?$/.test(path);
-      var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
+    if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
 
-      if (!looksLikeActionButton || (!isFormAction && !isNumericDetail)) return;
-
-      event.preventDefault();
-      window.parent.postMessage({
-        type: 'management-action-modal:navigate',
-        href: url.href,
-        title: link.getAttribute('title') || (link.textContent || '').replace(/\s+/g, ' ').trim() || 'Management Action'
-      }, window.location.origin);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeSidebar();
     });
-  }
-})();
-
-(function() {
-  var sidebar = document.getElementById('managementSidebar');
-  var overlay = document.getElementById('sidebarOverlay');
-  var toggleBtn = document.getElementById('sidebarToggle');
-  var closeBtn = document.getElementById('sidebarClose');
-
-  function openSidebar() {
-    sidebar.classList.add('sidebar-open');
-    overlay.classList.add('show');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeSidebar() {
-    sidebar.classList.remove('sidebar-open');
-    overlay.classList.remove('show');
-    document.body.style.overflow = '';
-  }
-
-  if (toggleBtn) toggleBtn.addEventListener('click', openSidebar);
-  if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-  if (overlay) overlay.addEventListener('click', closeSidebar);
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeSidebar();
-  });
-})();
+  })();
 
 </script>
 {% endblock %}
 
 {% block scripts %}
 <script>
-(function() {
-  if (window.self !== window.top) return;
+  (function () {
+    if (window.self !== window.top) return;
 
-  var modalEl = document.getElementById('managementActionModal');
-  var frame = document.getElementById('managementActionFrame');
-  var titleEl = document.getElementById('managementActionModalLabel');
-  var errorEl = document.getElementById('managementActionError');
-  if (!modalEl || !frame || !window.bootstrap) return;
+    var modalEl = document.getElementById('managementActionModal');
+    var frame = document.getElementById('managementActionFrame');
+    var titleEl = document.getElementById('managementActionModalLabel');
+    var errorEl = document.getElementById('managementActionError');
+    if (!modalEl || !frame || !window.bootstrap) return;
 
-  var modal = new bootstrap.Modal(modalEl);
-  var initialPath = '';
-  var hasLoadedInitialPage = false;
+    var modal = new bootstrap.Modal(modalEl);
+    var initialPath = '';
+    var hasLoadedInitialPage = false;
 
-  function isManagementActionLink(link) {
-    if (!link || link.target || link.hasAttribute('download') || link.dataset.bsToggle || link.classList.contains('js-skip-action-modal')) {
-      return false;
-    }
-
-    var href = link.getAttribute('href') || '';
-    if (!href || href === '#' || href.indexOf('javascript:') === 0) return false;
-
-    var url;
-    try {
-      url = new URL(href, window.location.href);
-    } catch (e) {
-      return false;
-    }
-
-    if (url.origin !== window.location.origin || url.pathname.indexOf('/management/') === -1) {
-      return false;
-    }
-
-    var path = url.pathname;
-    var isFormAction = /\/(add|edit|delete|status|convert|complete|miss|update-call-status)\/?$/.test(path);
-    var isNumericDetail = /\/\d+\/?$/.test(path);
-    var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
-
-    return looksLikeActionButton && (isFormAction || isNumericDetail);
-  }
-
-  function getActionTitle(link) {
-    var explicitTitle = link.getAttribute('title');
-    var text = (link.textContent || '').replace(/\s+/g, ' ').trim();
-    var href = link.getAttribute('href') || '';
-
-    if (explicitTitle) return explicitTitle;
-    if (text) return text;
-    if (href.indexOf('/add') !== -1) return 'Add Record';
-    if (href.indexOf('/edit') !== -1) return 'Edit Record';
-    if (href.indexOf('/delete') !== -1) return 'Delete Record';
-    if (href.indexOf('/status') !== -1) return 'Update Status';
-    return 'View Details';
-  }
-
-  document.addEventListener('click', function(event) {
-    var link = event.target.closest('a[href]');
-    if (!isManagementActionLink(link)) return;
-
-    event.preventDefault();
-    initialPath = new URL(link.href, window.location.href).pathname;
-    hasLoadedInitialPage = false;
-    titleEl.textContent = getActionTitle(link);
-    modalEl.classList.add('is-loading');
-    if (errorEl) errorEl.classList.add('d-none');
-    frame.style.display = 'block';
-    frame.src = link.href;
-    modal.show();
-  });
-
-  window.addEventListener('message', function(event) {
-    if (event.origin !== window.location.origin || !event.data) {
-      return;
-    }
-
-    if (event.data.type === 'management-action-modal:close') {
-      modal.hide();
-      return;
-    }
-
-    if (event.data.type === 'management-action-modal:navigate') {
-      var url;
-      try {
-        url = new URL(event.data.href, window.location.href);
-      } catch (e) {
-        return;
+    function isManagementActionLink(link) {
+      if (!link || link.target || link.hasAttribute('download') || link.dataset.bsToggle || link.classList.contains('js-skip-action-modal')) {
+        return false;
       }
 
-      initialPath = url.pathname;
+      var href = link.getAttribute('href') || '';
+      if (!href || href === '#' || href.indexOf('javascript:') === 0) return false;
+
+      var url;
+      try {
+        url = new URL(href, window.location.href);
+      } catch (e) {
+        return false;
+      }
+
+      if (url.origin !== window.location.origin || url.pathname.indexOf('/management/') === -1) {
+        return false;
+      }
+
+      var path = url.pathname;
+      var isFormAction = /\/(add|edit|delete|status|convert|complete|miss|update-call-status)\/?$/.test(path);
+      var isNumericDetail = /\/\d+\/?$/.test(path);
+      var looksLikeActionButton = link.classList.contains('btn') || link.classList.contains('action-btn');
+
+      return looksLikeActionButton && (isFormAction || isNumericDetail);
+    }
+
+    function getActionTitle(link) {
+      var explicitTitle = link.getAttribute('title');
+      var text = (link.textContent || '').replace(/\s+/g, ' ').trim();
+      var href = link.getAttribute('href') || '';
+
+      if (explicitTitle) return explicitTitle;
+      if (text) return text;
+      if (href.indexOf('/add') !== -1) return 'Add Record';
+      if (href.indexOf('/edit') !== -1) return 'Edit Record';
+      if (href.indexOf('/delete') !== -1) return 'Delete Record';
+      if (href.indexOf('/status') !== -1) return 'Update Status';
+      return 'View Details';
+    }
+
+    document.addEventListener('click', function (event) {
+      var link = event.target.closest('a[href]');
+      if (!isManagementActionLink(link)) return;
+
+      event.preventDefault();
+      initialPath = new URL(link.href, window.location.href).pathname;
       hasLoadedInitialPage = false;
-      titleEl.textContent = event.data.title || 'Management Action';
+      titleEl.textContent = getActionTitle(link);
       modalEl.classList.add('is-loading');
       if (errorEl) errorEl.classList.add('d-none');
       frame.style.display = 'block';
-      frame.src = url.href;
+      frame.src = link.href;
       modal.show();
-    }
-  });
+    });
 
-  frame.addEventListener('load', function() {
-    if (!frame.src) return;
+    window.addEventListener('message', function (event) {
+      if (event.origin !== window.location.origin || !event.data) {
+        return;
+      }
 
-    if (!hasLoadedInitialPage) {
-      hasLoadedInitialPage = true;
-      modalEl.classList.remove('is-loading');
-      
-      try {
-        var frameDoc = frame.contentDocument || frame.contentWindow.document;
-        var title = (frameDoc.title || '').toLowerCase();
-        if (title.includes('error') || title.includes('server error') || title.includes('not found')) {
+      if (event.data.type === 'management-action-modal:close') {
+        modal.hide();
+        return;
+      }
+
+      if (event.data.type === 'management-action-modal:navigate') {
+        var url;
+        try {
+          url = new URL(event.data.href, window.location.href);
+        } catch (e) {
+          return;
+        }
+
+        initialPath = url.pathname;
+        hasLoadedInitialPage = false;
+        titleEl.textContent = event.data.title || 'Management Action';
+        modalEl.classList.add('is-loading');
+        if (errorEl) errorEl.classList.add('d-none');
+        frame.style.display = 'block';
+        frame.src = url.href;
+        modal.show();
+      }
+    });
+
+    frame.addEventListener('load', function () {
+      if (!frame.src) return;
+
+      if (!hasLoadedInitialPage) {
+        hasLoadedInitialPage = true;
+        modalEl.classList.remove('is-loading');
+
+        try {
+          var frameDoc = frame.contentDocument || frame.contentWindow.document;
+          var title = (frameDoc.title || '').toLowerCase();
+          if (title.includes('error') || title.includes('server error') || title.includes('not found')) {
             console.error("Management Action Modal Error: Loaded page returned an error (" + frameDoc.title + "). URL: " + frame.src);
+          }
+        } catch (e) {
+          console.error("Management Action Modal Error: Failed to access iframe document. Likely a cross-origin or X-Frame-Options restriction. URL: " + frame.src);
+          if (errorEl) {
+            errorEl.classList.remove('d-none');
+            frame.style.display = 'none';
+          }
+        }
+        return;
+      }
+
+      try {
+        var framePath = frame.contentWindow.location.pathname;
+        if (framePath && framePath !== initialPath) {
+          window.location.reload();
         }
       } catch (e) {
-        console.error("Management Action Modal Error: Failed to access iframe document. Likely a cross-origin or X-Frame-Options restriction. URL: " + frame.src);
-        if (errorEl) {
-          errorEl.classList.remove('d-none');
-          frame.style.display = 'none';
-        }
+        // Ignore cross-context access failures; all app pages should be same-origin.
       }
-      return;
-    }
+    });
 
-    try {
-      var framePath = frame.contentWindow.location.pathname;
-      if (framePath && framePath !== initialPath) {
-        window.location.reload();
-      }
-    } catch (e) {
-      // Ignore cross-context access failures; all app pages should be same-origin.
-    }
-  });
-
-  modalEl.addEventListener('hidden.bs.modal', function() {
-    frame.removeAttribute('src');
-    modalEl.classList.remove('is-loading');
-    initialPath = '';
-    hasLoadedInitialPage = false;
-  });
-})();
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      frame.removeAttribute('src');
+      modalEl.classList.remove('is-loading');
+      initialPath = '';
+      hasLoadedInitialPage = false;
+    });
+  })();
 </script>
 
 <script>
-// ── Global Omnibar Search ──────────────────────────────────────────────
-(function() {
-  const input = document.getElementById('omnibarInput');
-  const results = document.getElementById('omnibarResults');
-  if (!input || !results) return;
+  // ── Global Omnibar Search ──────────────────────────────────────────────
+  (function () {
+    const input = document.getElementById('omnibarInput');
+    const results = document.getElementById('omnibarResults');
+    if (!input || !results) return;
 
-  let debounceTimer;
-  const SEARCH_URL = '{% url "global_search" %}';
+    let debounceTimer;
+    const SEARCH_URL = '{% url "global_search" %}';
 
-  // Role-based fallback URLs for Enter key
-  const fallbackUrl = {% if request.user.role == 'counselor' %}'{% url "counselor_lead_list" %}'{% else %}'{% url "lead_list" %}'{% endif %};
+    // Role-based fallback URLs for Enter key
+    const fallbackUrl = {% if request.user.role == 'counselor' %}'{% url "counselor_lead_list" %}'{% else %} '{% url "lead_list" %}'{% endif %};
 
-  input.addEventListener('input', function() {
+  input.addEventListener('input', function () {
     clearTimeout(debounceTimer);
     const q = input.value.trim();
     if (q.length < 2) { results.classList.remove('show'); results.innerHTML = ''; return; }
     debounceTimer = setTimeout(() => fetchResults(q), 280);
   });
 
-  input.addEventListener('keydown', function(e) {
+  input.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') { results.classList.remove('show'); input.blur(); }
     if (e.key === 'Enter') { window.location.href = fallbackUrl + '?q=' + encodeURIComponent(input.value.trim()); }
   });
 
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', function (e) {
     if (!document.getElementById('omnibarWrap').contains(e.target)) {
       results.classList.remove('show');
     }
@@ -1616,35 +1754,36 @@
 
   function escHtml(str) {
     if (!str) return '';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
-})();
+}) ();
 
-// ── Notification Center ──────────────────────────────────────────────
-function markAllRead() {
-  const badge = document.getElementById('notifCount');
-  if (badge) badge.style.display = 'none';
-  document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
-}
+  // ── Notification Center ──────────────────────────────────────────────
+  function markAllRead() {
+    const badge = document.getElementById('notifCount');
+    if (badge) badge.style.display = 'none';
+    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+  }
 
-// ── Global Page Loader / Graceful Fallback ───────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-  const forms = document.querySelectorAll('form:not(.no-loader)');
-  forms.forEach(f => f.addEventListener('submit', () => {
-    const loader = document.getElementById('page-loader');
-    if (loader) loader.classList.add('show');
-  }));
-
-  const links = document.querySelectorAll('.page-link, .filter-pill');
-  links.forEach(l => l.addEventListener('click', function(e) {
-    if (this.getAttribute('href') && this.getAttribute('href') !== '#') {
+  // ── Global Page Loader / Graceful Fallback ───────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    const forms = document.querySelectorAll('form:not(.no-loader)');
+    forms.forEach(f => f.addEventListener('submit', () => {
       const loader = document.getElementById('page-loader');
       if (loader) loader.classList.add('show');
-    }
-  }));
-});
+    }));
+
+    const links = document.querySelectorAll('.page-link, .filter-pill');
+    links.forEach(l => l.addEventListener('click', function (e) {
+      if (this.getAttribute('href') && this.getAttribute('href') !== '#') {
+        const loader = document.getElementById('page-loader');
+        if (loader) loader.classList.add('show');
+      }
+    }));
+  });
 </script>
 
-<div id="page-loader"><div class="loader-spinner"></div></div>
+<div id="page-loader">
+  <div class="loader-spinner"></div>
+</div>
 {% endblock %}
-

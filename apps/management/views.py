@@ -11,6 +11,7 @@ from datetime import datetime, date, time, timedelta
 import json
 import csv
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 
 from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
 from .forms import InquiryForm, LeadConversionForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm
@@ -36,6 +37,28 @@ def normalize_timestamp(value):
         dt = datetime.combine(value, time.min)
         return timezone.make_aware(dt) if not timezone.is_aware(dt) else dt
     return value
+
+def parse_filter_date(value):
+    """Accept native date input and the dd-mm-yyyy format shown in the UI."""
+    if not value:
+        return None
+
+    parsed = parse_date(value)
+    if parsed:
+        return parsed
+
+    try:
+        return datetime.strptime(value, "%d-%m-%Y").date()
+    except ValueError:
+        return None
+
+def filter_datetime_field_by_local_date(queryset, field_name, selected_date):
+    start = timezone.make_aware(datetime.combine(selected_date, time.min), timezone.get_current_timezone())
+    end = start + timedelta(days=1)
+    return queryset.filter(**{
+        f"{field_name}__gte": start,
+        f"{field_name}__lt": end,
+    })
 
 @login_required
 @telecaller_required
@@ -302,8 +325,10 @@ def inquiry_list(request):
         inquiries = inquiries.filter(call_status=call_status)
 
     date_filter = request.GET.get('date', '').strip()
-    if date_filter:
-        inquiries = inquiries.filter(created_at__date=date_filter)
+    selected_date = parse_filter_date(date_filter)
+    if selected_date:
+        inquiries = filter_datetime_field_by_local_date(inquiries, 'created_at', selected_date)
+        date_filter = selected_date.isoformat()
 
     inquiries = inquiries.order_by('-created_at')
     paginator = Paginator(inquiries, 10)
@@ -321,6 +346,7 @@ def inquiry_list(request):
         'status_choices': Inquiry.STATUS_CHOICES,
         'source_choices': Inquiry.SOURCE_CHOICES,
         'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
+        'can_delete_inquiries': is_admin_user(request.user),
     })
 
 
@@ -334,11 +360,8 @@ def inquiry_add(request):
             inquiry.created_by = request.user
             with transaction.atomic():
                 inquiry.save()
-                # Auto-create Lead tied to this Inquiry
-                Lead.objects.create(
-                    inquiry=inquiry,
-                    assigned_by=request.user if request.user.role in ['admin', 'superadmin'] else None
-                )
+                if is_admin_user(request.user):
+                    Lead.objects.create(inquiry=inquiry, assigned_by=request.user)
             messages.success(request, f"Inquiry for {inquiry.full_name} created successfully.")
             return redirect('inquiry_list')
     else:
@@ -375,12 +398,9 @@ def inquiry_edit(request, pk):
 
 
 @login_required
-@telecaller_counselor_admin_required
+@admin_required
 def inquiry_delete(request, pk):
     inquiry = get_object_or_404(Inquiry, pk=pk)
-    # Security Data Isolation
-    if not can_access_inquiry(request.user, inquiry):
-        return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     if request.method == 'POST':
         name = inquiry.full_name
@@ -388,6 +408,32 @@ def inquiry_delete(request, pk):
         messages.success(request, f"Inquiry for {name} deleted successfully.")
         return redirect('inquiry_list')
     return render(request, 'management/inquiry_confirm_delete.html', {'inquiry': inquiry})
+
+
+@login_required
+@admin_required
+def inquiry_bulk_delete(request):
+    if request.method != 'POST':
+        return HttpResponseForbidden("Bulk delete requires a POST request.")
+
+    inquiry_ids = request.POST.getlist('inquiries')
+    if not inquiry_ids:
+        messages.warning(request, "Please select at least one inquiry to delete.")
+        return redirect('inquiry_list')
+
+    inquiries = Inquiry.objects.filter(pk__in=inquiry_ids)
+    selected_count = inquiries.count()
+
+    if selected_count == 0:
+        messages.warning(request, "No valid inquiries were selected.")
+        return redirect('inquiry_list')
+
+    with transaction.atomic():
+        inquiries.delete()
+
+    label = "inquiry" if selected_count == 1 else "inquiries"
+    messages.success(request, f"{selected_count} {label} deleted successfully.")
+    return redirect('inquiry_list')
 
 
 @login_required
@@ -406,8 +452,8 @@ def inquiry_convert(request, pk):
             return redirect('counselor_lead_detail', pk=inquiry.lead.pk)
         return redirect('lead_detail', pk=inquiry.lead.pk)
 
-    auto_assign_to_self = request.user.role in ('telecaller', 'counselor')
     form = LeadConversionForm(request.POST or None)
+    has_active_counselors = form.fields['assigned_counselor'].queryset.exists()
 
     if request.method == 'POST':
         telecaller = None
@@ -415,7 +461,9 @@ def inquiry_convert(request, pk):
 
         if request.user.role == 'telecaller':
             telecaller = request.user
-            is_valid = True
+            is_valid = form.is_valid()
+            if is_valid:
+                assigned_counselor = form.cleaned_data['assigned_counselor']
         elif request.user.role == 'counselor':
             assigned_counselor = request.user
             if inquiry.created_by and getattr(inquiry.created_by, 'role', '') == 'telecaller':
@@ -451,7 +499,7 @@ def inquiry_convert(request, pk):
                 log_lead_activity(lead, 'ASSIGNED', f"Counselor {assigned_counselor.username} assigned during conversion by {request.user.username}.", request.user)
 
             if request.user.role == 'telecaller':
-                messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to you.")
+                messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to you and counselor {assigned_counselor.username}.")
             elif assigned_counselor:
                 messages.success(request, f"Inquiry for {inquiry.full_name} converted to Lead and assigned to counselor {assigned_counselor.username}.")
             else:
@@ -466,7 +514,7 @@ def inquiry_convert(request, pk):
     return render(request, 'management/inquiry_convert.html', {
         'inquiry': inquiry,
         'form': form,
-        'auto_assign_to_self': auto_assign_to_self,
+        'has_active_counselors': has_active_counselors,
     })
 
 
@@ -532,8 +580,10 @@ def lead_list(request):
         leads = leads.filter(priority=priority)
 
     date_filter = request.GET.get('date', '').strip()
-    if date_filter:
-        leads = leads.filter(created_at__date=date_filter)
+    selected_date = parse_filter_date(date_filter)
+    if selected_date:
+        leads = filter_datetime_field_by_local_date(leads, 'created_at', selected_date)
+        date_filter = selected_date.isoformat()
 
     paginator = Paginator(leads, 10)
     page_number = request.GET.get('page')
@@ -1216,7 +1266,43 @@ def import_history(request):
 
     return render(request, 'management/import_history.html', {
         'page_obj': page_obj,
+        'can_delete_imports': is_admin_user(request.user),
     })
+
+
+@login_required
+@admin_required
+def import_history_delete(request, pk):
+    if request.method != 'POST':
+        return HttpResponseForbidden("Import history delete requires a POST request.")
+
+    lead_import = get_object_or_404(LeadImport, pk=pk)
+    lead_import.delete()
+    messages.success(request, "Import history record deleted successfully.")
+    return redirect(request.POST.get('next') or 'import_history')
+
+
+@login_required
+@admin_required
+def import_history_bulk_delete(request):
+    if request.method != 'POST':
+        return HttpResponseForbidden("Bulk import history delete requires a POST request.")
+
+    import_ids = request.POST.getlist('imports')
+    if not import_ids:
+        messages.warning(request, "Please select at least one import record to delete.")
+        return redirect(request.POST.get('next') or 'import_history')
+
+    imports = LeadImport.objects.filter(pk__in=import_ids)
+    selected_count = imports.count()
+    if selected_count == 0:
+        messages.warning(request, "No valid import records were selected.")
+        return redirect(request.POST.get('next') or 'import_history')
+
+    imports.delete()
+    label = "record" if selected_count == 1 else "records"
+    messages.success(request, f"{selected_count} import history {label} deleted successfully.")
+    return redirect(request.POST.get('next') or 'import_history')
 
 
 @login_required
@@ -1362,7 +1448,43 @@ def import_errors(request):
         'page_obj': page_obj,
         'lead_import': lead_import,
         'import_id': import_id,
+        'can_delete_import_errors': is_admin_user(request.user),
     })
+
+
+@login_required
+@admin_required
+def import_error_delete(request, pk):
+    if request.method != 'POST':
+        return HttpResponseForbidden("Import error delete requires a POST request.")
+
+    error = get_object_or_404(ImportErrorLog, pk=pk)
+    error.delete()
+    messages.success(request, "Import error record deleted successfully.")
+    return redirect(request.POST.get('next') or 'import_errors')
+
+
+@login_required
+@admin_required
+def import_error_bulk_delete(request):
+    if request.method != 'POST':
+        return HttpResponseForbidden("Bulk import error delete requires a POST request.")
+
+    error_ids = request.POST.getlist('errors')
+    if not error_ids:
+        messages.warning(request, "Please select at least one import error to delete.")
+        return redirect(request.POST.get('next') or 'import_errors')
+
+    errors = ImportErrorLog.objects.filter(pk__in=error_ids)
+    selected_count = errors.count()
+    if selected_count == 0:
+        messages.warning(request, "No valid import errors were selected.")
+        return redirect(request.POST.get('next') or 'import_errors')
+
+    errors.delete()
+    label = "error" if selected_count == 1 else "errors"
+    messages.success(request, f"{selected_count} import {label} deleted successfully.")
+    return redirect(request.POST.get('next') or 'import_errors')
 
 
 @login_required
@@ -1964,8 +2086,10 @@ def counselor_lead_list(request):
         leads = leads.filter(priority=priority)
 
     date_filter = request.GET.get('date', '').strip()
-    if date_filter:
-        leads = leads.filter(created_at__date=date_filter)
+    selected_date = parse_filter_date(date_filter)
+    if selected_date:
+        leads = filter_datetime_field_by_local_date(leads, 'created_at', selected_date)
+        date_filter = selected_date.isoformat()
 
     paginator = Paginator(leads, 15)
     page_number = request.GET.get('page')

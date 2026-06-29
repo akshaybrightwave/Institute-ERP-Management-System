@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap');
+
+:root {
+  --examly-title-font: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+h1,
+h2,
+h3,
+.dashboard-title,
+.page-title,
+.section-title,
+.card-title,
+.modal-title,
+.m-card-title,
+.hr-page-title h1,
+.external-title-row h1,
+.sa-content h1,
+.sa-content h2 {
+  font-family: var(--examly-title-font) !important;
+  letter-spacing: 0 !important;
+}
