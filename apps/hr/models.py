@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -253,7 +254,7 @@ class PlacementCompany(models.Model):
 
     @property
     def selected_count(self):
-        return self.placement_assignments.filter(final_status__in=['selected', 'joined']).count()
+        return self.placement_assignments.filter(final_status='selected').count()
 
     @property
     def rejected_count(self):
@@ -266,7 +267,7 @@ class PlacementCompany(models.Model):
     @property
     def placement_rate(self):
         sent = self.students_sent_count
-        return round((self.selected_count / sent) * 100, 1) if sent else 0
+        return round((self.joined_count / sent) * 100, 1) if sent else 0
 
 
 class PlacementDrive(models.Model):
@@ -314,15 +315,15 @@ class PlacementDrive(models.Model):
 
     @property
     def appeared_count(self):
-        return self.assignments.filter(interview_status__in=['appeared', 'selected', 'rejected']).count()
+        return self.assignments.filter(interview_status__in=['appeared', 'selected', 'rejected', 'joined']).count()
 
     @property
     def selected_count(self):
-        return self.assignments.filter(final_status__in=['selected', 'joined']).count()
+        return self.assignments.filter(final_status='selected').count()
 
 
 class PlacementStudentAssignment(models.Model):
-    INTERVIEW_STATUS_CHOICES = (
+    INTERVIEW_PROGRESS_CHOICES = (
         ('scheduled', 'Scheduled'),
         ('appeared', 'Appeared'),
         ('absent', 'Absent'),
@@ -335,6 +336,16 @@ class PlacementStudentAssignment(models.Model):
         ('rejected', 'Rejected'),
         ('joined', 'Joined'),
     )
+    ASSIGNMENT_STATUS_CHOICES = (
+        ('scheduled', 'Scheduled'),
+        ('appeared', 'Appeared'),
+        ('absent', 'Absent'),
+        ('selected', 'Selected'),
+        ('rejected', 'Rejected'),
+        ('pending', 'Pending'),
+        ('joined', 'Joined'),
+    )
+    INTERVIEW_STATUS_CHOICES = ASSIGNMENT_STATUS_CHOICES
 
     company = models.ForeignKey(PlacementCompany, on_delete=models.CASCADE, related_name='placement_assignments', null=True, blank=True)
     drive = models.ForeignKey(PlacementDrive, on_delete=models.SET_NULL, related_name='assignments', null=True, blank=True)
@@ -367,9 +378,23 @@ class PlacementStudentAssignment(models.Model):
             return self.student.batch.course.name
         return self.course_name
 
+    @property
+    def assignment_status(self):
+        return self.interview_status
+
+    @property
+    def assignment_status_display(self):
+        return dict(self.ASSIGNMENT_STATUS_CHOICES).get(self.interview_status, self.interview_status.title())
+
+    def sync_final_status_from_interview_status(self):
+        if self.interview_status in dict(self.FINAL_STATUS_CHOICES):
+            self.final_status = self.interview_status
+        elif self.interview_status in {'scheduled', 'appeared', 'absent'}:
+            self.final_status = 'pending'
+
 
 class PlacementInterview(models.Model):
-    STATUS_CHOICES = PlacementStudentAssignment.INTERVIEW_STATUS_CHOICES
+    STATUS_CHOICES = PlacementStudentAssignment.INTERVIEW_PROGRESS_CHOICES
 
     company = models.ForeignKey(PlacementCompany, on_delete=models.SET_NULL, related_name='placement_interviews', null=True, blank=True)
     drive = models.ForeignKey(PlacementDrive, on_delete=models.SET_NULL, related_name='placement_interviews', null=True, blank=True)
@@ -483,15 +508,15 @@ class ProjectCompany(models.Model):
 
     @property
     def selected_count(self):
-        return self.project_assignments.filter(final_status='selected').count()
+        return self.project_assignments.filter(Q(interview_status='selected') | Q(final_status='selected')).count()
 
     @property
     def rejected_count(self):
-        return self.project_assignments.filter(final_status='rejected').count()
+        return self.project_assignments.filter(Q(interview_status='rejected') | Q(final_status='rejected')).count()
 
     @property
     def allocated_count(self):
-        return self.project_assignments.filter(final_status='allocated').count()
+        return self.project_assignments.filter(Q(interview_status='allocated') | Q(final_status='allocated')).count()
 
     @property
     def project_rate(self):
@@ -546,19 +571,19 @@ class ProjectDrive(models.Model):
 
     @property
     def appeared_count(self):
-        return self.assignments.filter(interview_status__in=['appeared', 'selected', 'rejected']).count()
+        return self.assignments.filter(interview_status__in=['appeared', 'selected', 'rejected', 'allocated', 'released']).count()
 
     @property
     def selected_count(self):
-        return self.assignments.filter(final_status='selected').count()
+        return self.assignments.filter(Q(interview_status='selected') | Q(final_status='selected')).count()
 
     @property
     def allocated_count(self):
-        return self.assignments.filter(final_status='allocated').count()
+        return self.assignments.filter(Q(interview_status='allocated') | Q(final_status='allocated')).count()
 
 
 class ProjectEmployeeAssignment(models.Model):
-    INTERVIEW_STATUS_CHOICES = (
+    INTERVIEW_PROGRESS_CHOICES = (
         ('scheduled', 'Scheduled'),
         ('appeared', 'Appeared'),
         ('absent', 'Absent'),
@@ -572,6 +597,17 @@ class ProjectEmployeeAssignment(models.Model):
         ('allocated', 'Allocated'),
         ('released', 'Released'),
     )
+    ASSIGNMENT_STATUS_CHOICES = (
+        ('scheduled', 'Scheduled'),
+        ('appeared', 'Appeared'),
+        ('absent', 'Absent'),
+        ('selected', 'Selected'),
+        ('rejected', 'Rejected'),
+        ('pending', 'Pending'),
+        ('allocated', 'Allocated'),
+        ('released', 'Released'),
+    )
+    INTERVIEW_STATUS_CHOICES = ASSIGNMENT_STATUS_CHOICES
 
     company = models.ForeignKey(ProjectCompany, on_delete=models.CASCADE, related_name='project_assignments', null=True, blank=True)
     drive = models.ForeignKey(ProjectDrive, on_delete=models.SET_NULL, related_name='assignments', null=True, blank=True)
@@ -605,9 +641,23 @@ class ProjectEmployeeAssignment(models.Model):
             return self.employee.designation
         return self.designation
 
+    @property
+    def assignment_status(self):
+        return self.interview_status
+
+    @property
+    def assignment_status_display(self):
+        return dict(self.ASSIGNMENT_STATUS_CHOICES).get(self.interview_status, self.interview_status.title())
+
+    def sync_final_status_from_interview_status(self):
+        if self.interview_status in dict(self.FINAL_STATUS_CHOICES):
+            self.final_status = self.interview_status
+        elif self.interview_status in {'scheduled', 'appeared', 'absent'}:
+            self.final_status = 'pending'
+
 
 class ProjectInterview(models.Model):
-    STATUS_CHOICES = ProjectEmployeeAssignment.INTERVIEW_STATUS_CHOICES
+    STATUS_CHOICES = ProjectEmployeeAssignment.INTERVIEW_PROGRESS_CHOICES
 
     company = models.ForeignKey(ProjectCompany, on_delete=models.SET_NULL, related_name='project_interviews', null=True, blank=True)
     drive = models.ForeignKey(ProjectDrive, on_delete=models.SET_NULL, related_name='project_interviews', null=True, blank=True)

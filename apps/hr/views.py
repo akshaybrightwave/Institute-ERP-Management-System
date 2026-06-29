@@ -6,7 +6,7 @@ from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Q
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template
@@ -622,7 +622,7 @@ def export_candidates(request):
 
 def placement_metrics(request):
     total_sent = hr_scope(PlacementStudentAssignment.objects.all(), request).count()
-    selected = hr_scope(PlacementStudentAssignment.objects.filter(final_status__in=['selected', 'joined']), request).count()
+    selected = hr_scope(PlacementStudentAssignment.objects.filter(final_status='selected'), request).count()
     rejected = hr_scope(PlacementStudentAssignment.objects.filter(final_status='rejected'), request).count()
     placed = hr_scope(PlacementStudentAssignment.objects.filter(final_status='joined'), request).count()
     rate = round((placed / total_sent) * 100, 2) if total_sent else 0
@@ -656,7 +656,7 @@ def placement_dashboard(request):
         'pipeline': {
             'scheduled': hr_scope(PlacementDrive.objects.exclude(status='cancelled'), request).count(),
             'shortlisted': hr_scope(PlacementStudentAssignment.objects.all(), request).count(),
-            'appeared': hr_scope(PlacementStudentAssignment.objects.filter(interview_status__in=['appeared', 'selected', 'rejected']), request).count(),
+            'appeared': hr_scope(PlacementStudentAssignment.objects.filter(interview_status__in=['appeared', 'selected', 'rejected', 'joined']), request).count(),
             'offers': hr_scope(PlacementOffer.objects.exclude(offer_status='pending'), request).count(),
             'placed': hr_scope(PlacementStudentAssignment.objects.filter(final_status='joined'), request).count(),
         },
@@ -821,7 +821,7 @@ def placement_student_list(request):
     status = request.GET.get('status', '').strip()
     query = request.GET.get('q', '').strip()
     if status:
-        assignments = assignments.filter(final_status=status)
+        assignments = assignments.filter(Q(interview_status=status) | Q(final_status=status))
     if query:
         assignments = assignments.filter(
             Q(student_name__icontains=query)
@@ -832,7 +832,7 @@ def placement_student_list(request):
     page_obj = Paginator(assignments, 14).get_page(request.GET.get('page'))
     return render(request, 'hr/placement_student_list.html', {
         'page_obj': page_obj,
-        'status_choices': PlacementStudentAssignment.FINAL_STATUS_CHOICES,
+        'status_choices': PlacementStudentAssignment.ASSIGNMENT_STATUS_CHOICES,
         'status': status,
         'query': query,
     })
@@ -906,7 +906,8 @@ def placement_interview_create(request, drive_id=None, assignment_id=None):
         interview.save()
         if interview.assignment:
             interview.assignment.interview_status = interview.status
-            interview.assignment.save(update_fields=['interview_status', 'updated_at'])
+            interview.assignment.sync_final_status_from_interview_status()
+            interview.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         add_placement_activity('interview', f'Interview scheduled for {interview.assignment or interview.company or "employee"}', request, company=interview.company, drive=interview.drive)
         messages.success(request, 'Placement interview saved successfully.')
         return redirect('hr:placement_interview_list')
@@ -926,6 +927,7 @@ def placement_interview_edit(request, interview_id):
                 interview.assignment.final_status = 'selected'
             elif interview.status == 'rejected':
                 interview.assignment.final_status = 'rejected'
+            interview.assignment.sync_final_status_from_interview_status()
             interview.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         messages.success(request, 'Placement interview updated successfully.')
         return redirect('hr:placement_interview_list')
@@ -956,11 +958,14 @@ def placement_offer_create(request, assignment_id=None):
         if offer.assignment:
             if offer.joining_status == 'joined':
                 offer.assignment.final_status = 'joined'
+                offer.assignment.interview_status = 'joined'
             elif offer.offer_status in ('offered', 'accepted'):
                 offer.assignment.final_status = 'selected'
+                offer.assignment.interview_status = 'selected'
             elif offer.offer_status == 'rejected':
                 offer.assignment.final_status = 'rejected'
-            offer.assignment.save(update_fields=['final_status', 'updated_at'])
+                offer.assignment.interview_status = 'rejected'
+            offer.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         add_placement_activity('offer', f'Offer updated for {offer.assignment or offer.company}', request, company=offer.company)
         messages.success(request, 'Offer and placement saved successfully.')
         return redirect('hr:placement_offer_list')
@@ -974,6 +979,17 @@ def placement_offer_edit(request, offer_id):
     form = PlacementOfferForm(request.POST or None, instance=offer)
     if request.method == 'POST' and form.is_valid():
         offer = form.save()
+        if offer.assignment:
+            if offer.joining_status == 'joined':
+                offer.assignment.final_status = 'joined'
+                offer.assignment.interview_status = 'joined'
+            elif offer.offer_status in ('offered', 'accepted'):
+                offer.assignment.final_status = 'selected'
+                offer.assignment.interview_status = 'selected'
+            elif offer.offer_status == 'rejected':
+                offer.assignment.final_status = 'rejected'
+                offer.assignment.interview_status = 'rejected'
+            offer.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         messages.success(request, 'Offer updated successfully.')
         return redirect('hr:placement_offer_list')
     return render(request, 'hr/placement_offer_form.html', {'form': form, 'offer': offer})
@@ -989,19 +1005,20 @@ def placement_reports(request):
     if company_id:
         assignments = assignments.filter(company_id=company_id)
     if status:
-        assignments = assignments.filter(final_status=status)
+        assignments = assignments.filter(Q(interview_status=status) | Q(final_status=status))
     return render(request, 'hr/placement_reports.html', {
         'companies': companies,
         'assignments': assignments[:100],
         'company_id': company_id,
         'status': status,
-        'status_choices': PlacementStudentAssignment.FINAL_STATUS_CHOICES,
+        'status_choices': PlacementStudentAssignment.ASSIGNMENT_STATUS_CHOICES,
         'summary': {
             'companies': companies.count(),
             'drives': hr_scope(PlacementDrive.objects.all(), request).count(),
             'sent': hr_scope(PlacementStudentAssignment.objects.all(), request).count(),
-            'selected': hr_scope(PlacementStudentAssignment.objects.filter(final_status__in=['selected', 'joined']), request).count(),
-            'joined': hr_scope(PlacementStudentAssignment.objects.filter(final_status='joined'), request).count(),
+            'selected': hr_scope(PlacementStudentAssignment.objects.filter(Q(interview_status='selected') | Q(final_status='selected')), request).count(),
+            'rejected': hr_scope(PlacementStudentAssignment.objects.filter(Q(interview_status='rejected') | Q(final_status='rejected')), request).count(),
+            'joined': hr_scope(PlacementStudentAssignment.objects.filter(Q(interview_status='joined') | Q(final_status='joined')), request).count(),
         },
     })
 
@@ -1012,15 +1029,14 @@ def export_placement_report(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="placement-report.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Employee', 'Designation', 'Company', 'Drive', 'Interview Status', 'Final Status'])
+    writer.writerow(['Employee', 'Designation', 'Company', 'Drive', 'Status'])
     for item in hr_scope(PlacementStudentAssignment.objects.select_related('student', 'company', 'drive'), request):
         writer.writerow([
             item.display_name,
             item.display_course,
             item.company.name if item.company else '',
             item.drive.job_role if item.drive else '',
-            item.get_interview_status_display(),
-            item.get_final_status_display(),
+            item.assignment_status_display,
         ])
     return response
 
@@ -1054,8 +1070,11 @@ def project_dashboard(request):
     drives = hr_scope(ProjectDrive.objects.select_related('company'), request)[:6]
     assignments = hr_scope(ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive'), request)
     assignment_status_counts = {
-        item['final_status']: item['total']
-        for item in assignments.values('final_status').annotate(total=Count('id'))
+        'selected': assignments.filter(Q(interview_status='selected') | Q(final_status='selected')).count(),
+        'rejected': assignments.filter(Q(interview_status='rejected') | Q(final_status='rejected')).count(),
+        'allocated': assignments.filter(Q(interview_status='allocated') | Q(final_status='allocated')).count(),
+        'released': assignments.filter(Q(interview_status='released') | Q(final_status='released')).count(),
+        'pending': assignments.filter(Q(interview_status='pending') | Q(final_status='pending')).count(),
     }
     status_counts = {key: hr_scope(ProjectDrive.objects.filter(status=key), request).count() for key, _ in ProjectDrive.STATUS_CHOICES}
     total_drives = max(sum(status_counts.values()), 1)
@@ -1081,9 +1100,9 @@ def project_dashboard(request):
         'pipeline': {
             'scheduled': hr_scope(ProjectDrive.objects.exclude(status='cancelled'), request).count(),
             'sent': hr_scope(ProjectEmployeeAssignment.objects.all(), request).count(),
-            'appeared': hr_scope(ProjectEmployeeAssignment.objects.filter(interview_status__in=['appeared', 'selected', 'rejected']), request).count(),
+            'appeared': hr_scope(ProjectEmployeeAssignment.objects.filter(interview_status__in=['appeared', 'selected', 'rejected', 'allocated', 'released']), request).count(),
             'allocations': hr_scope(ProjectAllocation.objects.all(), request).count(),
-            'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='allocated'), request).count(),
+            'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='allocated') | Q(final_status='allocated')), request).count(),
         },
     }
     return render(request, 'hr/project_dashboard.html', context)
@@ -1243,7 +1262,7 @@ def project_employee_list(request):
     status = request.GET.get('status', '').strip()
     query = request.GET.get('q', '').strip()
     if status:
-        assignments = assignments.filter(final_status=status)
+        assignments = assignments.filter(Q(interview_status=status) | Q(final_status=status))
     if query:
         assignments = assignments.filter(
             Q(employee_name__icontains=query) | Q(employee__full_name__icontains=query) | Q(company__name__icontains=query)
@@ -1251,7 +1270,7 @@ def project_employee_list(request):
     page_obj = Paginator(assignments, 14).get_page(request.GET.get('page'))
     return render(request, 'hr/project_employee_list.html', {
         'page_obj': page_obj,
-        'status_choices': ProjectEmployeeAssignment.FINAL_STATUS_CHOICES,
+        'status_choices': ProjectEmployeeAssignment.ASSIGNMENT_STATUS_CHOICES,
         'status': status,
         'query': query,
     })
@@ -1329,7 +1348,8 @@ def project_interview_create(request, drive_id=None, assignment_id=None):
         interview.save()
         if interview.assignment:
             interview.assignment.interview_status = interview.status
-            interview.assignment.save(update_fields=['interview_status', 'updated_at'])
+            interview.assignment.sync_final_status_from_interview_status()
+            interview.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         add_project_activity('interview', f'Interview scheduled for {interview.assignment or interview.company}', request, company=interview.company, drive=interview.drive)
         messages.success(request, 'Project interview saved successfully.')
         return redirect('hr:project_interview_list')
@@ -1349,6 +1369,7 @@ def project_interview_edit(request, interview_id):
                 interview.assignment.final_status = 'selected'
             elif interview.status == 'rejected':
                 interview.assignment.final_status = 'rejected'
+            interview.assignment.sync_final_status_from_interview_status()
             interview.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         messages.success(request, 'Project interview updated.')
         return redirect('hr:project_interview_list')
@@ -1379,9 +1400,11 @@ def project_allocation_create(request, assignment_id=None):
         if allocation.assignment:
             if allocation.allocation_status == 'allocated':
                 allocation.assignment.final_status = 'allocated'
+                allocation.assignment.interview_status = 'allocated'
             elif allocation.allocation_status == 'released':
                 allocation.assignment.final_status = 'released'
-            allocation.assignment.save(update_fields=['final_status', 'updated_at'])
+                allocation.assignment.interview_status = 'released'
+            allocation.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         add_project_activity('allocation', f'Allocation updated for {allocation.assignment or allocation.company}', request, company=allocation.company)
         messages.success(request, 'Allocation saved successfully.')
         return redirect('hr:project_allocation_list')
@@ -1395,6 +1418,14 @@ def project_allocation_edit(request, allocation_id):
     form = ProjectAllocationForm(request.POST or None, instance=allocation)
     if request.method == 'POST' and form.is_valid():
         allocation = form.save()
+        if allocation.assignment:
+            if allocation.allocation_status == 'allocated':
+                allocation.assignment.final_status = 'allocated'
+                allocation.assignment.interview_status = 'allocated'
+            elif allocation.allocation_status == 'released':
+                allocation.assignment.final_status = 'released'
+                allocation.assignment.interview_status = 'released'
+            allocation.assignment.save(update_fields=['interview_status', 'final_status', 'updated_at'])
         messages.success(request, 'Allocation updated successfully.')
         return redirect('hr:project_allocation_list')
     return render(request, 'hr/project_allocation_form.html', {'form': form, 'allocation': allocation})
@@ -1410,20 +1441,21 @@ def project_reports(request):
     if company_id:
         assignments = assignments.filter(company_id=company_id)
     if status:
-        assignments = assignments.filter(final_status=status)
+        assignments = assignments.filter(Q(interview_status=status) | Q(final_status=status))
     return render(request, 'hr/project_reports.html', {
         'companies': companies,
         'assignments': assignments[:100],
         'company_id': company_id,
         'status': status,
-        'status_choices': ProjectEmployeeAssignment.FINAL_STATUS_CHOICES,
+        'status_choices': ProjectEmployeeAssignment.ASSIGNMENT_STATUS_CHOICES,
         'summary': {
             'companies': companies.count(),
             'drives': hr_scope(ProjectDrive.objects.all(), request).count(),
             'sent': hr_scope(ProjectEmployeeAssignment.objects.all(), request).count(),
-            'selected': hr_scope(ProjectEmployeeAssignment.objects.filter(interview_status='selected'), request).count(),
-            'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='allocated'), request).count(),
-            'released': hr_scope(ProjectEmployeeAssignment.objects.filter(final_status='released'), request).count(),
+            'selected': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='selected') | Q(final_status='selected')), request).count(),
+            'rejected': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='rejected') | Q(final_status='rejected')), request).count(),
+            'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='allocated') | Q(final_status='allocated')), request).count(),
+            'released': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='released') | Q(final_status='released')), request).count(),
         },
     })
 
@@ -1434,7 +1466,7 @@ def export_project_report(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="project-report.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Employee', 'Code', 'Department', 'Company', 'Drive', 'Interview Status', 'Final Status'])
+    writer.writerow(['Employee', 'Code', 'Department', 'Company', 'Drive', 'Status'])
     for item in hr_scope(ProjectEmployeeAssignment.objects.select_related('employee', 'company', 'drive'), request):
         writer.writerow([
             item.display_name,
@@ -1442,8 +1474,7 @@ def export_project_report(request):
             item.department,
             item.company.name if item.company else '',
             item.drive.project_name if item.drive else '',
-            item.get_interview_status_display(),
-            item.get_final_status_display(),
+            item.assignment_status_display,
         ])
     return response
 

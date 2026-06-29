@@ -110,8 +110,7 @@
           <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">EMPLOYEE ID</th>
           <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">DESIGNATION</th>
           <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">SKILLS</th>
-          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">INTERVIEW STATUS</th>
-          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">FINAL STATUS</th>
+          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">STATUS</th>
           <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ACTION</th>
         </tr>
       </thead>
@@ -122,24 +121,7 @@
           <td class="text-muted">{% if item.employee %}{{ item.employee.employee_id }}{% else %}{{ item.employee_code|default:"--" }}{% endif %}</td>
           <td class="text-muted">{{ item.display_designation|default:"--" }}</td>
           <td class="text-muted">{{ item.skills|truncatechars:50|default:"--" }}</td>
-          <td>
-            {% if item.get_interview_status_display == 'Selected' %}
-              <span class="badge" style="background-color: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); font-weight: 600;">{{ item.get_interview_status_display }}</span>
-            {% elif item.get_interview_status_display == 'Rejected' %}
-              <span class="badge" style="background-color: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); font-weight: 600;">{{ item.get_interview_status_display }}</span>
-            {% else %}
-              <span class="badge bg-secondary text-white">{{ item.get_interview_status_display }}</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if item.get_final_status_display == 'Allocated' %}
-              <span class="badge" style="background-color: rgba(67, 97, 238, 0.2); color: #4361ee; border: 1px solid rgba(67, 97, 238, 0.5); font-weight: 600; padding: 0.4em 0.8em;">{{ item.get_final_status_display }}</span>
-            {% elif item.get_final_status_display == 'Released' %}
-              <span class="badge" style="background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 600; padding: 0.4em 0.8em;">{{ item.get_final_status_display }}</span>
-            {% else %}
-              <span class="badge bg-secondary text-white" style="padding: 0.4em 0.8em;">{{ item.get_final_status_display }}</span>
-            {% endif %}
-          </td>
+          <td><span class="status-badge status-{{ item.assignment_status }}">{{ item.assignment_status_display }}</span></td>
           <td>
             <div class="d-flex align-items-center gap-2">
               <a class="text-info" href="{% url 'hr:project_assignment_detail' item.id %}" title="View" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(13,202,240,0.4);box-shadow:0 0 8px rgba(13,202,240,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(13,202,240,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-eye"></i></a>
@@ -150,7 +132,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="7" class="text-center py-5 hr-muted">No employees assigned yet.</td></tr>
+        <tr><td colspan="6" class="text-center py-5 hr-muted">No employees assigned yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>

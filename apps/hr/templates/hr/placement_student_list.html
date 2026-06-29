@@ -21,7 +21,7 @@
       </div>
     </div>
     <div class="col-md-3">
-      <label class="form-label small hr-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">Final Status</label>
+      <label class="form-label small hr-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">Status</label>
       <select class="form-select" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 48px; border-radius: 8px;" name="status">
         <option value="">All Status</option>
         {% for value, label in status_choices %}
@@ -50,8 +50,7 @@
           <th>Company</th>
           <th>Placement Drive</th>
           <th>Designation</th>
-          <th>Interview</th>
-          <th>Final</th>
+          <th>Status</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -63,8 +62,7 @@
           <td class="text-white fw-semibold">{{ item.company|default:"--" }}</td>
           <td class="hr-muted">{{ item.drive.job_role|default:"--" }}</td>
           <td class="text-white">{{ item.display_course|default:"--" }}</td>
-          <td><span class="status-badge status-{{ item.interview_status }}">{{ item.get_interview_status_display }}</span></td>
-          <td><span class="status-badge status-{{ item.final_status }}">{{ item.get_final_status_display }}</span></td>
+          <td><span class="status-badge status-{{ item.assignment_status }}">{{ item.assignment_status_display }}</span></td>
           <td>
             <div class="d-flex align-items-center gap-2">
               <a class="text-info" href="{% url 'hr:placement_employee_detail' item.id %}" title="View" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(13,202,240,0.4);box-shadow:0 0 8px rgba(13,202,240,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(13,202,240,0.1)';this.style.boxShadow='0 0 15px rgba(13,202,240,0.4)';" onmouseout="this.style.background='transparent';this.style.boxShadow='0 0 8px rgba(13,202,240,0.2)';"><i class="bi bi-eye"></i></a>
@@ -75,7 +73,7 @@
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="8" class="text-center py-5 hr-muted">No placement employees found.</td></tr>
+        <tr><td colspan="7" class="text-center py-5 hr-muted">No placement employees found.</td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -619,7 +619,6 @@ class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):
             'percentage_or_cgpa',
             'skills',
             'interview_status',
-            'final_status',
         ]
         widgets = {
             'skills': forms.Textarea(attrs={'rows': 3}),
@@ -635,6 +634,7 @@ class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):
         self.fields['drive'].widget = forms.HiddenInput()
         self.fields['student_name'].label = 'Employee Name'
         self.fields['course_name'].label = 'Designation'
+        self.fields['interview_status'].choices = PlacementStudentAssignment.ASSIGNMENT_STATUS_CHOICES
         if drive:
             self.fields['drive'].initial = drive
             self.fields['company'].initial = drive.company
@@ -674,7 +674,6 @@ class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):
             'percentage_or_cgpa',
             'skills',
             'interview_status',
-            'final_status',
         ])
         for field in self.fields.values():
             field.required = False
@@ -720,6 +719,7 @@ class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):
 
         assignment.company = company
         assignment.drive = drive
+        assignment.sync_final_status_from_interview_status()
         if commit:
             assignment.save()
             self.save_m2m()
@@ -1030,7 +1030,6 @@ class ProjectAssignmentForm(HRModelFormMixin, forms.ModelForm):
             'designation',
             'skills',
             'interview_status',
-            'final_status',
         ]
         widgets = {
             'skills': forms.Textarea(attrs={'rows': 3}),
@@ -1046,6 +1045,7 @@ class ProjectAssignmentForm(HRModelFormMixin, forms.ModelForm):
         self.fields['company'].widget = forms.HiddenInput()
         self.fields['drive'].widget = forms.HiddenInput()
         self.fields['employee'].widget = forms.HiddenInput()
+        self.fields['interview_status'].choices = ProjectEmployeeAssignment.ASSIGNMENT_STATUS_CHOICES
         if drive:
             self.fields['drive'].initial = drive
             self.fields['company'].initial = drive.company
@@ -1101,7 +1101,6 @@ class ProjectAssignmentForm(HRModelFormMixin, forms.ModelForm):
             'designation',
             'skills',
             'interview_status',
-            'final_status',
         ])
         for field in self.fields.values():
             field.required = False
@@ -1178,6 +1177,7 @@ class ProjectAssignmentForm(HRModelFormMixin, forms.ModelForm):
         else:
             assignment.employee_name = employee_entry
 
+        assignment.sync_final_status_from_interview_status()
         if commit:
             assignment.save()
             self.save_m2m()
