@@ -1016,8 +1016,9 @@ def placement_reports(request):
             'companies': companies.count(),
             'drives': hr_scope(PlacementDrive.objects.all(), request).count(),
             'sent': hr_scope(PlacementStudentAssignment.objects.all(), request).count(),
-            'selected': hr_scope(PlacementStudentAssignment.objects.filter(final_status='selected'), request).count(),
-            'joined': hr_scope(PlacementStudentAssignment.objects.filter(final_status='joined'), request).count(),
+            'selected': hr_scope(PlacementStudentAssignment.objects.filter(Q(interview_status='selected') | Q(final_status='selected')), request).count(),
+            'rejected': hr_scope(PlacementStudentAssignment.objects.filter(Q(interview_status='rejected') | Q(final_status='rejected')), request).count(),
+            'joined': hr_scope(PlacementStudentAssignment.objects.filter(Q(interview_status='joined') | Q(final_status='joined')), request).count(),
         },
     })
 
@@ -1451,7 +1452,8 @@ def project_reports(request):
             'companies': companies.count(),
             'drives': hr_scope(ProjectDrive.objects.all(), request).count(),
             'sent': hr_scope(ProjectEmployeeAssignment.objects.all(), request).count(),
-            'selected': hr_scope(ProjectEmployeeAssignment.objects.filter(interview_status='selected'), request).count(),
+            'selected': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='selected') | Q(final_status='selected')), request).count(),
+            'rejected': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='rejected') | Q(final_status='rejected')), request).count(),
             'allocated': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='allocated') | Q(final_status='allocated')), request).count(),
             'released': hr_scope(ProjectEmployeeAssignment.objects.filter(Q(interview_status='released') | Q(final_status='released')), request).count(),
         },
