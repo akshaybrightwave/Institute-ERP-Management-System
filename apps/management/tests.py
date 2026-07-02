@@ -286,6 +286,79 @@ class TelecallerModuleTests(TestCase):
             lead.refresh_from_db()
             self.assertEqual(lead.status, status)
 
+    def test_telecaller_call_status_choices_exclude_new_and_accepted(self):
+        response = self.client_tele1.get(reverse('inquiry_list'))
+
+        self.assertEqual(response.status_code, 200)
+        choice_values = [code for code, _ in response.context['call_status_choices']]
+        self.assertNotIn('NEW', choice_values)
+        self.assertNotIn('ACCEPTED', choice_values)
+        self.assertIn('BUSY', choice_values)
+        self.assertIn('PENDING_FOLLOW_UP', choice_values)
+
+    def test_telecaller_cannot_submit_removed_call_statuses(self):
+        for removed_status in ('NEW', 'ACCEPTED'):
+            response = self.client_tele1.post(
+                reverse('update_call_status', kwargs={'pk': self.inquiry1.pk}),
+                data=f'{{"call_status":"{removed_status}"}}',
+                content_type='application/json'
+            )
+
+            self.assertEqual(response.status_code, 400)
+
+        response = self.client_tele1.post(
+            reverse('update_call_status', kwargs={'pk': self.inquiry1.pk}),
+            data='{"call_status":"BUSY"}',
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.inquiry1.refresh_from_db()
+        self.assertEqual(self.inquiry1.call_status, 'BUSY')
+
+    def test_telecaller_dashboard_cards_match_scoped_lists(self):
+        Lead.objects.create(
+            inquiry=self.inquiry1,
+            assigned_telecaller=self.tele1,
+            assigned_by=self.admin,
+            status='New'
+        )
+        self.inquiry1.call_status = 'BUSY'
+        self.inquiry1.save(update_fields=['call_status'])
+
+        converted_lead = Lead.objects.create(
+            inquiry=self.inquiry2,
+            assigned_telecaller=self.tele1,
+            assigned_by=self.admin,
+            status='New',
+            converted_at=timezone.now()
+        )
+        self.inquiry2.status = 'Qualified'
+        self.inquiry2.call_status = 'INTERESTED'
+        self.inquiry2.save(update_fields=['status', 'call_status'])
+
+        dashboard = self.client_tele1.get(reverse('management_dashboard'))
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertEqual(dashboard.context['call_outcomes']['busy'], 1)
+        self.assertEqual(dashboard.context['qualified_leads']['total'], 1)
+
+        busy_list = self.client_tele1.get(reverse('inquiry_list'), {
+            'scope': 'active_contacts',
+            'call_status': 'BUSY',
+        })
+        self.assertEqual(busy_list.status_code, 200)
+        busy_ids = {inquiry.pk for inquiry in busy_list.context['page_obj'].object_list}
+        self.assertIn(self.inquiry1.pk, busy_ids)
+        self.assertNotIn(self.inquiry2.pk, busy_ids)
+
+        converted_list = self.client_tele1.get(reverse('inquiry_list'), {
+            'scope': 'converted_leads',
+            'status': 'Qualified',
+        })
+        self.assertEqual(converted_list.status_code, 200)
+        converted_ids = {inquiry.lead.pk for inquiry in converted_list.context['page_obj'].object_list}
+        self.assertIn(converted_lead.pk, converted_ids)
+
     def test_lead_notes_timeline(self):
         # Create a lead
         lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
@@ -549,13 +622,29 @@ class TelecallerModuleTests(TestCase):
         self.assertTrue(ImportErrorLog.objects.filter(pk=error.pk).exists())
 
     def test_lead_assignment_management(self):
-        lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
+        owned_lead = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
 
         # 1. Telecaller tries to reassign - forbidden
-        response = self.client_tele1.post(reverse('lead_assign'), {'lead_id': lead.pk, 'telecaller': self.tele2.pk})
+        response = self.client_tele1.post(reverse('lead_assign'), {'lead_id': owned_lead.pk, 'telecaller': self.tele2.pk})
         self.assertEqual(response.status_code, 403)
 
-        # 2. Admin assigns lead to telecaller 2
+        admin_uploaded_inquiry = Inquiry.objects.create(
+            full_name='Admin Uploaded Contact',
+            mobile_number='7777777777',
+            email='admin-uploaded@example.com',
+            city='Nashik',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            created_by=self.admin
+        )
+        lead = Lead.objects.create(
+            inquiry=admin_uploaded_inquiry,
+            assigned_by=self.admin,
+            status='New'
+        )
+
+        # 2. Admin assigns a fresh admin-uploaded contact to telecaller 2
         response = self.client_admin.post(reverse('lead_assign'), {'leads': [lead.pk], 'telecaller': self.tele2.pk})
         self.assertEqual(response.status_code, 302)
 
@@ -565,6 +654,77 @@ class TelecallerModuleTests(TestCase):
         self.assertIsNotNone(lead.assigned_at)
         
         self.assertTrue(lead.activities.filter(activity_type='ASSIGNED', description__icontains="assigned to tele2 by admin").exists())
+
+    def test_telecaller_assignment_filters_show_admin_uploaded_lifecycle_contacts(self):
+        admin_uploaded_inquiry = Inquiry.objects.create(
+            full_name='Fresh Admin Upload',
+            mobile_number='7777777778',
+            email='fresh-admin@example.com',
+            city='Thane',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            created_by=self.admin
+        )
+        queue_lead = Lead.objects.create(
+            inquiry=admin_uploaded_inquiry,
+            assigned_by=self.admin,
+            status='New'
+        )
+
+        assigned_admin_inquiry = Inquiry.objects.create(
+            full_name='Already Assigned Admin Upload',
+            mobile_number='7777777779',
+            email='assigned-admin@example.com',
+            city='Mumbai',
+            course_interest='Java',
+            source='Referral',
+            status='New',
+            created_by=self.admin
+        )
+        assigned_admin_lead = Lead.objects.create(
+            inquiry=assigned_admin_inquiry,
+            assigned_telecaller=self.tele1,
+            assigned_by=self.admin,
+            status='New'
+        )
+
+        telecaller_inquiry = Inquiry.objects.create(
+            full_name='Telecaller Created Contact',
+            mobile_number='7777777780',
+            email='tele-created@example.com',
+            city='Pune',
+            course_interest='UI/UX',
+            source='Website',
+            status='New',
+            created_by=self.tele1
+        )
+        telecaller_lead = Lead.objects.create(
+            inquiry=telecaller_inquiry,
+            assigned_telecaller=self.tele1,
+            status='New'
+        )
+
+        all_response = self.client_admin.get(reverse('lead_assign'), {'assigned': 'all'})
+        self.assertEqual(all_response.status_code, 200)
+        all_ids = {lead.pk for lead in all_response.context['page_obj'].object_list}
+        self.assertIn(queue_lead.pk, all_ids)
+        self.assertIn(assigned_admin_lead.pk, all_ids)
+        self.assertNotIn(telecaller_lead.pk, all_ids)
+
+        assigned_response = self.client_admin.get(reverse('lead_assign'), {'assigned': 'yes'})
+        self.assertEqual(assigned_response.status_code, 200)
+        assigned_ids = {lead.pk for lead in assigned_response.context['page_obj'].object_list}
+        self.assertIn(assigned_admin_lead.pk, assigned_ids)
+        self.assertNotIn(queue_lead.pk, assigned_ids)
+        self.assertNotIn(telecaller_lead.pk, assigned_ids)
+
+        unassigned_response = self.client_admin.get(reverse('lead_assign'), {'assigned': 'no'})
+        self.assertEqual(unassigned_response.status_code, 200)
+        unassigned_ids = {lead.pk for lead in unassigned_response.context['page_obj'].object_list}
+        self.assertIn(queue_lead.pk, unassigned_ids)
+        self.assertNotIn(assigned_admin_lead.pk, unassigned_ids)
+        self.assertNotIn(telecaller_lead.pk, unassigned_ids)
 
     def test_bulk_lead_actions_and_isolation(self):
         lead1 = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
@@ -842,6 +1002,52 @@ class CounselorModuleTests(TestCase):
         self.assertEqual(self.lead1.assigned_counselor, self.counselor2)
         self.assertEqual(self.lead1.assigned_by, self.admin)
         self.assertIsNotNone(self.lead1.assigned_at)
+
+    def test_counselor_telecalling_unassigned_filter_excludes_owned_contacts(self):
+        unassigned_inquiry = Inquiry.objects.create(
+            full_name='Unassigned Contact',
+            mobile_number='9999999993',
+            email='unassigned@example.com',
+            city='Nashik',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            created_by=self.admin
+        )
+        unassigned_lead = Lead.objects.create(
+            inquiry=unassigned_inquiry,
+            status='New'
+        )
+        telecaller_inquiry = Inquiry.objects.create(
+            full_name='Telecaller Owned Contact',
+            mobile_number='9999999994',
+            email='owned@example.com',
+            city='Surat',
+            course_interest='Java',
+            source='Referral',
+            status='New',
+            created_by=self.admin
+        )
+        telecaller_lead = Lead.objects.create(
+            inquiry=telecaller_inquiry,
+            assigned_telecaller=self.telecaller,
+            assigned_by=self.admin,
+            status='New'
+        )
+
+        response = self.client_admin.get(reverse('lead_assign_counselor'), {
+            'assignment_type': 'telecalling',
+            'assigned': 'no'
+        })
+
+        self.assertEqual(response.status_code, 200)
+        lead_ids = {lead.pk for lead in response.context['page_obj'].object_list}
+        self.assertIn(unassigned_lead.pk, lead_ids)
+        self.assertNotIn(telecaller_lead.pk, lead_ids)
+        self.assertFalse(any(
+            lead.assigned_telecaller_id or lead.assigned_counselor_id
+            for lead in response.context['page_obj'].object_list
+        ))
 
     def test_counselor_reports_dashboard_and_exports(self):
         # Record counseling session & followup to populate reports

@@ -20,9 +20,18 @@ from .forms import InquiryForm, LeadConversionForm, LeadForm, CallLogForm, Follo
 from .decorators import superadmin_required, admin_required, telecaller_required, counselor_required, telecaller_counselor_admin_required
 
 ADMIN_ROLES = ('admin', 'superadmin', 'SUPER_ADMIN')
+TELECALLER_CALL_STATUS_EXCLUDED = {'NEW', 'ACCEPTED'}
 
 def is_admin_user(user):
     return user.is_authenticated and user.role in ADMIN_ROLES
+
+def get_call_status_choices_for_user(user):
+    if getattr(user, 'role', None) == 'telecaller':
+        return [
+            choice for choice in Inquiry.CALL_STATUS_CHOICES
+            if choice[0] not in TELECALLER_CALL_STATUS_EXCLUDED
+        ]
+    return Inquiry.CALL_STATUS_CHOICES
 
 def can_access_inquiry(user, inquiry):
     if is_admin_user(user) or user.role == 'counselor':
@@ -32,6 +41,23 @@ def can_access_inquiry(user, inquiry):
     if inquiry.created_by_id == user.id:
         return True
     return Lead.objects.filter(inquiry=inquiry, assigned_telecaller=user).exists()
+
+def initial_assignment_queue():
+    """Admin upload/import contacts that have never entered a user work queue."""
+    return admin_uploaded_assignment_records().filter(
+        assigned_telecaller__isnull=True,
+        assigned_counselor__isnull=True,
+        first_assigned_user__isnull=True,
+        first_assigned_telecaller__isnull=True,
+        first_assigned_counselor__isnull=True,
+    )
+
+def admin_uploaded_assignment_records():
+    """Admin-created pre-conversion contacts shown on first-assignment pages."""
+    return Lead.objects.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').filter(
+        converted_at__isnull=True,
+        inquiry__created_by__role__in=ADMIN_ROLES,
+    )
 
 def remember_first_assignment(lead_ids, user, assigned_at, assignment_type):
     """Keep the original owner metadata stable while allowing reassignments."""
@@ -129,6 +155,7 @@ def management_dashboard(request):
         'today': converted_leads_qs.filter(converted_at__date=today).count(),
         'total': converted_leads_qs.count()
     }
+    qualified_leads = converted_to_lead
     calls_stats = {'today': calls_qs.filter(call_date__date=today).count(), 'total': calls_qs.count()}
     followups_stats = {
         'pending': followups_qs.filter(status='Pending').count(),
@@ -142,6 +169,8 @@ def management_dashboard(request):
         'wrong_number': active_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
         'interested': active_contacts_qs.filter(call_status='INTERESTED').count(),
         'not_interested': active_contacts_qs.filter(call_status='NOT_INTERESTED').count(),
+        'pending_follow_up': active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).count(),
+        'overdue_follow_up': active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).count(),
     }
 
     # Recent leads = recently converted leads this telecaller worked on
@@ -151,10 +180,12 @@ def management_dashboard(request):
     ).select_related('lead__inquiry', 'created_by').order_by('-created_at')[:5]
     today_followups_list = followups_qs.filter(status='Pending', followup_date=today).select_related('lead__inquiry', 'created_by').order_by('followup_date')[:5]
     overdue_followups_list = followups_qs.filter(status='Pending', followup_date__lt=today).select_related('lead__inquiry', 'created_by').order_by('followup_date')[:5]
+    overdue_inquiry_followups = active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).order_by('updated_at')[:5]
 
     context = {
         'assigned_inquiries': assigned_inquiries,
         'converted_to_lead': converted_to_lead,
+        'qualified_leads': qualified_leads,
         'today_calls': calls_stats,
         'pending_followups': followups_stats['pending'],
         'overdue_followups': followups_stats['overdue'],
@@ -164,6 +195,7 @@ def management_dashboard(request):
         'today_followups_list': today_followups_list,
         'overdue_followups_list': overdue_followups_list,
         'pending_inquiry_followups': pending_inquiry_followups,
+        'overdue_inquiry_followups': overdue_inquiry_followups,
         'active_contacts': active_contacts_qs.select_related('lead').order_by('-lead__assigned_at')[:10],
     }
     return render(request, 'management/telecaller_dashboard.html', context)
@@ -560,9 +592,20 @@ def inquiry_list(request):
     scope = request.GET.get('scope', '').strip()
 
     if request.user.role == 'telecaller':
-        inquiries = Inquiry.objects.filter(
-            Q(created_by=request.user) | Q(lead__assigned_telecaller=request.user)
-        ).distinct()
+        if scope == 'active_contacts':
+            inquiries = Inquiry.objects.filter(
+                lead__assigned_telecaller=request.user,
+                lead__converted_at__isnull=True,
+            ).distinct()
+        elif scope == 'converted_leads':
+            inquiries = Inquiry.objects.filter(
+                lead__assigned_telecaller=request.user,
+                lead__converted_at__isnull=False,
+            ).distinct()
+        else:
+            inquiries = Inquiry.objects.filter(
+                Q(created_by=request.user) | Q(lead__assigned_telecaller=request.user)
+            ).distinct()
     elif request.user.role == 'counselor':
         if scope == 'counselor_telecalling':
             inquiries = Inquiry.objects.filter(
@@ -615,6 +658,8 @@ def inquiry_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    call_status_choices = get_call_status_choices_for_user(request.user)
+
     return render(request, 'management/inquiry_list.html', {
         'page_obj': page_obj,
         'inquiry_form': InquiryForm(),
@@ -627,7 +672,8 @@ def inquiry_list(request):
         'date_filter': date_filter,
         'status_choices': Inquiry.STATUS_CHOICES,
         'source_choices': Inquiry.SOURCE_CHOICES,
-        'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
+        'call_status_choices': call_status_choices,
+        'call_status_choice_values': [choice[0] for choice in call_status_choices],
         'can_delete_inquiries': is_admin_user(request.user),
     })
 
@@ -930,7 +976,7 @@ def update_call_status(request, pk):
     except (json.JSONDecodeError, AttributeError):
         return JsonResponse({'success': False, 'message': 'Invalid data.'}, status=400)
 
-    valid_statuses = [choice[0] for choice in Inquiry.CALL_STATUS_CHOICES]
+    valid_statuses = [choice[0] for choice in get_call_status_choices_for_user(request.user)]
     if new_status not in valid_statuses:
         return JsonResponse({'success': False, 'message': f'Invalid call status: {new_status}'}, status=400)
 
@@ -1925,22 +1971,24 @@ def lead_assign(request):
             'total': stats['total'],
         })
 
-    # Telecaller Assignment base queryset:
-    # Shows ALL leads (contacts) that are not yet converted (pending telecalling)
-    # These are contacts imported by admin and available for telecaller assignment.
-    leads = Lead.objects.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').filter(
-        converted_at__isnull=True  # Only pre-conversion contacts
-    )
+    # Telecaller Assignment display queryset:
+    # Show admin-uploaded contacts in the first-assignment lifecycle.
+    assignment_queue = initial_assignment_queue()
+    leads = admin_uploaded_assignment_records()
 
     q = request.GET.get('q', '').strip()
     if q:
         leads = leads.filter(
             Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
         )
+        assignment_queue = assignment_queue.filter(
+            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
+        )
 
     status = request.GET.get('status', '').strip()
     if status:
         leads = leads.filter(status=status)
+        assignment_queue = assignment_queue.filter(status=status)
 
     # Default: show all (both assigned and unassigned) so admin can see the full picture
     assigned_status = request.GET.get('assigned', 'all').strip()
@@ -1962,13 +2010,7 @@ def lead_assign(request):
             quantity = int(request.POST.get('quantity', 0) or 0)
             assign_source = request.POST.get('assign_source', 'unassigned')
 
-            target_leads = leads
-            if assign_source == 'unassigned':
-                target_leads = Lead.objects.filter(
-                    converted_at__isnull=True,
-                    assigned_telecaller__isnull=True,
-                    assigned_counselor__isnull=True,
-                )
+            target_leads = assignment_queue if assign_source == 'filtered' else initial_assignment_queue()
 
             if mode == 'quantity':
                 available = target_leads.count()
@@ -1980,7 +2022,7 @@ def lead_assign(request):
                     'remaining': available - will_assign
                 })
             elif mode == 'all_filtered':
-                available = leads.count() # all_filtered always uses filtered scope
+                available = assignment_queue.count()
                 return JsonResponse({
                     'requested': available,
                     'eligible': available,
@@ -2017,7 +2059,7 @@ def lead_assign(request):
                 telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
                 with transaction.atomic():
                     now = timezone.now()
-                    lead_ids = list(Lead.objects.filter(pk__in=lead_ids, converted_at__isnull=True).values_list('id', flat=True))
+                    lead_ids = list(initial_assignment_queue().filter(pk__in=lead_ids).values_list('id', flat=True))
                     Lead.objects.filter(pk__in=lead_ids).update(
                         assigned_telecaller=telecaller,
                         assigned_counselor=None,
@@ -2210,7 +2252,7 @@ def lead_assign(request):
                 messages.error(request, "Invalid telecaller or quantity.")
             else:
                 telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
-                target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True)
+                target_leads = assignment_queue if assign_source == 'filtered' else initial_assignment_queue()
 
                 with transaction.atomic():
                     lead_ids = list(target_leads.select_for_update().values_list('id', flat=True)[:quantity])
@@ -2245,7 +2287,7 @@ def lead_assign(request):
             else:
                 telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
                 with transaction.atomic():
-                    lead_ids = list(leads.select_for_update().values_list('id', flat=True))
+                    lead_ids = list(assignment_queue.select_for_update().values_list('id', flat=True))
                     if lead_ids:
                         now = timezone.now()
                         Lead.objects.filter(pk__in=lead_ids).update(
@@ -2281,7 +2323,7 @@ def lead_assign(request):
                 if not selected_users:
                     messages.error(request, "Invalid telecallers selected.")
                 else:
-                    target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True)
+                    target_leads = assignment_queue if assign_source == 'filtered' else initial_assignment_queue()
 
                     with transaction.atomic():
                         lead_ids = list(target_leads.select_for_update().values_list('id', flat=True))
@@ -3361,13 +3403,13 @@ def lead_assign_counselor(request):
 
     if is_telecalling_assignment:
         # Counselor Telecalling Assignment:
-        # Shows raw contacts only. Assigning here must NOT convert the lead.
-        leads = Lead.objects.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').filter(
-            converted_at__isnull=True
-        )
+        # Show admin-uploaded raw contacts in the first-assignment lifecycle.
+        assignment_queue = initial_assignment_queue()
+        leads = admin_uploaded_assignment_records()
     else:
         # Counselor Lead Assignment (Admin Queue):
         # Shows converted leads that need a counselor assignment.
+        assignment_queue = None
         leads = Lead.objects.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').filter(
             converted_at__isnull=False
         )
@@ -3379,17 +3421,29 @@ def lead_assign_counselor(request):
         leads = leads.filter(
             Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
         )
+        if is_telecalling_assignment:
+            assignment_queue = assignment_queue.filter(
+                Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
+            )
 
     status = request.GET.get('status', '').strip()
     if status:
         if is_telecalling_assignment:
             leads = leads.filter(status=status)
+            assignment_queue = assignment_queue.filter(status=status)
         else:
             leads = leads.filter(counselor_status=status)
 
-    # Default: show leads WITHOUT a counselor (the actual Admin Queue)
+    # Default: show records without the owner relevant to the selected assignment flow.
     assigned_status = request.GET.get('assigned', 'no').strip()
-    if assigned_status == 'yes':
+    if is_telecalling_assignment:
+        if assigned_status == 'yes':
+            leads = leads.filter(Q(assigned_telecaller__isnull=False) | Q(assigned_counselor__isnull=False))
+        elif assigned_status == 'no':
+            leads = leads.filter(assigned_telecaller__isnull=True, assigned_counselor__isnull=True)
+        elif assigned_status == 'all':
+            pass
+    elif assigned_status == 'yes':
         leads = leads.filter(assigned_counselor__isnull=False)
     elif assigned_status == 'no':
         leads = leads.filter(assigned_counselor__isnull=True)
@@ -3407,14 +3461,11 @@ def lead_assign_counselor(request):
             quantity = int(request.POST.get('quantity', 0) or 0)
             assign_source = request.POST.get('assign_source', 'unassigned')
 
-            target_leads = leads
-            if assign_source == 'unassigned':
-                if is_telecalling_assignment:
-                    target_leads = Lead.objects.filter(
-                        converted_at__isnull=True,
-                        assigned_counselor__isnull=True,
-                    )
-                else:
+            if is_telecalling_assignment:
+                target_leads = assignment_queue if assign_source == 'filtered' else initial_assignment_queue()
+            else:
+                target_leads = leads
+                if assign_source == 'unassigned':
                     target_leads = Lead.objects.filter(
                         converted_at__isnull=False,
                         assigned_counselor__isnull=True,
@@ -3430,7 +3481,7 @@ def lead_assign_counselor(request):
                     'remaining': available - will_assign
                 })
             elif mode == 'all_filtered':
-                available = leads.count()
+                available = assignment_queue.count() if is_telecalling_assignment else leads.count()
                 return JsonResponse({
                     'requested': available,
                     'eligible': available,
@@ -3467,8 +3518,11 @@ def lead_assign_counselor(request):
                 counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
                 with transaction.atomic():
                     assigned_at = timezone.now()
-                    lead_filter = {'pk__in': lead_ids, 'converted_at__isnull': is_telecalling_assignment}
-                    lead_ids = list(Lead.objects.filter(**lead_filter).values_list('id', flat=True))
+                    if is_telecalling_assignment:
+                        lead_ids = list(initial_assignment_queue().filter(pk__in=lead_ids).values_list('id', flat=True))
+                    else:
+                        lead_filter = {'pk__in': lead_ids, 'converted_at__isnull': False}
+                        lead_ids = list(Lead.objects.filter(**lead_filter).values_list('id', flat=True))
                     update_fields = {
                         'assigned_counselor': counselor,
                         'assigned_by': request.user,
@@ -3507,13 +3561,9 @@ def lead_assign_counselor(request):
             else:
                 counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
                 if assign_source == 'filtered':
-                    target_leads = leads
+                    target_leads = assignment_queue if is_telecalling_assignment else leads
                 elif is_telecalling_assignment:
-                    target_leads = Lead.objects.filter(
-                        converted_at__isnull=True,
-                        assigned_telecaller__isnull=True,
-                        assigned_counselor__isnull=True,
-                    )
+                    target_leads = initial_assignment_queue()
                 else:
                     target_leads = Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True)
 
@@ -3558,7 +3608,8 @@ def lead_assign_counselor(request):
             else:
                 counselor = get_object_or_404(User, pk=counselor_id, is_deleted=False, is_active=True)
                 with transaction.atomic():
-                    lead_ids = list(leads.select_for_update().values_list('id', flat=True))
+                    source_leads = assignment_queue if is_telecalling_assignment else leads
+                    lead_ids = list(source_leads.select_for_update().values_list('id', flat=True))
                     if lead_ids:
                         assigned_at = timezone.now()
                         update_fields = {
@@ -3603,13 +3654,9 @@ def lead_assign_counselor(request):
                     messages.error(request, "Invalid counselors selected.")
                 else:
                     if assign_source == 'filtered':
-                        target_leads = leads
+                        target_leads = assignment_queue if is_telecalling_assignment else leads
                     elif is_telecalling_assignment:
-                        target_leads = Lead.objects.filter(
-                            converted_at__isnull=True,
-                            assigned_telecaller__isnull=True,
-                            assigned_counselor__isnull=True,
-                        )
+                        target_leads = initial_assignment_queue()
                     else:
                         target_leads = Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True)
 

@@ -1039,6 +1039,9 @@
                 <td data-label="Call Status">
                   <div class="call-status-wrapper">
                     <select class="call-status-select" data-inquiry-id="{{ inquiry.pk }}" onchange="updateCallStatus(this)">
+                      {% if inquiry.call_status not in call_status_choice_values %}
+                        <option value="" selected disabled>Select Call Status</option>
+                      {% endif %}
                       {% for code, name in call_status_choices %}
                         <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
                       {% endfor %}
@@ -1046,7 +1049,7 @@
                   </div>
                   <div class="mt-1">
                     <span class="call-status-badge cs-{{ inquiry.call_status }}" id="badge-{{ inquiry.pk }}">
-                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% endif %}
+                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% elif inquiry.call_status == 'PENDING_FOLLOW_UP' %}<i class="bi bi-calendar-check"></i>{% endif %}
                       {{ inquiry.get_call_status_display }}
                     </span>
                   </div>
@@ -1433,7 +1436,8 @@ const badgeIcons = {
   'CALL_BACK': '<i class="bi bi-arrow-repeat"></i>',
   'NO_ANSWER': '<i class="bi bi-telephone-x"></i>',
   'WRONG_NUMBER': '<i class="bi bi-x-circle"></i>',
-  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>'
+  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>',
+  'PENDING_FOLLOW_UP': '<i class="bi bi-calendar-check"></i>'
 };
 
 const selectAllInquiries = document.getElementById('selectAllInquiries');
