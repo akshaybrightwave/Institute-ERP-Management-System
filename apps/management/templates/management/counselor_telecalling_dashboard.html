@@ -1,6 +1,6 @@
 {% extends 'management/base.html' %}
 
-{% block title %}Telecaller Dashboard | Examly{% endblock %}
+{% block title %}Telecalling Dashboard | Examly{% endblock %}
 
 {% block extra_style %}
 {# All dark theme CSS (topbar, sidebar, cards, tables, erp-card, gradients) comes from the shared include #}
@@ -12,8 +12,8 @@
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div>
     <div class="page-welcome">Welcome back, {{ request.user.username|title }} 👋</div>
-    <h1 class="page-title">Telecaller Dashboard</h1>
-    <p class="page-subtitle">Manage your daily calls, follow-ups, and lead generation</p>
+    <h1 class="page-title">Telecalling Dashboard</h1>
+    <p class="page-subtitle">Manage your telecalling tasks and lead generation</p>
   </div>
   <div>
     <span class="badge bg-dark border border-secondary py-2 px-3">
@@ -34,7 +34,7 @@
         <div class="text-white-50 small mt-1">Today: <strong>{{ assigned_inquiries.today }}</strong></div>
         <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View assigned
       </a>
     </div>
@@ -48,7 +48,7 @@
         <div class="erp-card-number">{{ call_outcomes.busy }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=BUSY" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=BUSY" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -62,7 +62,7 @@
         <div class="erp-card-number">{{ call_outcomes.ringing }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=NO_ANSWER" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=NO_ANSWER" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -76,7 +76,7 @@
         <div class="erp-card-number">{{ call_outcomes.call_back }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-arrow-return-left"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=CALL_BACK" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=CALL_BACK" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -90,7 +90,7 @@
         <div class="erp-card-number">{{ call_outcomes.wrong_number }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-x-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=WRONG_NUMBER" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=WRONG_NUMBER" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -104,7 +104,7 @@
         <div class="erp-card-number">{{ call_outcomes.interested }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=INTERESTED" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=INTERESTED" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -118,7 +118,7 @@
         <div class="erp-card-number">{{ call_outcomes.not_interested }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=NOT_INTERESTED" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=NOT_INTERESTED" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -132,7 +132,7 @@
         <div class="erp-card-number">{{ call_outcomes.pending_follow_up }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-calendar-check-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=PENDING_FOLLOW_UP&overdue=false" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=PENDING_FOLLOW_UP&overdue=false" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View pending
       </a>
     </div>
@@ -146,7 +146,7 @@
         <div class="erp-card-number">{{ call_outcomes.overdue_follow_up }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=PENDING_FOLLOW_UP&overdue=true" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=PENDING_FOLLOW_UP&overdue=true" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View overdue
       </a>
     </div>
@@ -161,7 +161,7 @@
         <div class="text-white-50 small mt-1">Today: <strong>{{ qualified_leads.today }}</strong></div>
         <div class="erp-card-bg-icon"><i class="bi bi-arrow-right-circle-fill text-white-50"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?status=Qualified" class="erp-card-footer border-top border-success text-white">
+      <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&status=Qualified" class="erp-card-footer border-top border-success text-white">
         <i class="bi bi-list-ul"></i> View conversions
       </a>
     </div>
@@ -172,59 +172,48 @@
 <div class="row g-4 mb-4">
   <!-- Left Side: Data Tables -->
   <div class="col-xxl-9">
-    <!-- Recent Leads -->
+    <!-- Recent Inquiries -->
     <div class="m-card mb-4">
       <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-funnel-fill me-2 text-info"></i>Recent Leads</h5>
-        <a href="{% url 'lead_list' %}" class="btn btn-sm btn-outline-info">View All</a>
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-funnel-fill me-2 text-info"></i>Recent Inquiries</h5>
+        <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling" class="btn btn-sm btn-outline-info">View All</a>
       </div>
 
       <div class="table-responsive">
-        {% if recent_leads %}
+        {% if recent_inquiries %}
         <table class="table m-table align-middle">
           <thead>
             <tr>
-              <th>Lead</th>
+              <th>Inquiry</th>
               <th>Status</th>
-              <th>Priority</th>
-              <th>Next Follow-Up</th>
+              <th>Source</th>
+              <th>Call Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {% for lead in recent_leads %}
+            {% for inquiry in recent_inquiries %}
             <tr>
               <td>
-                <span class="fw-semibold" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</span>
+                <span class="fw-semibold" style="color:#f1f5f9;">{{ inquiry.full_name }}</span>
               </td>
               <td>
-                <span
-                  class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
-                  {{ lead.status }}
+                <span class="badge-premium {% if inquiry.status == 'New' %}bg-primary{% elif inquiry.status == 'Qualified' %}bg-success{% elif inquiry.status == 'Rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                  {{ inquiry.status }}
                 </span>
               </td>
               <td>
-                <span
-                  class="badge-premium {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning{% else %}bg-secondary{% endif %}">
-                  {{ lead.priority }}
-                </span>
+                <span class="text-muted small">{{ inquiry.source }}</span>
               </td>
               <td>
-                {% if lead.next_followup_date %}
-                <span class="d-inline-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.82rem;">
-                  <i class="bi bi-calendar3" style="color:#818cf8;"></i>
-                  {{ lead.next_followup_date|date:"d M Y" }}
-                </span>
-                {% else %}
-                <span class="text-muted small">—</span>
-                {% endif %}
+                <span class="badge-premium bg-info">{{ inquiry.get_call_status_display }}</span>
               </td>
               <td>
                 <div class="d-flex gap-1">
-                  <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i
+                  <a href="{% url 'inquiry_detail' inquiry.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i
                       class="bi bi-eye"></i> Profile</a>
-                  <a href="{% url 'lead_notes_list' lead.pk %}" class="btn btn-sm btn-outline-info" title="Notes"><i
-                      class="bi bi-chat-left-text"></i> Notes</a>
+                  <a href="{% url 'inquiry_convert' inquiry.pk %}" class="btn btn-sm btn-success" title="Convert to Lead"><i
+                      class="bi bi-arrow-right-circle"></i> Convert</a>
                 </div>
               </td>
             </tr>
@@ -234,7 +223,7 @@
         {% else %}
         <div class="empty-state-premium">
           <i class="bi bi-funnel"></i>
-          <p>No leads assigned or converted yet.</p>
+          <p>No recent inquiries found.</p>
         </div>
         {% endif %}
       </div>
@@ -245,34 +234,21 @@
       <div class="d-flex align-items-center justify-content-between mb-3">
         <h5 class="fw-bold mb-0 text-white"><i class="bi bi-calendar-check text-success me-2"></i>Today's Follow-Ups
         </h5>
-        <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-success">View All</a>
+        <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=PENDING_FOLLOW_UP&overdue=false" class="btn btn-sm btn-outline-success">View All</a>
       </div>
 
       <div class="table-responsive">
-        {% if today_followups_list or pending_inquiry_followups %}
+        {% if pending_inquiry_followups %}
         <table class="table m-table align-middle">
           <thead>
             <tr>
-              <th>Lead / Inquiry</th>
-              <th>Status / Date</th>
-              <th>Notes / Action Required</th>
+              <th>Inquiry</th>
+              <th>Status</th>
+              <th>Notes / Remarks</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {% for fp in today_followups_list %}
-            <tr>
-              <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }} <span class="badge bg-primary ms-1" style="font-size: 0.7em;">Converted Lead</span></td>
-              <td><span class="badge-premium bg-success">Today</span></td>
-              <td class="small">{{ fp.response|default:"Scheduled Follow-up" }}</td>
-              <td>
-                <div class="d-flex gap-1">
-                  <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i class="bi bi-eye"></i></a>
-                  <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
             {% for inq in pending_inquiry_followups %}
             <tr>
               <td class="fw-bold text-white">{{ inq.full_name }} <span class="badge bg-secondary ms-1" style="font-size: 0.7em;">Inquiry</span></td>
@@ -302,42 +278,26 @@
       <div class="d-flex align-items-center justify-content-between mb-3">
         <h5 class="fw-bold mb-0 text-white"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Overdue
           Follow-Ups</h5>
-        <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-danger">View All</a>
+        <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=PENDING_FOLLOW_UP&overdue=true" class="btn btn-sm btn-outline-danger">View All</a>
       </div>
 
       <div class="table-responsive">
-        {% if overdue_followups_list or overdue_inquiry_followups %}
+        {% if overdue_inquiry_followups %}
         <table class="table m-table align-middle">
           <thead>
             <tr>
-              <th>Lead / Inquiry</th>
-              <th>Status / Date</th>
-              <th>Notes / Action Required</th>
+              <th>Inquiry</th>
+              <th>Status</th>
+              <th>Notes / Remarks</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {% for fp in overdue_followups_list %}
-            <tr>
-              <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }} <span class="badge bg-primary ms-1" style="font-size: 0.7em;">Converted Lead</span></td>
-              <td>
-                {{ fp.followup_date|date:"d M Y" }}
-                <span class="badge-premium bg-danger ms-1">⚠ Overdue Follow-Up</span>
-              </td>
-              <td class="text-danger fw-bold">{{ fp.days_overdue }} days overdue</td>
-              <td>
-                <div class="d-flex gap-1">
-                  <a href="{% url 'lead_detail' fp.lead.pk %}" class="btn btn-sm btn-outline-light" title="View Lead"><i class="bi bi-eye"></i></a>
-                  <a href="{% url 'followup_complete' fp.pk %}" class="btn btn-sm btn-success" title="Mark Completed"><i class="bi bi-check-lg"></i> Complete</a>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
             {% for inq in overdue_inquiry_followups %}
             <tr>
               <td class="fw-bold text-white">{{ inq.full_name }} <span class="badge bg-secondary ms-1" style="font-size: 0.7em;">Inquiry</span></td>
               <td>
-                <span class="badge-premium bg-danger ms-1">⚠ {{ inq.get_call_status_display }}</span>
+                <span class="badge-premium bg-danger ms-1">âš  {{ inq.get_call_status_display }}</span>
               </td>
               <td class="text-danger fw-bold">{{ inq.remarks|default:"Pending > 48 hours" }}</td>
               <td>
@@ -370,10 +330,10 @@
         <a href="{% url 'inquiry_add' %}" class="action-btn">
           <div class="action-icon-box"><i class="bi bi-person-plus"></i></div> Add New Inquiry
         </a>
-        <a href="{% url 'call_log_add' %}" class="action-btn">
-          <div class="action-icon-box"><i class="bi bi-telephone-outbound"></i></div> Add Call Log
+        <a href="{% url 'counselor_session_add' %}" class="action-btn">
+          <div class="action-icon-box"><i class="bi bi-chat-dots"></i></div> Add Session
         </a>
-        <a href="{% url 'followup_add' %}" class="action-btn">
+        <a href="{% url 'counselor_followup_add' %}" class="action-btn">
           <div class="action-icon-box"><i class="bi bi-calendar-event"></i></div> Schedule Follow-Up
         </a>
       </div>

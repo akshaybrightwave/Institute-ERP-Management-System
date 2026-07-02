@@ -1167,7 +1167,7 @@
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
-    {% if request.user.role == 'superadmin' %}
+    {% if request.user.role == 'superadmin' or request.user.role == 'SUPER_ADMIN' %}
     <a class="management-brand" href="{% url 'management_super_admin_dashboard' %}">
       <span class="management-brand-icon"><i class="bi bi-building-fill"></i></span>
       Super Admin
@@ -1176,6 +1176,10 @@
     <a href="{% url 'management_super_admin_dashboard' %}"
       class="sidebar-item {% if request.resolver_match.url_name == 'management_super_admin_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    <a href="{% url 'admin_counselor_updates' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'admin_counselor_updates' %}active{% endif %}">
+      <i class="bi bi-activity"></i> Counselor Updates
     </a>
     <div class="sidebar-section">Reports</div>
     <a href="{% url 'reports_dashboard' %}"
@@ -1204,6 +1208,10 @@
     <a href="{% url 'management_admin_dashboard' %}"
       class="sidebar-item {% if request.resolver_match.url_name == 'management_admin_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Dashboard
+    </a>
+    <a href="{% url 'admin_counselor_updates' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'admin_counselor_updates' %}active{% endif %}">
+      <i class="bi bi-activity"></i> Counselor Updates
     </a>
     <div class="sidebar-section">Lead Management</div>
     <a href="{% url 'inquiry_list' %}"
@@ -1271,15 +1279,19 @@
     <div class="sidebar-section">Counselor Portal</div>
     <a href="{% url 'counselor_dashboard' %}"
       class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
-      <i class="bi bi-grid-1x2"></i> Dashboard
-    </a>
-    <a href="{% url 'inquiry_list' %}"
-      class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
-      <i class="bi bi-person-lines-fill"></i> Inquiry Directory
+      <i class="bi bi-grid-1x2"></i> Counselor Dashboard
     </a>
     <a href="{% url 'counselor_lead_list' %}"
       class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
       <i class="bi bi-people-fill"></i> Assigned Leads
+    </a>
+    <a href="{% url 'counselor_telecalling_dashboard' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'counselor_telecalling_dashboard' %}active{% endif %}">
+      <i class="bi bi-telephone-outbound"></i> Telecalling Dashboard
+    </a>
+    <a href="{% url 'inquiry_list' %}"
+      class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="bi bi-person-lines-fill"></i> Inquiry Directory
     </a>
     <a href="{% url 'counselor_session_list' %}"
       class="sidebar-item {% if 'counselor_session' in request.resolver_match.url_name %}active{% endif %}">
@@ -1405,7 +1417,7 @@
             <li class="d-sm-none">
               <hr class="dropdown-divider">
             </li>
-            {% if request.user.role == 'superadmin' %}
+            {% if request.user.role == 'superadmin' or request.user.role == 'SUPER_ADMIN' %}
             <li><a class="dropdown-item" href="{% url 'management_super_admin_dashboard' %}"><i
                   class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
             {% elif request.user.role == 'admin' %}

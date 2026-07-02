@@ -28,7 +28,7 @@ from .models import AuthActivityLog, User, Feedback
 REGISTRATION_DISABLED_MESSAGE = 'Public registration is disabled. Please contact the Super Admin for credentials.'
 
 ROLE_DASHBOARD_URLS = {
-    'SUPER_ADMIN': 'superadmin_dashboard',
+    'SUPER_ADMIN': 'management_super_admin_dashboard',
     'superadmin': 'management_super_admin_dashboard',
     'admin': 'admin_dashboard',
     'center': 'center_dashboard',

@@ -9,8 +9,9 @@
 {% block management_content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div>
-    <h2 class="dashboard-title text-white mb-1">Admin Dashboard</h2>
-    <p class="text-muted small mb-0">Manage uploads, assignments, and backend operations.</p>
+    <div class="page-welcome">Welcome back, Admin 👋</div>
+    <h1 class="page-title">Admin Dashboard</h1>
+    <p class="page-subtitle">Manage uploads, assignments, and backend operations</p>
   </div>
   <div>
     <span class="badge-premium bg-dark border border-secondary py-2 px-3">
@@ -51,12 +52,12 @@
   <div class="col">
     <div class="erp-card bg-g-violet">
       <div class="erp-card-body">
-        <div class="erp-card-title">Unassigned Inquiries</div>
+        <div class="erp-card-title">Unassigned Contacts</div>
         <div class="erp-card-number">{{ unassigned_inquiries.total }}</div>
         <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ unassigned_inquiries.today }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-person-x-fill"></i></div>
       </div>
-      <a href="{% url 'lead_assign' %}" class="erp-card-footer">
+      <a href="{% url 'lead_assign' %}?assigned=no" class="erp-card-footer">
         <i class="bi bi-arrow-right"></i> Assign Now
       </a>
     </div>
@@ -65,13 +66,27 @@
   <div class="col">
     <div class="erp-card bg-g-teal">
       <div class="erp-card-body">
-        <div class="erp-card-title">Assigned (Telecaller)</div>
+        <div class="erp-card-title">Telecaller Contacts</div>
         <div class="erp-card-number">{{ assigned_to_telecaller.total }}</div>
         <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ assigned_to_telecaller.today }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-fill"></i></div>
       </div>
-      <a href="{% url 'lead_assign' %}" class="erp-card-footer">
+      <a href="{% url 'lead_assign' %}?assigned=yes" class="erp-card-footer">
         <i class="bi bi-gear"></i> Manage
+      </a>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="erp-card" style="background: linear-gradient(135deg,#f59e0b,#d97706);">
+      <div class="erp-card-body">
+        <div class="erp-card-title">Admin Queue</div>
+        <div class="erp-card-number">{{ admin_queue.total }}</div>
+        <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ admin_queue.today }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-inbox-fill"></i></div>
+      </div>
+      <a href="{% url 'lead_assign_counselor' %}?assigned=no" class="erp-card-footer">
+        <i class="bi bi-arrow-right"></i> Assign Counselor
       </a>
     </div>
   </div>
@@ -79,16 +94,17 @@
   <div class="col">
     <div class="erp-card bg-g-pink">
       <div class="erp-card-body">
-        <div class="erp-card-title">Assigned (Counselor)</div>
+        <div class="erp-card-title">Counselor Leads</div>
         <div class="erp-card-number">{{ assigned_to_counselor.total }}</div>
         <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ assigned_to_counselor.today }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-person-badge-fill"></i></div>
       </div>
-      <a href="{% url 'lead_assign_counselor' %}" class="erp-card-footer">
+      <a href="{% url 'lead_assign_counselor' %}?assigned=yes" class="erp-card-footer">
         <i class="bi bi-gear"></i> Manage
       </a>
     </div>
   </div>
+
 </div>
 
 <div class="row g-4">

@@ -1,6 +1,6 @@
 {% extends 'management/base.html' %}
 
-{% block title %}Counselor Leads | Examly{% endblock %}
+{% block title %}Counselor Updates Tracking | Examly{% endblock %}
 
 
 {% block extra_style %}
@@ -10,8 +10,8 @@
 {% block management_content %}
 <div class="mb-4 d-flex justify-content-between align-items-center">
   <div>
-    <h2 class="fw-bold text-white mb-1">Assigned Leads</h2>
-    <p class="text-muted small">Perform counseling activities and manage conversions</p>
+    <h2 class="fw-bold text-white mb-1">Counselor Updates Tracking</h2>
+    <p class="text-muted small">Monitor what status counselors are updating in real-time.</p>
   </div>
 </div>
 
@@ -55,29 +55,13 @@
     </div>
 
     <div class="col-md-3 mt-2">
-      <label class="form-label text-muted small fw-bold">Date Range</label>
-      <select name="date_preset" id="datePresetFilter" class="form-select bg-dark border-secondary text-white" onchange="toggleCustomDates()">
-        <option value="">All Time</option>
-        <option value="today" {% if date_preset == 'today' %}selected{% endif %}>Today</option>
-        <option value="yesterday" {% if date_preset == 'yesterday' %}selected{% endif %}>Yesterday</option>
-        <option value="last_7_days" {% if date_preset == 'last_7_days' %}selected{% endif %}>Last 7 Days</option>
-        <option value="custom" {% if date_preset == 'custom' %}selected{% endif %}>Custom Range</option>
-      </select>
-    </div>
-
-    <div class="col-md-3 mt-2 custom-date-group" style="{% if date_preset != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">Start Date</label>
-      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white">
-    </div>
-
-    <div class="col-md-3 mt-2 custom-date-group" style="{% if date_preset != 'custom' %}display: none;{% endif %}">
-      <label class="form-label text-muted small fw-bold">End Date</label>
-      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white">
+      <label class="form-label text-muted small fw-bold">Date</label>
+      <input type="date" name="date" value="{{ date_filter }}" class="form-control">
     </div>
   </form>
-  {% if q or status or priority or date_preset or date_filter %}
+  {% if q or status or priority or date_filter %}
   <div class="mt-3">
-    <a href="{% url 'counselor_lead_list' %}" class="btn btn-sm btn-outline-secondary">
+    <a href="{% url 'admin_counselor_updates' %}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-x-circle me-1"></i> Clear filters
     </a>
   </div>
@@ -96,9 +80,10 @@
             <th>Mobile</th>
             <th>Email</th>
             <th>City</th>
-            <th>Added / Assigned</th>
+            <th>Date Added</th>
             <th>Priority</th>
             <th>Next Follow-up</th>
+            <th>Counselor</th>
             <th>Counselor Status</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -111,15 +96,7 @@
               <td>{{ lead.inquiry.mobile_number }}</td>
               <td>{{ lead.inquiry.email|default:"-" }}</td>
               <td>{{ lead.inquiry.city }}</td>
-              <td>
-                <span class="text-white-50">
-                  {% if lead.assigned_at %}
-                    {{ lead.assigned_at|date:"d M Y" }}
-                  {% else %}
-                    {{ lead.created_at|date:"d M Y" }}
-                  {% endif %}
-                </span>
-              </td>
+              <td><span class="text-white-50">{{ lead.created_at|date:"d M Y" }}</span></td>
               <td>
                 {% if lead.priority == 'Hot' %}
                   <span class="badge bg-danger"><i class="bi bi-fire"></i> Hot</span>
@@ -136,6 +113,7 @@
                   <span class="text-muted small">Not Scheduled</span>
                 {% endif %}
               </td>
+              <td><span class="text-info fw-bold">{{ lead.assigned_counselor.get_full_name|default:lead.assigned_counselor.username }}</span></td>
               <td>
                 <span class="badge {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info text-white{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if lead.counselor_status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif lead.counselor_status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
                   {{ lead.get_counselor_status_display }}
@@ -144,14 +122,6 @@
               <td class="text-end">
                 <div class="d-inline-flex gap-1">
                   <a href="{% url 'counselor_lead_detail' lead.pk %}" class="btn btn-sm btn-outline-info" title="View Profile"><i class="bi bi-eye"></i> Profile</a>
-                  <button type="button" class="btn btn-sm btn-outline-warning js-status-btn"
-                    data-lead-id="{{ lead.pk }}"
-                    data-lead-name="{{ lead.inquiry.full_name }}"
-                    data-current-status="{{ lead.counselor_status }}"
-                    data-current-notes="{{ lead.notes|escapejs }}"
-                    title="Update Status">
-                    <i class="bi bi-pencil"></i> Status
-                  </button>
                 </div>
               </td>
             </tr>
@@ -185,85 +155,10 @@
     {% else %}
       <div class="empty-state">
         <i class="bi bi-people"></i>
-        <h4>No Assigned Leads Found</h4>
-        <p class="text-muted">No leads currently assigned to you match these filters.</p>
+        <h4>No Counselor Updates Found</h4>
+        <p class="text-muted">No leads match these filters.</p>
       </div>
     {% endif %}
   </div>
 </div>
-
-<!-- Status Update Modal -->
-<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content bg-dark border border-secondary">
-      <form id="statusForm" method="POST">
-        {% csrf_token %}
-        <div class="modal-header border-secondary">
-          <h5 class="modal-title text-white fw-bold" id="statusModalLabel">
-            <i class="bi bi-pencil-square text-warning me-2"></i>Update Status
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p class="text-muted small mb-3">Candidate: <strong class="text-white" id="modalLeadName"></strong></p>
-
-          <div class="mb-3">
-            <label class="form-label text-muted small fw-bold">Counselor Status <span class="text-danger">*</span></label>
-            <select name="counselor_status" id="modalStatus" class="form-select bg-dark border-secondary text-white" required>
-              <option value="" disabled selected>-- Select the option --</option>
-              {% for code, name in status_choices %}
-                <option value="{{ code }}">{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="mb-1">
-            <label class="form-label text-muted small fw-bold">Remark</label>
-            <textarea name="notes" id="modalNotes" class="form-control bg-dark border-secondary text-white"
-              rows="3" placeholder="Add a remark or note about this status update..."></textarea>
-          </div>
-        </div>
-        <div class="modal-footer border-secondary">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning fw-bold text-dark">
-            <i class="bi bi-check-lg me-1"></i>Save Status
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<script>
-  document.querySelectorAll('.js-status-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var leadId = this.dataset.leadId;
-      var leadName = this.dataset.leadName;
-      var currentStatus = this.dataset.currentStatus;
-      var currentNotes = this.dataset.currentNotes;
-
-      document.getElementById('modalLeadName').textContent = leadName;
-      var statusSelect = document.getElementById('modalStatus');
-      statusSelect.value = currentStatus;
-      if (statusSelect.selectedIndex === -1) {
-          statusSelect.value = "";
-      }
-      document.getElementById('modalNotes').value = currentNotes;
-      document.getElementById('statusForm').action = '/management/counselor/leads/' + leadId + '/status/';
-
-      var modal = new bootstrap.Modal(document.getElementById('statusModal'));
-      modal.show();
-    });
-  });
-
-  function toggleCustomDates() {
-    var preset = document.getElementById('datePresetFilter').value;
-    var customGroups = document.querySelectorAll('.custom-date-group');
-    if (preset === 'custom') {
-      customGroups.forEach(function(el) { el.style.display = 'block'; });
-    } else {
-      customGroups.forEach(function(el) { el.style.display = 'none'; });
-    }
-  }
-</script>
 {% endblock %}

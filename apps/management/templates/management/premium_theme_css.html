@@ -18,9 +18,37 @@
     color: #94a3b8 !important;
   }
 
-  html body.management-shell .management-content .dashboard-title {
-    font-weight: 400 !important;
-    letter-spacing: 0 !important;
+  /* ── Base typography adjustments to look more professional and compact ── */
+  html body.management-shell .management-content h1 { font-size: 1.4rem !important; font-weight: 700 !important; }
+  html body.management-shell .management-content h2,
+  html body.management-shell .management-content .dashboard-title { 
+    font-size: 1.2rem !important; 
+    font-weight: 600 !important; 
+    letter-spacing: -0.01em !important;
+  }
+  html body.management-shell .management-content h3 { font-size: 1.1rem !important; font-weight: 600 !important; }
+  html body.management-shell .management-content h4 { font-size: 1rem !important; font-weight: 600 !important; }
+  html body.management-shell .management-content h5 { font-size: 0.95rem !important; font-weight: 600 !important; }
+  html body.management-shell .management-content h6 { font-size: 0.85rem !important; font-weight: 600 !important; }
+
+  /* ── Uniform Dashboard Headers ── */
+  .page-welcome {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 2px;
+    font-weight: 400;
+  }
+  .page-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin-bottom: 2px;
+    line-height: 1.1;
+  }
+  .page-subtitle {
+    font-size: 0.82rem;
+    color: #64748b;
+    font-weight: 400;
   }
 
   /* ── Global dark form controls — beats base.html's .form-control { background:#fff !important } ── */
@@ -306,6 +334,24 @@
     align-items: center;
     justify-content: center;
   }
+  .stat-card-value {
+    font-weight: 800 !important;
+    font-size: 1.75rem !important;
+    color: #f1f5f9 !important;
+    margin: 8px 0 !important;
+    line-height: 1 !important;
+  }
+  .stat-card-label {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: #94a3b8 !important;
+  }
+  .stat-card-subtext {
+    font-size: 0.75rem !important;
+    color: #64748b !important;
+  }
   html body.management-shell .management-content .empty-state-premium i {
     font-size: 2.5rem !important;
     color: #475569 !important;
@@ -385,10 +431,11 @@
     color: #fff !important;
   }
   .erp-card-body { padding: 1.15rem 1.25rem 1rem; position: relative; flex: 1; }
-  .erp-card-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255,255,255,0.9); margin-bottom: 0.5rem; }
-  .erp-card-number { font-size: 2.3rem; font-weight: 800; line-height: 1; text-shadow: 0 3px 10px rgba(0,0,0,0.38); }
-  .erp-card-number.sm { font-size: 1.65rem; }
-  .erp-card-bg-icon { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: 4rem; opacity: 0.16; pointer-events: none; line-height: 1; }
+  .erp-card-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: rgba(255,255,255,0.9); margin-bottom: 0.5rem; }
+  .erp-card-number { font-size: 1.75rem; font-weight: 800; line-height: 1; text-shadow: 0 3px 10px rgba(0,0,0,0.38); }
+  .erp-card-number.sm { font-size: 1.25rem; }
+  .erp-card-bg-icon { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: 3rem; opacity: 0.16; pointer-events: none; line-height: 1; }
+  .erp-card-sub { font-size: 0.75rem; opacity: 0.85; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
   .erp-card-footer {
     display: flex;
     align-items: center;

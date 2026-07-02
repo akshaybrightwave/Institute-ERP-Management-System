@@ -175,8 +175,34 @@
         <form method="POST">
           {% csrf_token %}
 
-          <!-- ── Counselor Selection (mandatory for non-counselors) ── -->
-          {% if request.user.role == 'telecaller' %}
+          {% if telecaller_convert_mode %}
+            <!-- TELECALLER MODE: Contact assigned by admin, telecaller converts to admin queue -->
+            <div class="counselor-field-wrap" style="border-color:rgba(74,222,128,0.3);background:rgba(74,222,128,0.05);">
+              <div class="counselor-field-label">
+                <i class="bi bi-telephone-fill"></i>
+                Assigned Telecaller
+              </div>
+              <div class="text-white fw-bold">
+                <i class="bi bi-check-circle-fill text-success me-1"></i> You ({{ request.user.username }})
+              </div>
+              <div class="text-muted small mt-1">This contact will be converted to a Lead and sent to the <strong>Admin Queue</strong>. The admin will assign a counselor.</div>
+            </div>
+
+          {% elif counselor_telecalling_convert_mode %}
+            <!-- COUNSELOR TELECALLING MODE: Contact assigned for telecalling, counselor converts to admin queue -->
+            <div class="counselor-field-wrap" style="border-color:rgba(129,140,248,0.3);background:rgba(129,140,248,0.05);">
+              <div class="counselor-field-label">
+                <i class="bi bi-person-badge-fill"></i>
+                Counselor Telecalling
+              </div>
+              <div class="text-white fw-bold">
+                <i class="bi bi-check-circle-fill text-success me-1"></i> You ({{ request.user.username }})
+              </div>
+              <div class="text-muted small mt-1">This contact will be converted to a Lead and sent to the <strong>Admin Queue</strong>. The admin will assign it to your counseling dashboard.</div>
+            </div>
+
+          {% elif request.user.role == 'telecaller' %}
+            <!-- TELECALLER: New inquiry conversion - goes to admin queue -->
             <div class="counselor-field-wrap">
               <div class="counselor-field-label">
                 <i class="bi bi-telephone-fill"></i>
@@ -185,32 +211,11 @@
               <div class="text-white fw-bold">
                 <i class="bi bi-check-circle-fill text-success me-1"></i> You ({{ request.user.username }})
               </div>
-              <div class="text-muted small mt-1">This lead will be automatically assigned to you.</div>
+              <div class="text-muted small mt-1">This lead will go to the <strong>Admin Queue</strong> after conversion.</div>
             </div>
-            {% if has_active_counselors %}
-              <div class="counselor-field-wrap {% if form.assigned_counselor.errors %}has-error{% endif %}">
-                <div class="counselor-field-label">
-                  <i class="bi bi-person-badge-fill"></i>
-                  Select Counselor
-                  <span class="counselor-required-star">*</span>
-                </div>
-                {{ form.assigned_counselor }}
-                {% if form.assigned_counselor.errors %}
-                  <div class="counselor-field-error">
-                    <i class="bi bi-exclamation-circle-fill"></i>
-                    {{ form.assigned_counselor.errors|first }}
-                  </div>
-                {% endif %}
-                <div class="text-muted small mt-2">Selected counselor will receive this lead in the counselor module.</div>
-              </div>
-            {% else %}
-              <div class="no-counselors-alert">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <strong>No active counselors available.</strong>
-                Please ask your administrator to add an active counselor before converting this inquiry.
-              </div>
-            {% endif %}
+
           {% elif request.user.role == 'counselor' %}
+            <!-- COUNSELOR: From inquiry directory, assigns to self -->
             <div class="counselor-field-wrap">
               <div class="counselor-field-label">
                 <i class="bi bi-person-badge-fill"></i>
@@ -221,29 +226,31 @@
               </div>
               <div class="text-muted small mt-1">This lead will be automatically assigned to you.</div>
             </div>
+
           {% else %}
-            {% if form.assigned_counselor.field.queryset.exists %}
-              <div class="counselor-field-wrap {% if form.assigned_counselor.errors %}has-error{% endif %}">
-                <div class="counselor-field-label">
-                  <i class="bi bi-person-badge-fill"></i>
-                  Assigned Counselor
-                  <span class="counselor-required-star">*</span>
-                </div>
-                {{ form.assigned_counselor }}
-                {% if form.assigned_counselor.errors %}
-                  <div class="counselor-field-error">
-                    <i class="bi bi-exclamation-circle-fill"></i>
-                    {{ form.assigned_counselor.errors|first }}
+            <!-- ADMIN: Can optionally select a counselor -->
+            {% if form %}
+              {% if form.assigned_counselor.field.queryset.exists %}
+                <div class="counselor-field-wrap {% if form.assigned_counselor.errors %}has-error{% endif %}">
+                  <div class="counselor-field-label">
+                    <i class="bi bi-person-badge-fill"></i>
+                    Assign Counselor (Optional)
                   </div>
-                {% endif %}
-              </div>
-            {% else %}
-              <!-- No active counselors exist — block conversion -->
-              <div class="no-counselors-alert">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <strong>No active counselors available.</strong>
-                Please ask your administrator to add an active counselor before converting this inquiry.
-              </div>
+                  {{ form.assigned_counselor }}
+                  {% if form.assigned_counselor.errors %}
+                    <div class="counselor-field-error">
+                      <i class="bi bi-exclamation-circle-fill"></i>
+                      {{ form.assigned_counselor.errors|first }}
+                    </div>
+                  {% endif %}
+                  <div class="text-muted small mt-2">Leave blank to put in Admin Queue for later assignment.</div>
+                </div>
+              {% else %}
+                <div class="no-counselors-alert">
+                  <i class="bi bi-info-circle-fill"></i>
+                  No active counselors found. Lead will be placed in <strong>Admin Queue</strong>.
+                </div>
+              {% endif %}
             {% endif %}
           {% endif %}
 
@@ -254,13 +261,14 @@
             {% else %}
               <li>Create a new Lead record for <strong>{{ inquiry.full_name }}</strong>.</li>
             {% endif %}
-            {% if request.user.role == 'telecaller' %}
-              <li>Assign the Lead immediately to you as telecaller (<strong>{{ request.user.username }}</strong>).</li>
-              <li>Assign the Lead immediately to the selected <strong>Counselor</strong>.</li>
+            {% if telecaller_convert_mode or counselor_telecalling_convert_mode %}
+              <li>Send Lead to <strong>Admin Queue</strong> for counselor assignment.</li>
+            {% elif request.user.role == 'telecaller' %}
+              <li>Lead sent to <strong>Admin Queue</strong> — admin will assign counselor.</li>
             {% elif request.user.role == 'counselor' %}
               <li>Assign the Lead immediately to you (<strong>{{ request.user.username }}</strong>).</li>
             {% else %}
-              <li>Assign the Lead immediately to the selected <strong>Counselor</strong>.</li>
+              <li>Assign to selected Counselor or place in <strong>Admin Queue</strong>.</li>
             {% endif %}
             <li>Set the initial Lead status to <strong>New</strong>.</li>
             <li>Mark this Inquiry as <strong>Qualified</strong>.</li>
@@ -274,13 +282,13 @@
               <i class="bi bi-x-lg me-1"></i> Cancel
             </a>
             <button type="submit"
-                    class="btn btn-success fw-bold"
-                    {% if request.user.role != 'counselor' and not has_active_counselors %}disabled{% endif %}>
+                    class="btn btn-success fw-bold">
               <i class="bi bi-check-lg me-1"></i> Convert to Lead
             </button>
           </div>
 
         </form>
+
 
       </div>
     </div>
