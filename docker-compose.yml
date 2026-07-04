@@ -3,9 +3,10 @@ services:
     build: .
     container_name: online_exam_web
     restart: always
-    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: sh -c "if [ ! -f /app-db/db.sqlite3 ] && [ -f /app/db.sqlite3 ]; then cp /app/db.sqlite3 /app-db/db.sqlite3; fi && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - .:/app
+      - db_data:/app-db
     ports:
       - "8000:8000"
     env_file:
@@ -13,6 +14,7 @@ services:
     environment:
       - DB_HOST=host.docker.internal
       - REDIS_HOST=redis
+      - SQLITE_DB_PATH=/app-db/db.sqlite3
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -22,3 +24,6 @@ services:
     ports:
       - "6379:6379"
     restart: always
+
+volumes:
+  db_data:

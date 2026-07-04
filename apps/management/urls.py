@@ -5,7 +5,9 @@ urlpatterns = [
     # Dashboard
     path('super-admin/dashboard/', views.management_super_admin_dashboard, name='management_super_admin_dashboard'),
     path('admin/dashboard/', views.management_admin_dashboard, name='management_admin_dashboard'),
+    path('admin/counselor-updates/', views.admin_counselor_updates, name='admin_counselor_updates'),
     path('telecaller/dashboard/', views.management_dashboard, name='management_dashboard'),
+    path('create-user/', views.management_create_user, name='management_create_user'),
 
     # Inquiry CRUD
     path('inquiries/', views.inquiry_list, name='inquiry_list'),
@@ -14,6 +16,7 @@ urlpatterns = [
     path('inquiries/<int:pk>/edit/', views.inquiry_edit, name='inquiry_edit'),
     path('inquiries/<int:pk>/delete/', views.inquiry_delete, name='inquiry_delete'),
     path('inquiries/bulk-delete/', views.inquiry_bulk_delete, name='inquiry_bulk_delete'),
+    path('inquiries/bulk-assign/', views.inquiry_bulk_assign, name='inquiry_bulk_assign'),
     path('inquiries/<int:pk>/convert/', views.inquiry_convert, name='inquiry_convert'),
     path('inquiries/<int:pk>/update-call-status/', views.update_call_status, name='update_call_status'),
 
@@ -56,6 +59,7 @@ urlpatterns = [
 
     # Phase 11.2 Counselor Operations
     path('counselor/dashboard/', views.counselor_dashboard, name='counselor_dashboard'),
+    path('counselor/telecalling-dashboard/', views.counselor_telecalling_dashboard, name='counselor_telecalling_dashboard'),
     path('counselor/leads/', views.counselor_lead_list, name='counselor_lead_list'),
     path('counselor/leads/<int:pk>/', views.counselor_lead_detail, name='counselor_lead_detail'),
     path('counselor/leads/<int:pk>/status/', views.counselor_lead_status_update, name='counselor_lead_status_update'),

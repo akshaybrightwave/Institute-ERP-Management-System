@@ -213,12 +213,28 @@
       <button type="submit" class="btn btn-info text-white w-100 fw-bold"><i class="bi bi-funnel"></i></button>
     </div>
 
-    <div class="col-md-3">
-      <label class="form-label text-muted small fw-bold">Date</label>
-      <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+    <div class="col-md-3 mt-2">
+      <label class="form-label text-muted small fw-bold">Date Range</label>
+      <select name="date_preset" id="datePresetFilter" class="form-select bg-dark border-secondary text-white" onchange="toggleCustomDates()">
+        <option value="">All Time</option>
+        <option value="today" {% if date_preset == 'today' %}selected{% endif %}>Today</option>
+        <option value="yesterday" {% if date_preset == 'yesterday' %}selected{% endif %}>Yesterday</option>
+        <option value="last_7_days" {% if date_preset == 'last_7_days' %}selected{% endif %}>Last 7 Days</option>
+        <option value="custom" {% if date_preset == 'custom' %}selected{% endif %}>Custom Range</option>
+      </select>
+    </div>
+
+    <div class="col-md-3 mt-2 custom-date-group" style="{% if date_preset != 'custom' %}display: none;{% endif %}">
+      <label class="form-label text-muted small fw-bold">Start Date</label>
+      <input type="date" name="start_date" value="{{ start_date }}" class="form-control bg-dark border-secondary text-white">
+    </div>
+
+    <div class="col-md-3 mt-2 custom-date-group" style="{% if date_preset != 'custom' %}display: none;{% endif %}">
+      <label class="form-label text-muted small fw-bold">End Date</label>
+      <input type="date" name="end_date" value="{{ end_date }}" class="form-control bg-dark border-secondary text-white">
     </div>
   </form>
-  {% if q or status or priority or date_filter %}
+  {% if q or status or priority or date_preset or date_filter %}
   <div class="mt-3">
     <a href="{% url 'lead_list' %}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-x-circle me-1"></i> Clear filters
@@ -239,7 +255,7 @@
             <th>Mobile</th>
             <th>Email</th>
             <th>Course Interest</th>
-            <th>Date Added</th>
+            <th>Lead Converted Date</th>
             <th>Priority</th>
             <th>Next Follow-up</th>
             <th>Status</th>
@@ -254,7 +270,15 @@
               <td>{{ lead.inquiry.mobile_number }}</td>
               <td>{{ lead.inquiry.email|default:"-" }}</td>
               <td>{{ lead.inquiry.course_interest }}</td>
-              <td><span class="text-white-50">{{ lead.created_at|date:"d M Y" }}</span></td>
+              <td>
+                <span class="text-white-50">
+                  {% if lead.converted_at %}
+                    {{ lead.converted_at|date:"d M Y" }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </span>
+              </td>
               <td>
                 {% if lead.priority == 'Hot' %}
                   <span class="badge bg-danger"><i class="bi bi-fire"></i> Hot</span>
@@ -294,9 +318,6 @@
                 <div class="d-inline-flex gap-1">
                   <button type="button" class="btn btn-sm btn-outline-info lead-action-btn" title="View Lead Profile" data-bs-toggle="modal" data-bs-target="#viewLeadModal{{ lead.pk }}">
                     <i class="bi bi-eye"></i>
-                  </button>
-                  <button type="button" class="btn btn-sm btn-outline-warning lead-action-btn" title="Update status/priority" data-bs-toggle="modal" data-bs-target="#editLeadModal{{ lead.pk }}">
-                    <i class="bi bi-pencil"></i>
                   </button>
                 </div>
               </td>
@@ -519,5 +540,15 @@
       });
     });
   })();
+
+  function toggleCustomDates() {
+    var preset = document.getElementById('datePresetFilter').value;
+    var customGroups = document.querySelectorAll('.custom-date-group');
+    if (preset === 'custom') {
+      customGroups.forEach(function(el) { el.style.display = 'block'; });
+    } else {
+      customGroups.forEach(function(el) { el.style.display = 'none'; });
+    }
+  }
 </script>
 {% endblock %}

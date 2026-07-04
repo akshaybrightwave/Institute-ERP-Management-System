@@ -18,18 +18,27 @@
 {% block management_content %}
 <div class="mb-4">
   <h2 class="fw-bold text-white mb-1">Counselor Assignment Management</h2>
-  <p class="text-muted small">Distribute candidate leads among registered counselors for counseling sessions.</p>
+  <p class="text-muted small">
+    {% if assignment_type == 'telecalling' %}
+    Assign raw contacts to counselors for telecalling only.
+    {% else %}
+    Distribute converted leads among registered counselors for counseling sessions.
+    {% endif %}
+  </p>
 </div>
 
 <!-- Workload Dashboard -->
 <div class="m-card mb-4">
-  <h6 class="text-info fw-bold mb-3"><i class="bi bi-speedometer2"></i> Counselor Workload Dashboard</h6>
+  <h6 class="text-info fw-bold mb-3">
+    <i class="bi bi-speedometer2"></i>
+    {% if assignment_type == 'telecalling' %}Counselor Telecalling Workload{% else %}Counselor Workload Dashboard{% endif %}
+  </h6>
   <div class="table-responsive">
     <table class="table table-dark table-sm workload-table mb-0">
       <thead>
         <tr>
           <th>Counselor</th>
-          <th>Active Leads (New/Contacted/Follow-up)</th>
+          <th>{% if assignment_type == 'telecalling' %}Active Contacts{% else %}Active Leads (New/Contacted/Follow-up){% endif %}</th>
           <th>Assigned Today</th>
           <th>Total Assigned Ever</th>
         </tr>
@@ -54,18 +63,18 @@
 <div class="m-card mb-4">
   <form method="GET" class="row g-3 align-items-end" id="filter-form">
     <div class="col-md-3">
+      <label class="form-label text-muted small fw-bold">Assignment Type</label>
+      <select name="assignment_type" class="form-select bg-dark border-secondary text-white form-select-sm">
+        <option value="telecalling" {% if assignment_type == 'telecalling' %}selected{% endif %}>Counselor Telecalling Contacts</option>
+        <option value="counseling" {% if assignment_type == 'counseling' %}selected{% endif %}>Counseling Leads</option>
+      </select>
+    </div>
+    <div class="col-md-3">
       <label class="form-label text-muted small fw-bold">Search Candidate</label>
       <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white form-control-sm" placeholder="Name or Mobile...">
     </div>
     <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">Assignment Scope</label>
-      <select name="all_leads" class="form-select bg-dark border-secondary text-white form-select-sm">
-        <option value="no" {% if all_leads == 'no' %}selected{% endif %}>Counseling-Ready Only</option>
-        <option value="yes" {% if all_leads == 'yes' %}selected{% endif %}>All System Leads</option>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <label class="form-label text-muted small fw-bold">Counselor Status</label>
+      <label class="form-label text-muted small fw-bold">{% if assignment_type == 'telecalling' %}Contact Status{% else %}Counselor Status{% endif %}</label>
       <select name="status" class="form-select bg-dark border-secondary text-white form-select-sm">
         <option value="">All Statuses</option>
         {% for choice in status_choices %}
@@ -73,10 +82,10 @@
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
       <label class="form-label text-muted small fw-bold">Assignment Status</label>
       <select name="assigned" class="form-select bg-dark border-secondary text-white form-select-sm">
-        <option value="all" {% if assigned == 'all' %}selected{% endif %}>All Leads</option>
+        <option value="all" {% if assigned == 'all' %}selected{% endif %}>All Contacts</option>
         <option value="yes" {% if assigned == 'yes' %}selected{% endif %}>Assigned Only</option>
         <option value="no" {% if assigned == 'no' %}selected{% endif %}>Unassigned Only</option>
       </select>
@@ -108,6 +117,7 @@
       <form method="POST" id="form-quantity">
         {% csrf_token %}
         <input type="hidden" name="mode" value="quantity">
+        <input type="hidden" name="assignment_type" value="{{ assignment_type }}">
         <div class="row g-3 align-items-end">
           <div class="col-md-3">
             <label class="form-label text-muted small fw-bold">Counselor</label>
@@ -126,11 +136,11 @@
             <label class="form-label text-muted small fw-bold d-block">Assignment Source</label>
             <div class="form-check form-check-inline mt-1">
               <input class="form-check-input" type="radio" name="assign_source" id="qty_src_unassigned" value="unassigned" checked>
-              <label class="form-check-label text-white small" for="qty_src_unassigned">Unassigned Records</label>
+            <label class="form-check-label text-white small" for="qty_src_unassigned">Unassigned Records</label>
             </div>
             <div class="form-check form-check-inline">
               <input class="form-check-input" type="radio" name="assign_source" id="qty_src_filtered" value="filtered">
-              <label class="form-check-label text-white small" for="qty_src_filtered">Filtered Records (from above)</label>
+              <label class="form-check-label text-white small" for="qty_src_filtered">Filtered Records</label>
             </div>
           </div>
           <div class="col-md-3">
@@ -145,6 +155,7 @@
       <form method="POST" id="form-filtered">
         {% csrf_token %}
         <input type="hidden" name="mode" value="all_filtered">
+        <input type="hidden" name="assignment_type" value="{{ assignment_type }}">
         <div class="row g-3 align-items-end">
           <div class="col-md-4">
             <label class="form-label text-muted small fw-bold">Counselor</label>
@@ -157,7 +168,14 @@
           </div>
           <div class="col-md-5">
             <div class="alert alert-dark mb-0 py-2 border-secondary">
-              <i class="bi bi-funnel text-info"></i> <span class="small">Will assign all records matching the current filters above.</span>
+              <i class="bi bi-funnel text-info"></i>
+              <span class="small">
+                {% if assignment_type == 'telecalling' %}
+                Assigns all filtered raw contacts to the selected counselor for telecalling only.
+                {% else %}
+                Assigns all converted leads matching the current filters.
+                {% endif %}
+              </span>
             </div>
           </div>
           <div class="col-md-3">
@@ -172,6 +190,7 @@
       <form method="POST" id="form-auto">
         {% csrf_token %}
         <input type="hidden" name="mode" value="auto_distribute">
+        <input type="hidden" name="assignment_type" value="{{ assignment_type }}">
         <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label text-muted small fw-bold">Select Counselors for Distribution</label>
@@ -221,36 +240,83 @@
           <th>Lead / Candidate</th>
           <th>Mobile</th>
           <th>City</th>
-          <th>Priority</th>
-          <th>Counselor Status</th>
-          <th>Assigned Counselor</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Current Owner</th>
+          <th>Assigned Date</th>
         </tr>
       </thead>
       <tbody>
         {% for lead in page_obj %}
         <tr>
           <td>
+            {% if assignment_type == 'telecalling' %}
+            <a href="{% url 'lead_detail' lead.pk %}" class="text-info fw-bold text-decoration-none">
+              {{ lead.inquiry.full_name }}
+            </a>
+            {% else %}
             <a href="{% url 'counselor_lead_detail' lead.pk %}" class="text-info fw-bold text-decoration-none">
               {{ lead.inquiry.full_name }}
             </a>
+            {% endif %}
           </td>
           <td>{{ lead.inquiry.mobile_number }}</td>
           <td>{{ lead.inquiry.city }}</td>
+          <td><span class="badge bg-secondary">{{ lead.inquiry.source }}</span></td>
           <td>
-            <span class="badge {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-              {{ lead.priority }}
+            {% if assignment_type == 'telecalling' %}
+            <span class="badge {% if lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% else %}bg-primary{% endif %}">
+              {{ lead.status }}
             </span>
-          </td>
-          <td>
+            {% else %}
             <span class="badge {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info text-white{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if lead.counselor_status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif lead.counselor_status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
               {{ lead.get_counselor_status_display }}
             </span>
+            {% endif %}
           </td>
           <td>
-            {% if lead.assigned_counselor %}
-            <span class="text-success fw-bold"><i class="bi bi-person-badge-fill"></i> {{ lead.assigned_counselor.username }}</span>
+            {% if assignment_type == 'counseling' %}
+              {% if lead.assigned_counselor %}
+              <span class="text-info fw-bold d-block">{{ lead.assigned_counselor.username }}</span>
+              {% else %}
+              <span class="text-muted fst-italic">Unassigned</span>
+              {% endif %}
             {% else %}
-            <span class="text-muted italic">Unassigned</span>
+              {% if lead.first_assigned_user %}
+              <span class="text-info fw-bold d-block">{{ lead.first_assigned_user.username }}</span>
+              {% elif lead.first_assigned_telecaller %}
+              <span class="text-info fw-bold d-block">{{ lead.first_assigned_telecaller.username }}</span>
+              {% elif lead.first_assigned_counselor %}
+              <span class="text-info fw-bold d-block">{{ lead.first_assigned_counselor.username }}</span>
+              {% elif lead.assigned_telecaller %}
+              <span class="text-info fw-bold d-block">{{ lead.assigned_telecaller.username }}</span>
+              {% elif lead.assigned_counselor %}
+              <span class="text-info fw-bold d-block">{{ lead.assigned_counselor.username }}</span>
+              {% else %}
+              <span class="text-muted fst-italic">Unassigned</span>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td class="small text-muted">
+            {% if assignment_type == 'counseling' %}
+              {% if lead.assigned_counselor %}
+                <span class="d-block">{{ lead.counselor_assigned_at|date:"Y-m-d H:i"|default:"-" }}</span>
+              {% else %}
+                -
+              {% endif %}
+            {% else %}
+              {% if lead.first_assigned_date %}
+                {{ lead.first_assigned_date|date:"Y-m-d H:i" }}
+              {% elif lead.telecaller_assigned_at %}
+                {{ lead.telecaller_assigned_at|date:"Y-m-d H:i" }}
+              {% elif lead.counselor_assigned_at %}
+                {{ lead.counselor_assigned_at|date:"Y-m-d H:i" }}
+              {% else %}
+                {{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}
+              {% endif %}
+              {% if not lead.first_assigned_date and not lead.telecaller_assigned_at and not lead.counselor_assigned_at and not lead.assigned_at %}
+              -
+              {% endif %}
             {% endif %}
           </td>
         </tr>
@@ -265,10 +331,10 @@
     <ul class="pagination pagination-sm justify-content-center">
       {% if page_obj.has_previous %}
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">&laquo; First</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page=1&assignment_type={{ assignment_type }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">&laquo; First</a>
       </li>
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">Previous</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}&assignment_type={{ assignment_type }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Previous</a>
       </li>
       {% endif %}
 
@@ -278,10 +344,10 @@
 
       {% if page_obj.has_next %}
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">Next</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}&assignment_type={{ assignment_type }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Next</a>
       </li>
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}{% if all_leads %}&all_leads={{ all_leads }}{% endif %}">Last &raquo;</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}&assignment_type={{ assignment_type }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Last &raquo;</a>
       </li>
       {% endif %}
     </ul>

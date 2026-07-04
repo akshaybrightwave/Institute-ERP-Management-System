@@ -190,6 +190,22 @@
     justify-content: space-between;
     gap: 12px;
     padding: 0 2px 14px;
+    flex-wrap: wrap;
+  }
+
+  .inquiry-bulk-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .inquiry-bulk-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
   }
 
   .inquiry-bulk-select {
@@ -272,21 +288,42 @@
     border-bottom: 0 !important;
   }
 
-  /* Column widths (7 columns) */
-  .inquiry-table th:nth-child(1),
-  .inquiry-table td:nth-child(1) { width: 17%; }
-  .inquiry-table th:nth-child(2),
-  .inquiry-table td:nth-child(2) { width: 14%; }
-  .inquiry-table th:nth-child(3),
-  .inquiry-table td:nth-child(3) { width: 10%; }
-  .inquiry-table th:nth-child(4),
-  .inquiry-table td:nth-child(4) { width: 10%; }
-  .inquiry-table th:nth-child(5),
-  .inquiry-table td:nth-child(5) { width: 11%; overflow: visible; }
-  .inquiry-table th:nth-child(6),
-  .inquiry-table td:nth-child(6) { width: 12%; overflow: visible; }
-  .inquiry-table th:nth-child(7),
-  .inquiry-table td:nth-child(7) { width: 26%; }
+  .admin-inquiry-table {
+    min-width: 1280px;
+  }
+
+  .inquiry-select-cell {
+    width: 72px;
+  }
+
+  .inquiry-converted-by,
+  .inquiry-assigned-date {
+    color: var(--mg-text);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .bulk-counselor-select {
+    min-width: 220px;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--mg-line);
+    color: var(--mg-text);
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .inquiry-assigned-date.is-empty,
+  .inquiry-converted-by.is-empty {
+    color: var(--mg-muted);
+    font-weight: 700;
+  }
+
+  .inquiry-counselor-name {
+    color: var(--mg-text);
+    font-size: 13px;
+    font-weight: 700;
+  }
 
   .candidate-name {
     font-weight: 800;
@@ -386,6 +423,7 @@
   .cs-NO_ANSWER  { background: #f1f5f9; color: #475569; }
   .cs-WRONG_NUMBER   { background: #fee2e2; color: #b91c1c; }
   .cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; }
+  .cs-PENDING_FOLLOW_UP { background: #ccfbf1; color: #0f766e; }
 
   /* Inline Call Status Dropdown */
   .call-status-wrapper {
@@ -413,6 +451,18 @@
     border-color: #06b6d4;
     box-shadow: 0 0 0 2px rgba(6,182,212,0.2);
   }
+  .call-status-select option {
+    background: #0f172a;
+    color: #fff;
+    font-weight: 700;
+  }
+  .call-status-select option:checked {
+    background: #2563eb;
+    color: #fff;
+  }
+  .call-status-select option:disabled {
+    color: #cbd5e1;
+  }
   .call-status-select.saving {
     opacity: 0.6;
     pointer-events: none;
@@ -427,6 +477,7 @@
   .call-status-select.cs-NO_ANSWER { background: #f1f5f9; color: #475569; border-color: #94a3b8; }
   .call-status-select.cs-WRONG_NUMBER { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
   .call-status-select.cs-NOT_INTERESTED { background: #fecdd3; color: #9f1239; border-color: #fda4af; }
+  .call-status-select.cs-PENDING_FOLLOW_UP { background: #ccfbf1; color: #0f766e; border-color: #5eead4; }
 
   .call-status-wrapper::after {
     content: '\25BC';
@@ -666,6 +717,27 @@
   /* Candidate name & meta text */
   .candidate-name { color: #f1f5f9 !important; }
   .candidate-contact, .candidate-context, .inquiry-date { color: #64748b !important; }
+  .inquiry-converted-by,
+  .inquiry-assigned-date {
+    color: #e2e8f0 !important;
+  }
+  .inquiry-converted-by.is-empty,
+  .inquiry-assigned-date.is-empty {
+    color: #64748b !important;
+  }
+
+  .bulk-counselor-select {
+    background: #1e293b !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #e2e8f0 !important;
+  }
+  .bulk-counselor-select:focus {
+    border-color: #5b5fef !important;
+    box-shadow: 0 0 0 2px rgba(91,95,239,0.2) !important;
+  }
+  .inquiry-counselor-name {
+    color: #e2e8f0 !important;
+  }
 
   /* Result meta bar */
   .inquiry-result-meta {
@@ -702,11 +774,12 @@
   .call-status-badge.cs-NO_ANSWER  { background: rgba(71,85,105,0.15) !important;  color: #94a3b8 !important; }
   .call-status-badge.cs-WRONG_NUMBER   { background: rgba(185,28,28,0.15) !important; color: #f87171 !important; }
   .call-status-badge.cs-NOT_INTERESTED { background: rgba(159,18,57,0.15) !important; color: #fb7185 !important; }
+  .call-status-badge.cs-PENDING_FOLLOW_UP { background: rgba(20,184,166,0.15) !important; color: #2dd4bf !important; }
 
   /* Inline call-status select (editable dropdown) */
   .call-status-select {
     background: #1e293b !important;
-    color: #94a3b8 !important;
+    color: #fff !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
   }
   .call-status-select:focus {
@@ -721,6 +794,19 @@
   .call-status-select.cs-NO_ANSWER  { background: rgba(71,85,105,0.18) !important;  color: #94a3b8 !important; border-color: rgba(71,85,105,0.35) !important; }
   .call-status-select.cs-WRONG_NUMBER   { background: rgba(185,28,28,0.18) !important; color: #f87171 !important; border-color: rgba(185,28,28,0.35) !important; }
   .call-status-select.cs-NOT_INTERESTED { background: rgba(159,18,57,0.18) !important; color: #fb7185 !important; border-color: rgba(159,18,57,0.35) !important; }
+  .call-status-select.cs-PENDING_FOLLOW_UP { background: rgba(20,184,166,0.18) !important; color: #2dd4bf !important; border-color: rgba(20,184,166,0.35) !important; }
+  .call-status-select[class*="cs-"] { color: #fff !important; }
+  .call-status-select option {
+    background: #0f172a !important;
+    color: #fff !important;
+  }
+  .call-status-select option:checked {
+    background: #2563eb !important;
+    color: #fff !important;
+  }
+  .call-status-select option:disabled {
+    color: #cbd5e1 !important;
+  }
 
   .call-status-wrapper::after { color: #64748b !important; }
 
@@ -897,6 +983,18 @@
 
   <div class="m-card inquiry-filter-card mb-4">
     <form method="GET" class="row g-3 align-items-end">
+      {% if scope %}
+        <input type="hidden" name="scope" value="{{ scope }}">
+      {% endif %}
+      {% if queue %}
+        <input type="hidden" name="queue" value="{{ queue }}">
+      {% endif %}
+      {% if converted %}
+        <input type="hidden" name="converted" value="{{ converted }}">
+      {% endif %}
+      {% if overdue %}
+        <input type="hidden" name="overdue" value="{{ overdue }}">
+      {% endif %}
       <div class="col-lg-4">
         <label class="form-label">Search inquiries</label>
         <div class="input-group">
@@ -942,11 +1040,27 @@
       </div>
 
       <div class="col-lg-2 col-md-6 mt-2">
-        <label class="form-label">Date</label>
-        <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+        <label class="form-label">Assigned Date</label>
+        <select name="date_filter" class="form-select">
+          <option value="">All Dates</option>
+          <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+          <option value="yesterday" {% if date_filter == 'yesterday' %}selected{% endif %}>Yesterday</option>
+          <option value="last_7_days" {% if date_filter == 'last_7_days' %}selected{% endif %}>Last 7 Days</option>
+          <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Date Range</option>
+        </select>
       </div>
 
-      {% if q or status or source or call_status or date_filter %}
+      <div class="col-lg-2 col-md-6 mt-2">
+        <label class="form-label">From</label>
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control">
+      </div>
+
+      <div class="col-lg-2 col-md-6 mt-2">
+        <label class="form-label">To</label>
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
+      </div>
+
+      {% if q or status or source or call_status or date_filter or date_from or date_to or queue or converted or overdue %}
         <div class="col-12 mt-2">
           <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-x-circle me-1"></i> Clear filters
@@ -972,30 +1086,53 @@
         <form method="POST" action="{% url 'inquiry_bulk_delete' %}" id="bulkDeleteInquiryForm">
           {% csrf_token %}
           <div class="inquiry-bulk-toolbar">
-            <label class="inquiry-bulk-select" for="selectAllInquiries">
-              <input type="checkbox" class="form-check-input m-0" id="selectAllInquiries">
-              <span>Select all on this page</span>
-            </label>
-            <button type="button" class="btn btn-danger inquiry-bulk-delete" id="bulkDeleteButton" data-bs-toggle="modal" data-bs-target="#bulkDeleteInquiryModal" disabled>
-              <i class="bi bi-trash"></i>
-              Delete Selected
-            </button>
+            <div class="inquiry-bulk-left">
+              <label class="inquiry-bulk-select" for="selectAllInquiries">
+                <input type="checkbox" class="form-check-input m-0" id="selectAllInquiries">
+                <span>Select all on this page</span>
+              </label>
+              <select class="form-select bulk-counselor-select" id="bulkAssignCounselor" name="counselor" aria-label="Choose counselor for selected qualified inquiries">
+                <option value="">Choose counselor</option>
+                {% for counselor in counselors %}
+                  <option value="{{ counselor.pk }}">{{ counselor.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="inquiry-bulk-actions">
+              <button type="submit" class="btn btn-success inquiry-bulk-delete" id="bulkAssignButton" formaction="{% url 'inquiry_bulk_assign' %}" disabled>
+                Assign Qualified
+              </button>
+              <button type="button" class="btn btn-danger inquiry-bulk-delete" id="bulkDeleteButton" data-bs-toggle="modal" data-bs-target="#bulkDeleteInquiryModal" disabled>
+                <i class="bi bi-trash"></i>
+                Delete Selected
+              </button>
+            </div>
           </div>
       {% endif %}
 
       <div class="table-responsive inquiry-table-shell">
-        <table class="table m-table inquiry-table align-middle">
+        <table class="table m-table inquiry-table {% if can_delete_inquiries %}admin-inquiry-table{% endif %} align-middle">
           <thead>
             <tr>
               {% if can_delete_inquiries %}
                 <th class="inquiry-select-cell">Select</th>
               {% endif %}
-              <th>ID</th>
+              {% if not can_delete_inquiries %}
+                <th>ID</th>
+              {% endif %}
               <th>Student</th>
               <th>Interest</th>
-              <th>Source</th>
+              {% if not can_delete_inquiries %}
+                <th>Source</th>
+              {% endif %}
               <th>Status</th>
-              <th>Added</th>
+              {% if can_delete_inquiries %}
+                <th>Converted By</th>
+                <th>Counselor</th>
+                <th>Assigned Date</th>
+              {% else %}
+                <th>Added</th>
+              {% endif %}
               <th>Call Status</th>
               <th class="text-end">Actions</th>
             </tr>
@@ -1005,21 +1142,25 @@
               <tr>
                 {% if can_delete_inquiries %}
                   <td class="inquiry-select-cell" data-label="Select">
-                    <input type="checkbox" name="inquiries" value="{{ inquiry.pk }}" class="form-check-input m-0 inquiry-row-checkbox" aria-label="Select {{ inquiry.full_name }}">
+                    <input type="checkbox" name="inquiries" value="{{ inquiry.pk }}" class="form-check-input m-0 inquiry-row-checkbox" data-assignable="{% if inquiry.status == 'Qualified' and inquiry.lead and inquiry.lead.converted_at %}1{% else %}0{% endif %}" aria-label="Select {{ inquiry.full_name }}">
                   </td>
                 {% endif %}
-                <td data-label="ID">
-                  <span class="fw-bold text-muted">#{{ inquiry.pk }}</span>
-                </td>
+                {% if not can_delete_inquiries %}
+                  <td data-label="ID">
+                    <span class="fw-bold text-muted">#{{ inquiry.pk }}</span>
+                  </td>
+                {% endif %}
                 <td data-label="Student">
                   <div class="candidate-name">{{ inquiry.full_name }}</div>
                 </td>
                 <td data-label="Interest">
                   <span class="course-pill">{{ inquiry.course_interest|default:"No course added" }}</span>
                 </td>
-                <td data-label="Source">
-                  <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
-                </td>
+                {% if not can_delete_inquiries %}
+                  <td data-label="Source">
+                    <span class="source-pill"><i class="bi bi-megaphone"></i>{{ inquiry.source }}</span>
+                  </td>
+                {% endif %}
                 <td data-label="Status">
                   {% if inquiry.status == 'New' %}
                     <span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>
@@ -1031,22 +1172,45 @@
                     <span class="status-pill status-rejected"><i class="bi bi-x-circle"></i>Rejected</span>
                   {% endif %}
                 </td>
-                <td data-label="Added">
-                  <div class="inquiry-date">
-                    <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
-                  </div>
-                </td>
+                {% if can_delete_inquiries %}
+                  <td data-label="Converted By">
+                    {% if inquiry.lead and inquiry.lead.converted_at %}
+                      <div class="inquiry-converted-by">{{ inquiry.annotated_converted_by|default:"-" }}</div>
+                    {% else %}
+                      <div class="inquiry-converted-by is-empty">-</div>
+                    {% endif %}
+                  </td>
+                  <td data-label="Counselor">
+                    {% if inquiry.status == 'Qualified' and inquiry.lead and inquiry.lead.converted_at and inquiry.lead.assigned_counselor %}
+                      <div class="inquiry-counselor-name">{{ inquiry.lead.assigned_counselor.username }}</div>
+                    {% endif %}
+                  </td>
+                  <td data-label="Assigned Date">
+                    {% if inquiry.status == 'Qualified' and inquiry.lead and inquiry.lead.converted_at and inquiry.lead.assigned_counselor and inquiry.lead.counselor_assigned_at %}
+                      <div class="inquiry-assigned-date">{{ inquiry.lead.counselor_assigned_at|date:"d M Y" }}</div>
+                    {% endif %}
+                  </td>
+                {% else %}
+                  <td data-label="Added">
+                    <div class="inquiry-date">
+                      <span><i class="bi bi-calendar3"></i>{{ inquiry.created_at|date:"d M Y" }}</span>
+                    </div>
+                  </td>
+                {% endif %}
                 <td data-label="Call Status">
                   <div class="call-status-wrapper">
-                    <select class="call-status-select" data-inquiry-id="{{ inquiry.pk }}" onchange="updateCallStatus(this)">
-                      {% for code, name in call_status_choices %}
+                    <select class="call-status-select cs-{{ inquiry.call_status }}" data-inquiry-id="{{ inquiry.pk }}" onchange="updateCallStatus(this)">
+                      {% if inquiry.call_status == 'NEW' or inquiry.call_status == 'ACCEPTED' %}
+                        <option value="" selected disabled>Update status</option>
+                      {% endif %}
+                      {% for code, name in call_status_update_choices %}
                         <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
                       {% endfor %}
                     </select>
                   </div>
                   <div class="mt-1">
                     <span class="call-status-badge cs-{{ inquiry.call_status }}" id="badge-{{ inquiry.pk }}">
-                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% endif %}
+                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% elif inquiry.call_status == 'PENDING_FOLLOW_UP' %}<i class="bi bi-calendar-check"></i>{% endif %}
                       {{ inquiry.get_call_status_display }}
                     </span>
                   </div>
@@ -1061,28 +1225,36 @@
                     </button>
                     {% if request.user.role != 'admin' and request.user.role != 'superadmin' %}
                       {% if not inquiry.lead %}
-                        <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                        <a href="{% url 'inquiry_convert' inquiry.pk %}?next={{ request.get_full_path|urlencode }}" class="inquiry-convert-btn" title="Convert to lead">
                           <i class="bi bi-arrow-right-circle"></i> Convert to Lead
                         </a>
                       {% elif request.user.role == 'telecaller' %}
-                        {% if not inquiry.lead.assigned_counselor_id or inquiry.status != 'Qualified' %}
-                          <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                        {% if inquiry.lead.assigned_telecaller_id == request.user.id and not inquiry.lead.converted_at %}
+                          <a href="{% url 'inquiry_convert' inquiry.pk %}?next={{ request.get_full_path|urlencode }}" class="inquiry-convert-btn" title="Convert to lead">
                             <i class="bi bi-arrow-right-circle"></i> Convert to Lead
                           </a>
-                        {% else %}
+                        {% elif inquiry.lead.assigned_telecaller_id == request.user.id %}
                           <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
                             <i class="bi bi-check2-circle"></i> View Lead
                           </a>
+                        {% else %}
+                          <span class="inquiry-lead-btn" title="Lead already exists">
+                            <i class="bi bi-check2-circle"></i> Lead Exists
+                          </span>
                         {% endif %}
                       {% elif request.user.role == 'counselor' %}
-                        {% if not inquiry.lead.assigned_counselor_id or inquiry.lead.assigned_counselor_id == request.user.id and inquiry.status != 'Qualified' %}
-                          <a href="{% url 'inquiry_convert' inquiry.pk %}" class="inquiry-convert-btn" title="Convert to lead">
+                        {% if inquiry.lead.assigned_counselor_id == request.user.id and not inquiry.lead.converted_at %}
+                          <a href="{% url 'inquiry_convert' inquiry.pk %}?next={{ request.get_full_path|urlencode }}" class="inquiry-convert-btn" title="Convert to lead">
                             <i class="bi bi-arrow-right-circle"></i> Convert to Lead
                           </a>
-                        {% else %}
+                        {% elif inquiry.lead.assigned_counselor_id == request.user.id %}
                           <a href="{% url 'counselor_lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
                             <i class="bi bi-check2-circle"></i> View Lead
                           </a>
+                        {% else %}
+                          <span class="inquiry-lead-btn" title="Lead already exists">
+                            <i class="bi bi-check2-circle"></i> Lead Exists
+                          </span>
                         {% endif %}
                       {% else %}
                         <a href="{% url 'lead_detail' inquiry.lead.pk %}" class="inquiry-lead-btn" title="View lead">
@@ -1111,17 +1283,17 @@
           <ul class="pagination justify-content-center flex-wrap gap-1">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}" aria-label="Previous page">&laquo;</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous page">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ i }}</a>
+                <a class="page-link" href="?page={{ i }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}" aria-label="Next page">&raquo;</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if source %}&source={{ source }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next page">&raquo;</a>
               </li>
             {% endif %}
           </ul>
@@ -1132,7 +1304,7 @@
         <h4>No Inquiries Found</h4>
         <p class="text-muted">No records match your search or filters.</p>
         <div class="d-flex justify-content-center gap-2 flex-wrap">
-          {% if q or status or source or call_status or date_filter %}
+          {% if q or status or source or call_status or date_filter or date_from or date_to or queue or converted or overdue %}
             <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
           {% endif %}
           <button type="button" class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">Add Inquiry</button>
@@ -1396,6 +1568,7 @@
     </div>
   </div>
 </div>
+
 {% endif %}
 
 <!-- Toast Notification -->
@@ -1433,7 +1606,8 @@ const badgeIcons = {
   'CALL_BACK': '<i class="bi bi-arrow-repeat"></i>',
   'NO_ANSWER': '<i class="bi bi-telephone-x"></i>',
   'WRONG_NUMBER': '<i class="bi bi-x-circle"></i>',
-  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>'
+  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>',
+  'PENDING_FOLLOW_UP': '<i class="bi bi-calendar-check"></i>'
 };
 
 const selectAllInquiries = document.getElementById('selectAllInquiries');
@@ -1441,9 +1615,12 @@ const inquiryCheckboxes = Array.from(document.querySelectorAll('.inquiry-row-che
 const bulkDeleteButton = document.getElementById('bulkDeleteButton');
 const bulkDeleteConfirm = document.getElementById('bulkDeleteConfirm');
 const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+const bulkAssignButton = document.getElementById('bulkAssignButton');
+const bulkAssignCounselor = document.getElementById('bulkAssignCounselor');
 
 function updateBulkDeleteState() {
   const selectedCount = inquiryCheckboxes.filter(cb => cb.checked).length;
+  const selectedAssignableCount = inquiryCheckboxes.filter(cb => cb.checked && cb.dataset.assignable === '1').length;
 
   if (bulkDeleteButton) {
     bulkDeleteButton.disabled = selectedCount === 0;
@@ -1460,6 +1637,13 @@ function updateBulkDeleteState() {
     bulkDeleteCount.textContent = selectedCount;
   }
 
+  if (bulkAssignButton) {
+    bulkAssignButton.disabled = selectedAssignableCount === 0 || !bulkAssignCounselor || !bulkAssignCounselor.value;
+    bulkAssignButton.innerHTML = selectedAssignableCount > 0
+      ? 'Assign Qualified (' + selectedAssignableCount + ')'
+      : 'Assign Qualified';
+  }
+
   if (selectAllInquiries) {
     selectAllInquiries.checked = inquiryCheckboxes.length > 0 && selectedCount === inquiryCheckboxes.length;
     selectAllInquiries.indeterminate = selectedCount > 0 && selectedCount < inquiryCheckboxes.length;
@@ -1474,6 +1658,9 @@ if (selectAllInquiries) {
 }
 
 inquiryCheckboxes.forEach(cb => cb.addEventListener('change', updateBulkDeleteState));
+if (bulkAssignCounselor) {
+  bulkAssignCounselor.addEventListener('change', updateBulkDeleteState);
+}
 updateBulkDeleteState();
 
 function updateCallStatus(selectEl) {
@@ -1499,6 +1686,7 @@ function updateCallStatus(selectEl) {
     selectEl.classList.remove('saving');
     if (data.success) {
       showToast(data.message, false);
+      selectEl.className = 'call-status-select cs-' + newStatus;
       const badge = document.getElementById('badge-' + inquiryId);
       if (badge) {
         const icon = badgeIcons[newStatus] || '';

@@ -18,20 +18,19 @@
 {% block management_content %}
 <div class="mb-4">
   <h2 class="fw-bold text-white mb-1">Lead Assignment Management</h2>
-  <p class="text-muted small">Distribute inquiries and leads among registered telecallers.</p>
+  <p class="text-muted small">Distribute imported contacts among registered telecallers.</p>
 </div>
 
-<!-- Workload Dashboard -->
 <div class="m-card mb-4">
-  <h6 class="text-info fw-bold mb-3"><i class="bi bi-speedometer2"></i> Telecaller Workload Dashboard</h6>
+  <h6 class="text-info fw-bold mb-3"><i class="bi bi-speedometer2"></i> Telecaller Workload</h6>
   <div class="table-responsive">
     <table class="table table-dark table-sm workload-table mb-0">
       <thead>
         <tr>
           <th>Telecaller</th>
-          <th>Active Leads (New/Contacted/Interested)</th>
+          <th>Active Contacts</th>
           <th>Assigned Today</th>
-          <th>Total Assigned Ever</th>
+          <th>Total Assigned</th>
         </tr>
       </thead>
       <tbody>
@@ -50,7 +49,6 @@
   </div>
 </div>
 
-<!-- Filters -->
 <div class="m-card mb-4">
   <form method="GET" class="row g-3 align-items-end" id="filter-form">
     <div class="col-md-4">
@@ -69,7 +67,7 @@
     <div class="col-md-3">
       <label class="form-label text-muted small fw-bold">Assignment Status</label>
       <select name="assigned" class="form-select bg-dark border-secondary text-white form-select-sm">
-        <option value="all" {% if assigned == 'all' %}selected{% endif %}>All Leads</option>
+        <option value="all" {% if assigned == 'all' %}selected{% endif %}>All Contacts</option>
         <option value="yes" {% if assigned == 'yes' %}selected{% endif %}>Assigned Only</option>
         <option value="no" {% if assigned == 'no' %}selected{% endif %}>Unassigned Only</option>
       </select>
@@ -80,7 +78,6 @@
   </form>
 </div>
 
-<!-- Assignment Forms -->
 <div class="mb-4">
   <ul class="nav nav-tabs" id="assignmentTabs" role="tablist">
     <li class="nav-item" role="presentation">
@@ -93,10 +90,8 @@
       <button class="nav-link fw-bold small" id="auto-tab" data-bs-toggle="tab" data-bs-target="#auto" type="button" role="tab">3. Auto Distribute</button>
     </li>
   </ul>
-  
+
   <div class="tab-content" id="assignmentTabsContent">
-    
-    <!-- Mode 1: Quantity -->
     <div class="tab-pane fade show active" id="quantity" role="tabpanel">
       <form method="POST" id="form-quantity">
         {% csrf_token %}
@@ -123,7 +118,7 @@
             </div>
             <div class="form-check form-check-inline">
               <input class="form-check-input" type="radio" name="assign_source" id="qty_src_filtered" value="filtered">
-              <label class="form-check-label text-white small" for="qty_src_filtered">Filtered Records (from above)</label>
+              <label class="form-check-label text-white small" for="qty_src_filtered">Filtered Records</label>
             </div>
           </div>
           <div class="col-md-3">
@@ -133,7 +128,6 @@
       </form>
     </div>
 
-    <!-- Mode 2: All Filtered -->
     <div class="tab-pane fade" id="filtered" role="tabpanel">
       <form method="POST" id="form-filtered">
         {% csrf_token %}
@@ -150,7 +144,7 @@
           </div>
           <div class="col-md-5">
             <div class="alert alert-dark mb-0 py-2 border-secondary">
-              <i class="bi bi-funnel text-info"></i> <span class="small">Will assign all records matching the current filters above.</span>
+              <i class="bi bi-funnel text-info"></i> <span class="small">Assigns all contacts matching the current filters.</span>
             </div>
           </div>
           <div class="col-md-3">
@@ -160,7 +154,6 @@
       </form>
     </div>
 
-    <!-- Mode 3: Auto Distribute -->
     <div class="tab-pane fade" id="auto" role="tabpanel">
       <form method="POST" id="form-auto">
         {% csrf_token %}
@@ -177,7 +170,7 @@
               {% endfor %}
             </div>
             <div class="mt-1">
-              <a href="#" class="small text-info text-decoration-none" id="auto-select-all">Select All</a> | 
+              <a href="#" class="small text-info text-decoration-none" id="auto-select-all">Select All</a> |
               <a href="#" class="small text-muted text-decoration-none" id="auto-select-none">None</a>
             </div>
           </div>
@@ -196,16 +189,14 @@
         </div>
       </form>
     </div>
-    
   </div>
 </div>
 
-<!-- Data Table for Display -->
 <div class="m-card">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h6 class="text-white fw-bold mb-0">Record List</h6>
   </div>
-  
+
   {% if page_obj %}
   <div class="table-responsive">
     <table class="table m-table table-hover">
@@ -216,7 +207,7 @@
           <th>City</th>
           <th>Source</th>
           <th>Status</th>
-          <th>Assigned Telecaller</th>
+          <th>Current Owner</th>
           <th>Assigned Date</th>
         </tr>
       </thead>
@@ -237,20 +228,37 @@
             </span>
           </td>
           <td>
-            {% if lead.assigned_telecaller %}
-            <span class="text-success fw-bold"><i class="bi bi-person-fill"></i> {{ lead.assigned_telecaller.username }}</span>
+            {% if lead.first_assigned_user %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-person-check"></i> {{ lead.first_assigned_user.username }}</span>
+            {% elif lead.first_assigned_telecaller %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-telephone"></i> {{ lead.first_assigned_telecaller.username }}</span>
+            {% elif lead.first_assigned_counselor %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-person-badge"></i> {{ lead.first_assigned_counselor.username }}</span>
+            {% elif lead.assigned_telecaller %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-telephone"></i> {{ lead.assigned_telecaller.username }}</span>
+            {% elif lead.assigned_counselor %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-person-badge"></i> {{ lead.assigned_counselor.username }}</span>
             {% else %}
-            <span class="text-muted italic">Unassigned</span>
+            <span class="text-muted fst-italic">Unassigned</span>
             {% endif %}
           </td>
-          <td class="small text-muted">{{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}</td>
+          <td class="small text-muted">
+            {% if lead.first_assigned_date %}
+              {{ lead.first_assigned_date|date:"Y-m-d H:i" }}
+            {% elif lead.telecaller_assigned_at %}
+              {{ lead.telecaller_assigned_at|date:"Y-m-d H:i" }}
+            {% elif lead.counselor_assigned_at %}
+              {{ lead.counselor_assigned_at|date:"Y-m-d H:i" }}
+            {% else %}
+              {{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <!-- Pagination -->
   {% if page_obj.has_other_pages %}
   <nav class="mt-4">
     <ul class="pagination pagination-sm justify-content-center">
@@ -288,7 +296,6 @@
   {% endif %}
 </div>
 
-<!-- Preview Modal -->
 <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content bg-dark border-secondary text-white">
@@ -317,52 +324,55 @@
 
 <script>
   let activeFormId = null;
-  
-  document.getElementById('auto-select-all').addEventListener('click', function(e) {
-    e.preventDefault();
-    document.querySelectorAll('.tc-auto-check').forEach(cb => cb.checked = true);
-  });
-  document.getElementById('auto-select-none').addEventListener('click', function(e) {
-    e.preventDefault();
-    document.querySelectorAll('.tc-auto-check').forEach(cb => cb.checked = false);
-  });
+  const autoSelectAll = document.getElementById('auto-select-all');
+  const autoSelectNone = document.getElementById('auto-select-none');
+
+  if (autoSelectAll) {
+    autoSelectAll.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.tc-auto-check').forEach(cb => cb.checked = true);
+    });
+  }
+  if (autoSelectNone) {
+    autoSelectNone.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.tc-auto-check').forEach(cb => cb.checked = false);
+    });
+  }
 
   document.querySelectorAll('.preview-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       activeFormId = this.getAttribute('data-form');
       const form = document.getElementById(activeFormId);
-      
+
       if (!form.checkValidity()) {
         form.reportValidity();
         return;
       }
-      
+
       const formData = new FormData(form);
       formData.append('action', 'preview');
-      
-      // Append current GET filters to FormData
+
       const filterForm = document.getElementById('filter-form');
       const filterData = new FormData(filterForm);
-      for(let [key, val] of filterData.entries()) {
-        if(val) formData.append(key, val);
+      for (let [key, val] of filterData.entries()) {
+        if (val) formData.append(key, val);
       }
-      
+
       const btnOrig = this.innerHTML;
       this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
       this.disabled = true;
 
       fetch(window.location.href, {
         method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
       })
       .then(res => res.json())
       .then(data => {
         this.innerHTML = btnOrig;
         this.disabled = false;
-        
+
         let targetText = "";
         if (activeFormId === 'form-auto') {
           targetText = data.users_count + " Telecallers (Auto-Distribute)";
@@ -376,16 +386,11 @@
         document.getElementById('prv-elig').textContent = data.eligible;
         document.getElementById('prv-assign').textContent = data.will_assign;
         document.getElementById('prv-remain').textContent = data.remaining;
-        
-        if (data.will_assign == 0) {
-           document.getElementById('confirm-assign-btn').disabled = true;
-        } else {
-           document.getElementById('confirm-assign-btn').disabled = false;
-        }
+        document.getElementById('confirm-assign-btn').disabled = data.will_assign == 0;
 
         new bootstrap.Modal(document.getElementById('previewModal')).show();
       })
-      .catch(err => {
+      .catch(() => {
         this.innerHTML = btnOrig;
         this.disabled = false;
         alert("Error generating preview.");
@@ -395,17 +400,16 @@
 
   document.getElementById('confirm-assign-btn').addEventListener('click', function() {
     if (activeFormId) {
-      // Append current filters as hidden inputs to the active form before submit
       const form = document.getElementById(activeFormId);
       const filterForm = document.getElementById('filter-form');
       const filterData = new FormData(filterForm);
-      for(let [key, val] of filterData.entries()) {
-        if(val && !form.querySelector(`input[name="${key}"]`)) {
-           const hiddenField = document.createElement('input');
-           hiddenField.type = 'hidden';
-           hiddenField.name = key;
-           hiddenField.value = val;
-           form.appendChild(hiddenField);
+      for (let [key, val] of filterData.entries()) {
+        if (val && !form.querySelector(`input[name="${key}"]`)) {
+          const hiddenField = document.createElement('input');
+          hiddenField.type = 'hidden';
+          hiddenField.name = key;
+          hiddenField.value = val;
+          form.appendChild(hiddenField);
         }
       }
       this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';

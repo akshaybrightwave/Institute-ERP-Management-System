@@ -3,386 +3,824 @@
 {% block title %}Super Admin Dashboard | Examly{% endblock %}
 
 {% block extra_style %}
-{# All dark theme CSS (topbar, sidebar, cards, erp-card, gradients) comes from the shared include #}
 {% include 'management/premium_theme_css.html' %}
+<style>
+  /* ── Super Admin Dashboard Styles ── */
+  
+  /* Top Summary Cards */
+  .summary-card-link {
+    display: block;
+    text-decoration: none;
+    height: 100%;
+  }
+  .summary-card {
+    background: #1a2236;
+    border: 1px solid #232f45;
+    border-radius: 14px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    height: 100%;
+    transition: transform 0.18s, box-shadow 0.18s;
+    min-height: 100px;
+  }
+  .summary-card > div:first-child {
+    min-width: 0;
+  }
+  .summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  }
+  .summary-card .sc-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .summary-card .sc-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .summary-card .sc-today {
+    font-size: 0.74rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .summary-card .sc-today i { font-size: 0.75rem; }
+  .summary-card .sc-icon {
+    width: 50px; height: 50px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    opacity: 0.95;
+  }
+  .sc-blue   { color: #3b82f6; } .sc-icon-blue   { background: rgba(59,130,246,0.15); color: #3b82f6; }
+  .sc-orange { color: #f97316; } .sc-icon-orange { background: rgba(249,115,22,0.15); color: #f97316; }
+  .sc-purple { color: #8b5cf6; } .sc-icon-purple { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+  .sc-green  { color: #22c55e; } .sc-icon-green  { background: rgba(34,197,94,0.15);  color: #22c55e; }
+  .sc-teal   { color: #06b6d4; } .sc-icon-teal   { background: rgba(6,182,212,0.15);  color: #06b6d4; }
+  .sc-red    { color: #ef4444; } .sc-icon-red    { background: rgba(239,68,68,0.15);  color: #ef4444; }
+  .sc-pink   { color: #ec4899; } .sc-icon-pink   { background: rgba(236,72,153,0.15); color: #ec4899; }
+  .sc-indigo { color: #6366f1; } .sc-icon-indigo { background: rgba(99,102,241,0.15); color: #6366f1; }
+
+  /* Section panels */
+  .sa-panel {
+    background: #1a2236;
+    border: 1px solid #232f45;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sa-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .sa-panel-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f1f5f9;
+  }
+  .sa-panel-subtitle {
+    font-size: 0.72rem;
+    color: #64748b;
+  }
+  .sa-view-link {
+    font-size: 0.78rem;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .sa-view-link:hover { color: #60a5fa; }
+
+  /* Mini stat cards inside panels */
+  .mini-stat {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 12px 14px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .mini-stat .ms-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.2;
+    min-height: 1.68rem; /* Enough for 2 lines */
+  }
+  .mini-stat .ms-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .mini-stat .ms-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .followup-mini {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 12px;
+  }
+  .followup-mini .fm-card {
+    flex: 1;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .fm-pending { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.2); }
+  .fm-overdue { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.2); }
+  .fm-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px; }
+  .fm-value { font-size: 1.1rem; font-weight: 800; }
+  .fm-icon { font-size: 1rem; margin-bottom: 4px; }
+
+  /* Go-to button at bottom of panel */
+  .sa-goto-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: #3b82f6;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 14px;
+    transition: background 0.2s, color 0.2s;
+  }
+  .sa-goto-btn:hover {
+    background: #1e293b;
+    color: #60a5fa;
+  }
+
+  /* Recent Assignments table */
+  .sa-table { width: 100%; border-collapse: collapse; }
+  .sa-table th {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 8px 10px;
+    border-bottom: 1px solid #1e293b;
+  }
+  .sa-table td {
+    font-size: 0.82rem;
+    color: #cbd5e1;
+    padding: 10px 10px;
+    border-bottom: 1px solid #1a2236;
+    vertical-align: middle;
+  }
+  .sa-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+  .sa-avatar {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .av-blue   { background: rgba(59,130,246,0.2); color: #3b82f6; }
+  .av-orange { background: rgba(249,115,22,0.2); color: #f97316; }
+  .av-green  { background: rgba(34,197,94,0.2);  color: #22c55e; }
+  .av-purple { background: rgba(139,92,246,0.2); color: #8b5cf6; }
+  .av-red    { background: rgba(239,68,68,0.2);  color: #ef4444; }
+  .av-teal   { background: rgba(6,182,212,0.2);  color: #06b6d4; }
+
+  /* Activity Feed */
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #1e293b;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .act-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .act-text { flex: 1; }
+  .act-text p { font-size: 0.8rem; color: #94a3b8; margin: 0; line-height: 1.4; }
+  .act-time { font-size: 0.7rem; color: #475569; white-space: nowrap; margin-top: 2px; }
+
+  /* Pending Actions */
+  .pending-action-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #1e293b;
+  }
+  .pending-action-item:last-child { border-bottom: none; }
+  .pa-left { display: flex; align-items: center; gap: 10px; }
+  .pa-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+  .pa-label { font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
+  .pa-count { font-size: 0.8rem; font-weight: 800; }
+
+  /* Bottom user count cards */
+  .user-count-card-link {
+    display: block;
+    text-decoration: none;
+    height: 100%;
+  }
+  .user-count-card {
+    background: #1a2236;
+    border: 1px solid #232f45;
+    border-radius: 14px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    height: 100%;
+    transition: transform 0.18s;
+  }
+  .user-count-card > div:first-child {
+    min-width: 0;
+  }
+  .user-count-card:hover { transform: translateY(-2px); }
+  .uc-label { font-size: 0.78rem; color: #64748b; margin-bottom: 4px; font-weight: 500; }
+  .uc-value { font-size: 1.4rem; font-weight: 800; color: #f1f5f9; line-height: 1; }
+  .uc-sub { font-size: 0.7rem; color: #475569; margin-top: 2px; }
+  .uc-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  /* Type badges */
+  .type-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .tb-tele { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .tb-counsel { background: rgba(139,92,246,0.15); color: #a78bfa; }
+  .tb-both { background: rgba(6,182,212,0.15); color: #22d3ee; }
+</style>
 {% endblock %}
 
 {% block management_content %}
-<!-- Header -->
+
+<!-- ── Header ── -->
 <div class="d-flex align-items-center justify-content-between mb-4">
   <div>
-    <h2 class="dashboard-title text-white mb-1">Super Admin Dashboard</h2>
-    <p class="text-muted small mb-0">Overview of all system statistics across telecallers and counselors.</p>
+    <div class="page-welcome">Welcome back, Super Admin 👋</div>
+    <h1 class="page-title">Super Admin Dashboard</h1>
+    <p class="page-subtitle">Overview of key activities across the system</p>
   </div>
   <div>
-    <span class="badge-premium bg-dark border border-secondary py-2 px-3">
-      <i class="bi bi-calendar3 me-1"></i> Today: {% now "d M Y" %}
-    </span>
+    <a href="{% url 'lead_assign' %}" class="btn btn-sm fw-bold px-3 py-2" style="background: linear-gradient(135deg,#5b5fef,#8b5cf6); color:#fff; border:none; border-radius:10px; font-size:0.82rem;">
+      <i class="bi bi-lightning-charge-fill me-1"></i> Quick Actions
+      <i class="bi bi-chevron-down ms-1"></i>
+    </a>
   </div>
 </div>
 
-<!-- Stats Row — uses shared erp-card component from premium_theme_css.html -->
-<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
-  <!-- Total Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-blue">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Total Leads</div>
-        <div class="erp-card-number">{{ total_leads.total }}</div>
-        <div class="small fw-bold text-white-50 mt-1">Today: {{ total_leads.today }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-person-lines-fill"></i></div>
+<!-- ── Top 8 Summary Cards ── -->
+<div class="row g-3 mb-4">
+  <!-- Total Uploaded -->
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'inquiry_list' %}" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-blue">Total Uploaded</div>
+          <div class="sc-value sc-blue">{{ total_uploaded.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ total_uploaded.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-blue"><i class="bi bi-cloud-upload-fill"></i></div>
       </div>
-      <a href="{% url 'lead_list' %}" class="erp-card-footer">
-        <i class="bi bi-eye"></i> View all
-      </a>
-    </div>
+    </a>
   </div>
-
-  <!-- Assigned Leads -->
-  <div class="col">
-    <div class="erp-card bg-g-teal">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Assigned Leads</div>
-        <div class="erp-card-number">{{ assigned_leads.total }}</div>
-        <div class="small fw-bold text-white-50 mt-1">Today: {{ assigned_leads.today }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
+  <!-- Total Assigned -->
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'lead_assign' %}" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-orange">Total Assigned</div>
+          <div class="sc-value sc-orange">{{ total_assigned.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ total_assigned.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-orange"><i class="bi bi-check2-all"></i></div>
       </div>
-      <a href="{% url 'lead_assign' %}" class="erp-card-footer">
-        <i class="bi bi-gear"></i> Assign leads
-      </a>
-    </div>
+    </a>
   </div>
-
-
-  <!-- Today's Calls -->
-  <div class="col">
-    <div class="erp-card bg-g-orange">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Today's Calls</div>
-        <div class="erp-card-number">{{ today_calls.today }}</div>
-        <div class="small fw-bold text-white-50 mt-1">Total: {{ today_calls.total }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+  <!-- Unassigned Inquiries -->
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'inquiry_list' %}" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-purple">Unassigned Inquiries</div>
+          <div class="sc-value sc-purple">{{ unassigned_inquiries.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ unassigned_inquiries.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-purple"><i class="bi bi-person-x-fill"></i></div>
       </div>
-      <a href="{% url 'call_log_list' %}" class="erp-card-footer">
-        <i class="bi bi-clock-history"></i> Call logs
-      </a>
-    </div>
+    </a>
   </div>
-
-  <!-- Pending Follow-ups -->
-  <div class="col">
-    <div class="erp-card bg-g-pink">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Pending Follow-ups</div>
-        <div class="erp-card-number">{{ pending_followups }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event-fill"></i></div>
+  <!-- Assigned (Telecaller) -->
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'lead_list' %}" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-teal">Assigned (Telecaller)</div>
+          <div class="sc-value sc-teal">{{ assigned_to_telecaller.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ assigned_to_telecaller.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-teal"><i class="bi bi-telephone-outbound-fill"></i></div>
       </div>
-      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
-        <i class="bi bi-eye"></i> View pending
-      </a>
-    </div>
+    </a>
   </div>
-
-  <!-- Overdue Follow-ups -->
-  <div class="col">
-    <div class="erp-card bg-g-dred">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Overdue Follow-ups</div>
-        <div class="erp-card-number">{{ overdue_followups }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+  <!-- Assigned (Counselor) -->
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'lead_list' %}" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-pink">Assigned (Counselor)</div>
+          <div class="sc-value sc-pink">{{ assigned_to_counselor.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ assigned_to_counselor.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-pink"><i class="bi bi-person-badge-fill"></i></div>
       </div>
-      <a href="{% url 'followup_list' %}?status=Pending" class="erp-card-footer">
-        <i class="bi bi-exclamation-circle"></i> Handle overdue
-      </a>
-    </div>
+    </a>
   </div>
-  <!-- Counseling Completed -->
-  <div class="col">
-    <div class="erp-card bg-g-navy">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Counseling Completed</div>
-        <div class="erp-card-number">{{ counseling_done }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-person-video3"></i></div>
+  <!-- Active Leads -->
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'lead_list' %}" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-green">Active Leads</div>
+          <div class="sc-value sc-green">{{ active_leads_count.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ active_leads_count.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-green"><i class="bi bi-bullseye"></i></div>
       </div>
-      <a href="{% url 'lead_list' %}?counselor_status=COUNSELING_DONE" class="erp-card-footer">
-        <i class="bi bi-person-video3"></i> View counseling
-      </a>
-    </div>
+    </a>
   </div>
-
-  <!-- Today's Visits -->
-  <div class="col">
-    <div class="erp-card bg-g-teal">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Today's Visits</div>
-        <div class="erp-card-number">{{ today_visits }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
-      </div>
-      <a href="{% url 'counselor_visit_list' %}?date={% now 'Y-m-d' %}" class="erp-card-footer">
-        <i class="bi bi-calendar2-day"></i> View today's
-      </a>
-    </div>
-  </div>
-
   <!-- Total Admissions -->
-  <div class="col">
-    <div class="erp-card bg-g-purple">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Total Admissions</div>
-        <div class="erp-card-number">{{ admission_metrics.total }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-journal-check"></i></div>
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'admission_list' %}" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-indigo">Total Admissions</div>
+          <div class="sc-value sc-indigo">{{ total_admissions_count.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ total_admissions_count.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-indigo"><i class="bi bi-mortarboard-fill"></i></div>
       </div>
-      <a href="{% url 'admission_list' %}" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View admissions
+    </a>
+  </div>
+  <!-- Lost Leads -->
+  <div class="col-6 col-md-4 col-xl-3">
+    <a href="{% url 'lead_list' %}?status=Rejected" class="summary-card-link">
+      <div class="summary-card">
+        <div>
+          <div class="sc-label sc-red">Lost Leads</div>
+          <div class="sc-value sc-red">{{ lost_leads_count.total }}</div>
+          <div class="sc-today"><i class="bi bi-arrow-up-short"></i> Today: {{ lost_leads_count.today }}</div>
+        </div>
+        <div class="sc-icon sc-icon-red"><i class="bi bi-x-circle-fill"></i></div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ── Three Section Panels Row ── -->
+<div class="row g-3 mb-4">
+
+  <!-- Telecalling (Normal Telecallers) -->
+  <div class="col-md-4">
+    <div class="sa-panel h-100">
+      <div class="sa-panel-header">
+        <div>
+          <div class="sa-panel-title">Telecalling</div>
+          <div class="sa-panel-subtitle">Normal Telecallers</div>
+        </div>
+        <a href="{% url 'management_dashboard' %}" class="sa-view-link">View Details <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <!-- Mini Stats -->
+      <div class="row g-2 mb-2">
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Assigned by Admin</div>
+              <div class="ms-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="bi bi-person-check-fill"></i></div>
+            </div>
+            <div class="ms-value sc-blue">{{ telecalling_assigned_by_admin }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Called</div>
+              <div class="ms-icon" style="background:rgba(34,197,94,0.15); color:#22c55e;"><i class="bi bi-telephone-fill"></i></div>
+            </div>
+            <div class="ms-value sc-green">{{ telecalling_called }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Leads Gen.</div>
+              <div class="ms-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;"><i class="bi bi-graph-up-arrow"></i></div>
+            </div>
+            <div class="ms-value sc-teal">{{ telecalling_leads_generated }}</div>
+          </div>
+        </div>
+      </div>
+      <!-- Follow Ups -->
+      <div class="followup-mini">
+        <div class="fm-card fm-pending">
+          <div class="fm-icon" style="color:#f59e0b;"><i class="bi bi-clock-fill"></i></div>
+          <div class="fm-label" style="color:#f59e0b;">Pending Follow Ups</div>
+          <div class="fm-value" style="color:#fbbf24;">{{ telecalling_pending_followups }}</div>
+        </div>
+        <div class="fm-card fm-overdue">
+          <div class="fm-icon" style="color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="fm-label" style="color:#ef4444;">Overdue Follow Ups</div>
+          <div class="fm-value" style="color:#f87171;">{{ telecalling_overdue_followups }}</div>
+        </div>
+      </div>
+      <a href="{% url 'management_dashboard' %}" class="sa-goto-btn">
+        <span>Go to Telecalling Dashboard</span>
+        <i class="bi bi-chevron-right"></i>
       </a>
     </div>
   </div>
 
-  <!-- Pending Admissions -->
-  <div class="col">
-    <div class="erp-card bg-g-orange">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Pending Admissions</div>
-        <div class="erp-card-number">{{ admission_metrics.pending }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-clock-history"></i></div>
+  <!-- Counsellor Telecaller -->
+  <div class="col-md-4">
+    <div class="sa-panel h-100">
+      <div class="sa-panel-header">
+        <div>
+          <div class="sa-panel-title">Counsellor Telecaller</div>
+          <div class="sa-panel-subtitle">Counsellors Doing Telecalling</div>
+        </div>
+        <a href="{% url 'counselor_telecalling_dashboard' %}" class="sa-view-link">View Details <i class="bi bi-arrow-right"></i></a>
       </div>
-      <a href="{% url 'admission_list' %}?status=PENDING" class="erp-card-footer">
-        <i class="bi bi-clock"></i> View pending
+      <div class="row g-2 mb-2">
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Assigned by Admin</div>
+              <div class="ms-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="bi bi-person-check-fill"></i></div>
+            </div>
+            <div class="ms-value sc-blue">{{ ct_assigned_by_admin }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Called</div>
+              <div class="ms-icon" style="background:rgba(34,197,94,0.15); color:#22c55e;"><i class="bi bi-telephone-fill"></i></div>
+            </div>
+            <div class="ms-value sc-green">{{ ct_called }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Leads Gen.</div>
+              <div class="ms-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;"><i class="bi bi-graph-up-arrow"></i></div>
+            </div>
+            <div class="ms-value sc-teal">{{ ct_leads_generated }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="followup-mini">
+        <div class="fm-card fm-pending">
+          <div class="fm-icon" style="color:#f59e0b;"><i class="bi bi-clock-fill"></i></div>
+          <div class="fm-label" style="color:#f59e0b;">Pending Follow Ups</div>
+          <div class="fm-value" style="color:#fbbf24;">{{ ct_pending_followups }}</div>
+        </div>
+        <div class="fm-card fm-overdue">
+          <div class="fm-icon" style="color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="fm-label" style="color:#ef4444;">Overdue Follow Ups</div>
+          <div class="fm-value" style="color:#f87171;">{{ ct_overdue_followups }}</div>
+        </div>
+      </div>
+      <a href="{% url 'counselor_telecalling_dashboard' %}" class="sa-goto-btn">
+        <span>Go to Counsellor Telecalling Dashboard</span>
+        <i class="bi bi-chevron-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Counselling (Counsellors) -->
+  <div class="col-md-4">
+    <div class="sa-panel h-100">
+      <div class="sa-panel-header">
+        <div>
+          <div class="sa-panel-title">Counselling</div>
+          <div class="sa-panel-subtitle">Counsellors</div>
+        </div>
+        <a href="{% url 'counselor_dashboard' %}" class="sa-view-link">View Details <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="row g-2 mb-2">
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Assigned by Admin</div>
+              <div class="ms-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="bi bi-person-check-fill"></i></div>
+            </div>
+            <div class="ms-value sc-blue">{{ counselling_assigned }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Interested</div>
+              <div class="ms-icon" style="background:rgba(34,197,94,0.15); color:#22c55e;"><i class="bi bi-heart-fill"></i></div>
+            </div>
+            <div class="ms-value sc-green">{{ counselling_interested }}</div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="mini-stat">
+            <div class="d-flex align-items-start justify-content-between mb-1 gap-2">
+              <div class="ms-label">Admissions Done</div>
+              <div class="ms-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;"><i class="bi bi-mortarboard-fill"></i></div>
+            </div>
+            <div class="ms-value sc-teal">{{ counselling_admissions_done }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="followup-mini">
+        <div class="fm-card fm-pending">
+          <div class="fm-icon" style="color:#f59e0b;"><i class="bi bi-clock-fill"></i></div>
+          <div class="fm-label" style="color:#f59e0b;">Pending Follow Ups</div>
+          <div class="fm-value" style="color:#fbbf24;">{{ counselling_pending_followups }}</div>
+        </div>
+        <div class="fm-card fm-overdue">
+          <div class="fm-icon" style="color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="fm-label" style="color:#ef4444;">Overdue Follow Ups</div>
+          <div class="fm-value" style="color:#f87171;">{{ counselling_overdue_followups }}</div>
+        </div>
+      </div>
+      <a href="{% url 'counselor_dashboard' %}" class="sa-goto-btn">
+        <span>Go to Counselling Dashboard</span>
+        <i class="bi bi-chevron-right"></i>
       </a>
     </div>
   </div>
 </div>
 
-<!-- Content Grid -->
-<div class="row g-4 mb-4">
-  <!-- Left Side: Data Tables -->
-  <div class="col-xxl-9">
-    <!-- Recent Leads -->
-    <div class="m-card mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-funnel-fill me-2 text-info"></i>Recent Leads</h5>
-        <a href="{% url 'lead_list' %}" class="btn btn-sm btn-outline-info">View All</a>
-      </div>
+<!-- ── Bottom Three Columns: Assignments | Activity Feed | Pending Actions ── -->
+<div class="row g-3 mb-4">
 
+  <!-- Recent Assignments -->
+  <div class="col-lg-4">
+    <div class="sa-panel h-100">
+      <div class="sa-panel-header">
+        <div class="sa-panel-title">Recent Assignments</div>
+        <a href="{% url 'lead_assign' %}" class="sa-view-link">View All <i class="bi bi-arrow-right"></i></a>
+      </div>
       <div class="table-responsive">
-        {% if recent_leads %}
-          <table class="table m-table align-middle">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Status</th>
-                <th>Priority</th>
-                <th>Next Follow-Up</th>
-                <th>Assigned Telecaller</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for lead in recent_leads %}
-                <tr>
-                  <td>
-                    <span class="fw-semibold" style="color:#f1f5f9;">{{ lead.inquiry.full_name }}</span>
-                  </td>
-                  <td>
-                    <span class="badge-premium {% if lead.status == 'New' %}bg-primary{% elif lead.status == 'Contacted' %}bg-info{% elif lead.status == 'Interested' %}bg-warning{% elif lead.status == 'Follow Up' %}bg-violet{% elif lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% elif lead.status == 'Invalid Number' %}bg-secondary{% else %}bg-dark{% endif %}">
-                      {{ lead.status }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="badge-premium {% if lead.priority == 'Hot' %}bg-danger{% elif lead.priority == 'Warm' %}bg-warning{% else %}bg-secondary{% endif %}">
-                      {{ lead.priority }}
-                    </span>
-                  </td>
-                  <td>
-                    {% if lead.next_followup_date %}
-                      <span class="d-inline-flex align-items-center gap-1" style="color:#94a3b8;font-size:0.82rem;">
-                        <i class="bi bi-calendar3" style="color:#818cf8;"></i>
-                        {{ lead.next_followup_date|date:"d M Y" }}
-                      </span>
-                    {% else %}
-                      <span class="text-muted small">—</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if lead.assigned_telecaller %}
-                      <div class="d-inline-flex align-items-center gap-2">
-                        <span style="width:26px;height:26px;border-radius:6px;background:#5b5fef;color:#fff;font-size:0.7rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;">{{ lead.assigned_telecaller.username|slice:":1"|upper }}</span>
-                        <span style="color:#e2e8f0;font-size:0.82rem;font-weight:600;">{{ lead.assigned_telecaller.username }}</span>
-                      </div>
-                    {% else %}
-                      <span class="text-muted small">—</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <div class="d-flex gap-1">
-                      <a href="{% url 'lead_detail' lead.pk %}" class="btn btn-sm btn-outline-light" title="View Profile"><i class="bi bi-eye"></i></a>
-                    </div>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <div class="empty-state py-4">
-            <i class="bi bi-funnel"></i>
-            <p>No leads assigned or converted yet.</p>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Today's Follow Ups -->
-    <div class="m-card mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-calendar-check text-success me-2"></i>Today's Follow-Ups</h5>
-        <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-success">View All</a>
-      </div>
-
-      <div class="table-responsive">
-        {% if today_followups_list %}
-          <table class="table m-table align-middle">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Scheduled Date</th>
-                <th>Response / Notes</th>
-                <th>Assigned Telecaller</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for fp in today_followups_list %}
-                <tr>
-                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
-                  <td><span class="badge-premium bg-success">Today</span></td>
-                  <td class="small">{{ fp.response|default:"-" }}</td>
-                  <td class="small text-muted">{{ fp.created_by.username }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <div class="empty-state py-3">
-            <i class="bi bi-calendar2-check text-muted"></i>
-            <p class="small text-muted mb-0">No follow-ups due today.</p>
-          </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Overdue Follow Ups -->
-    <div class="m-card mb-4">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Overdue Follow-Ups</h5>
-        <a href="{% url 'followup_list' %}?status=Pending" class="btn btn-sm btn-outline-danger">View All</a>
-      </div>
-
-      <div class="table-responsive">
-        {% if overdue_followups_list %}
-          <table class="table m-table align-middle">
-            <thead>
-              <tr>
-                <th>Lead</th>
-                <th>Follow-Up Date</th>
-                <th>Days Overdue</th>
-                <th>Assigned Telecaller</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for fp in overdue_followups_list %}
-                <tr>
-                  <td class="fw-bold text-white">{{ fp.lead.inquiry.full_name }}</td>
-                  <td>
-                    {{ fp.followup_date|date:"d M Y" }}
-                    <span class="badge-overdue ms-1">⚠ Overdue Follow-Up</span>
-                  </td>
-                  <td class="text-danger fw-bold">{{ fp.days_overdue }} days</td>
-                  <td class="small text-info fw-bold">{{ fp.lead.assigned_telecaller.username|default:"Unassigned" }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <div class="empty-state-premium">
-            <i class="bi bg-transparent bi-clipboard-check"></i>
-            <p>You have no overdue follow-ups.</p>
-          </div>
-        {% endif %}
+        <table class="sa-table">
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Mobile</th>
+              <th>Assigned To</th>
+              <th>Type</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lead in recent_assignments %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  {% with name=lead.inquiry.full_name %}
+                  <div class="sa-avatar {% cycle 'av-blue' 'av-orange' 'av-green' 'av-purple' 'av-red' 'av-teal' %}">{{ name|slice:":1"|upper }}</div>
+                  {% endwith %}
+                  <span class="fw-bold text-white" style="font-size:0.8rem;">{{ lead.inquiry.full_name|truncatechars:12 }}</span>
+                </div>
+              </td>
+              <td>{{ lead.inquiry.mobile_number }}</td>
+              <td style="font-size:0.78rem;">
+                {% if lead.assigned_telecaller %}{{ lead.assigned_telecaller.get_full_name|default:lead.assigned_telecaller.username|truncatechars:10 }}
+                {% elif lead.assigned_counselor %}{{ lead.assigned_counselor.get_full_name|default:lead.assigned_counselor.username|truncatechars:10 }}
+                {% else %}<span class="text-muted">—</span>{% endif %}
+              </td>
+              <td>
+                {% if lead.assigned_telecaller and lead.assigned_counselor %}
+                  <span class="type-badge tb-both">Both</span>
+                {% elif lead.assigned_telecaller %}
+                  <span class="type-badge tb-tele">Telecalling</span>
+                {% elif lead.assigned_counselor %}
+                  <span class="type-badge tb-counsel">Counselling</span>
+                {% else %}
+                  <span class="type-badge" style="background:#1e293b; color:#64748b;">—</span>
+                {% endif %}
+              </td>
+              <td style="color:#475569;">
+                {% if lead.assigned_at %}{{ lead.assigned_at|date:"H:i A" }}{% else %}—{% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4" style="font-size:0.8rem;">No recent assignments found.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <!-- Sidebar: Quick Actions & Activities -->
-  <div class="col-xxl-3">
-    <!-- Quick Actions -->
-    <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
-      <div class="d-flex flex-column gap-2">
-        <a href="{% url 'inquiry_list' %}" class="action-btn">
-          <div class="action-icon-box"><i class="bi bi-person-lines-fill"></i></div> View All Inquiries
-        </a>
-        <a href="{% url 'lead_list' %}" class="action-btn">
-          <div class="action-icon-box"><i class="bi bi-funnel"></i></div> View All Leads
-        </a>
-        <a href="{% url 'lead_assign' %}" class="action-btn">
-          <div class="action-icon-box"><i class="bi bi-person-check"></i></div> Manage Lead Assignments
-        </a>
-        <a href="{% url 'reports_dashboard' %}" class="action-btn">
-          <div class="action-icon-box"><i class="bi bi-bar-chart-line"></i></div> View Marketing Analytics
-        </a>
-        <a href="{% url 'telecaller_report' %}" class="action-btn">
-          <div class="action-icon-box"><i class="bi bi-file-earmark-bar-graph"></i></div> View Performance Reports
-        </a>
+  <!-- Activity Feed -->
+  <div class="col-lg-4">
+    <div class="sa-panel h-100">
+      <div class="sa-panel-header">
+        <div class="sa-panel-title">Activity Feed</div>
+        <a href="{% url 'activities_list' %}" class="sa-view-link">View All <i class="bi bi-arrow-right"></i></a>
       </div>
-    </div>
-
-    <!-- Call Outcomes Card -->
-    <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-telephone-outbound-fill me-2 text-info"></i>Call Outcomes</h5>
-      <div class="d-flex flex-wrap gap-2">
-        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Accepted: {{ call_outcomes.accepted }}</span>
-        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Busy: {{ call_outcomes.busy }}</span>
-        <span class="badge-premium bg-primary"><i class="bi bi-arrow-repeat me-1"></i>Call Back: {{ call_outcomes.call_back }}</span>
-        <span class="badge-premium bg-info"><i class="bi bi-heart-fill me-1"></i>Interested: {{ call_outcomes.interested }}</span>
-        <span class="badge-premium bg-danger"><i class="bi bi-hand-thumbs-down me-1"></i>Not Interested: {{ call_outcomes.not_interested }}</span>
-      </div>
-    </div>
-
-    <!-- Admission Metrics Card -->
-    <div class="m-card mb-4">
-      <h5 class="fw-bold text-white mb-3"><i class="bi bi-journal-check me-2 text-success"></i>Admissions</h5>
-      <div class="d-flex flex-wrap gap-2">
-        <span class="badge-premium bg-primary"><i class="bi bi-journal me-1"></i>Total: {{ admission_metrics.total }}</span>
-        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Confirmed: {{ admission_metrics.confirmed }}</span>
-        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Pending: {{ admission_metrics.pending }}</span>
-        <span class="badge-premium bg-danger"><i class="bi bi-x-circle me-1"></i>Cancelled: {{ admission_metrics.cancelled }}</span>
-      </div>
-    </div>
-
-    <!-- Recent Activities Timeline -->
-    <div class="m-card">
-      <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold text-white mb-0"><i class="bi bi-activity text-info me-2"></i>Recent Activities</h5>
-        <a href="{% url 'activities_list' %}" class="btn btn-sm btn-outline-info">View All</a>
-      </div>
-      
       {% if recent_activities %}
-        <div class="list-group list-group-flush bg-transparent">
-          {% for act in recent_activities %}
-            <div class="list-group-item bg-transparent text-white border-secondary px-0 py-2">
-              <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="fw-bold text-info small">{{ act.get_activity_type_display }}</span>
-                <span class="text-muted small" style="font-size: 0.7rem;">{{ act.created_at|date:"d M, H:i" }}</span>
-              </div>
-              <p class="small mb-0 text-muted">{{ act.description }}</p>
-            </div>
-          {% endfor %}
+      {% for act in recent_activities %}
+      <div class="activity-item">
+        <div class="act-icon
+          {% if act.activity_type == 'ASSIGNED' %}
+            " style="background:rgba(59,130,246,0.15); color:#3b82f6;">
+            <i class="bi bi-person-fill-add"></i>
+          {% elif act.activity_type == 'STATUS_CHANGED' %}
+            " style="background:rgba(249,115,22,0.15); color:#f97316;">
+            <i class="bi bi-arrow-repeat"></i>
+          {% elif act.activity_type == 'NOTE_ADDED' %}
+            " style="background:rgba(139,92,246,0.15); color:#8b5cf6;">
+            <i class="bi bi-chat-text-fill"></i>
+          {% elif act.activity_type == 'CALL_LOGGED' %}
+            " style="background:rgba(34,197,94,0.15); color:#22c55e;">
+            <i class="bi bi-telephone-fill"></i>
+          {% else %}
+            " style="background:rgba(6,182,212,0.15); color:#06b6d4;">
+            <i class="bi bi-activity"></i>
+          {% endif %}
         </div>
+        <div class="act-text">
+          <p>{{ act.description|truncatechars:65 }}</p>
+          <div class="act-time">{{ act.created_at|date:"H:i A" }}</div>
+        </div>
+      </div>
+      {% endfor %}
       {% else %}
-        <div class="empty-state py-3">
-          <p class="small text-muted mb-0">No activities logged yet.</p>
-        </div>
+      <div class="text-center text-muted py-4" style="font-size:0.82rem;">No recent activities found.</div>
       {% endif %}
     </div>
   </div>
+
+  <!-- Pending Actions -->
+  <div class="col-lg-4">
+    <div class="sa-panel h-100">
+      <div class="sa-panel-header">
+        <div class="sa-panel-title">Pending Actions</div>
+        <a href="{% url 'inquiry_list' %}" class="sa-view-link">View All <i class="bi bi-arrow-right"></i></a>
+      </div>
+
+      <div class="pending-action-item">
+        <div class="pa-left">
+          <div class="pa-icon" style="background:rgba(239,68,68,0.15); color:#ef4444;"><i class="bi bi-person-fill-exclamation"></i></div>
+          <div class="pa-label">Pending Telecaller Assignment</div>
+        </div>
+        <div class="pa-count sc-red">{{ pending_telecaller_assignment }}</div>
+      </div>
+
+      <div class="pending-action-item">
+        <div class="pa-left">
+          <div class="pa-icon" style="background:rgba(249,115,22,0.15); color:#f97316;"><i class="bi bi-person-fill-gear"></i></div>
+          <div class="pa-label">Pending Counsellor Assignment</div>
+        </div>
+        <div class="pa-count sc-orange">{{ pending_counselor_assignment }}</div>
+      </div>
+
+      <div class="pending-action-item">
+        <div class="pa-left">
+          <div class="pa-icon" style="background:rgba(245,158,11,0.15); color:#f59e0b;"><i class="bi bi-clock-history"></i></div>
+          <div class="pa-label">Pending Follow Ups</div>
+        </div>
+        <div class="pa-count" style="color:#f59e0b;">{{ pending_followups_count }}</div>
+      </div>
+
+      <div class="pending-action-item">
+        <div class="pa-left">
+          <div class="pa-icon" style="background:rgba(239,68,68,0.15); color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          <div class="pa-label">Overdue Follow Ups</div>
+        </div>
+        <div class="pa-count sc-red">{{ overdue_followups_count }}</div>
+      </div>
+
+      <div class="pending-action-item">
+        <div class="pa-left">
+          <div class="pa-icon" style="background:rgba(34,197,94,0.15); color:#22c55e;"><i class="bi bi-mortarboard-fill"></i></div>
+          <div class="pa-label">Admissions Waiting</div>
+        </div>
+        <div class="pa-count sc-green">{{ admissions_waiting }}</div>
+      </div>
+
+      <div class="pending-action-item">
+        <div class="pa-left">
+          <div class="pa-icon" style="background:rgba(249,115,22,0.15); color:#f97316;"><i class="bi bi-fire"></i></div>
+          <div class="pa-label">High Priority Leads</div>
+        </div>
+        <div class="pa-count sc-orange">{{ high_priority_leads }}</div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- ── Bottom User Count Cards ── -->
+<div class="row g-3 mb-2">
+  <!-- Total Telecallers (Normal) -->
+  <div class="col-6 col-md-3">
+    <div class="user-count-card">
+      <div>
+        <div class="uc-label">Total Telecallers (Normal)</div>
+        <div class="uc-value">{{ total_telecallers_count }}</div>
+        <div class="uc-sub">Active Today: &mdash;</div>
+      </div>
+      <div class="uc-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="bi bi-headset"></i></div>
+    </div>
+  </div>
+  <!-- Counsellor Telecallers -->
+  <div class="col-6 col-md-3">
+    <div class="user-count-card">
+      <div>
+        <div class="uc-label">Counsellor Telecallers</div>
+        <div class="uc-value">{{ total_counselor_telecallers_count }}</div>
+        <div class="uc-sub">Active Today: &mdash;</div>
+      </div>
+      <div class="uc-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;"><i class="bi bi-person-video2"></i></div>
+    </div>
+  </div>
+  <!-- Total Counsellors -->
+  <div class="col-6 col-md-3">
+    <div class="user-count-card">
+      <div>
+        <div class="uc-label">Total Counsellors</div>
+        <div class="uc-value">{{ total_counsellors_count }}</div>
+        <div class="uc-sub">Active Today: &mdash;</div>
+      </div>
+      <div class="uc-icon" style="background:rgba(139,92,246,0.15); color:#8b5cf6;"><i class="bi bi-person-workspace"></i></div>
+    </div>
+  </div>
+  <!-- Total Users -->
+  <div class="col-6 col-md-3">
+    <div class="user-count-card">
+      <div>
+        <div class="uc-label">Total Users</div>
+        <div class="uc-value">{{ total_users_count }}</div>
+        <div class="uc-sub">Active Today: &mdash;</div>
+      </div>
+      <div class="uc-icon" style="background:rgba(249,115,22,0.15); color:#f97316;"><i class="bi bi-people-fill"></i></div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

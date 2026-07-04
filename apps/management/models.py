@@ -24,11 +24,12 @@ class Inquiry(SoftDeleteModel):
         ('NEW', 'New'),
         ('ACCEPTED', 'Accepted'),
         ('BUSY', 'Busy'),
-        ('NO_ANSWER', 'No Answer'),
+        ('NO_ANSWER', 'Ringing'),
         ('CALL_BACK', 'Call Back'),
         ('WRONG_NUMBER', 'Wrong Number'),
         ('INTERESTED', 'Interested'),
         ('NOT_INTERESTED', 'Not Interested'),
+        ('PENDING_FOLLOW_UP', 'Pending Follow Up'),
     )
 
     full_name = models.CharField(max_length=100, db_index=True)
@@ -52,6 +53,11 @@ class Inquiry(SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_deleted', 'created_at'], name='mg_inquiry_del_created_idx'),
+            models.Index(fields=['is_deleted', 'call_status'], name='mg_inquiry_del_call_idx'),
+            models.Index(fields=['is_deleted', 'status'], name='mg_inquiry_del_status_idx'),
+        ]
 
     def __str__(self):
         return f"{self.full_name} ({self.status})"
@@ -101,7 +107,17 @@ class Lead(SoftDeleteModel):
         related_name='assigned_leads_by'
     )
     assigned_at = models.DateTimeField(null=True, blank=True)
+    converted_at = models.DateTimeField(null=True, blank=True)
+    telecaller_assigned_at = models.DateTimeField(null=True, blank=True)
+    counselor_assigned_at = models.DateTimeField(null=True, blank=True)
     
+    first_assigned_telecaller = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='first_assigned_leads'
+    )
     assigned_counselor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -109,6 +125,21 @@ class Lead(SoftDeleteModel):
         blank=True,
         related_name='assigned_counselor_leads'
     )
+    first_assigned_counselor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='first_assigned_counselor_leads'
+    )
+    first_assigned_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='globally_first_assigned_leads'
+    )
+    first_assigned_date = models.DateTimeField(null=True, blank=True)
     counselor_status = models.CharField(
         max_length=25,
         choices=COUNSELOR_STATUS_CHOICES,
@@ -126,6 +157,112 @@ class Lead(SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_deleted', 'created_at'], name='mg_lead_del_created_idx'),
+            models.Index(fields=['is_deleted', 'assigned_at'], name='mg_lead_del_assigned_idx'),
+            models.Index(fields=['is_deleted', 'converted_at'], name='mg_lead_del_converted_idx'),
+            models.Index(fields=['is_deleted', 'assigned_counselor', 'converted_at'], name='mg_lead_counsel_conv_idx'),
+            models.Index(fields=['is_deleted', 'assigned_telecaller', 'assigned_at'], name='mg_lead_tc_assigned_idx'),
+            models.Index(fields=['is_deleted', 'first_assigned_user', 'converted_at'], name='mg_lead_owner_conv_idx'),
+            models.Index(fields=['is_deleted', 'counselor_status', 'counselor_status_updated_at'], name='mg_lead_cstat_date_idx'),
+        ]
+
+    @property
+    def original_owner(self):
+        return (
+            self.first_assigned_user
+            or self.first_assigned_telecaller
+            or self.first_assigned_counselor
+            or self.assigned_telecaller
+            or self.assigned_counselor
+        )
+
+    @property
+    def original_owner_date(self):
+        return (
+            self.first_assigned_date
+            or self.telecaller_assigned_at
+            or self.counselor_assigned_at
+            or self.assigned_at
+        )
+
+    def _set_first_assignment_defaults(self):
+        if self.assigned_telecaller_id and not self.first_assigned_telecaller_id:
+            self.first_assigned_telecaller_id = self.assigned_telecaller_id
+
+        if self.assigned_counselor_id and not self.first_assigned_counselor_id:
+            self.first_assigned_counselor_id = self.assigned_counselor_id
+
+        if not self.first_assigned_user_id:
+            self.first_assigned_user_id = (
+                self.first_assigned_telecaller_id
+                or self.first_assigned_counselor_id
+                or self.assigned_telecaller_id
+                or self.assigned_counselor_id
+            )
+
+        if self.first_assigned_user_id and not self.first_assigned_date:
+            if self.first_assigned_user_id == self.first_assigned_telecaller_id:
+                self.first_assigned_date = self.telecaller_assigned_at or self.assigned_at or timezone.now()
+            elif self.first_assigned_user_id == self.first_assigned_counselor_id:
+                self.first_assigned_date = self.counselor_assigned_at or self.assigned_at or timezone.now()
+            else:
+                self.first_assigned_date = self.assigned_at or timezone.now()
+
+    def save(self, *args, **kwargs):
+        protected_field_map = {
+            'first_assigned_user': 'first_assigned_user_id',
+            'first_assigned_date': 'first_assigned_date',
+            'first_assigned_telecaller': 'first_assigned_telecaller_id',
+            'first_assigned_counselor': 'first_assigned_counselor_id',
+            'converted_at': 'converted_at',
+        }
+        original_values = {}
+
+        if self.pk:
+            existing = Lead.objects.filter(pk=self.pk).only(
+                'first_assigned_user',
+                'first_assigned_date',
+                'first_assigned_telecaller',
+                'first_assigned_counselor',
+                'converted_at',
+            ).first()
+            if existing:
+                original_values = {
+                    'first_assigned_user_id': existing.first_assigned_user_id,
+                    'first_assigned_date': existing.first_assigned_date,
+                    'first_assigned_telecaller_id': existing.first_assigned_telecaller_id,
+                    'first_assigned_counselor_id': existing.first_assigned_counselor_id,
+                    'converted_at': existing.converted_at,
+                }
+
+        before_values = {
+            field_name: getattr(self, value_attr)
+            for field_name, value_attr in protected_field_map.items()
+        }
+
+        self._set_first_assignment_defaults()
+
+        changed_protected_fields = {
+            field_name
+            for field_name, value_attr in protected_field_map.items()
+            if getattr(self, value_attr) != before_values[field_name]
+        }
+
+        for field_name, original_value in original_values.items():
+            if original_value:
+                current_value = getattr(self, field_name)
+                if current_value != original_value:
+                    setattr(self, field_name, original_value)
+                    changed_protected_fields.add(field_name.replace('_id', ''))
+
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.update(changed_protected_fields)
+            kwargs['update_fields'] = update_fields
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Lead: {self.inquiry.full_name} ({self.status})"
@@ -156,6 +293,10 @@ class CallLog(SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_deleted', 'call_date'], name='mg_call_del_date_idx'),
+            models.Index(fields=['is_deleted', 'created_by'], name='mg_call_del_user_idx'),
+        ]
 
     def __str__(self):
         return f"Call to {self.lead.inquiry.full_name} - {self.call_status}"
@@ -186,6 +327,10 @@ class FollowUp(SoftDeleteModel):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_deleted', 'status', 'followup_date'], name='mg_follow_del_status_idx'),
+            models.Index(fields=['is_deleted', 'created_by', 'status', 'followup_date'], name='mg_follow_user_status_idx'),
+        ]
 
     @property
     def is_overdue(self):
