@@ -12,12 +12,25 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
-from decouple import config
+from decouple import Csv, config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-TEMP_DIR = os.path.join(BASE_DIR, 'templates')
-STATIC_DIR = os.path.join(BASE_DIR,'static')
+TEMP_DIR = BASE_DIR / 'templates'
+STATIC_DIR = BASE_DIR / 'static'
+
+def env_bool(name, default=False):
+    value = config(name, default=None)
+    if value is None or value == '':
+        return default
+    if isinstance(value, bool):
+        return value
+    value = str(value).strip().lower()
+    if value in ('1', 'true', 'yes', 'on'):
+        return True
+    if value in ('0', 'false', 'no', 'off'):
+        return False
+    return default
 
 
 MEDIA_URL = '/media/'
@@ -27,13 +40,21 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-u*c1c66bb4v3v8-9##dhyw7_#h*bp1qn_g5j#j^u3x7@xvutp1'
+# SECURITY WARNING: keep the secret key used in production secret.
+SECRET_KEY = config(
+    'SECRET_KEY',
+    default='local-dev-only-change-this-secret-key-before-production-2026'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config(
+    'ALLOWED_HOSTS',
+    default='127.0.0.1,localhost,testserver',
+    cast=Csv()
+)
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
 # Change this from True to False
 # DEBUG = False
@@ -104,13 +125,13 @@ WSGI_APPLICATION = 'online_exam_portal.wsgi.application'
 ASGI_APPLICATION = 'online_exam_portal.asgi.application'
 
 # Channel Layers Configuration
-import os
-redis_host = os.environ.get('REDIS_HOST', '127.0.0.1')
+REDIS_HOST = config('REDIS_HOST', default='127.0.0.1')
+REDIS_PORT = config('REDIS_PORT', default=6379, cast=int)
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.pubsub.RedisPubSubChannelLayer",
         "CONFIG": {
-            "hosts": [(redis_host, 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     },
 }
@@ -127,23 +148,26 @@ CHANNEL_LAYERS = {
 # }
 
 
-DB_ENGINE = config('DB_ENGINE', default='sqlite').lower()
+DB_ENGINE = config('DB_ENGINE', default='django.db.backends.sqlite3')
 
-if DB_ENGINE == 'mysql':
+if DB_ENGINE in ('mysql', 'django.db.backends.mysql'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': config('DB_NAME', default='online_exam_portal_db'),
-            'USER': config('DB_USER', default='root'),
-            'PASSWORD': config('DB_PASSWORD', default='root'),
-            'HOST': config('DB_HOST', default='localhost'),
+            'NAME': config('DB_NAME', default='erp_db'),
+            'USER': config('DB_USER', default='erp_user'),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='127.0.0.1'),
             'PORT': config('DB_PORT', default='3306'),
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
+            'ENGINE': DB_ENGINE,
             'NAME': config('SQLITE_DB_PATH', default=BASE_DIR / 'db.sqlite3'),
         }
     }
@@ -183,8 +207,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS=[STATIC_DIR]
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = []
+if STATIC_DIR.exists():
+    STATICFILES_DIRS.append(STATIC_DIR)
 
 
 # Default primary key field type
@@ -208,8 +235,26 @@ MESSAGE_TAGS = {
 }
 
 
-# For development: This prints the password reset email directly into your terminal!
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# For development, the default prints password reset email directly into your terminal.
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', default=True)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='webmaster@localhost')
 
-# Allow iframe loading from same origin for management action modals
-X_FRAME_OPTIONS = 'SAMEORIGIN'
+# Production security settings. Keep these configurable so local development can
+# use DEBUG=True without being forced through HTTPS.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', default=not DEBUG)
+SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', default=not DEBUG)
+CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', default=not DEBUG)
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=31536000 if not DEBUG else 0, cast=int)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', default=not DEBUG)
+SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', default=not DEBUG)
+SECURE_CONTENT_TYPE_NOSNIFF = env_bool('SECURE_CONTENT_TYPE_NOSNIFF', default=True)
+
+# Existing management UI uses same-origin modal frames. Set DENY in production
+# only after confirming those flows no longer need iframe rendering.
+X_FRAME_OPTIONS = config('X_FRAME_OPTIONS', default='SAMEORIGIN')
