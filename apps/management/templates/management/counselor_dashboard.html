@@ -132,8 +132,8 @@
       <div class="erp-card bg-g-orange h-100">
         <div class="erp-card-body">
           <div class="erp-card-title text-truncate">Pending Follow-ups</div>
-          <div class="erp-card-number">{{ pending_followups.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>{{ pending_followups.today }}</strong></div>
+          <div class="erp-card-number">{{ followup_req.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
+          <div class="text-white-50 small mt-1">Today: <strong>{{ followup_req.today }}</strong></div>
           <div class="erp-card-bg-icon"><i class="bi bi-telephone-forward-fill"></i></div>
         </div>
         <a href="{% url 'counselor_lead_list' %}?followup_state=pending" class="erp-card-footer mt-auto">
@@ -147,8 +147,8 @@
       <div class="erp-card bg-g-red h-100">
         <div class="erp-card-body">
           <div class="erp-card-title text-truncate">Overdue Follow-ups</div>
-          <div class="erp-card-number">{{ overdue_followups.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>{{ overdue_followups.today }}</strong></div>
+          <div class="erp-card-number">{{ overdue_followups }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
+          <div class="text-white-50 small mt-1">Today: <strong>-</strong></div>
           <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
         </div>
         <a href="{% url 'counselor_lead_list' %}?followup_state=overdue" class="erp-card-footer mt-auto">
@@ -199,7 +199,7 @@
           {% else %}
             <div class="empty-state-premium">
               <i class="bi bi-calendar2-check text-muted"></i>
-              <p class="small text-muted mb-0">No pending follow-ups.</p>
+              <p class="small text-muted mb-0">No pending follow-ups today.</p>
             </div>
           {% endif %}
         </div>

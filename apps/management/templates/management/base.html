@@ -1199,6 +1199,12 @@
       <i class="bi bi-graph-up-arrow"></i> Counselor Reports
     </a>
 
+    <div class="sidebar-section">User Management</div>
+    <a href="{% url 'management_create_user' %}"
+      class="sidebar-item {% if request.resolver_match.url_name == 'management_create_user' %}active{% endif %}">
+      <i class="bi bi-person-plus-fill"></i> Create User
+    </a>
+
     {% elif request.user.role == 'admin' %}
     <a class="management-brand" href="{% url 'management_admin_dashboard' %}">
       <span class="management-brand-icon"><i class="bi bi-building-fill"></i></span>
@@ -1289,7 +1295,7 @@
       class="sidebar-item {% if request.resolver_match.url_name == 'counselor_telecalling_dashboard' %}active{% endif %}">
       <i class="bi bi-telephone-outbound"></i> Telecalling Dashboard
     </a>
-    <a href="{% url 'inquiry_list' %}"
+    <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling"
       class="sidebar-item {% if 'inquiry' in request.resolver_match.url_name %}active{% endif %}">
       <i class="bi bi-person-lines-fill"></i> Inquiry Directory
     </a>

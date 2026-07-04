@@ -228,37 +228,29 @@
             </span>
           </td>
           <td>
-            {% if lead.assigned_telecaller %}
+            {% if lead.first_assigned_user %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-person-check"></i> {{ lead.first_assigned_user.username }}</span>
+            {% elif lead.first_assigned_telecaller %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-telephone"></i> {{ lead.first_assigned_telecaller.username }}</span>
+            {% elif lead.first_assigned_counselor %}
+            <span class="text-info fw-bold d-block"><i class="bi bi-person-badge"></i> {{ lead.first_assigned_counselor.username }}</span>
+            {% elif lead.assigned_telecaller %}
             <span class="text-info fw-bold d-block"><i class="bi bi-telephone"></i> {{ lead.assigned_telecaller.username }}</span>
-            {% endif %}
-            {% if lead.assigned_counselor %}
+            {% elif lead.assigned_counselor %}
             <span class="text-info fw-bold d-block"><i class="bi bi-person-badge"></i> {{ lead.assigned_counselor.username }}</span>
-            {% endif %}
-            {% if not lead.assigned_telecaller and not lead.assigned_counselor %}
+            {% else %}
             <span class="text-muted fst-italic">Unassigned</span>
             {% endif %}
           </td>
           <td class="small text-muted">
-            {% if lead.assigned_telecaller %}
-              <span class="d-block">
-                {% if lead.telecaller_assigned_at %}
-                  {{ lead.telecaller_assigned_at|date:"Y-m-d H:i" }}
-                {% else %}
-                  {{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}
-                {% endif %}
-              </span>
-            {% endif %}
-            {% if lead.assigned_counselor %}
-              <span class="d-block">
-                {% if lead.counselor_assigned_at %}
-                  {{ lead.counselor_assigned_at|date:"Y-m-d H:i" }}
-                {% else %}
-                  {{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}
-                {% endif %}
-              </span>
-            {% endif %}
-            {% if not lead.assigned_telecaller and not lead.assigned_counselor %}
-              -
+            {% if lead.first_assigned_date %}
+              {{ lead.first_assigned_date|date:"Y-m-d H:i" }}
+            {% elif lead.telecaller_assigned_at %}
+              {{ lead.telecaller_assigned_at|date:"Y-m-d H:i" }}
+            {% elif lead.counselor_assigned_at %}
+              {{ lead.counselor_assigned_at|date:"Y-m-d H:i" }}
+            {% else %}
+              {{ lead.assigned_at|date:"Y-m-d H:i"|default:"-" }}
             {% endif %}
           </td>
         </tr>

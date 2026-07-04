@@ -34,7 +34,7 @@
         <div class="text-white-50 small mt-1">Today: <strong>{{ assigned_inquiries.today }}</strong></div>
         <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View assigned
       </a>
     </div>
@@ -48,7 +48,7 @@
         <div class="erp-card-number">{{ call_outcomes.busy }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=BUSY" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=BUSY" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -62,7 +62,7 @@
         <div class="erp-card-number">{{ call_outcomes.ringing }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=NO_ANSWER" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=NO_ANSWER" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -76,7 +76,7 @@
         <div class="erp-card-number">{{ call_outcomes.call_back }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-arrow-return-left"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=CALL_BACK" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=CALL_BACK" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -90,7 +90,7 @@
         <div class="erp-card-number">{{ call_outcomes.wrong_number }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-telephone-x-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=WRONG_NUMBER" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=WRONG_NUMBER" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -104,7 +104,7 @@
         <div class="erp-card-number">{{ call_outcomes.interested }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=INTERESTED" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=INTERESTED" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -118,7 +118,7 @@
         <div class="erp-card-number">{{ call_outcomes.not_interested }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=NOT_INTERESTED" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=NOT_INTERESTED" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View all
       </a>
     </div>
@@ -132,7 +132,7 @@
         <div class="erp-card-number">{{ call_outcomes.pending_follow_up }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-calendar-check-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=PENDING_FOLLOW_UP&overdue=false" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=false" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View pending
       </a>
     </div>
@@ -146,7 +146,7 @@
         <div class="erp-card-number">{{ call_outcomes.overdue_follow_up }}</div>
         <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?call_status=PENDING_FOLLOW_UP&overdue=true" class="erp-card-footer">
+      <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=true" class="erp-card-footer">
         <i class="bi bi-list-ul"></i> View overdue
       </a>
     </div>
@@ -157,11 +157,11 @@
     <div class="erp-card bg-success border border-success h-100">
       <div class="erp-card-body">
         <div class="erp-card-title text-truncate text-white">Convert to Lead</div>
-        <div class="erp-card-number text-white">{{ qualified_leads.total }}</div>
-        <div class="text-white-50 small mt-1">Today: <strong>{{ qualified_leads.today }}</strong></div>
+        <div class="erp-card-number text-white">{{ converted_to_lead.total }}</div>
+        <div class="text-white-50 small mt-1">Today: <strong>{{ converted_to_lead.today }}</strong></div>
         <div class="erp-card-bg-icon"><i class="bi bi-arrow-right-circle-fill text-white-50"></i></div>
       </div>
-      <a href="{% url 'inquiry_list' %}?status=Qualified" class="erp-card-footer border-top border-success text-white">
+      <a href="{% url 'lead_list' %}" class="erp-card-footer border-top border-success text-white">
         <i class="bi bi-list-ul"></i> View conversions
       </a>
     </div>

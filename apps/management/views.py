@@ -5,7 +5,7 @@ from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db.models import Q, Count, Avg
+from django.db.models import Q, Count, Avg, F
 from django.db import transaction
 from django.urls import reverse
 import datetime
@@ -16,8 +16,9 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
-from .forms import InquiryForm, LeadConversionForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm
+from .forms import InquiryForm, LeadConversionForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm, ManagementUserCreateForm
 from .decorators import superadmin_required, admin_required, telecaller_required, counselor_required, telecaller_counselor_admin_required
+from apps.accounts.auth_logging import log_auth_activity
 
 ADMIN_ROLES = ('admin', 'superadmin', 'SUPER_ADMIN')
 
@@ -32,6 +33,46 @@ def can_access_inquiry(user, inquiry):
     if inquiry.created_by_id == user.id:
         return True
     return Lead.objects.filter(inquiry=inquiry, assigned_telecaller=user).exists()
+
+def counselor_telecalling_inquiry_q(counselor_lookup):
+    """Contacts originally assigned to counselors for telecalling, still not converted."""
+    return (
+        Q(lead__converted_at__isnull=True)
+        & ~Q(status='Qualified')
+        & (
+            Q(lead__first_assigned_counselor__in=counselor_lookup)
+            | Q(lead__first_assigned_user__in=counselor_lookup)
+            | (
+                Q(lead__first_assigned_counselor__isnull=True)
+                & Q(lead__first_assigned_user__isnull=True)
+                & Q(lead__assigned_counselor__in=counselor_lookup)
+            )
+        )
+    )
+
+def counselor_telecalling_converted_inquiry_q(counselor_lookup):
+    """Contacts converted to leads by their original counselor telecalling owner."""
+    return (
+        Q(lead__converted_at__isnull=False)
+        & Q(lead__activities__activity_type='LEAD_CREATED')
+        & Q(lead__activities__created_by__in=counselor_lookup)
+        & (
+            Q(lead__first_assigned_counselor__in=counselor_lookup)
+            | Q(lead__first_assigned_user__in=counselor_lookup)
+        )
+    )
+
+def counselor_telecalling_converted_lead_q(counselor_lookup):
+    """Converted leads generated from counselor telecalling assignments."""
+    return (
+        Q(converted_at__isnull=False)
+        & Q(activities__activity_type='LEAD_CREATED')
+        & Q(activities__created_by__in=counselor_lookup)
+        & (
+            Q(first_assigned_counselor__in=counselor_lookup)
+            | Q(first_assigned_user__in=counselor_lookup)
+        )
+    )
 
 def remember_first_assignment(lead_ids, user, assigned_at, assignment_type):
     """Keep the original owner metadata stable while allowing reassignments."""
@@ -103,7 +144,6 @@ def management_dashboard(request):
     inquiries_qs = Inquiry.objects.filter(
         Q(created_by=request.user) | Q(lead__assigned_telecaller=request.user)
     ).distinct()
-
     # Converted leads: assigned_telecaller=this user AND converted_at is set
     converted_leads_qs = Lead.objects.filter(
         assigned_telecaller=request.user,
@@ -111,7 +151,7 @@ def management_dashboard(request):
     )
 
     # Pending inquiry followups: contacts needing follow-up (call_status=PENDING_FOLLOW_UP)
-    timeout_threshold = timezone.now() - timedelta(hours=48)
+    timeout_threshold = timezone.now() - timedelta(hours=24)
     pending_inquiry_followups = active_contacts_qs.filter(
         call_status='PENDING_FOLLOW_UP',
         updated_at__gte=timeout_threshold
@@ -142,6 +182,14 @@ def management_dashboard(request):
         'wrong_number': active_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
         'interested': active_contacts_qs.filter(call_status='INTERESTED').count(),
         'not_interested': active_contacts_qs.filter(call_status='NOT_INTERESTED').count(),
+        'pending_follow_up': active_contacts_qs.filter(
+            call_status='PENDING_FOLLOW_UP',
+            updated_at__gte=timeout_threshold,
+        ).count(),
+        'overdue_follow_up': active_contacts_qs.filter(
+            call_status='PENDING_FOLLOW_UP',
+            updated_at__lt=timeout_threshold,
+        ).count(),
     }
 
     # Recent leads = recently converted leads this telecaller worked on
@@ -179,55 +227,72 @@ def management_admin_dashboard(request):
     # Total contacts (inquiries) in the system
     total_uploaded = {'today': Inquiry.objects.filter(created_at__date=today).count(), 'total': Inquiry.objects.count()}
 
-    # Unassigned contacts: no Lead record at all (never imported as a lead)
-    unassigned_inquiries = {
-        'today': Inquiry.objects.filter(lead__isnull=True, created_at__date=today).count(),
-        'total': Inquiry.objects.filter(lead__isnull=True).count()
+    converted_leads_qs = Lead.objects.filter(converted_at__isnull=False)
+
+    telecaller_leads = {
+        'today': converted_leads_qs.filter(converted_at__date=today).count(),
+        'total': converted_leads_qs.count()
     }
 
-    # Telecaller-assigned contacts: has a Lead with assigned_telecaller, not yet converted
-    assigned_to_telecaller = {
-        'today': Lead.objects.filter(assigned_telecaller__isnull=False, converted_at__isnull=True, assigned_at__date=today).count(),
-        'total': Lead.objects.filter(assigned_telecaller__isnull=False, converted_at__isnull=True).count()
+    # Total Admissions: Leads with counselor_status='ADMISSION'
+    total_admissions = {
+        'today': Lead.objects.filter(counselor_status='ADMISSION', counselor_status_updated_at__date=today).count(),
+        'total': Lead.objects.filter(counselor_status='ADMISSION').count()
     }
 
-    # Counselor telecalling contacts: has a Lead with assigned_counselor, not yet converted (telecalling mode)
-    counselor_telecalling_contacts = {
-        'today': Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=True, assigned_at__date=today).count(),
-        'total': Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=True).count()
-    }
-
-    # Admin Queue: converted leads without a counselor (waiting for counselor assignment)
-    admin_queue = {
-        'today': Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True, converted_at__date=today).count(),
-        'total': Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True).count()
-    }
-
-    # Counselor-assigned leads: properly assigned to counselor for counseling
-    assigned_to_counselor = {
-        'today': Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=False, counselor_assigned_at__date=today).count(),
-        'total': Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=False).count(),
-    }
-
-    # Total assigned count for summary card
+    # Total assigned count for summary card:
+    # Count original first-time telecalling assignments only. Later conversion,
+    # counselor assignment, or reassignment must not change this card.
+    original_assignment_timing_q = (
+        Q(converted_at__isnull=True)
+        | Q(first_assigned_date__lt=F('converted_at'))
+    )
+    original_owner_assignment_q = (
+        (
+            Q(first_assigned_telecaller__isnull=False)
+            | Q(first_assigned_counselor__isnull=False)
+            | Q(first_assigned_user__role__in=['telecaller', 'counselor'])
+        )
+        & original_assignment_timing_q
+    )
+    legacy_current_owner_q = (
+        Q(first_assigned_user__isnull=True)
+        & Q(first_assigned_telecaller__isnull=True)
+        & Q(first_assigned_counselor__isnull=True)
+        & Q(converted_at__isnull=True)
+        & (Q(assigned_telecaller__isnull=False) | Q(assigned_counselor__isnull=False))
+    )
+    assigned_contacts_qs = Lead.objects.filter(
+        original_owner_assignment_q | legacy_current_owner_q
+    ).distinct()
     total_assigned = {
-        'today': Lead.objects.filter(assigned_at__date=today).count(),
-        'total': Lead.objects.count()
+        'today': assigned_contacts_qs.filter(
+            Q(first_assigned_date__date=today)
+            | Q(first_assigned_date__isnull=True, assigned_at__date=today)
+        ).count(),
+        'total': assigned_contacts_qs.count()
     }
 
     # Tables for Admin (Uploads, Assignments)
     recent_inquiries = Inquiry.objects.order_by('-created_at')[:5]
-    recent_leads = Lead.objects.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').order_by('-assigned_at')[:5]
+
+    from django.db.models import Subquery, OuterRef
+    converted_by_sq = LeadActivity.objects.filter(
+        lead=OuterRef('pk'),
+        activity_type='LEAD_CREATED'
+    ).values('created_by__username')[:1]
+
+    recent_leads = converted_leads_qs.annotate(
+        annotated_converted_by=Subquery(converted_by_sq)
+    ).select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').order_by('-converted_at')[:5]
+
     pending_admissions = Lead.objects.filter(counselor_status='ADMISSION').select_related('inquiry', 'assigned_counselor')
 
     context = {
         'total_uploaded': total_uploaded,
         'total_assigned': total_assigned,
-        'unassigned_inquiries': unassigned_inquiries,
-        'assigned_to_telecaller': assigned_to_telecaller,
-        'counselor_telecalling_contacts': counselor_telecalling_contacts,
-        'admin_queue': admin_queue,
-        'assigned_to_counselor': assigned_to_counselor,
+        'telecaller_leads': telecaller_leads,
+        'total_admissions': total_admissions,
         'recent_inquiries': recent_inquiries,
         'recent_leads': recent_leads,
         'pending_admissions': pending_admissions,
@@ -288,7 +353,7 @@ def management_super_admin_dashboard(request):
         followups_qs = followups_qs.filter(followup_date__lte=end_date)
 
     dashboard_cache_key = (
-        f"management:super_admin_dashboard:v2:"
+        f"management:super_admin_dashboard:v5:"
         f"{date_filter}:{start_date or ''}:{end_date or ''}:"
         f"{request.GET.get('view', '')}"
     )
@@ -316,6 +381,13 @@ def management_super_admin_dashboard(request):
         })
         return render(request, 'management/super_admin_dashboard.html', cached_dashboard_context)
 
+    User = get_user_model()
+    normal_telecallers = User.objects.filter(role='telecaller', is_active=True, is_deleted=False)
+    counselor_telecallers = User.objects.filter(role='counselor', is_active=True, is_deleted=False)
+    assigned_telecaller_qs = Lead.objects.filter(assigned_telecaller__isnull=False)
+    assigned_counselor_qs = Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=False)
+    converted_leads_qs = Lead.objects.filter(converted_at__isnull=False)
+
     # Top dashboard cards: keep these aligned with the Admin Dashboard cards.
     total_uploaded = {
         'today': Inquiry.objects.filter(created_at__date=today).count(),
@@ -330,16 +402,23 @@ def management_super_admin_dashboard(request):
         'total': Inquiry.objects.filter(lead__isnull=True).count(),
     }
     assigned_to_telecaller = {
-        'today': Lead.objects.filter(assigned_telecaller__isnull=False, assigned_at__date=today).count(),
-        'total': Lead.objects.filter(assigned_telecaller__isnull=False).count(),
+        'today': assigned_telecaller_qs.filter(
+            Q(telecaller_assigned_at__date=today)
+            | Q(telecaller_assigned_at__isnull=True, assigned_at__date=today)
+        ).count(),
+        'total': assigned_telecaller_qs.count(),
     }
     assigned_to_counselor = {
-        'today': Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=False, assigned_at__date=today).count(),
-        'total': Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=False).count(),
+        'today': assigned_counselor_qs.filter(
+            Q(counselor_assigned_at__date=today)
+            | Q(counselor_assigned_at__isnull=True, assigned_at__date=today)
+        ).count(),
+        'total': assigned_counselor_qs.count(),
     }
+    counselor_admissions_qs = converted_leads_qs.filter(counselor_status='ADMISSION')
     total_admissions_count = {
-        'today': AdmissionSheet.objects.filter(admission_date=today).count(),
-        'total': AdmissionSheet.objects.count(),
+        'today': counselor_admissions_qs.filter(counselor_status_updated_at__date=today).count(),
+        'total': counselor_admissions_qs.count(),
     }
     lost_leads_qs = Lead.objects.filter(
         Q(status='Rejected') | Q(counselor_status__in=['LOST', 'NOT_INTERESTED'])
@@ -407,14 +486,9 @@ def management_super_admin_dashboard(request):
 
     # Telecalling specific metrics
     timeout_threshold = timezone.now() - timedelta(hours=48)
-    User = get_user_model()
-    normal_telecallers = User.objects.filter(role='telecaller')
-    telecalling_converted_leads = Lead.objects.filter(
-        converted_at__isnull=False,
-        first_assigned_user__in=normal_telecallers,
-    )
+    telecalling_converted_leads = converted_leads_qs.filter(assigned_telecaller__in=normal_telecallers)
     telecalling_leads_generated = telecalling_converted_leads.count()
-    telecalling_assigned_by_admin = Lead.objects.filter(assigned_telecaller__in=normal_telecallers).count()
+    telecalling_assigned_by_admin = assigned_telecaller_qs.filter(assigned_telecaller__in=normal_telecallers).count()
     telecalling_called = CallLog.objects.filter(created_by__in=normal_telecallers).count()
     telecalling_pending_followups = FollowUp.objects.filter(
         created_by__in=normal_telecallers, status='Pending', followup_date__gte=today
@@ -423,13 +497,9 @@ def management_super_admin_dashboard(request):
         created_by__in=normal_telecallers, status='Pending', followup_date__lt=today
     ).count()
 
-    counselor_telecallers = User.objects.filter(role='counselor')
-    ct_converted_leads = Lead.objects.filter(
-        converted_at__isnull=False,
-        first_assigned_user__in=counselor_telecallers,
-    )
+    ct_converted_leads = converted_leads_qs.filter(assigned_counselor__in=counselor_telecallers)
     ct_leads_generated = ct_converted_leads.count()
-    ct_assigned_by_admin = ct_converted_leads.count()
+    ct_assigned_by_admin = Lead.objects.filter(assigned_counselor__in=counselor_telecallers).count()
     ct_called = CallLog.objects.filter(created_by__in=counselor_telecallers).count()
     ct_pending_followups = ct_converted_leads.filter(
         counselor_status='FOLLOW_UP_REQUIRED',
@@ -440,10 +510,7 @@ def management_super_admin_dashboard(request):
         counselor_status_updated_at__lt=timeout_threshold
     ).count()
 
-    counselling_leads = Lead.objects.filter(
-        assigned_counselor__isnull=False,
-        converted_at__isnull=False,
-    )
+    counselling_leads = assigned_counselor_qs
     counselling_assigned = counselling_leads.count()
     counselling_interested = counselling_leads.filter(counselor_status='INTERESTED').count()
     counselling_admissions_done = counselling_leads.filter(counselor_status='ADMISSION').count()
@@ -456,11 +523,10 @@ def management_super_admin_dashboard(request):
         counselor_status_updated_at__lt=timeout_threshold,
     ).count()
 
-    active_leads_today = (
-        telecalling_converted_leads.filter(converted_at__date=today).count() +
-        ct_converted_leads.filter(converted_at__date=today).count()
-    )
-    active_leads_count = {'today': active_leads_today, 'total': telecalling_leads_generated + ct_leads_generated}
+    active_leads_count = {
+        'today': converted_leads_qs.filter(converted_at__date=today).count(),
+        'total': converted_leads_qs.count(),
+    }
 
     # Tables
     recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller').order_by('-created_at')[:5]
@@ -558,21 +624,22 @@ def management_super_admin_dashboard(request):
 @telecaller_counselor_admin_required
 def inquiry_list(request):
     scope = request.GET.get('scope', '').strip()
+    converted = request.GET.get('converted', '').strip()
 
     if request.user.role == 'telecaller':
         inquiries = Inquiry.objects.filter(
             Q(created_by=request.user) | Q(lead__assigned_telecaller=request.user)
         ).distinct()
     elif request.user.role == 'counselor':
-        if scope == 'counselor_telecalling':
+        scope = 'counselor_telecalling'
+        if converted == 'yes':
             inquiries = Inquiry.objects.filter(
-                lead__assigned_counselor=request.user,
-                lead__converted_at__isnull=True,
+                counselor_telecalling_converted_inquiry_q([request.user])
             ).distinct()
         else:
             inquiries = Inquiry.objects.filter(
-                Q(created_by=request.user) | Q(lead__assigned_telecaller=request.user) | Q(lead__assigned_counselor=request.user)
-            ).distinct()
+                counselor_telecalling_inquiry_q([request.user])
+            ).exclude(status='Qualified').distinct()
     else:
         inquiries = Inquiry.objects.all()
 
@@ -598,36 +665,94 @@ def inquiry_list(request):
 
     overdue = request.GET.get('overdue', '').strip()
     if call_status == 'PENDING_FOLLOW_UP' and overdue in ('true', 'false'):
-        timeout_threshold = timezone.now() - timedelta(hours=48)
+        timeout_threshold = timezone.now() - timedelta(hours=24)
         if overdue == 'true':
             inquiries = inquiries.filter(updated_at__lt=timeout_threshold)
         else:
             inquiries = inquiries.filter(updated_at__gte=timeout_threshold)
 
-    date_filter = request.GET.get('date', '').strip()
-    selected_date = parse_filter_date(date_filter)
-    if selected_date:
-        inquiries = filter_datetime_field_by_local_date(inquiries, 'created_at', selected_date)
-        date_filter = selected_date.isoformat()
+    date_filter = request.GET.get('date_filter', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    today = timezone.localdate()
+    assigned_start_date = None
+    assigned_end_date = None
+
+    if date_filter == 'today':
+        assigned_start_date = today
+        assigned_end_date = today
+    elif date_filter == 'yesterday':
+        assigned_start_date = today - timedelta(days=1)
+        assigned_end_date = assigned_start_date
+    elif date_filter == 'last_7_days':
+        assigned_start_date = today - timedelta(days=6)
+        assigned_end_date = today
+    elif date_filter == 'custom':
+        assigned_start_date = parse_filter_date(date_from)
+        assigned_end_date = parse_filter_date(date_to)
+        date_from = assigned_start_date.isoformat() if assigned_start_date else ''
+        date_to = assigned_end_date.isoformat() if assigned_end_date else ''
+
+    if assigned_start_date and not assigned_end_date:
+        assigned_end_date = assigned_start_date
+    if assigned_end_date and not assigned_start_date:
+        assigned_start_date = assigned_end_date
+    if assigned_start_date and assigned_end_date and assigned_start_date > assigned_end_date:
+        assigned_start_date, assigned_end_date = assigned_end_date, assigned_start_date
+        date_from = assigned_start_date.isoformat()
+        date_to = assigned_end_date.isoformat()
+
+    if assigned_start_date and assigned_end_date:
+        current_tz = timezone.get_current_timezone()
+        start_dt = timezone.make_aware(datetime.combine(assigned_start_date, time.min), current_tz)
+        end_dt = timezone.make_aware(datetime.combine(assigned_end_date, time.max), current_tz)
+        inquiries = inquiries.filter(lead__counselor_assigned_at__range=(start_dt, end_dt))
 
     inquiries = inquiries.order_by('-created_at')
+
+    from django.db.models import Subquery, OuterRef
+    converted_by_sq = LeadActivity.objects.filter(
+        lead__inquiry=OuterRef('pk'),
+        activity_type='LEAD_CREATED'
+    ).values('created_by__username')[:1]
+
+    inquiries = inquiries.annotate(
+        annotated_converted_by=Subquery(converted_by_sq)
+    )
+
     paginator = Paginator(inquiries, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    User = get_user_model()
+    counselors = User.objects.filter(
+        role='counselor',
+        is_active=True,
+        is_deleted=False,
+    ).order_by('username')
+    call_status_update_choices = [
+        (code, name)
+        for code, name in Inquiry.CALL_STATUS_CHOICES
+        if code not in ('NEW', 'ACCEPTED')
+    ]
 
     return render(request, 'management/inquiry_list.html', {
         'page_obj': page_obj,
         'inquiry_form': InquiryForm(),
+        'counselors': counselors,
         'q': q,
         'status': status,
         'source': source,
         'call_status': call_status,
         'scope': scope,
+        'converted': converted,
         'overdue': overdue,
         'date_filter': date_filter,
+        'date_from': date_from,
+        'date_to': date_to,
         'status_choices': Inquiry.STATUS_CHOICES,
         'source_choices': Inquiry.SOURCE_CHOICES,
         'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
+        'call_status_update_choices': call_status_update_choices,
         'can_delete_inquiries': is_admin_user(request.user),
     })
 
@@ -789,7 +914,7 @@ def inquiry_convert(request, pk):
         })
 
     if counselor_telecalling_convert:
-        # Counselor telecalling: convert contact, goes to Admin Queue, admin assigns to their counselor dashboard.
+        # Counselor telecalling: convert contact, goes to their counselor dashboard automatically.
         if request.method == 'POST':
             converted_at = timezone.now()
             existing_lead.converted_at = converted_at
@@ -798,9 +923,8 @@ def inquiry_convert(request, pk):
             existing_lead.first_assigned_user = existing_lead.first_assigned_user or request.user
             existing_lead.first_assigned_date = existing_lead.first_assigned_date or existing_lead.counselor_assigned_at or converted_at
             existing_lead.status = existing_lead.status or 'New'
-            # Remove the telecalling counselor assignment so it goes to admin queue
-            # Admin will re-assign this lead to the counselor's counseling dashboard
-            existing_lead.assigned_counselor = None
+            # Assign to counselor dashboard directly
+            existing_lead.assigned_counselor = request.user
             existing_lead.save()
 
             inquiry.status = 'Qualified'
@@ -809,12 +933,12 @@ def inquiry_convert(request, pk):
             log_lead_activity(
                 existing_lead,
                 'LEAD_CREATED',
-                f"Lead converted from counselor telecalling by {request.user.username}. Sent to admin queue for counselor assignment.",
+                f"Lead converted from counselor telecalling by {request.user.username}. Automatically assigned to their counseling dashboard.",
                 request.user,
             )
             messages.success(
                 request,
-                f"Contact {inquiry.full_name} successfully converted to Lead. Admin will assign it to your counseling queue.",
+                f"Contact {inquiry.full_name} successfully converted to Lead. It has been assigned to your counseling queue.",
             )
             return redirect('counselor_telecalling_dashboard')
 
@@ -2577,6 +2701,7 @@ def telecaller_report(request):
 def counselor_dashboard(request):
 
     today = timezone.localdate()
+    followup_overdue_threshold = timezone.now() - timedelta(hours=24)
 
     # Base Lead Queryset Scoping (Strict Isolation)
     if is_admin_user(request.user):
@@ -2599,15 +2724,27 @@ def counselor_dashboard(request):
     new_leads = {'today': leads_qs.filter(counselor_status='NEW', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='NEW').count()}
     contacted_leads = {'today': leads_qs.filter(counselor_status='CONTACTED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='CONTACTED').count()}
     counseling_done = {'today': leads_qs.filter(counselor_status='COUNSELING_DONE', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='COUNSELING_DONE').count()}
-    followup_req = {'today': leads_qs.filter(counselor_status='FOLLOW_UP_REQUIRED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='FOLLOW_UP_REQUIRED').count()}
+    pending_followup_leads_qs = leads_qs.filter(
+        Q(counselor_status='FOLLOW_UP_REQUIRED') &
+        (Q(counselor_status_updated_at__gte=followup_overdue_threshold) | Q(counselor_status_updated_at__isnull=True))
+    )
+    overdue_followup_leads_qs = leads_qs.filter(
+        counselor_status='FOLLOW_UP_REQUIRED',
+        counselor_status_updated_at__lt=followup_overdue_threshold,
+    )
+    followup_req = {
+        'today': pending_followup_leads_qs.filter(counselor_status_updated_at__date=today).count(),
+        'total': pending_followup_leads_qs.count(),
+    }
     interested_leads = {'today': leads_qs.filter(counselor_status='INTERESTED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='INTERESTED').count()}
     converted_leads = {'today': leads_qs.filter(counselor_status__in=['CONVERTED', 'ADMISSION'], counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status__in=['CONVERTED', 'ADMISSION']).count()}
     not_interested = {'today': leads_qs.filter(counselor_status='NOT_INTERESTED', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='NOT_INTERESTED').count()}
     lost_leads = {'today': leads_qs.filter(counselor_status='LOST', counselor_status_updated_at__date=today).count(), 'total': leads_qs.filter(counselor_status='LOST').count()}
 
-    # Followup statistics
-    pending_followups = followups_qs.filter(status='Pending').count()
-    overdue_followups = followups_qs.filter(status='Pending', followup_date__lt=today).count()
+    # Follow-up cards are status-driven: after 24 hours in Pending Follow Up,
+    # the lead moves from Pending to Overdue automatically.
+    pending_followups = pending_followup_leads_qs.count()
+    overdue_followups = overdue_followup_leads_qs.count()
 
     today_visits = visits_qs.filter(visit_date=today).count()
     upcoming_visits = visits_qs.filter(visit_date__gt=today, status='Scheduled').count()
@@ -2624,8 +2761,8 @@ def counselor_dashboard(request):
 
     # Table Contexts
     recent_leads = leads_qs.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').order_by('-created_at')[:5]
-    today_followups_list = followups_qs.filter(status='Pending', followup_date=today).select_related('lead__inquiry', 'created_by').order_by('followup_date')[:5]
-    overdue_followups_list = followups_qs.filter(status='Pending', followup_date__lt=today).select_related('lead__inquiry', 'created_by').order_by('followup_date')[:5]
+    today_followups_list = pending_followup_leads_qs.select_related('inquiry').order_by('-counselor_status_updated_at')[:5]
+    overdue_followups_list = overdue_followup_leads_qs.select_related('inquiry').order_by('counselor_status_updated_at')[:5]
     recent_activities = activities_qs.select_related('lead__inquiry', 'created_by').order_by('-created_at')[:5]
 
     context = {
@@ -2693,9 +2830,25 @@ def counselor_lead_list(request):
     if selected_assigned_date:
         leads = filter_datetime_field_by_local_date(leads, 'assigned_at', selected_assigned_date)
 
+    followup_state = request.GET.get('followup_state', '').strip()
+    if followup_state in ('pending', 'overdue'):
+        followup_overdue_threshold = timezone.now() - timedelta(hours=24)
+        leads = leads.filter(counselor_status='FOLLOW_UP_REQUIRED')
+        if followup_state == 'pending':
+            leads = leads.filter(counselor_status_updated_at__gte=followup_overdue_threshold)
+        else:
+            leads = leads.filter(counselor_status_updated_at__lt=followup_overdue_threshold)
+
     paginator = Paginator(leads, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    counselor_status_choices = [
+        ('INTERESTED', 'Interested'),
+        ('NOT_INTERESTED', 'Not Interested'),
+        ('ADMISSION', 'Admission'),
+        ('FOLLOW_UP_REQUIRED', 'Pending Follow Up'),
+    ]
 
     return render(request, 'management/counselor_lead_list.html', {
         'page_obj': page_obj,
@@ -2703,7 +2856,8 @@ def counselor_lead_list(request):
         'status': status,
         'priority': priority,
         'date_filter': date_filter,
-        'status_choices': Lead.COUNSELOR_STATUS_CHOICES,
+        'followup_state': followup_state,
+        'status_choices': counselor_status_choices,
         'priority_choices': Lead.PRIORITY_CHOICES,
     })
 
@@ -2773,10 +2927,9 @@ def counselor_lead_status_update(request, pk):
         if form.is_valid():
             old_status = lead.counselor_status
             updated_lead = form.save(commit=False)
-            updated_lead.counselor_status_updated_at = timezone.now()
-            updated_lead.save()
 
             if old_status != updated_lead.counselor_status:
+                updated_lead.counselor_status_updated_at = timezone.now()
                 remark = updated_lead.notes.strip() if updated_lead.notes else ''
                 activity_msg = f"Counselor status updated from {old_status} to {updated_lead.counselor_status}."
                 if remark:
@@ -2787,6 +2940,8 @@ def counselor_lead_status_update(request, pk):
                     activity_msg,
                     request.user
                 )
+
+            updated_lead.save()
 
             messages.success(request, f"Counselor status updated successfully to {updated_lead.counselor_status}.")
             return redirect('counselor_lead_detail', pk=lead.pk)
@@ -3390,9 +3545,15 @@ def lead_assign_counselor(request):
     # Default: show leads WITHOUT a counselor (the actual Admin Queue)
     assigned_status = request.GET.get('assigned', 'no').strip()
     if assigned_status == 'yes':
-        leads = leads.filter(assigned_counselor__isnull=False)
+        if is_telecalling_assignment:
+            leads = leads.filter(Q(assigned_counselor__isnull=False) | Q(assigned_telecaller__isnull=False))
+        else:
+            leads = leads.filter(assigned_counselor__isnull=False)
     elif assigned_status == 'no':
-        leads = leads.filter(assigned_counselor__isnull=True)
+        if is_telecalling_assignment:
+            leads = leads.filter(assigned_counselor__isnull=True, assigned_telecaller__isnull=True)
+        else:
+            leads = leads.filter(assigned_counselor__isnull=True)
     elif assigned_status == 'all':
         pass
 
@@ -3413,6 +3574,7 @@ def lead_assign_counselor(request):
                     target_leads = Lead.objects.filter(
                         converted_at__isnull=True,
                         assigned_counselor__isnull=True,
+                        assigned_telecaller__isnull=True,
                     )
                 else:
                     target_leads = Lead.objects.filter(
@@ -4469,11 +4631,45 @@ def admin_counselor_updates(request):
     if priority:
         leads = leads.filter(priority=priority)
 
-    date_filter = request.GET.get('date', '').strip()
-    selected_date = parse_filter_date(date_filter)
-    if selected_date:
-        leads = filter_datetime_field_by_local_date(leads, 'counselor_status_updated_at', selected_date)
-        date_filter = selected_date.isoformat()
+    date_filter = request.GET.get('date_filter', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    today = timezone.localdate()
+    assigned_start_date = None
+    assigned_end_date = None
+
+    if date_filter == 'today':
+        assigned_start_date = today
+        assigned_end_date = today
+    elif date_filter == 'yesterday':
+        assigned_start_date = today - timedelta(days=1)
+        assigned_end_date = assigned_start_date
+    elif date_filter == 'last_7_days':
+        assigned_start_date = today - timedelta(days=6)
+        assigned_end_date = today
+    elif date_filter == 'custom':
+        assigned_start_date = parse_filter_date(date_from)
+        assigned_end_date = parse_filter_date(date_to)
+        date_from = assigned_start_date.isoformat() if assigned_start_date else ''
+        date_to = assigned_end_date.isoformat() if assigned_end_date else ''
+
+    if assigned_start_date and not assigned_end_date:
+        assigned_end_date = assigned_start_date
+    if assigned_end_date and not assigned_start_date:
+        assigned_start_date = assigned_end_date
+    if assigned_start_date and assigned_end_date and assigned_start_date > assigned_end_date:
+        assigned_start_date, assigned_end_date = assigned_end_date, assigned_start_date
+        date_from = assigned_start_date.isoformat()
+        date_to = assigned_end_date.isoformat()
+
+    if assigned_start_date and assigned_end_date:
+        current_tz = timezone.get_current_timezone()
+        start_dt = timezone.make_aware(datetime.combine(assigned_start_date, time.min), current_tz)
+        end_dt = timezone.make_aware(datetime.combine(assigned_end_date, time.max), current_tz)
+        leads = leads.filter(
+            Q(counselor_assigned_at__range=(start_dt, end_dt))
+            | Q(counselor_assigned_at__isnull=True, assigned_at__range=(start_dt, end_dt))
+        )
 
     paginator = Paginator(leads, 15)
     page_number = request.GET.get('page')
@@ -4497,6 +4693,8 @@ def admin_counselor_updates(request):
         'status': status,
         'priority': priority,
         'date_filter': date_filter,
+        'date_from': date_from,
+        'date_to': date_to,
         'status_choices': counselor_status_choices,
         'priority_choices': Lead.PRIORITY_CHOICES,
     })
@@ -4561,7 +4759,7 @@ def inquiry_bulk_assign(request):
 @counselor_required
 def counselor_telecalling_dashboard(request):
     today = timezone.localdate()
-    timeout_threshold = timezone.now() - timedelta(hours=48)
+    timeout_threshold = timezone.now() - timedelta(hours=24)
     User = get_user_model()
 
     if is_admin_user(request.user):
@@ -4572,29 +4770,27 @@ def counselor_telecalling_dashboard(request):
     from django.db.models import Q
 
     # COUNSELOR TELECALLING DASHBOARD:
-    # Shows ONLY contacts assigned by admin for counselors to do telecalling.
-    # These are Inquiries whose Lead has assigned_counselor set but converted_at IS NULL.
-    # Once converted, they move to Admin Queue (counselor_dashboard after admin re-assigns).
-
-    # Active telecalling contacts: Lead exists, assigned to this counselor, NOT yet converted
+    # Shows only contacts originally assigned by admin for counselor telecalling.
+    # Leads assigned later for counseling stay on the Counselor Dashboard / Assigned Leads flow.
     active_contacts_qs = Inquiry.objects.filter(
-        lead__assigned_counselor__in=counselor_users,
+        counselor_telecalling_inquiry_q(counselor_users)
+    ).exclude(status='Qualified').distinct()
+    active_status_contacts_qs = active_contacts_qs.filter(
         lead__converted_at__isnull=True
-    ).distinct()
+    )
 
     # Leads converted from telecalling by this counselor (historical, for stats)
     converted_from_telecalling_qs = Lead.objects.filter(
-        first_assigned_counselor__in=counselor_users,
-        converted_at__isnull=False,
-    )
+        counselor_telecalling_converted_lead_q(counselor_users)
+    ).distinct()
 
     calls_qs = CallLog.objects.filter(created_by__in=counselor_users)
     followups_qs = FollowUp.objects.filter(created_by__in=counselor_users)
 
     # Statistics: based on active telecalling contacts
     assigned_inquiries = {
-        'today': active_contacts_qs.filter(lead__assigned_at__date=today).count(),
-        'total': active_contacts_qs.count()
+        'today': active_status_contacts_qs.filter(lead__assigned_at__date=today).count(),
+        'total': active_status_contacts_qs.count()
     }
     total_leads = {
         'today': converted_from_telecalling_qs.filter(converted_at__date=today).count(),
@@ -4602,38 +4798,38 @@ def counselor_telecalling_dashboard(request):
     }
     assigned_leads = total_leads
     contacted_leads = {
-        'today': active_contacts_qs.filter(call_status='INTERESTED', updated_at__date=today).count(),
-        'total': active_contacts_qs.filter(call_status='INTERESTED').count()
+        'today': active_status_contacts_qs.filter(call_status='INTERESTED', updated_at__date=today).count(),
+        'total': active_status_contacts_qs.filter(call_status='INTERESTED').count()
     }
     interested_leads = {
-        'today': active_contacts_qs.filter(call_status='INTERESTED', updated_at__date=today).count(),
-        'total': active_contacts_qs.filter(call_status='INTERESTED').count()
+        'today': active_status_contacts_qs.filter(call_status='INTERESTED', updated_at__date=today).count(),
+        'total': active_status_contacts_qs.filter(call_status='INTERESTED').count()
     }
     qualified_leads = total_leads
     rejected_leads = {
-        'today': active_contacts_qs.filter(call_status='NOT_INTERESTED', updated_at__date=today).count(),
-        'total': active_contacts_qs.filter(call_status='NOT_INTERESTED').count()
+        'today': active_status_contacts_qs.filter(call_status='NOT_INTERESTED', updated_at__date=today).count(),
+        'total': active_status_contacts_qs.filter(call_status='NOT_INTERESTED').count()
     }
     calls_stats = {'today': calls_qs.filter(call_date__date=today).count(), 'total': calls_qs.count()}
     followups_stats = {'pending': followups_qs.filter(status='Pending').count(), 'overdue': followups_qs.filter(status='Pending', followup_date__lt=today).count()}
 
     # Call Outcomes (from active contacts)
     call_outcomes = {
-        'accepted': active_contacts_qs.filter(call_status='ACCEPTED').count(),
-        'busy': active_contacts_qs.filter(call_status='BUSY').count(),
-        'ringing': active_contacts_qs.filter(call_status='NO_ANSWER').count(),
-        'call_back': active_contacts_qs.filter(call_status='CALL_BACK').count(),
-        'wrong_number': active_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
-        'interested': active_contacts_qs.filter(call_status='INTERESTED').count(),
-        'not_interested': active_contacts_qs.filter(call_status='NOT_INTERESTED').count(),
-        'pending_follow_up': active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).count(),
-        'overdue_follow_up': active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).count(),
+        'accepted': active_status_contacts_qs.filter(call_status='ACCEPTED').count(),
+        'busy': active_status_contacts_qs.filter(call_status='BUSY').count(),
+        'ringing': active_status_contacts_qs.filter(call_status='NO_ANSWER').count(),
+        'call_back': active_status_contacts_qs.filter(call_status='CALL_BACK').count(),
+        'wrong_number': active_status_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
+        'interested': active_status_contacts_qs.filter(call_status='INTERESTED').count(),
+        'not_interested': active_status_contacts_qs.filter(call_status='NOT_INTERESTED').count(),
+        'pending_follow_up': active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).count(),
+        'overdue_follow_up': active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).count(),
     }
 
     # Tables
-    recent_inquiries = active_contacts_qs.select_related('lead', 'lead__assigned_counselor').order_by('-lead__assigned_at')[:5]
-    pending_inquiry_followups = active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).order_by('-updated_at')[:5]
-    overdue_inquiry_followups = active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).order_by('updated_at')[:5]
+    recent_inquiries = active_status_contacts_qs.select_related('lead', 'lead__assigned_counselor').order_by('-lead__assigned_at')[:5]
+    pending_inquiry_followups = active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).order_by('-updated_at')[:5]
+    overdue_inquiry_followups = active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).order_by('updated_at')[:5]
     recent_leads = converted_from_telecalling_qs.select_related('inquiry', 'assigned_counselor').order_by('-converted_at')[:5]
     recent_activities = LeadActivity.objects.filter(
         lead__in=converted_from_telecalling_qs
@@ -4661,7 +4857,143 @@ def counselor_telecalling_dashboard(request):
         'recent_activities': recent_activities,
         'today_followups_list': today_followups_list,
         'overdue_followups_list': overdue_followups_list,
-        'active_contacts_count': active_contacts_qs.count(),
+        'active_contacts_count': active_status_contacts_qs.count(),
     }
     return render(request, 'management/counselor_telecalling_dashboard.html', context)
 
+
+@login_required
+@superadmin_required
+def management_create_user(request):
+    User = get_user_model()
+    managed_roles = ('admin', 'hr', 'telecaller', 'counselor')
+    role_department = {
+        'admin': 'Administration',
+        'hr': 'Human Resources',
+        'counselor': 'Counseling',
+        'telecaller': 'Telecalling',
+    }
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'create_user')
+
+        if action == 'toggle_status':
+            user_obj = get_object_or_404(User.all_objects.filter(role__in=managed_roles, is_deleted=False), pk=request.POST.get('user_id'))
+            if user_obj.is_active and not user_obj.is_deleted:
+                user_obj.is_active = False
+                user_obj.save(update_fields=['is_active'])
+                messages.success(request, f"User '{user_obj.username}' has been deactivated.")
+            else:
+                user_obj.is_active = True
+                user_obj.is_deleted = False
+                user_obj.deleted_at = None
+                user_obj.save(update_fields=['is_active', 'is_deleted', 'deleted_at'])
+                messages.success(request, f"User '{user_obj.username}' has been activated.")
+            return redirect('management_create_user')
+
+        if action == 'delete_user':
+            user_obj = get_object_or_404(User.all_objects.filter(role__in=managed_roles, is_deleted=False), pk=request.POST.get('user_id'))
+            username = user_obj.username
+            user_obj.delete()
+            messages.success(request, f"User '{username}' has been deleted.")
+            return redirect('management_create_user')
+
+        form = ManagementUserCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            log_auth_activity(
+                'USER_CREATED',
+                request=request,
+                user=request.user,
+                username=user.username,
+                details=f"Created {user.get_role_display()} credentials for {user.username}.",
+            )
+            messages.success(
+                request,
+                f"{user.get_role_display()} user '{user.username}' created successfully. They can now log in.",
+            )
+            return redirect(f"{reverse('management_create_user')}?created={user.id}")
+        messages.error(request, 'Please correct the highlighted fields and try again.')
+    else:
+        form = ManagementUserCreateForm()
+
+    query = request.GET.get('q', '').strip()
+    role_filter = request.GET.get('role', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    per_page = request.GET.get('per_page', '10')
+    if per_page not in ('10', '20', '50'):
+        per_page = '10'
+
+    managed_users_qs = User.all_objects.filter(role__in=managed_roles, is_deleted=False)
+    users_qs = managed_users_qs.order_by('-date_joined', '-id')
+    if query:
+        users_qs = users_qs.filter(
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(role__icontains=query)
+        )
+    if role_filter in managed_roles:
+        users_qs = users_qs.filter(role=role_filter)
+    if status_filter == 'active':
+        users_qs = users_qs.filter(is_active=True, is_deleted=False)
+    elif status_filter == 'inactive':
+        users_qs = users_qs.filter(is_active=False)
+
+    paginator = Paginator(users_qs, int(per_page))
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    from apps.accounts.models import AuthActivityLog
+    page_users = list(page_obj.object_list)
+    creation_logs = AuthActivityLog.objects.filter(
+        event_type='USER_CREATED',
+        username__in=[user.username for user in page_users],
+    ).select_related('user').order_by('-created_at')
+    created_by_by_username = {}
+    for log in creation_logs:
+        if log.username not in created_by_by_username:
+            if log.user:
+                created_by_by_username[log.username] = log.user.get_full_name() or log.user.username
+            else:
+                created_by_by_username[log.username] = 'Super Admin'
+
+    avatar_classes = {
+        'admin': 'avatar-purple',
+        'hr': 'avatar-green',
+        'counselor': 'avatar-blue',
+        'telecaller': 'avatar-orange',
+    }
+    for user_obj in page_users:
+        display_name = user_obj.get_full_name() or user_obj.username
+        name_parts = display_name.split()
+        user_obj.display_name = display_name
+        user_obj.department_label = role_department.get(user_obj.role, 'Operations')
+        user_obj.created_by_label = created_by_by_username.get(user_obj.username, 'Super Admin')
+        user_obj.avatar_class = avatar_classes.get(user_obj.role, 'avatar-purple')
+        user_obj.avatar_initials = ''.join(part[0] for part in name_parts[:2]).upper() or user_obj.username[:2].upper()
+    page_obj.object_list = page_users
+
+    created_user_id = request.GET.get('created')
+    created_user_id = int(created_user_id) if created_user_id and created_user_id.isdigit() else None
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        query_params.pop('page')
+    if 'created' in query_params:
+        query_params.pop('created')
+
+    return render(request, 'management/create_user.html', {
+        'form': form,
+        'page_obj': page_obj,
+        'created_user_id': created_user_id,
+        'query': query,
+        'role_filter': role_filter,
+        'status_filter': status_filter,
+        'per_page': per_page,
+        'querystring': query_params.urlencode(),
+        'role_choices': [(role, dict(User.ROLE_CHOICES).get(role, role.title())) for role in managed_roles],
+        'total_users_count': managed_users_qs.count(),
+        'active_users_count': managed_users_qs.filter(is_active=True).count(),
+        'inactive_users_count': managed_users_qs.filter(is_active=False).count(),
+        'admin_users_count': managed_users_qs.filter(role='admin').count(),
+    })

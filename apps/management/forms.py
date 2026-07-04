@@ -1,8 +1,82 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from .models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet, AdmissionSheet
 
 ADMIN_ROLES = ('admin', 'superadmin')
+MANAGED_USER_ROLES = ('admin', 'hr', 'telecaller', 'counselor')
+
+
+class ManagementUserCreateForm(forms.Form):
+    role = forms.ChoiceField(choices=())
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150)
+    email = forms.EmailField()
+    phone = forms.CharField(max_length=20)
+    username = forms.CharField(max_length=150)
+    password = forms.CharField(widget=forms.PasswordInput)
+    confirm_password = forms.CharField(widget=forms.PasswordInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        User = get_user_model()
+        self.fields['role'].choices = tuple(
+            choice for choice in User.ROLE_CHOICES if choice[0] in MANAGED_USER_ROLES
+        )
+
+    def clean_role(self):
+        role = self.cleaned_data.get('role')
+        if role not in MANAGED_USER_ROLES:
+            raise forms.ValidationError('Please select a valid role.')
+        return role
+
+    def clean_username(self):
+        username = (self.cleaned_data.get('username') or '').strip()
+        User = get_user_model()
+        if User.all_objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError('An account with this username already exists.')
+        return username
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        User = get_user_model()
+        if User.all_objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('An account with this email already exists.')
+        return email
+
+    def clean_phone(self):
+        phone = (self.cleaned_data.get('phone') or '').strip()
+        digits = ''.join(char for char in phone if char.isdigit())
+        if len(digits) < 10 or len(digits) > 15:
+            raise forms.ValidationError('Phone number must be between 10 and 15 digits.')
+        return phone
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        if password and confirm_password and password != confirm_password:
+            self.add_error('confirm_password', 'Passwords do not match.')
+        if password:
+            try:
+                validate_password(password)
+            except forms.ValidationError as exc:
+                self.add_error('password', exc)
+        return cleaned_data
+
+    def save(self):
+        User = get_user_model()
+        user = User.all_objects.create_user(
+            username=self.cleaned_data['username'],
+            email=self.cleaned_data['email'],
+            password=self.cleaned_data['password'],
+            first_name=self.cleaned_data['first_name'].strip(),
+            last_name=self.cleaned_data['last_name'].strip(),
+            role=self.cleaned_data['role'],
+            is_active=True,
+            is_deleted=False,
+        )
+        return user
 
 class InquiryForm(forms.ModelForm):
     class Meta:
@@ -144,6 +218,15 @@ class CounselorFollowUpForm(forms.ModelForm):
 
 
 class CounselorLeadStatusForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['counselor_status'].choices = [
+            ('', '-- Select the option --'),
+            ('INTERESTED', 'Interested'),
+            ('NOT_INTERESTED', 'Not Interested'),
+            ('ADMISSION', 'Admission'),
+            ('FOLLOW_UP_REQUIRED', 'Pending Follow Up'),
+        ]
     class Meta:
         model = Lead
         fields = ['counselor_status', 'notes']

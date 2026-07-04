@@ -20,7 +20,7 @@
   </div>
 </div>
 
-<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5">
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-xl-4">
   <div class="col">
     <div class="erp-card bg-g-blue">
       <div class="erp-card-body">
@@ -52,59 +52,30 @@
   <div class="col">
     <div class="erp-card bg-g-violet">
       <div class="erp-card-body">
-        <div class="erp-card-title">Unassigned Contacts</div>
-        <div class="erp-card-number">{{ unassigned_inquiries.total }}</div>
-        <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ unassigned_inquiries.today }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-person-x-fill"></i></div>
+        <div class="erp-card-title">Telecaller Leads</div>
+        <div class="erp-card-number">{{ telecaller_leads.total }}</div>
+        <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ telecaller_leads.today }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound"></i></div>
       </div>
-      <a href="{% url 'lead_assign' %}?assigned=no" class="erp-card-footer">
-        <i class="bi bi-arrow-right"></i> Assign Now
-      </a>
+      <div class="erp-card-footer">
+        <i class="bi bi-check-circle"></i> Converted Leads
+      </div>
     </div>
   </div>
 
   <div class="col">
     <div class="erp-card bg-g-teal">
       <div class="erp-card-body">
-        <div class="erp-card-title">Telecaller Contacts</div>
-        <div class="erp-card-number">{{ assigned_to_telecaller.total }}</div>
-        <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ assigned_to_telecaller.today }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-telephone-fill"></i></div>
+        <div class="erp-card-title">Total Admissions</div>
+        <div class="erp-card-number">{{ total_admissions.total }}</div>
+        <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ total_admissions.today }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-mortarboard-fill"></i></div>
       </div>
-      <a href="{% url 'lead_assign' %}?assigned=yes" class="erp-card-footer">
-        <i class="bi bi-gear"></i> Manage
+      <a href="{% url 'admission_list' %}" class="erp-card-footer">
+        <i class="bi bi-file-earmark-check"></i> View Admissions
       </a>
     </div>
   </div>
-
-  <div class="col">
-    <div class="erp-card" style="background: linear-gradient(135deg,#f59e0b,#d97706);">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Admin Queue</div>
-        <div class="erp-card-number">{{ admin_queue.total }}</div>
-        <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ admin_queue.today }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-inbox-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_assign_counselor' %}?assigned=no" class="erp-card-footer">
-        <i class="bi bi-arrow-right"></i> Assign Counselor
-      </a>
-    </div>
-  </div>
-
-  <div class="col">
-    <div class="erp-card bg-g-pink">
-      <div class="erp-card-body">
-        <div class="erp-card-title">Counselor Leads</div>
-        <div class="erp-card-number">{{ assigned_to_counselor.total }}</div>
-        <div class="small fw-bold text-white-50 mt-1"><i class="bi bi-arrow-up-right me-1"></i>Today: {{ assigned_to_counselor.today }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-person-badge-fill"></i></div>
-      </div>
-      <a href="{% url 'lead_assign_counselor' %}?assigned=yes" class="erp-card-footer">
-        <i class="bi bi-gear"></i> Manage
-      </a>
-    </div>
-  </div>
-
 </div>
 
 <div class="row g-4">
@@ -144,7 +115,7 @@
   <div class="col-xl-6">
     <div class="m-card">
       <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-funnel-fill me-2 text-info"></i>Recent Lead Assignments</h5>
+        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-funnel-fill me-2 text-info"></i>Recent Leads Generated</h5>
         <a href="{% url 'lead_assign' %}" class="btn btn-sm btn-outline-info">Manage</a>
       </div>
       <div class="table-responsive">
@@ -152,8 +123,8 @@
           <thead>
             <tr>
               <th>Lead</th>
-              <th>Assigned TC</th>
-              <th>Assigned Counselor</th>
+              <th>Converted By</th>
+              <th>Counselor</th>
               <th>Date</th>
             </tr>
           </thead>
@@ -162,10 +133,10 @@
             <tr>
               <td class="fw-semibold text-white">{{ lead.inquiry.full_name }}</td>
               <td>
-                {% if lead.assigned_telecaller %}
-                  <span class="badge bg-primary">{{ lead.assigned_telecaller.username }}</span>
+                {% if lead.annotated_converted_by %}
+                  <span class="badge bg-primary">{{ lead.annotated_converted_by }}</span>
                 {% else %}
-                  <span class="badge bg-secondary">Unassigned</span>
+                  <span class="badge bg-secondary">-</span>
                 {% endif %}
               </td>
               <td>
@@ -175,7 +146,7 @@
                   <span class="badge bg-secondary">Unassigned</span>
                 {% endif %}
               </td>
-              <td class="text-muted small">{{ lead.assigned_at|date:"d M, Y" }}</td>
+              <td class="text-muted small">{{ lead.converted_at|date:"d M, Y" }}</td>
             </tr>
             {% empty %}
             <tr><td colspan="4" class="text-center text-muted">No recent leads found.</td></tr>

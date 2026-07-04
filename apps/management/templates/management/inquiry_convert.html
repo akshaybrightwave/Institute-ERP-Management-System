@@ -189,7 +189,7 @@
             </div>
 
           {% elif counselor_telecalling_convert_mode %}
-            <!-- COUNSELOR TELECALLING MODE: Contact assigned for telecalling, counselor converts to admin queue -->
+            <!-- COUNSELOR TELECALLING MODE: Contact assigned for telecalling, counselor converts -->
             <div class="counselor-field-wrap" style="border-color:rgba(129,140,248,0.3);background:rgba(129,140,248,0.05);">
               <div class="counselor-field-label">
                 <i class="bi bi-person-badge-fill"></i>
@@ -198,7 +198,7 @@
               <div class="text-white fw-bold">
                 <i class="bi bi-check-circle-fill text-success me-1"></i> You ({{ request.user.username }})
               </div>
-              <div class="text-muted small mt-1">This contact will be converted to a Lead and sent to the <strong>Admin Queue</strong>. The admin will assign it to your counseling dashboard.</div>
+              <div class="text-muted small mt-1">This contact will be converted to a Lead and <strong>automatically assigned</strong> to your counseling dashboard.</div>
             </div>
 
           {% elif request.user.role == 'telecaller' %}

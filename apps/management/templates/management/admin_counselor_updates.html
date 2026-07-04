@@ -55,11 +55,27 @@
     </div>
 
     <div class="col-md-3 mt-2">
-      <label class="form-label text-muted small fw-bold">Date</label>
-      <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+      <label class="form-label text-muted small fw-bold">Date Added</label>
+      <select name="date_filter" class="form-select bg-dark border-secondary text-white">
+        <option value="">All Dates</option>
+        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+        <option value="yesterday" {% if date_filter == 'yesterday' %}selected{% endif %}>Yesterday</option>
+        <option value="last_7_days" {% if date_filter == 'last_7_days' %}selected{% endif %}>Last 7 Days</option>
+        <option value="custom" {% if date_filter == 'custom' %}selected{% endif %}>Date Range</option>
+      </select>
+    </div>
+
+    <div class="col-md-3 mt-2">
+      <label class="form-label text-muted small fw-bold">From</label>
+      <input type="date" name="date_from" value="{{ date_from }}" class="form-control bg-dark border-secondary text-white">
+    </div>
+
+    <div class="col-md-3 mt-2">
+      <label class="form-label text-muted small fw-bold">To</label>
+      <input type="date" name="date_to" value="{{ date_to }}" class="form-control bg-dark border-secondary text-white">
     </div>
   </form>
-  {% if q or status or priority or date_filter %}
+  {% if q or status or priority or date_filter or date_from or date_to %}
   <div class="mt-3">
     <a href="{% url 'admin_counselor_updates' %}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-x-circle me-1"></i> Clear filters
@@ -96,7 +112,17 @@
               <td>{{ lead.inquiry.mobile_number }}</td>
               <td>{{ lead.inquiry.email|default:"-" }}</td>
               <td>{{ lead.inquiry.city }}</td>
-              <td><span class="text-white-50">{{ lead.created_at|date:"d M Y" }}</span></td>
+              <td>
+                <span class="text-white-50">
+                  {% if lead.counselor_assigned_at %}
+                    {{ lead.counselor_assigned_at|date:"d M Y" }}
+                  {% elif lead.assigned_at %}
+                    {{ lead.assigned_at|date:"d M Y" }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </span>
+              </td>
               <td>
                 {% if lead.priority == 'Hot' %}
                   <span class="badge bg-danger"><i class="bi bi-fire"></i> Hot</span>
@@ -113,11 +139,16 @@
                   <span class="text-muted small">Not Scheduled</span>
                 {% endif %}
               </td>
-              <td><span class="text-info fw-bold">{{ lead.assigned_counselor.get_full_name|default:lead.assigned_counselor.username }}</span></td>
+              <td><span class="text-info fw-bold">{{ lead.assigned_counselor.username }}</span></td>
               <td>
                 <span class="badge {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info text-white{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if lead.counselor_status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif lead.counselor_status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
                   {{ lead.get_counselor_status_display }}
                 </span>
+                {% if lead.counselor_status_updated_at and lead.counselor_status != 'NEW' %}
+                  <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+                    <i class="bi bi-clock-history me-1"></i>{{ lead.counselor_status_updated_at|date:"d M Y" }}
+                  </div>
+                {% endif %}
               </td>
               <td class="text-end">
                 <div class="d-inline-flex gap-1">
@@ -135,17 +166,17 @@
           <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">&laquo;</a>
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">{{ i }}</a>
+                <a class="page-link {% if page_obj.number == i %}bg-info border-info text-white{% else %}bg-dark border-secondary text-info{% endif %}" href="?page={{ i }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}">&raquo;</a>
+                <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if priority %}&priority={{ priority }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">&raquo;</a>
               </li>
             {% endif %}
           </ul>

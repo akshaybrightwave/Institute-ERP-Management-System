@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/dashboard/', views.management_admin_dashboard, name='management_admin_dashboard'),
     path('admin/counselor-updates/', views.admin_counselor_updates, name='admin_counselor_updates'),
     path('telecaller/dashboard/', views.management_dashboard, name='management_dashboard'),
+    path('create-user/', views.management_create_user, name='management_create_user'),
 
     # Inquiry CRUD
     path('inquiries/', views.inquiry_list, name='inquiry_list'),
