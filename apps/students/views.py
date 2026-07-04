@@ -5,8 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
 
 from apps.exams.models import Exam, StudentExamAttempt, StudentAnswer, Option
-from apps.students.models import StudentProfile
-from apps.students.forms import StudentProfileForm
+from apps.students.models import StudentProfile, StudentAdmission
+from apps.students.forms import StudentProfileForm, StudentAdmissionForm
+from apps.accounts.views import admin_required
 
 
 # ---------------------------------------------------------------------------
@@ -430,3 +431,431 @@ def edit_student_profile(request):
         form = StudentProfileForm(instance=profile)
 
     return render(request, 'student/edit_profile.html', {'form': form})
+
+
+@admin_required
+def student_admission_view(request):
+    if request.method == 'POST':
+        form = StudentAdmissionForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Student Admission processed successfully.')
+            return redirect('student_admission')
+    else:
+        form = StudentAdmissionForm()
+    
+    return render(request, 'student/student_admission.html', {'form': form})
+
+
+# ---------------------------------------------------------------------------
+# Student Details — Search & Quick Profile
+# ---------------------------------------------------------------------------
+
+@admin_required
+def student_details_view(request):
+    """Search student by enrollment no / name / mobile and display quick profile."""
+    from django.http import JsonResponse
+    from django.db.models import Q
+
+    student = None
+    admission = None
+    error = None
+
+    enrollment = request.GET.get('enrollment', '').strip()
+    if enrollment:
+        try:
+            admission = (
+                StudentAdmission.objects
+                .select_related('center', 'course')
+                .get(enrollment_no=enrollment)
+            )
+        except StudentAdmission.DoesNotExist:
+            error = 'No student found with that Enrollment Number / Name / Mobile.'
+
+    return render(request, 'student/student_details.html', {
+        'admission': admission,
+        'error': error,
+        'enrollment': enrollment,
+    })
+
+
+@login_required
+def student_search_autocomplete(request):
+    """Return JSON list of students matching query for Select2 autocomplete."""
+    from django.http import JsonResponse
+    from django.db.models import Q
+
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        qs = (
+            StudentAdmission.objects
+            .filter(
+                Q(enrollment_no__icontains=q) |
+                Q(student_name__icontains=q) |
+                Q(whatsapp_no__icontains=q)
+            )
+            .select_related('center')
+            .order_by('student_name')[:20]
+        )
+        for s in qs:
+            photo_url = s.photo.url if s.photo else ''
+            results.append({
+                'id': s.enrollment_no, # Used by Student Details
+                'db_id': s.id,         # Used by ID Card
+                'text': f'{s.student_name} ({s.enrollment_no})',
+                'name': s.student_name,
+                'enrollment': s.enrollment_no,
+                'mobile': s.whatsapp_no,
+                'photo': photo_url,
+            })
+    return JsonResponse({'results': results})
+
+
+# ---------------------------------------------------------------------------
+# Student ID Card
+# ---------------------------------------------------------------------------
+
+@login_required
+def student_id_card_view(request):
+    """Search student and display ID card preview for printing."""
+    student_id = request.GET.get('student_id', '').strip()
+    admission = None
+    error = None
+
+    if student_id:
+        try:
+            admission = (
+                StudentAdmission.objects
+                .select_related('center', 'course')
+                .get(pk=student_id)
+            )
+        except StudentAdmission.DoesNotExist:
+            error = 'No student found with that ID.'
+        except ValueError:
+            error = 'Invalid Student ID provided.'
+
+    return render(request, 'student/student_id_card.html', {
+        'admission': admission,
+        'error': error,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Pending List (Admission Verification Queue)
+# ---------------------------------------------------------------------------
+
+@login_required
+def student_pending_list(request):
+    """List pending student admissions. Admins see all, Center sees own."""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    
+    # Permission check: Only Admin and Center allowed
+    if request.user.role not in ['admin', 'center']:
+        return redirect('student_dashboard')
+
+    qs = StudentAdmission.objects.filter(status='Pending').select_related('center', 'course')
+
+    if request.user.role == 'center':
+        qs = qs.filter(center__code=request.user.username)  # Center can only see their own admissions
+
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        qs = qs.filter(
+            Q(enrollment_no__icontains=q) |
+            Q(student_name__icontains=q) |
+            Q(whatsapp_no__icontains=q) |
+            Q(email__icontains=q)
+        )
+
+    # Ordering: Newest first
+    qs = qs.order_by('-created_at', '-id')
+
+    # Pagination
+    show_entries = request.GET.get('show', '10')
+    try:
+        per_page = int(show_entries)
+    except ValueError:
+        per_page = 10
+
+    paginator = Paginator(qs, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'student/pending_list.html', {
+        'page_obj': page_obj,
+        'query': q,
+        'show_entries': show_entries,
+    })
+
+
+@login_required
+def student_approve_action(request, pk):
+    """Approve a pending or cancelled student admission."""
+    from django.utils import timezone
+    
+    redirect_url = request.META.get('HTTP_REFERER') or 'student_pending_list'
+    
+    if request.method == 'POST':
+        if request.user.role not in ['admin', 'center']:
+            messages.error(request, 'Permission denied.')
+            return redirect(redirect_url)
+            
+        try:
+            admission = StudentAdmission.objects.get(pk=pk, status__in=['Pending', 'Cancelled'])
+            
+            # Center can only approve own students
+            if request.user.role == 'center' and admission.center and admission.center.code != request.user.username:
+                messages.error(request, 'Permission denied.')
+                return redirect(redirect_url)
+
+            admission.status = 'Approved'
+            admission.approved_by = request.user
+            admission.approved_at = timezone.now()
+            admission.cancelled_by = None
+            admission.cancelled_at = None
+            admission.cancel_reason = None
+            admission.save()
+            messages.success(request, 'Student Admission Approved Successfully.')
+            
+        except StudentAdmission.DoesNotExist:
+            messages.error(request, 'Admission not found or is already Approved.')
+
+    return redirect(redirect_url)
+
+
+@login_required
+def student_cancel_action(request, pk):
+    """Cancel a pending student admission or update cancelled details."""
+    from django.utils import timezone
+    
+    redirect_url = request.META.get('HTTP_REFERER') or 'student_pending_list'
+    
+    if request.method == 'POST':
+        if request.user.role not in ['admin', 'center']:
+            messages.error(request, 'Permission denied.')
+            return redirect(redirect_url)
+            
+        try:
+            admission = StudentAdmission.objects.get(pk=pk, status__in=['Pending', 'Cancelled'])
+            
+            # Center can only cancel own students
+            if request.user.role == 'center' and admission.center and admission.center.code != request.user.username:
+                messages.error(request, 'Permission denied.')
+                return redirect(redirect_url)
+
+            cancel_reason = request.POST.get('cancel_reason', '').strip()
+            
+            admission.status = 'Cancelled'
+            admission.cancelled_by = request.user
+            admission.cancelled_at = timezone.now()
+            admission.cancel_reason = cancel_reason
+            admission.approved_by = None
+            admission.approved_at = None
+            admission.save()
+            messages.success(request, 'Student Admission Cancelled.')
+            
+        except StudentAdmission.DoesNotExist:
+            messages.error(request, 'Admission not found or is already Approved.')
+
+    return redirect(redirect_url)
+
+
+# ---------------------------------------------------------------------------
+# Approved List & Cancel List
+# ---------------------------------------------------------------------------
+
+@login_required
+def student_approved_list(request):
+    """List approved student admissions. Admins see all, Center sees own."""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    
+    # Permission check: Only Admin and Center allowed
+    if request.user.role not in ['admin', 'center']:
+        return redirect('student_dashboard')
+
+    qs = StudentAdmission.objects.filter(status='Approved').select_related('center', 'course')
+
+    if request.user.role == 'center':
+        qs = qs.filter(center__code=request.user.username)
+
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        qs = qs.filter(
+            Q(enrollment_no__icontains=q) |
+            Q(student_name__icontains=q) |
+            Q(whatsapp_no__icontains=q) |
+            Q(email__icontains=q)
+        )
+
+    # Ordering: Newest first
+    qs = qs.order_by('-created_at', '-id')
+
+    # Pagination
+    show_entries = request.GET.get('show', '10')
+    try:
+        per_page = int(show_entries)
+    except ValueError:
+        per_page = 10
+
+    paginator = Paginator(qs, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'student/approved_list.html', {
+        'page_obj': page_obj,
+        'query': q,
+        'show_entries': show_entries,
+    })
+
+
+@login_required
+def student_cancelled_list(request):
+    """List cancelled student admissions. Admins see all, Center sees own."""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    
+    # Permission check: Only Admin and Center allowed
+    if request.user.role not in ['admin', 'center']:
+        return redirect('student_dashboard')
+
+    qs = StudentAdmission.objects.filter(status='Cancelled').select_related('center', 'course')
+
+    if request.user.role == 'center':
+        qs = qs.filter(center__code=request.user.username)
+
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        qs = qs.filter(
+            Q(enrollment_no__icontains=q) |
+            Q(student_name__icontains=q) |
+            Q(whatsapp_no__icontains=q) |
+            Q(email__icontains=q)
+        )
+
+    # Ordering: Newest first
+    qs = qs.order_by('-created_at', '-id')
+
+    # Pagination
+    show_entries = request.GET.get('show', '10')
+    try:
+        per_page = int(show_entries)
+    except ValueError:
+        per_page = 10
+
+    paginator = Paginator(qs, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'student/cancelled_list.html', {
+        'page_obj': page_obj,
+        'query': q,
+        'show_entries': show_entries,
+    })
+
+
+@login_required
+def student_revert_pending_action(request, pk):
+    """Revert an approved or cancelled student admission back to pending."""
+    if request.method == 'POST':
+        if request.user.role not in ['admin', 'center']:
+            messages.error(request, 'Permission denied.')
+            return redirect('student_approved_list')
+            
+        try:
+            admission = StudentAdmission.objects.get(pk=pk)
+            
+            # Center can only revert own students
+            if request.user.role == 'center' and admission.center and admission.center.code != request.user.username:
+                messages.error(request, 'Permission denied.')
+                return redirect('student_approved_list')
+
+            admission.status = 'Pending'
+            admission.approved_by = None
+            admission.approved_at = None
+            admission.cancelled_by = None
+            admission.cancelled_at = None
+            admission.cancel_reason = None
+            admission.save()
+            messages.success(request, 'Student Admission Reverted to Pending.')
+            
+        except StudentAdmission.DoesNotExist:
+            messages.error(request, 'Admission record not found.')
+
+    return redirect('student_approved_list')
+
+
+@login_required
+def student_list_by_center(request):
+    """List students filtered by Selected Center."""
+    from apps.centers.models import Center
+    from django.db.models import Q
+    from django.core.paginator import Paginator
+    from django.contrib import messages
+    
+    # Check permissions (only admin and center role can view, center role is locked to their own center)
+    if request.user.role not in ['admin', 'center']:
+        messages.error(request, 'Permission denied.')
+        return redirect('admin_dashboard')
+        
+    centers = Center.objects.all().order_by('name')
+    selected_center_id = request.GET.get('center_id', '').strip()
+    
+    # If the user is a center, force selected_center_id to be their own center
+    if request.user.role == 'center':
+        try:
+            user_center = Center.objects.get(code=request.user.username)
+            selected_center_id = str(user_center.id)
+            # Filter centers list to only their own center for center role
+            centers = centers.filter(id=user_center.id)
+        except Center.DoesNotExist:
+            messages.error(request, 'Center not found for your account.')
+            return redirect('admin_dashboard')
+            
+    qs = StudentAdmission.objects.select_related('course', 'center').all()
+    
+    if selected_center_id:
+        qs = qs.filter(center_id=selected_center_id)
+    else:
+        # If admin and no center is selected, display empty list
+        if request.user.role == 'admin':
+            qs = qs.none()
+            
+    # Search query within the filtered queryset
+    q = request.GET.get('q', '').strip()
+    if q and selected_center_id:
+        qs = qs.filter(
+            Q(enrollment_no__icontains=q) |
+            Q(student_name__icontains=q) |
+            Q(whatsapp_no__icontains=q) |
+            Q(email__icontains=q)
+        )
+        
+    # Ordering: Newest first
+    qs = qs.order_by('-created_at', '-id')
+    
+    # Pagination
+    show_entries = request.GET.get('show', '10')
+    try:
+        per_page = int(show_entries)
+    except ValueError:
+        per_page = 10
+        
+    paginator = Paginator(qs, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'student/list_by_center.html', {
+        'centers': centers,
+        'selected_center_id': selected_center_id,
+        'page_obj': page_obj,
+        'query': q,
+        'show_entries': show_entries,
+    })
+
+

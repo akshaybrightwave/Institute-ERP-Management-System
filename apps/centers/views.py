@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from django.core.paginator import Paginator
 from apps.accounts.views import admin_required
 from .models import Center
 from .forms import CenterForm
@@ -8,8 +10,31 @@ from .forms import CenterForm
 
 @admin_required
 def center_list(request):
-    centers = Center.objects.all()
-    return render(request, 'centers/center_list.html', {'centers': centers})
+    form = CenterForm()
+
+    if request.method == 'POST':
+        post_data = request.POST.copy()
+        if 'phone' not in post_data or not post_data.get('phone'):
+            post_data['phone'] = '1234567890'
+        form = CenterForm(post_data)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Center created successfully.')
+            return redirect('center_list')
+
+    query = request.GET.get('q', '').strip()
+    qs = Center.objects.all().order_by('-id')
+    if query:
+        qs = qs.filter(name__icontains=query)
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'centers/center_list.html', {
+        'form': form,
+        'page_obj': page_obj,
+        'query': query,
+    })
 
 
 @admin_required
@@ -33,8 +58,22 @@ def center_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Center updated successfully.')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
             return redirect('center_list')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                errors = {field: list(errs) for field, errs in form.errors.items()}
+                return JsonResponse({'success': False, 'errors': errors}, status=400)
     else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'id': center.pk,
+                'name': center.name,
+                'code': center.code,
+                'address': center.address,
+                'phone': center.phone,
+            })
         form = CenterForm(instance=center)
     return render(request, 'centers/center_form.html', {'form': form, 'action': 'Update', 'center': center})
 

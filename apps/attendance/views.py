@@ -2,7 +2,7 @@ import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from datetime import date as datetime_date
@@ -10,6 +10,120 @@ from apps.batches.models import Batch
 from apps.students.models import StudentProfile
 from apps.teachers.models import TeacherProfile
 from .models import Attendance
+
+
+@login_required
+def student_attendance(request):
+    """New Student Attendance page — Select batch + date, then mark 5-option attendance with remarks."""
+    is_admin = request.user.role == 'admin'
+    is_teacher = request.user.role == 'teacher'
+    is_center = request.user.role == 'center'
+
+    if not (is_admin or is_teacher or is_center):
+        return HttpResponseForbidden("Access Denied: Admins, Center users, or Teachers only.")
+
+    # Role-filtered batch queryset
+    if is_teacher:
+        teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
+        batches = Batch.objects.filter(teacher=teacher_profile).select_related('course')
+    elif is_center:
+        center = request.user.center
+        batches = Batch.objects.filter(course__center=center).select_related('course') if center else Batch.objects.none()
+    else:
+        batches = Batch.objects.all().select_related('course')
+
+    selected_batch_id = request.GET.get('batch') or request.POST.get('batch')
+    selected_date_str = request.GET.get('date') or request.POST.get('date')
+
+    # Parse date
+    if selected_date_str:
+        try:
+            selected_date = datetime_date.fromisoformat(selected_date_str)
+        except ValueError:
+            selected_date = datetime_date.today()
+    else:
+        selected_date = datetime_date.today()
+
+    selected_batch = None
+    student_list = []
+    searched = False
+
+    if selected_batch_id:
+        # Validate batch ownership
+        try:
+            if is_teacher:
+                selected_batch = batches.get(pk=selected_batch_id)
+            elif is_center:
+                selected_batch = batches.get(pk=selected_batch_id)
+            else:
+                selected_batch = Batch.objects.select_related('course').get(pk=selected_batch_id)
+        except Batch.DoesNotExist:
+            return HttpResponseForbidden("Access Denied: Batch not accessible.")
+
+    if request.method == 'POST' and selected_batch:
+        # ── SAVE attendance ──
+        teacher_profile_obj = None
+        if is_teacher:
+            teacher_profile_obj = get_object_or_404(TeacherProfile, user=request.user)
+
+        students = selected_batch.studentprofile_set.all()
+        saved_count = 0
+        for student in students:
+            status = request.POST.get(f'status_{student.id}', 'present')
+            remark = request.POST.get(f'remark_{student.id}', '').strip()
+            if status not in ['present', 'late', 'absent', 'holiday', 'half_day']:
+                status = 'present'
+            Attendance.objects.update_or_create(
+                student=student,
+                batch=selected_batch,
+                date=selected_date,
+                defaults={
+                    'status': status,
+                    'remark': remark,
+                    'marked_by': teacher_profile_obj if is_teacher else None,
+                }
+            )
+            saved_count += 1
+
+        messages.success(request, f"Attendance saved successfully for {saved_count} student(s) on {selected_date.strftime('%d-%m-%Y')}.")
+        return redirect(f"{request.path}?batch={selected_batch.pk}&date={selected_date.isoformat()}")
+
+    # ── GET: load students if batch selected ──
+    if selected_batch and request.GET.get('batch'):
+        searched = True
+        students = selected_batch.studentprofile_set.all().order_by('full_name')
+        existing = {att.student_id: att for att in Attendance.objects.filter(batch=selected_batch, date=selected_date)}
+
+        # Enrich with enrollment_no from StudentAdmission
+        from apps.students.models import StudentAdmission
+        name_to_enrollment = {
+            adm.student_name: adm.enrollment_no
+            for adm in StudentAdmission.objects.filter(student_name__in=[s.full_name for s in students])
+        }
+
+        for idx, student in enumerate(students, start=1):
+            att = existing.get(student.id)
+            student_list.append({
+                'idx': idx,
+                'student': student,
+                'enrollment_no': name_to_enrollment.get(student.full_name, '—'),
+                'status': att.status if att else 'present',
+                'remark': att.remark if att else '',
+            })
+
+    return render(request, 'attendance/student_attendance.html', {
+        'batches': batches,
+        'selected_batch': selected_batch,
+        'selected_batch_id': selected_batch_id,
+        'selected_date': selected_date.isoformat(),
+        'student_list': student_list,
+        'searched': searched,
+        'is_admin': is_admin,
+        'is_teacher': is_teacher,
+        'is_center': is_center,
+    })
+
+
 
 
 @login_required
@@ -297,3 +411,77 @@ def attendance_edit(request, pk):
         'action': 'Edit',
         'student_summary': student_summary,
     })
+
+@login_required
+def attendance_by_date(request):
+    """View to show attendance list by date with export functionality."""
+    is_admin = request.user.role == 'admin'
+    is_teacher = request.user.role == 'teacher'
+    is_center = request.user.role == 'center'
+
+    if not (is_admin or is_teacher or is_center):
+        return HttpResponseForbidden("Access Denied.")
+
+    selected_date_str = request.GET.get('date')
+    selected_date = None
+    query = request.GET.get('q', '')
+    show_entries = request.GET.get('show', '10')
+
+    if selected_date_str:
+        try:
+            selected_date = datetime_date.fromisoformat(selected_date_str)
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+
+    # Base Queryset
+    attendances = Attendance.objects.none()
+    
+    if selected_date:
+        attendances = Attendance.objects.select_related('student', 'batch', 'batch__course', 'batch__course__center').filter(date=selected_date).order_by('student__full_name')
+        
+        # Apply role-based filtering
+        if is_teacher:
+            teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
+            attendances = attendances.filter(batch__teacher=teacher_profile)
+        elif is_center:
+            center = request.user.center
+            if center:
+                attendances = attendances.filter(batch__course__center=center)
+            else:
+                attendances = Attendance.objects.none()
+
+        # Apply search query
+        if query:
+            attendances = attendances.filter(
+                Q(student__full_name__icontains=query) |
+                Q(batch__course__name__icontains=query) |
+                Q(status__icontains=query) |
+                Q(remark__icontains=query)
+            )
+
+    try:
+        show_entries_int = int(show_entries)
+    except ValueError:
+        show_entries_int = 10
+        
+    paginator = Paginator(attendances, show_entries_int)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Fetch all admissions to map names to enrollment nos
+    from apps.students.models import StudentAdmission
+    student_names = [att.student.full_name for att in page_obj]
+    admissions = StudentAdmission.objects.filter(student_name__in=student_names)
+    name_to_enrollment = {adm.student_name: adm.enrollment_no for adm in admissions}
+    
+    for att in page_obj:
+        att.enrollment_no = name_to_enrollment.get(att.student.full_name, '—')
+
+    context = {
+        'page_obj': page_obj,
+        'selected_date': selected_date_str if selected_date_str else '',
+        'query': query,
+        'show_entries': show_entries,
+        'searched': bool(selected_date_str),
+    }
+    return render(request, 'attendance/attendance_by_date.html', context)

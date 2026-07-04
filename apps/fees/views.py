@@ -157,6 +157,59 @@ def fees_list(request):
 
 
 @login_required
+def search_fee_payment(request):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied: Admins or Centers only.")
+        
+    query = request.GET.get('q', '').strip()
+    show_entries = request.GET.get('show', '10')
+    
+    try:
+        show = int(show_entries)
+    except ValueError:
+        show = 10
+        
+    payments_qs = FeePayment.objects.select_related('student').all().order_by('-payment_date', '-id')
+    
+    if is_center:
+        payments_qs = payments_qs.filter(student__batch__course__center=request.user.center)
+        
+    if query:
+        q_filter = Q(id__icontains=query) | Q(reference_number__icontains=query) | Q(student__full_name__icontains=query) | Q(student__phone__icontains=query)
+        
+        # Search via enrollment number mapped by name
+        from apps.students.models import StudentAdmission
+        matching_admissions = StudentAdmission.objects.filter(enrollment_no__icontains=query).values_list('student_name', flat=True)
+        if matching_admissions:
+            q_filter |= Q(student__full_name__in=matching_admissions)
+            
+        payments_qs = payments_qs.filter(q_filter)
+        
+    paginator = Paginator(payments_qs, show)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Enrich the current page with Enrollment No
+    from apps.students.models import StudentAdmission
+    names_on_page = [p.student.full_name for p in page_obj]
+    adm_map = {
+        adm.student_name: adm.enrollment_no
+        for adm in StudentAdmission.objects.filter(student_name__in=names_on_page)
+    }
+    
+    for payment in page_obj:
+        payment.enrollment_no = adm_map.get(payment.student.full_name, "—")
+        
+    return render(request, 'fees/search_fee_payment.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'show_entries': show_entries,
+    })
+
+@login_required
 def payment_create(request):
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
@@ -334,3 +387,102 @@ def payment_receipt(request, pk):
         'is_admin': user.role == 'admin',
         'is_center': user.role == 'center',
     })
+
+
+@login_required
+def student_fee_autocomplete(request):
+    """Return JSON list of StudentProfile records for Select2, enriched with StudentAdmission data when available."""
+    from django.http import JsonResponse
+    from django.db.models import Q
+    from apps.students.models import StudentAdmission
+
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    if not (is_admin or is_center):
+        return JsonResponse({'results': []})
+
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        # Primary search: StudentProfile (this is what FeePayment FK points to)
+        qs = StudentProfile.objects.select_related('batch__course').filter(
+            Q(full_name__icontains=q) |
+            Q(phone__icontains=q) |
+            Q(email__icontains=q)
+        )
+        if is_center and request.user.center:
+            qs = qs.filter(batch__course__center=request.user.center)
+        qs = qs.order_by('full_name')[:20]
+
+        profiles = list(qs)
+
+        # Try to enrich with StudentAdmission data (enrollment_no, photo, whatsapp_no)
+        name_set = {p.full_name for p in profiles}
+        adm_map = {}
+        for adm in StudentAdmission.objects.filter(student_name__in=name_set):
+            adm_map[adm.student_name] = adm
+
+        for sp in profiles:
+            adm = adm_map.get(sp.full_name)
+            if adm:
+                photo_url = adm.photo.url if adm.photo else ''
+                enrollment = adm.enrollment_no
+                mobile = adm.whatsapp_no
+            else:
+                photo_url = sp.profile_picture.url if sp.profile_picture else ''
+                enrollment = ''
+                mobile = sp.phone or ''
+
+            results.append({
+                'id': sp.pk,
+                'text': f'{sp.full_name} ({enrollment or mobile or sp.email})',
+                'name': sp.full_name,
+                'enrollment': enrollment,
+                'phone': mobile,
+                'photo': photo_url,
+            })
+    return JsonResponse({'results': results})
+
+
+
+
+@login_required
+def student_fee_summary_ajax(request):
+    """Return fee summary JSON for a given StudentProfile pk — used by Collect Fee page AJAX."""
+    from django.http import JsonResponse
+
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    if not (is_admin or is_center):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    student_id = request.GET.get('student_id', '').strip()
+    if not student_id:
+        return JsonResponse({'error': 'No student_id provided'}, status=400)
+
+    try:
+        qs = StudentProfile.objects.select_related('batch__course')
+        if is_center and request.user.center:
+            student = qs.get(pk=student_id, batch__course__center=request.user.center)
+        else:
+            student = qs.get(pk=student_id)
+    except StudentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Student not found'}, status=404)
+
+    total_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+    paid_amount = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    remaining = total_fee - paid_amount
+    if remaining < Decimal('0.00'):
+        remaining = Decimal('0.00')
+
+    return JsonResponse({
+        'student_id': student.pk,
+        'student_name': student.full_name,
+        'course_name': student.batch.course.name if (student.batch and student.batch.course) else 'N/A',
+        'batch_name': student.batch.name if student.batch else 'N/A',
+        'total_fee': str(total_fee),
+        'paid_amount': str(paid_amount),
+        'remaining_fee': str(remaining),
+        'has_due': remaining > Decimal('0.00'),
+    })
+

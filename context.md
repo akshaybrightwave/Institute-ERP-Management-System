@@ -90,6 +90,12 @@ Online-Examination-Portal/
 * **StudentProfile Model:** Linked 1:1 to custom User model. Contains fields for full name, phone, email, profile picture, bio, and batch association.
 * **Student Dashboard:** Enrolled student stats, attempts count, and exam listings.
 * **Student Profile Management:** Interface for students to view and update their profile details.
+* **Student Details Module:** Search students by enrollment/mobile and view their quick profile data on the Admin dashboard.
+* **Student ID Card Module:** Reuses Student Details search logic. Allows admins to search by Enrollment No/Name/Mobile, dynamically fetch `StudentAdmission` data via Primary Key (id), and generate a print-ready Student ID card. Includes a custom CSS `@media print` style to hide dashboard UI.
+* **Pending List (Admission Verification Queue) Module:** Intercepts new admissions with status `Pending`. Admins/Centers can view, approve (setting status to `Approved`), or cancel (setting status to `Cancelled` with a reason) pending admissions. It operates role-based access control, restricts Center views, and fully integrates into the standard CRUD layout.
+* **Approved List & Cancel List Modules:** Displays lists of students who have been verified (`Approved`) or rejected (`Cancelled`). Integrates into the nested "List Student(s)" sidebar dropdown and uses the same reusable CRUD design, sorting, searching, and pagination.
+
+
 
 ### 4.7 Teacher Management (`apps/teachers`)
 * **TeacherProfile Model:** Linked 1:1 to custom User model. Contains fields for full name, phone, email, profile picture, and bio.
@@ -1144,6 +1150,70 @@ No charts, no BI, no exports.
 - `apps/management/templates/management/counselor_lead_detail.html`: Added Create Admission button and admission history section.
 - `apps/management/templates/management/lead_detail.html`: Added admission history section.
 - `apps/management/templates/management/base.html`: Added Admissions and Admission Report sidebar links.
+
+## Arrange Subjects Module
+- **Purpose:** Allows administrators/centers to rearrange the order of subjects within a selected course.
+- **Database Schema Changes:** Created `SubjectOrder` model in the `subjects` app, storing `course` (ForeignKey), `subject` (ForeignKey), and `order` (PositiveIntegerField) with unique constraints.
+- **URLs Added:**
+  - `path('arrange/', views.arrange_subjects, name='arrange_subjects')` in the subjects URLs.
+- **Ordering Mechanism:** Combines native HTML5 Drag and Drop event handling with accessibility Up/Down buttons, saving the arrangement as an ordered list of IDs submitted via an AJAX POST request.
+- **Validation Performed:**
+  - Validates that a course is selected.
+  - Prevents saving empty arrangements.
+  - Prevents duplicate subject ordering.
+  - Restricts authorization based on the user's role (admin or center).
+- **Files Modified / Created:**
+  - [views.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/subjects/views.py): Added `arrange_subjects` view function.
+  - [models.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/subjects/models.py): Added `SubjectOrder` model.
+  - [urls.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/subjects/urls.py): Added URL routing for the arrange subjects view.
+  - [admin_dashboard.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/accounts/templates/accounts/admin_dashboard.html): Added sidebar link.
+  - [arrange_subjects.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/subjects/templates/subjects/arrange_subjects.html): [NEW] Template file with interactive UI.
+
+## Time Table Module
+- **Purpose:** Allows administrators/centers to define and list academic time slots/tables (e.g. 9:00 AM - 10:00 AM).
+- **Database Schema Changes:** Created `TimeTable` model in the `batches` app, storing `name` (CharField with unique constraint) and timestamps, inheriting soft delete behaviors.
+- **URLs Added:**
+  - `path('timetable/', views.timetable_list, name='timetable_list')`
+  - `path('timetable/<int:pk>/edit/', views.timetable_edit, name='timetable_edit')`
+  - `path('timetable/<int:pk>/delete/', views.timetable_delete, name='timetable_delete')`
+- **Validation Performed:**
+  - Name is required and must be unique.
+  - Role check to restrict edit/delete access to authorized users (`admin`, `center`).
+- **Files Modified / Created:**
+  - [views.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/batches/views.py): Added `timetable_list`, `timetable_edit`, and `timetable_delete` views.
+  - [models.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/batches/models.py): Added `TimeTable` model.
+  - [forms.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/batches/forms.py): Added `TimeTableForm`.
+  - [urls.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/batches/urls.py): Added Time Table routes.
+  - [admin_dashboard.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/accounts/templates/accounts/admin_dashboard.html): Added Time Table sidebar navigation link under Academics.
+  - [timetable_list.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/batches/templates/batches/timetable_list.html): [NEW] Reusable CRUD list/add page.
+  - [timetable_confirm_delete.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/batches/templates/batches/timetable_confirm_delete.html): [NEW] Confirm delete page.
+
+## Academics App Refactoring
+- **Purpose:** Decouples legacy Academic master records (Time Table, Session, and Occupation) from the batches application into a single dedicated `academics` app.
+- **Database Models:**
+  - `TimeTable` with field `timetable_name`
+  - `AcademicSession` with field `session_name`
+  - `Occupation` with field `occupation_name`
+  - Inherits audit properties from `SoftDeleteModel` (`is_deleted`, `deleted_at`, `created_at`, `updated_at`).
+- **URLs Added under `/academics/`:**
+  - `timetable/` (list/add), `timetable/<pk>/edit/`, `timetable/<pk>/delete/`
+  - `session/` (list/add), `session/<pk>/edit/`, `session/<pk>/delete/`
+  - `occupation/` (list/add), `occupation/<pk>/edit/`, `occupation/<pk>/delete/`
+- **Validation Performed:**
+  - Standard unique constraints per name field.
+  - Whitespace trimming validation when saving forms.
+  - Role validation checks allowing CRUD operations for `admin`, `center`, and `superadmin`.
+- **Files Modified / Created:**
+  - [views.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/academics/views.py): Added Academics views.
+  - [models.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/academics/models.py): Added TimeTable, AcademicSession, and Occupation models.
+  - [forms.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/academics/forms.py): Added TimeTableForm, AcademicSessionForm, and OccupationForm.
+  - [urls.py](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/academics/urls.py): Added URL routing rules.
+  - [admin_dashboard.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/accounts/templates/accounts/admin_dashboard.html): Configured active links and collapse states.
+  - [timetable_list.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/academics/templates/academics/timetable/timetable_list.html)
+  - [session_list.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/academics/templates/academics/session/session_list.html)
+  - [occupation_list.html](file:///c:/Users/Akshay/Desktop/Akshay/Django/Online-Examination-Portal/apps/academics/templates/academics/occupation/occupation_list.html)
+
+
 
 ---
 

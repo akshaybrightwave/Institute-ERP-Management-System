@@ -1,0 +1,309 @@
+{% extends "accounts/admin_dashboard.html" %}
+{% load static %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Header -->
+  <div class="d-flex align-items-center mb-3">
+    <div class="dash-breadcrumb">
+      <a href="{% url 'admin_dashboard' %}">Home</a> <span class="mx-1">-</span> <a href="{% url 'course_list' %}">Course</a> <span class="mx-1">-</span> <span class="current">Arrange Subjects</span>
+    </div>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div>
+      <h2 class="fw-bold mb-1 text-white"><i class="bi bi-journal-check text-primary me-2"></i>Arrange Subjects</h2>
+      <p class="text-muted mb-0" style="font-size: 0.9rem;">Organize the sequence of subjects taught under a course.</p>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Step 1: Select Course -->
+    <div class="col-12">
+      <div class="qa-card mb-4" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+        <label for="courseSelect" class="form-label fw-bold text-white mb-2" style="font-size: 0.95rem;">Select Course</label>
+        <div style="max-width: 400px;">
+          <select id="courseSelect" class="form-select dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; padding: 0.6rem 1rem;">
+            <option value="">[ Choose Course ▼ ]</option>
+            {% for course in courses %}
+              <option value="{{ course.id }}" {% if selected_course and selected_course.id == course.id %}selected{% endif %}>
+                {{ course.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steps 2 & 3: Arrange Subjects list -->
+    <div class="col-12" id="arrangementContainer" style="{% if not selected_course %}display: none;{% endif %}">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h5 class="fw-bold text-white mb-0"><i class="bi bi-list-ol me-2"></i>Arrange Subjects</h5>
+          <span class="badge bg-secondary text-white" id="subjectCount" style="font-size: 0.85rem;">{{ subjects|length }} Subjects</span>
+        </div>
+
+        <!-- Draggable list container -->
+        <div id="subjectList" class="list-group mb-4">
+          {% for subject in subjects %}
+            <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4 mb-2 text-white border-0" 
+                 data-id="{{ subject.id }}" 
+                 draggable="true" 
+                 style="background-color: #151821; border-radius: 8px; cursor: move; transition: background-color 0.2s;">
+              
+              <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-grid-3x3-gap-vertical text-muted fs-5 drag-handle"></i>
+                <div>
+                  <span class="fw-bold text-white text-uppercase d-block" style="font-size: 0.95rem;">{{ subject.name }}</span>
+                  <small class="text-muted" style="font-size: 0.8rem;">Code: {{ subject.subject_code }}</small>
+                </div>
+              </div>
+
+              <!-- Move controls (Accessibility Fallbacks) -->
+              <div class="d-flex gap-2 align-items-center">
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-move-up text-white" style="border-color: #252a3c;">
+                  <i class="bi bi-chevron-up"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-move-down text-white" style="border-color: #252a3c;">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </div>
+
+            </div>
+          {% empty %}
+            <div class="text-center py-5" id="emptyState" style="background-color: #151821; border-radius: 8px;">
+              <i class="bi bi-book fs-1 text-muted d-block mb-3"></i>
+              <p class="mb-0 text-muted">No active subjects found for this course.</p>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Action Button -->
+        <div class="d-flex justify-content-end border-top border-secondary pt-3 mt-4">
+          <button type="button" id="btnSaveArrangement" class="btn btn-success px-4 fw-bold" style="border-radius: 8px; padding: 0.7rem 1.5rem;">
+            <i class="bi bi-save me-2"></i>Save Arrangement
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Drag and Drop and Sorting Logic -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const courseSelect = document.getElementById('courseSelect');
+  const arrangementContainer = document.getElementById('arrangementContainer');
+  const subjectList = document.getElementById('subjectList');
+  const saveBtn = document.getElementById('btnSaveArrangement');
+
+  // Step 1 & 2: Load subjects when Course selection changes
+  courseSelect.addEventListener('change', function () {
+    const courseId = this.value;
+    if (!courseId) {
+      arrangementContainer.style.display = 'none';
+      return;
+    }
+    // Redirect to load selection state
+    window.location.search = `?course_id=${courseId}`;
+  });
+
+  // Up & Down movement handlers
+  function bindMoveEvents() {
+    document.querySelectorAll('.btn-move-up').forEach(btn => {
+      btn.onclick = function (e) {
+        e.stopPropagation();
+        const row = this.closest('.list-group-item');
+        const prev = row.previousElementSibling;
+        if (prev && prev.classList.contains('list-group-item')) {
+          subjectList.insertBefore(row, prev);
+        }
+      };
+    });
+
+    document.querySelectorAll('.btn-move-down').forEach(btn => {
+      btn.onclick = function (e) {
+        e.stopPropagation();
+        const row = this.closest('.list-group-item');
+        const next = row.nextElementSibling;
+        if (next && next.classList.contains('list-group-item')) {
+          subjectList.insertBefore(next, row);
+        }
+      };
+    });
+  }
+
+  // Pure HTML5 Drag and Drop handlers
+  let dragSrcEl = null;
+
+  function handleDragStart(e) {
+    this.style.opacity = '0.4';
+    dragSrcEl = this;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.innerHTML);
+  }
+
+  function handleDragOver(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+  }
+
+  function handleDragEnter(e) {
+    this.classList.add('over');
+  }
+
+  function handleDragEnd(e) {
+    this.style.opacity = '1';
+    document.querySelectorAll('.list-group-item').forEach(item => {
+      item.classList.remove('over');
+    });
+  }
+
+  function handleDrop(e) {
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    if (dragSrcEl !== this) {
+      // Reorder element in DOM directly
+      const allItems = Array.from(subjectList.querySelectorAll('.list-group-item'));
+      const srcIndex = allItems.indexOf(dragSrcEl);
+      const destIndex = allItems.indexOf(this);
+      
+      if (srcIndex < destIndex) {
+        subjectList.insertBefore(dragSrcEl, this.nextSibling);
+      } else {
+        subjectList.insertBefore(dragSrcEl, this);
+      }
+    }
+    return false;
+  }
+
+  function handleDragLeave(e) {
+    this.classList.remove('over');
+  }
+
+  function bindDragAndDrop() {
+    const items = subjectList.querySelectorAll('.list-group-item');
+    items.forEach(item => {
+      item.addEventListener('dragstart', handleDragStart, false);
+      item.addEventListener('dragenter', handleDragEnter, false);
+      item.addEventListener('dragover', handleDragOver, false);
+      item.addEventListener('dragleave', handleDragLeave, false);
+      item.addEventListener('drop', handleDrop, false);
+      item.addEventListener('dragend', handleDragEnd, false);
+    });
+  }
+
+  bindMoveEvents();
+  bindDragAndDrop();
+
+  // Save action handler
+  saveBtn.addEventListener('click', function () {
+    const courseId = courseSelect.value;
+    if (!courseId) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Course is not selected.',
+        customClass: { popup: 'dark-modal-swal' }
+      });
+      return;
+    }
+
+    const items = Array.from(subjectList.querySelectorAll('.list-group-item'));
+    const subjectIds = items.map(item => item.dataset.id);
+
+    if (subjectIds.length === 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Cannot save empty arrangement.',
+        customClass: { popup: 'dark-modal-swal' }
+      });
+      return;
+    }
+
+    // CSRF helper
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>Saving...';
+
+    const params = new URLSearchParams();
+    params.append('course_id', courseId);
+    subjectIds.forEach(id => {
+      params.append('subject_ids', id);
+    });
+
+    // POST arrangement to views
+    fetch('', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: params
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        window.location.reload();
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: data.message || 'An error occurred while saving the arrangement.',
+          customClass: { popup: 'dark-modal-swal' }
+        });
+      }
+    })
+    .catch(error => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Network error or validation failure.',
+        customClass: { popup: 'dark-modal-swal' }
+      });
+    })
+    .finally(() => {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '<i class="bi bi-save me-2"></i>Save Arrangement';
+    });
+  });
+});
+</script>
+
+<style>
+/* CSS transition hints for Drag and Drop */
+.list-group-item.over {
+  border: 2px dashed var(--erp-color-primary) !important;
+  background-color: rgba(27, 30, 43, 0.8) !important;
+}
+.drag-handle {
+  cursor: grab;
+}
+.drag-handle:active {
+  cursor: grabbing;
+}
+</style>
+{% endblock %}

@@ -361,93 +361,126 @@ def attendance_report(request):
     is_center = request.user.role == 'center'
 
     # Filter inputs
-    selected_course = request.GET.get('course')
-    selected_batch = request.GET.get('batch')
-    selected_student = request.GET.get('student')
-    selected_date = request.GET.get('date')
+    selected_batch = request.GET.get('batch', '')
+    selected_date_range = request.GET.get('date', '').strip()
 
+    # Determine Batches available for select
     if is_center:
         center = request.user.center
         if not center:
-            records = Attendance.objects.none()
             batches = Batch.objects.none()
-            students = StudentProfile.objects.none()
-            courses = Course.objects.none()
         else:
-            records = Attendance.objects.filter(batch__course__center=center)
             batches = Batch.objects.filter(course__center=center)
-            students = StudentProfile.objects.filter(batch__course__center=center)
-            courses = Course.objects.filter(center=center)
-            
-            # Security validations to prevent cross-center access
-            if selected_course and not courses.filter(id=selected_course).exists():
-                return HttpResponseForbidden("Access Denied: Course does not belong to your center.")
-            if selected_batch and not batches.filter(id=selected_batch).exists():
-                return HttpResponseForbidden("Access Denied: Batch does not belong to your center.")
-            if selected_student and not students.filter(id=selected_student).exists():
-                return HttpResponseForbidden("Access Denied: Student does not belong to your center.")
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
             return HttpResponseForbidden("Access Denied: Teacher profile missing.")
-        records = Attendance.objects.filter(batch__teacher=teacher_profile)
         batches = Batch.objects.filter(teacher=teacher_profile)
-        students = StudentProfile.objects.filter(batch__teacher=teacher_profile)
-        courses = Course.objects.filter(batch__teacher=teacher_profile).distinct()
     else:
-        records = Attendance.objects.all()
         batches = Batch.objects.all()
-        students = StudentProfile.objects.all()
-        courses = Course.objects.all()
 
-    # Apply filters
-    if selected_course:
-        records = records.filter(batch__course_id=selected_course)
+    # Process Date Range
+    start_date = None
+    end_date = None
+    dates = []
+    
+    if selected_date_range:
+        parts = selected_date_range.split('-')
+        if len(parts) == 2:
+            try:
+                start_date = datetime.date.fromisoformat(parts[0].strip())
+                end_date = datetime.date.fromisoformat(parts[1].strip())
+            except ValueError:
+                messages.error(request, "Invalid date range format. Use YYYY-MM-DD - YYYY-MM-DD.")
+        elif len(parts) == 3: # In case someone types a single date with dashes and it splits wrong, but fromisoformat handles YYYY-MM-DD. Oh wait, if the range is 'YYYY-MM-DD - YYYY-MM-DD', splitting by '-' yields 6 parts!
+            # Better parsing strategy for '2026-06-05 - 2026-07-04'
+            pass
+            
+    # Better date parsing
+    if selected_date_range:
+        if ' - ' in selected_date_range:
+            parts = selected_date_range.split(' - ')
+            if len(parts) == 2:
+                try:
+                    start_date = datetime.date.fromisoformat(parts[0].strip())
+                    end_date = datetime.date.fromisoformat(parts[1].strip())
+                except ValueError:
+                    messages.error(request, "Invalid date range format.")
+        else:
+            try:
+                start_date = datetime.date.fromisoformat(selected_date_range.strip())
+                end_date = start_date
+            except ValueError:
+                messages.error(request, "Invalid date format.")
+
+    if not start_date or not end_date:
+        end_date = datetime.date.today()
+        start_date = end_date - datetime.timedelta(days=6)
+        
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    # Generate dates list
+    delta = end_date - start_date
+    for i in range(delta.days + 1):
+        dates.append(start_date + datetime.timedelta(days=i))
+
+    students = []
+    students_data = []
+    
     if selected_batch:
-        records = records.filter(batch_id=selected_batch)
-    if selected_student:
-        records = records.filter(student_id=selected_student)
-    if selected_date:
-        records = records.filter(date=selected_date)
-
-    records = records.select_related('student', 'batch', 'batch__course', 'marked_by').order_by('-date', 'student__full_name')
-
-    total_records = records.count()
-    present_count = records.filter(status='present').count()
-    absent_count = records.filter(status='absent').count()
-    overall_pct = round((present_count / total_records * 100), 1) if total_records > 0 else 0.0
-
-    # CSV Export (Feature 7)
-    if request.GET.get('export') == 'csv':
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="attendance_report.csv"'
-        writer = csv.writer(response)
-        writer.writerow(['Student Name', 'Batch', 'Course', 'Date', 'Status', 'Marked By'])
-        for record in records:
-            marked_by_name = record.marked_by.full_name if record.marked_by else 'Admin'
-            writer.writerow([
-                record.student.full_name,
-                record.batch.name,
-                record.batch.course.name,
-                record.date.strftime('%Y-%m-%d'),
-                record.status.capitalize(),
-                marked_by_name
-            ])
-        return response
+        try:
+            batch_obj = batches.get(id=selected_batch)
+            students_qs = StudentProfile.objects.filter(batch=batch_obj).order_by('full_name')
+            students = list(students_qs)
+            
+            # Fetch Attendance
+            attendances = Attendance.objects.filter(
+                batch=batch_obj,
+                date__gte=start_date,
+                date__lte=end_date
+            )
+            
+            # Initialize matrix
+            matrix = {}
+            for student in students:
+                matrix[student.id] = {d: '-' for d in dates}
+                
+            for att in attendances:
+                if att.student_id in matrix and att.date in matrix[att.student_id]:
+                    # Map status to code
+                    if att.status == 'present':
+                        code = 'P'
+                    elif att.status == 'late':
+                        code = 'L'
+                    elif att.status == 'absent':
+                        code = 'A'
+                    elif att.status == 'holiday':
+                        code = 'H'
+                    elif att.status == 'half_day':
+                        code = 'F'
+                    else:
+                        code = 'O' # Other
+                    matrix[att.student_id][att.date] = code
+                    
+            for student in students:
+                statuses = []
+                for d in dates:
+                    statuses.append(matrix[student.id][d])
+                students_data.append({
+                    'name': student.full_name,
+                    'statuses': statuses
+                })
+                    
+        except Batch.DoesNotExist:
+            messages.error(request, "Selected timetable not found or access denied.")
 
     return render(request, 'reports/attendance_report.html', {
-        'records': records,
         'batches': batches,
-        'students': students,
-        'courses': courses,
-        'total_records': total_records,
-        'present_count': present_count,
-        'absent_count': absent_count,
-        'overall_pct': overall_pct,
-        'selected_course': selected_course,
         'selected_batch': selected_batch,
-        'selected_student': selected_student,
-        'selected_date': selected_date,
+        'selected_date_range': selected_date_range if selected_date_range else f"{start_date.isoformat()} - {end_date.isoformat()}",
+        'dates': dates,
+        'students_data': students_data,
     })
 
 

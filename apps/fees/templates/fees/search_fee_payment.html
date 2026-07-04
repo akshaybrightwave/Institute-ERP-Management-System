@@ -1,0 +1,165 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Search Fees Payment | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-calendar2-check text-primary me-2"></i>Search Fees Payment
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item text-muted active" aria-current="page">Search-fees-payment</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Reusable Card layout -->
+  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card); border: 1px solid #2563eb !important;">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Payment History</h5>
+    </div>
+    
+    <div class="card-body p-4">
+      
+      <!-- Top Filters & Search (Standard CRUD Pattern) -->
+      <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <!-- Show Entries dropdown -->
+        <div class="d-flex align-items-center gap-2">
+          <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+          <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+            <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+            <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+            <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+          </select>
+        </div>
+        
+        <!-- Search bar and action buttons -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <form method="GET" action="{% url 'search_fees_payment' %}" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="show" value="{{ show_entries }}">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+            <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" 
+                   style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+          </form>
+          
+          <div class="d-flex gap-1 no-print">
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-copy">Copy</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-csv">CSV</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-excel">Excel</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-pdf">PDF</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-print">Print</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Data Table -->
+      <div class="table-responsive">
+        <table class="table table-examly table-hover table-bordered align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+              <th class="ps-3 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Date</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Payment ID</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Enrollment No</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student Name</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Fee</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in page_obj %}
+            <tr>
+              <td class="ps-3 text-white-50" style="font-size: 0.9rem;">
+                {{ forloop.counter0|add:page_obj.start_index }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ payment.payment_date|date:"d-m-Y" }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ payment.id }}{{ payment.reference_number }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ payment.enrollment_no }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ payment.student.full_name }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ payment.amount }} ₹
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="bi bi-wallet2 text-success mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                No fee payments found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <span class="text-muted" style="font-size: 0.85rem;">
+          Showing {% if page_obj.paginator.count > 0 %}{{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}{% else %}0 to 0 of 0{% endif %} records
+        </span>
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation">
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&show={{ show_entries }}">&lt;</a>
+              </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active">
+                  <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}&q={{ query }}&show={{ show_entries }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}&q={{ query }}&show={{ show_entries }}">&gt;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function () {
+  // Show entries handler
+  $('#showEntriesSelect').on('change', function () {
+    const show = $(this).val();
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('show', show);
+    urlParams.set('page', '1');
+    window.location.search = urlParams.toString();
+  });
+});
+</script>
+{% endblock %}

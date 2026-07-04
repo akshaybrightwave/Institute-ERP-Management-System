@@ -7,7 +7,10 @@ from apps.teachers.models import TeacherProfile
 class Attendance(models.Model):
     STATUS_CHOICES = [
         ('present', 'Present'),
+        ('late', 'Late'),
         ('absent', 'Absent'),
+        ('holiday', 'Holiday'),
+        ('half_day', 'Half Day'),
     ]
 
     batch = models.ForeignKey(
@@ -23,8 +26,10 @@ class Attendance(models.Model):
     date = models.DateField()
     status = models.CharField(
         max_length=10,
-        choices=STATUS_CHOICES
+        choices=STATUS_CHOICES,
+        default='present'
     )
+    remark = models.CharField(max_length=255, blank=True, default='')
     marked_by = models.ForeignKey(
         TeacherProfile,
         null=True,
@@ -35,7 +40,7 @@ class Attendance(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('student', 'date')
+        unique_together = ('student', 'batch', 'date')
 
     def __str__(self):
         return f"{self.student.full_name} - {self.date} - {self.status}"

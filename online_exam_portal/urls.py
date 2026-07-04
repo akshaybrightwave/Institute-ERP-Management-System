@@ -13,6 +13,7 @@ urlpatterns = [
     # ERP Foundation CRUD
     path('centers/', include('apps.centers.urls')),
     path('courses/', include('apps.courses.urls')),
+    path('categories/', include('apps.categories.urls')),
     path('batches/', include('apps.batches.urls')),
     path('attendance/', include('apps.attendance.urls')),
     path('fees/', include('apps.fees.urls')),
@@ -20,6 +21,8 @@ urlpatterns = [
     path('reports/', include('apps.reports.urls')),
     path('management/', include('apps.management.urls')),
     path('hr/', include('apps.hr.urls')),
+    path('subjects/', include('apps.subjects.urls')),
+    path('academics/', include('apps.academics.urls')),
 ]
 
 if settings.DEBUG:

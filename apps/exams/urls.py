@@ -28,4 +28,7 @@ urlpatterns = [
     path('attempts/<int:attempt_id>/', views.center_attempt_detail, name='center_attempt_detail'),
     path('reports/exams/student-performance/export/', views.export_student_performance_csv, name='export_student_performance_csv'),
     path('reports/exams/batch-performance/export/', views.export_batch_performance_csv, name='export_batch_performance_csv'),
+    path('schedules/', views.exam_schedule_list, name='exam_schedule_list'),
+    path('schedules/<int:pk>/edit/', views.exam_schedule_edit, name='exam_schedule_edit'),
+    path('schedules/<int:pk>/delete/', views.exam_schedule_delete, name='exam_schedule_delete'),
 ]

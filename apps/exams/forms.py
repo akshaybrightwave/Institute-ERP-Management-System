@@ -1,5 +1,5 @@
 from django import forms
-from .models import Exam, Option, Question
+from .models import Exam, Option, Question, ExamSchedule
 
 
 class ExamForm(forms.ModelForm):
@@ -62,6 +62,38 @@ class OptionForm(forms.ModelForm):
             'text': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter option text'}),
             'is_correct': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+
+class ExamScheduleForm(forms.ModelForm):
+    duration = forms.ChoiceField(
+        choices=[
+            ('', 'Select duration'),
+            ('1 Month', '1 Month'),
+            ('2 Months', '2 Months'),
+            ('3 Months', '3 Months'),
+            ('6 Months', '6 Months'),
+            ('1 Year', '1 Year'),
+            ('2 Years', '2 Years'),
+        ],
+        widget=forms.Select(attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'})
+    )
+
+    class Meta:
+        model = ExamSchedule
+        fields = ['center', 'course', 'duration', 'exam_center', 'session']
+        widgets = {
+            'center': forms.Select(attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}),
+            'course': forms.Select(attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}),
+            'exam_center': forms.Select(attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}),
+            'session': forms.Select(attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['center'].empty_label = "Select a Center"
+        self.fields['course'].empty_label = "Select a Course"
+        self.fields['exam_center'].empty_label = "Select Exam Centre"
+        self.fields['session'].empty_label = "Select Session"
 
     # NOTE: StudentProfileForm → apps/students/forms.py
     #       TeacherProfileForm → apps/teachers/forms.py

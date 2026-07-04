@@ -82,6 +82,22 @@ class StudentAnswer(models.Model):
     def __str__(self):
         return f"Answer to {self.question.id} by {self.attempt.student.username}"
 
+
+class ExamSchedule(SoftDeleteModel):
+    center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_center')
+    course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='exam_schedules')
+    duration = models.CharField(max_length=100)
+    exam_center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_exam_center')
+    session = models.ForeignKey('academics.AcademicSession', on_delete=models.CASCADE, related_name='exam_schedules')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-id']
+
+    def __str__(self):
+        return f"{self.course.name} - {self.session.session_name}"
+
     # NOTE: StudentProfile and TeacherProfile have been moved to:
     #   apps/students/models.py  →  StudentProfile
     #   apps/teachers/models.py  →  TeacherProfile

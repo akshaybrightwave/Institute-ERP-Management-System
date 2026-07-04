@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'apps.teachers',
     'apps.centers',
     'apps.courses',
+    'apps.categories',
     'apps.batches',
     'apps.attendance',
     'apps.fees',
@@ -69,6 +70,8 @@ INSTALLED_APPS = [
     'apps.reports',
     'apps.management',
     'apps.hr',
+    'apps.subjects',
+    'apps.academics',
 ]
 
 MIDDLEWARE = [

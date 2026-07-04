@@ -1,0 +1,406 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Category Management | Examly{% endblock %}
+
+{% block erp_content %}
+
+
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h2><i class="bi bi-tags-fill text-primary me-2"></i>Category Management</h2>
+      <p>Manage course categories for your institute.</p>
+    </div>
+  </div>
+
+
+
+  <!-- ── Split-panel layout ── -->
+  <div class="row g-4">
+
+    <!-- ══════════════════════════════════
+         LEFT — Add Category Form
+    ══════════════════════════════════ -->
+    <div class="col-12">
+      <div class="qa-card">
+          <h6 class="fw-bold mb-4 border-bottom border-secondary pb-3" style="color: #f6f4ff;">Add Course Category</h6>
+
+          <form method="POST" action="{% url 'category_list' %}" id="addCategoryForm" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label for="id_name" class="form-label fw-semibold" style="color: #f6f4ff;">
+                Enter Title <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="name" class="form-control dark-input" id="id_name" placeholder="Enter Title" value="{{ form.name.value|default:'' }}" required>
+              {% if form.name.errors %}
+                {% for error in form.name.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <div class="mt-4" style="width: 150px;">
+              <button type="submit" class="btn btn-publish w-100 py-2 rounded-3">
+                <i class="bi bi-file-earmark-plus me-1"></i> Publish
+              </button>
+            </div>
+          </form>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         RIGHT — Category Listing
+    ══════════════════════════════════ -->
+    <div class="col-12">
+
+      <!-- Search bar -->
+      <div class="qa-card">
+        <h6 class="fw-bold mb-4 border-bottom border-secondary pb-3" style="color: #f6f4ff;">List Category(s)</h6>
+        
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+            <select class="form-select form-select-sm dark-input" style="width: 70px;">
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select>
+          </div>
+          
+          <form method="GET" action="{% url 'category_list' %}" class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+            <input type="text" name="q" id="categorySearch" class="form-control form-control-sm dark-input" value="{{ query }}" style="width: 200px;">
+          </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-examly table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem;">CATEGORY</th>
+                  <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for category in page_obj %}
+                <tr>
+                  <td class="ps-4 fw-semibold text-white">
+                    {{ category.name }}
+                  </td>
+                  <td class="pe-4 text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                      <!-- Edit triggers modal via AJAX -->
+                      <button type="button"
+                              class="btn btn-sm btn-action-edit btn-edit-category rounded-pill px-3"
+                              data-pk="{{ category.pk }}"
+                              data-url="{% url 'category_edit' category.pk %}"
+                              title="Edit">
+                        <i class="bi bi-pencil-square"></i> Edit
+                      </button>
+                      <!-- Delete -->
+                      <a href="{% url 'category_delete' category.pk %}"
+                         class="btn btn-sm btn-action-delete btn-delete-category rounded-pill px-3"
+                         data-name="{{ category.name }}"
+                         title="Delete">
+                        <i class="bi bi-trash"></i> Delete
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="2" class="p-0">
+                    <div class="empty-state py-5 text-center">
+                      <i class="bi bi-tags fs-1 text-muted d-block mb-2"></i>
+                      <p class="mb-0 text-muted">
+                        {% if query %}No categories found for "{{ query }}".{% else %}No categories yet. Add one on the left.{% endif %}
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if page_obj.has_other_pages %}
+          <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="text-muted small">
+              Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+            </div>
+            <nav aria-label="Categories pagination">
+              <ul class="pagination mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+                     aria-label="Previous">
+                    <span aria-hidden="true">&lt;</span>
+                  </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link">&lt;</span>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                  <a class="page-link"
+                     href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+                     aria-label="Next">
+                    <span aria-hidden="true">&gt;</span>
+                  </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link">&gt;</span>
+                </li>
+                {% endif %}
+              </ul>
+            </nav>
+          </div>
+          {% endif %}
+
+      </div>
+
+    </div>
+    <!-- /col right -->
+
+  </div>
+  <!-- /row -->
+
+</div>
+<!-- /container -->
+
+
+<!-- ══════════════════════════════════════════════
+     EDIT CATEGORY MODAL
+══════════════════════════════════════════════ -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1"
+     aria-labelledby="editCategoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content dark-modal">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="editCategoryModalLabel">
+          Edit Category
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editCategoryForm" method="POST" novalidate>
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="editCategoryName" class="form-label fw-semibold" style="color: #f6f4ff;">
+              Category Title
+            </label>
+            <input type="text" name="name" id="editCategoryName"
+                   class="form-control dark-input" placeholder="Enter category name" maxlength="255" required>
+            <div id="editCategoryNameError" class="text-danger small mt-1" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-save-modal px-4 py-2" id="editCategorySubmitBtn">
+            <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+
+  const editModal    = document.getElementById('editCategoryModal');
+  const editForm     = document.getElementById('editCategoryForm');
+  const nameInput    = document.getElementById('editCategoryName');
+  const nameError    = document.getElementById('editCategoryNameError');
+  const submitBtn    = document.getElementById('editCategorySubmitBtn');
+  const bsModal      = new bootstrap.Modal(editModal);
+
+  // Helper: get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      document.cookie.split(';').forEach(function (cookie) {
+        const c = cookie.trim();
+        if (c.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
+        }
+      });
+    }
+    return cookieValue;
+  }
+
+  function clearErrors() {
+    nameError.style.display = 'none';
+    nameError.textContent   = '';
+    nameInput.classList.remove('is-invalid');
+  }
+
+  function showError(msg) {
+    nameError.textContent   = msg;
+    nameError.style.display = 'block';
+    nameInput.classList.add('is-invalid');
+  }
+
+  // Click Edit button — load data via AJAX GET
+  document.querySelectorAll('.btn-edit-category').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const url = btn.dataset.url;
+      clearErrors();
+      nameInput.value = '';
+
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        nameInput.value          = data.name;
+        editForm.action          = url;
+        bsModal.show();
+        nameInput.focus();
+      })
+      .catch(function () {
+        alert('Unable to load category data. Please try again.');
+      });
+    });
+  });
+
+  // Submit Edit form via AJAX POST
+  editForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    const name = nameInput.value.trim();
+    if (!name) {
+      showError('Category name is required.');
+      nameInput.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Updating…';
+
+    const formData = new FormData(editForm);
+
+    fetch(editForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.success) {
+        bsModal.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Category Updated Successfully..',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        }).then(function () {
+          window.location.reload();
+        });
+      } else {
+        const errs = data.errors || {};
+        const msg  = errs.name
+                       ? errs.name[0]
+                       : (errs.__all__ ? errs.__all__[0] : 'Validation error. Please check your input.');
+        showError(msg);
+      }
+    })
+    .catch(function () {
+      showError('An error occurred. Please try again.');
+    })
+    .finally(function () {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Update';
+    });
+  });
+
+  // Reset modal errors on close
+  editModal.addEventListener('hidden.bs.modal', function () {
+    clearErrors();
+    nameInput.value = '';
+  });
+
+  // On DOMContentLoaded, check if there's a success message to display
+  {% if messages %}
+    {% for msg in messages %}
+      {% if "published successfully" in msg.message or "published" in msg.message or "published successfully." in msg.message %}
+        Swal.fire({
+          icon: 'success',
+          title: 'Category Added Successfully..',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        });
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  // Handle Delete Confirmation via SweetAlert2
+  document.querySelectorAll('.btn-delete-category').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = btn.getAttribute('href');
+      const name = btn.dataset.name;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure you want to delete ' + name + ' ?',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfToken = getCookie('csrftoken');
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+}());
+</script>
+{% endblock %}

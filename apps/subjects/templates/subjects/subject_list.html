@@ -1,0 +1,862 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Subject Management | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Header -->
+  <div class="d-flex align-items-center mb-3">
+    <div class="dash-breadcrumb">
+      <a href="{% url 'admin_dashboard' %}">Home</a> <span class="mx-1">-</span> <a href="{% url 'course_list' %}">Course</a> <span class="mx-1">-</span> <span class="current">Manage-subjects</span>
+    </div>
+  </div>
+
+  <div class="page-header mb-4">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: #f6f4ff;"><i class="bi bi-book text-primary me-2"></i>Manage Subjects</h2>
+    </div>
+  </div>
+
+
+
+  <!-- Stacked Layout -->
+  <div class="row g-4">
+
+    <!-- ══════════════════════════════════
+         TOP — Add Subject Form Card
+    ══════════════════════════════════ -->
+    <div class="col-12">
+      <div class="qa-card">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;"><i class="bi bi-plus-lg me-1"></i>Add Subject</h6>
+          <i class="bi bi-chevron-up text-muted fs-5"></i>
+        </div>
+
+        <form method="POST" action="{% url 'subject_list' %}" id="addSubjectForm" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <!-- Select Course -->
+            <div class="col-md-4">
+              <label for="id_course" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Course <span class="text-danger">*</span>
+              </label>
+              <select name="course" id="id_course" class="form-select dark-input">
+                <option value="">Select Course</option>
+                {% for course in form.fields.course.queryset %}
+                  <option value="{{ course.id }}" data-duration="{{ course.duration }}" {% if form.course.value|stringformat:"s" == course.id|stringformat:"s" %}selected{% endif %}>
+                    {{ course.name }}
+                  </option>
+                {% endfor %}
+              </select>
+              {% if form.course.errors %}
+                {% for error in form.course.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <!-- Select Duration offset -->
+            <div class="col-md-4">
+              <label for="id_duration_offset" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Select Duration in Year / Month <span class="text-danger">*</span>
+              </label>
+              <select name="duration_offset" id="id_duration_offset" class="form-select dark-input">
+                <option value="">Select duration</option>
+              </select>
+              {% if form.duration_offset.errors %}
+                {% for error in form.duration_offset.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <!-- Subject Code -->
+            <div class="col-md-4">
+              <label for="id_subject_code" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Subject Code <span class="text-danger">*</span>
+              </label>
+              {{ form.subject_code }}
+              {% if form.subject_code.errors %}
+                {% for error in form.subject_code.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <!-- Subject Name -->
+            <div class="col-12">
+              <label for="id_name" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Subject Name <span class="text-danger">*</span>
+              </label>
+              {{ form.name }}
+              {% if form.name.errors %}
+                {% for error in form.name.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <!-- Subject Type & Marks Row -->
+            <div class="col-md-3">
+              <label class="form-label fw-semibold d-block" style="color: #f6f4ff; font-size: 0.9rem;">
+                Subject Type <span class="text-danger">*</span>
+              </label>
+              <div class="d-flex flex-column gap-2 mt-2">
+                {% for radio in form.subject_type %}
+                  <div class="form-check">
+                    {{ radio.tag }}
+                    <label class="form-check-label text-white" for="{{ radio.id_for_label }}">
+                      {{ radio.choice_label }}
+                    </label>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <!-- Marks Input Grid -->
+            <div class="col-md-9">
+              <div class="row g-3">
+                <!-- Theory Max & Min Marks -->
+                <div class="col-md-6">
+                  <label for="id_theory_max_marks" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">Theory Max Marks</label>
+                  {{ form.theory_max_marks }}
+                </div>
+                <div class="col-md-6">
+                  <label for="id_theory_min_marks" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">Theory Min Marks</label>
+                  {{ form.theory_min_marks }}
+                </div>
+
+                <!-- Practical Max & Min Marks -->
+                <div class="col-md-6">
+                  <label for="id_practical_max_marks" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">Practical Max Marks</label>
+                  {{ form.practical_max_marks }}
+                </div>
+                <div class="col-md-6">
+                  <label for="id_practical_min_marks" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">Practical Min Marks</label>
+                  {{ form.practical_min_marks }}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="mt-4" style="width: 150px;">
+            <button type="submit" class="btn btn-publish w-100 py-2 rounded-3">
+              <i class="bi bi-file-earmark-plus me-1"></i> Publish
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         MIDDLE — Active Subject Listing
+    ══════════════════════════════════ -->
+    <div class="col-12">
+      <div class="qa-card">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;"><i class="bi bi-list-task me-1"></i>List All Subjects</h6>
+          <i class="bi bi-chevron-up text-muted fs-5"></i>
+        </div>
+
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+            <select class="form-select form-select-sm dark-input" style="width: 70px;">
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select>
+          </div>
+
+          <form method="GET" action="{% url 'subject_list' %}" class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+            <input type="text" name="q" id="subjectSearch" class="form-control form-control-sm dark-input" value="{{ query }}" style="width: 200px;">
+          </form>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-examly table-hover table-bordered align-middle mb-0 text-center">
+            <thead>
+              <tr class="align-middle">
+                <th rowspan="2" class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">#</th>
+                <th rowspan="2" class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Code</th>
+                <th rowspan="2" class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Name</th>
+                <th rowspan="2" class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Course</th>
+                <th colspan="2" class="text-uppercase text-muted border-bottom-0 pb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Theory</th>
+                <th colspan="2" class="text-uppercase text-muted border-bottom-0 pb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Practical</th>
+                <th rowspan="2" class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Action</th>
+              </tr>
+              <tr>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Min Marks</th>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Max Marks</th>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Min Marks</th>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Max Marks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for subject in page_obj %}
+              <tr>
+                <!-- # row index -->
+                <td class="ps-4 fw-semibold text-muted text-start" style="width: 50px;">
+                  {{ forloop.counter }}.
+                </td>
+
+                <!-- Subject Code -->
+                <td class="fw-bold text-white text-uppercase" style="font-size: 0.9rem;">
+                  {{ subject.subject_code }}
+                </td>
+
+                <!-- Subject Name -->
+                <td class="fw-semibold text-white text-uppercase" style="font-size: 0.9rem;">
+                  {{ subject.name }}
+                </td>
+
+                <!-- Course Name & Duration Badge -->
+                <td class="text-start">
+                  <span class="text-white fw-bold text-uppercase d-block mb-1" style="font-size: 0.85rem;">
+                    {{ subject.course.name }}
+                  </span>
+                  <span class="badge bg-primary rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                    {{ subject.course.duration }}
+                  </span>
+                </td>
+
+                <!-- Theory Min -->
+                <td>
+                  {% if subject.subject_type == 'Theory' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.theory_min_marks|default:"-" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Theory Max -->
+                <td>
+                  {% if subject.subject_type == 'Theory' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.theory_max_marks|default:"100" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Practical Min -->
+                <td style="border-left: 1px solid rgba(255,255,255,0.08);">
+                  {% if subject.subject_type == 'Practical' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.practical_min_marks|default:"-" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Practical Max -->
+                <td style="border-right: 1px solid rgba(255,255,255,0.08);">
+                  {% if subject.subject_type == 'Practical' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.practical_max_marks|default:"100" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <button class="btn btn-sm btn-edit-subject d-inline-flex align-items-center justify-content-center" data-url="{% url 'subject_edit' subject.id %}" style="background-color: rgba(99, 102, 241, 0.15) !important; border: 1px solid rgba(99, 102, 241, 0.4) !important; color: #818cf8 !important; width: 34px; height: 34px; border-radius: 6px;">
+                      <i class="bi bi-pencil-fill"></i>
+                    </button>
+
+                    <a href="{% url 'subject_delete' subject.id %}" class="btn btn-sm btn-delete-subject d-inline-flex align-items-center justify-content-center" style="background-color: rgba(240, 62, 101, 0.15) !important; border: 1px solid rgba(240, 62, 101, 0.4) !important; color: #f03e65 !important; width: 34px; height: 34px; border-radius: 6px;" data-name="{{ subject.name }}">
+                      <i class="bi bi-trash-fill"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="9" class="p-0">
+                  <div class="empty-state py-5 text-center">
+                    <i class="bi bi-book fs-1 text-muted d-block mb-2"></i>
+                    <p class="mb-0 text-muted">
+                      {% if query %}No subjects found for "{{ query }}".{% else %}No subjects yet. Add one above.{% endif %}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="text-muted small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </div>
+          <nav aria-label="Subjects pagination">
+            <ul class="pagination mb-0">
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&lt;</a>
+              </li>
+              {% else %}
+              <li class="page-item disabled"><span class="page-link">&lt;</span></li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+              </li>
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&gt;</a>
+              </li>
+              {% else %}
+              <li class="page-item disabled"><span class="page-link">&gt;</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         BOTTOM — Deleted Subject Listing
+    ══════════════════════════════════ -->
+    <div class="col-12">
+      <div class="qa-card">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Deleted List Subject(s)</h6>
+          <i class="bi bi-chevron-up text-muted fs-5"></i>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-examly table-hover table-bordered align-middle mb-0 text-center">
+            <thead>
+              <tr class="align-middle">
+                <th rowspan="2" class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">#</th>
+                <th rowspan="2" class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Code</th>
+                <th rowspan="2" class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Name</th>
+                <th rowspan="2" class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Course</th>
+                <th colspan="2" class="text-uppercase text-muted border-bottom-0 pb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Theory</th>
+                <th colspan="2" class="text-uppercase text-muted border-bottom-0 pb-1" style="font-size: 0.8rem; letter-spacing: 0.5px;">Practical</th>
+                <th rowspan="2" class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">Action</th>
+              </tr>
+              <tr>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Min Marks</th>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Max Marks</th>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Min Marks</th>
+                <th class="text-muted border-top-0 pt-0" style="font-size: 0.75rem;">Max Marks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for subject in deleted_subjects %}
+              <tr>
+                <!-- # row index -->
+                <td class="ps-4 fw-semibold text-muted text-start" style="width: 50px;">
+                  {{ forloop.counter }}.
+                </td>
+
+                <!-- Subject Code -->
+                <td class="fw-bold text-white text-uppercase" style="font-size: 0.9rem;">
+                  {{ subject.subject_code }}
+                </td>
+
+                <!-- Subject Name -->
+                <td class="fw-semibold text-white text-uppercase" style="font-size: 0.9rem;">
+                  {{ subject.name }}
+                </td>
+
+                <!-- Course Name & Duration Badge -->
+                <td class="text-start">
+                  <span class="text-white fw-bold text-uppercase d-block mb-1" style="font-size: 0.85rem;">
+                    {{ subject.course.name }}
+                  </span>
+                  <span class="badge bg-primary rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                    {{ subject.course.duration }}
+                  </span>
+                </td>
+
+                <!-- Theory Min -->
+                <td>
+                  {% if subject.subject_type == 'Theory' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.theory_min_marks|default:"-" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Theory Max -->
+                <td>
+                  {% if subject.subject_type == 'Theory' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.theory_max_marks|default:"100" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Practical Min -->
+                <td>
+                  {% if subject.subject_type == 'Practical' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.practical_min_marks|default:"-" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Practical Max -->
+                <td>
+                  {% if subject.subject_type == 'Practical' or subject.subject_type == 'Both' %}
+                    <span class="text-white">{{ subject.practical_max_marks|default:"100" }}</span>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <a href="{% url 'subject_restore' subject.id %}" class="btn btn-sm px-3" style="background-color: #1e3a8a !important; border: none !important; color: #60a5fa !important; font-size: 0.8rem; font-weight: 600; border-radius: 6px;">
+                      <i class="bi bi-arrow-left me-1"></i> Move to list
+                    </a>
+
+                    <a href="{% url 'subject_permanent_delete' subject.id %}" class="btn btn-sm btn-permanent-delete px-3" data-name="{{ subject.name }}" style="background-color: #f03e65 !important; border: none !important; color: #fff !important; font-size: 0.8rem; font-weight: 600; border-radius: 6px;">
+                      <i class="bi bi-trash-fill me-1"></i> Delete
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="9" class="p-0">
+                  <div class="empty-state py-5 text-center">
+                    <i class="bi bi-trash fs-1 text-muted d-block mb-2"></i>
+                    <p class="mb-0 text-muted">No deleted subjects found.</p>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     EDIT SUBJECT MODAL
+══════════════════════════════════ -->
+<div class="modal fade" id="editSubjectModal" tabindex="-1" aria-labelledby="editSubjectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold" id="editSubjectModalLabel" style="color: #f6f4ff;">Edit Subject</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editSubjectForm" method="POST" novalidate>
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-danger" id="editSubjectError" style="display: none;"></div>
+
+          <div class="row g-3">
+            <!-- Select Course -->
+            <div class="col-md-6">
+              <label for="edit_course" class="form-label fw-semibold" style="color: #f6f4ff;">Course <span class="text-danger">*</span></label>
+              <select name="course" id="edit_course" class="form-select dark-input">
+                <option value="">Select Course</option>
+                {% for course in form.fields.course.queryset %}
+                  <option value="{{ course.id }}" data-duration="{{ course.duration }}">{{ course.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Duration offset -->
+            <div class="col-md-6">
+              <label for="edit_duration_offset" class="form-label fw-semibold" style="color: #f6f4ff;">Select Duration in Year / Month <span class="text-danger">*</span></label>
+              <select name="duration_offset" id="edit_duration_offset" class="form-select dark-input">
+                <option value="">Select duration</option>
+              </select>
+            </div>
+
+            <!-- Subject Code -->
+            <div class="col-md-6">
+              <label for="edit_subject_code" class="form-label fw-semibold" style="color: #f6f4ff;">Subject Code <span class="text-danger">*</span></label>
+              <input type="text" name="subject_code" id="edit_subject_code" class="form-control dark-input" placeholder="Enter Subject Code">
+            </div>
+
+            <!-- Name -->
+            <div class="col-md-6">
+              <label for="edit_name" class="form-label fw-semibold" style="color: #f6f4ff;">Subject Name <span class="text-danger">*</span></label>
+              <input type="text" name="name" id="edit_name" class="form-control dark-input" placeholder="Enter Subject Name">
+            </div>
+
+            <!-- Subject Type selection -->
+            <div class="col-md-12">
+              <label class="form-label fw-semibold d-block" style="color: #f6f4ff;">Subject Type <span class="text-danger">*</span></label>
+              <div class="d-flex gap-4 mt-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="subject_type" id="edit_type_theory" value="Theory">
+                  <label class="form-check-label text-white" for="edit_type_theory">Theory</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="subject_type" id="edit_type_practical" value="Practical">
+                  <label class="form-check-label text-white" for="edit_type_practical">Practical</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="subject_type" id="edit_type_both" value="Both">
+                  <label class="form-check-label text-white" for="edit_type_both">Both</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Theory Marks -->
+            <div class="col-md-6">
+              <label for="edit_theory_max_marks" class="form-label fw-semibold" style="color: #f6f4ff;">Theory Max Marks</label>
+              <input type="number" name="theory_max_marks" id="edit_theory_max_marks" class="form-control dark-input">
+            </div>
+            <div class="col-md-6">
+              <label for="edit_theory_min_marks" class="form-label fw-semibold" style="color: #f6f4ff;">Theory Min Marks</label>
+              <input type="number" name="theory_min_marks" id="edit_theory_min_marks" class="form-control dark-input">
+            </div>
+
+            <!-- Practical Marks -->
+            <div class="col-md-6">
+              <label for="edit_practical_max_marks" class="form-label fw-semibold" style="color: #f6f4ff;">Practical Max Marks</label>
+              <input type="number" name="practical_max_marks" id="edit_practical_max_marks" class="form-control dark-input">
+            </div>
+            <div class="col-md-6">
+              <label for="edit_practical_min_marks" class="form-label fw-semibold" style="color: #f6f4ff;">Practical Min Marks</label>
+              <input type="number" name="practical_min_marks" id="edit_practical_min_marks" class="form-control dark-input">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary justify-content-end">
+          <button type="button" class="btn btn-close-modal px-4 py-2 me-2" data-bs-dismiss="modal">Close</button>
+          <button type="submit" id="editSubjectSubmitBtn" class="btn btn-save-modal px-4 py-2">
+            <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+
+  // Helper to parse dynamic duration units (e.g. "2 Year", "6 Month", "4 Semesters")
+  function generateDurationOptions(selectEl, durationStr, selectedVal) {
+    selectEl.innerHTML = '<option value="">Select duration</option>';
+    if (!durationStr) return;
+
+    const parts = durationStr.trim().split(' ');
+    if (parts.length < 2) return;
+
+    const val = parseInt(parts[0], 10);
+    const unit = parts[1].replace(/s$/, ''); // singularize unit
+
+    if (isNaN(val)) return;
+
+    for (let i = 1; i <= val; i++) {
+      const optVal = `${unit} ${i}`;
+      const selectedAttr = (optVal === selectedVal) ? 'selected' : '';
+      selectEl.innerHTML += `<option value="${optVal}" ${selectedAttr}>${unit} ${i}</option>`;
+    }
+  }
+
+  // Toggles Theory/Practical inputs state depending on selected Subject Type radio
+  function handleSubjectTypeToggles(prefix, typeVal) {
+    const tMax = document.getElementById(prefix + 'theory_max_marks');
+    const tMin = document.getElementById(prefix + 'theory_min_marks');
+    const pMax = document.getElementById(prefix + 'practical_max_marks');
+    const pMin = document.getElementById(prefix + 'practical_min_marks');
+
+    if (typeVal === 'Theory') {
+      tMax.disabled = false;
+      tMin.disabled = false;
+      pMax.disabled = true;
+      pMin.disabled = true;
+      pMax.value = '';
+      pMin.value = '';
+    } else if (typeVal === 'Practical') {
+      tMax.disabled = true;
+      tMin.disabled = true;
+      pMax.disabled = false;
+      pMin.disabled = false;
+      tMax.value = '';
+      tMin.value = '';
+    } else {
+      tMax.disabled = false;
+      tMin.disabled = false;
+      pMax.disabled = false;
+      pMin.disabled = false;
+    }
+  }
+
+  // ══════════════════════════════════
+  // ADD FORM HANDLERS
+  // ══════════════════════════════════
+  const addCourseSelect = document.getElementById('id_course');
+  const addDurationOffset = document.getElementById('id_duration_offset');
+
+  addCourseSelect.addEventListener('change', function () {
+    const selectedOption = addCourseSelect.options[addCourseSelect.selectedIndex];
+    const duration = selectedOption.dataset.duration || '';
+    generateDurationOptions(addDurationOffset, duration, '');
+  });
+
+  // Init duration on page load if course already selected
+  if (addCourseSelect.value) {
+    const selectedOption = addCourseSelect.options[addCourseSelect.selectedIndex];
+    const duration = selectedOption.dataset.duration || '';
+    generateDurationOptions(addDurationOffset, duration, '{{ form.duration_offset.value|default:"" }}');
+  }
+
+  // Type Radio handlers for Add Form
+  const addRadios = document.querySelectorAll('input[name="subject_type"]');
+  addRadios.forEach(radio => {
+    radio.addEventListener('change', function () {
+      handleSubjectTypeToggles('id_', this.value);
+    });
+  });
+
+  // Trigger initial toggle state for Add Form
+  const checkedAddRadio = document.querySelector('input[name="subject_type"]:checked');
+  if (checkedAddRadio) {
+    handleSubjectTypeToggles('id_', checkedAddRadio.value);
+  }
+
+  // ══════════════════════════════════
+  // EDIT MODAL HANDLERS
+  // ══════════════════════════════════
+  const editModal      = document.getElementById('editSubjectModal');
+  const editForm       = document.getElementById('editSubjectForm');
+  const editCourse     = document.getElementById('edit_course');
+  const editDuration   = document.getElementById('edit_duration_offset');
+  const editCode       = document.getElementById('edit_subject_code');
+  const editName       = document.getElementById('edit_name');
+  const editError      = document.getElementById('editSubjectError');
+  const submitBtn      = document.getElementById('editSubjectSubmitBtn');
+  const bsModal        = new bootstrap.Modal(editModal);
+
+  editCourse.addEventListener('change', function () {
+    const selectedOption = editCourse.options[editCourse.selectedIndex];
+    const duration = selectedOption.dataset.duration || '';
+    generateDurationOptions(editDuration, duration, '');
+  });
+
+  // Type Radio handlers for Edit Form
+  const editRadios = document.querySelectorAll('input[name="subject_type"]');
+  editRadios.forEach(radio => {
+    radio.addEventListener('change', function () {
+      handleSubjectTypeToggles('edit_', this.value);
+    });
+  });
+
+  // Click Edit button — load data via AJAX GET
+  document.querySelectorAll('.btn-edit-subject').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const url = btn.dataset.url;
+      editError.style.display = 'none';
+
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        editCourse.value = data.course_id;
+        generateDurationOptions(editDuration, data.course_duration, data.duration_offset);
+        editCode.value = data.subject_code;
+        editName.value = data.name;
+
+        // Select correct radio button
+        document.querySelectorAll('input[name="subject_type"]').forEach(radio => {
+          if (radio.value === data.subject_type) {
+            radio.checked = true;
+          }
+        });
+
+        // Set marks fields
+        document.getElementById('edit_theory_max_marks').value = data.theory_max_marks || '';
+        document.getElementById('edit_theory_min_marks').value = data.theory_min_marks || '';
+        document.getElementById('edit_practical_max_marks').value = data.practical_max_marks || '';
+        document.getElementById('edit_practical_min_marks').value = data.practical_min_marks || '';
+
+        handleSubjectTypeToggles('edit_', data.subject_type);
+
+        editForm.action = url;
+        bsModal.show();
+      })
+      .catch(() => {
+        alert('Unable to load subject data. Please try again.');
+      });
+    });
+  });
+
+  // Submit Edit form via AJAX POST
+  editForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    editError.style.display = 'none';
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+    const formData = new FormData(editForm);
+
+    fetch(editForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        bsModal.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Subject Updated Successfully..',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        }).then(() => {
+          window.location.reload();
+        });
+      } else {
+        const errs = data.errors || {};
+        let errMsg = 'Please check your inputs.';
+        // Extract first error message
+        for (const k in errs) {
+          if (errs[k] && errs[k][0]) {
+            errMsg = errs[k][0];
+            break;
+          }
+        }
+        editError.textContent = errMsg;
+        editError.style.display = 'block';
+      }
+    })
+    .catch(() => {
+      editError.textContent = 'An error occurred. Please try again.';
+      editError.style.display = 'block';
+    })
+    .finally(() => {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-bookmark-fill me-1"></i> Save Changes';
+    });
+  });
+
+  // SweetAlert2 for successful publication
+  {% if messages %}
+    {% for msg in messages %}
+      {% if "Subject created successfully" in msg.message or "created successfully" in msg.message %}
+        Swal.fire({
+          icon: 'success',
+          title: 'Subject Added Successfully..',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        });
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  // Delete Confirmation via SweetAlert2
+  document.querySelectorAll('.btn-delete-subject').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = btn.getAttribute('href');
+      const name = btn.dataset.name;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure you want to delete ' + name + ' ?',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+
+  // Permanent Delete Confirmation via SweetAlert2
+  document.querySelectorAll('.btn-permanent-delete').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = btn.getAttribute('href');
+      const name = btn.dataset.name;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure you want to permanently delete ' + name + ' ?',
+        text: 'This action cannot be undone.',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+
+}());
+</script>
+{% endblock %}

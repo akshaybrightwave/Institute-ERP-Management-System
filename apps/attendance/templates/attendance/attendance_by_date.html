@@ -1,0 +1,241 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Attendance By Date | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-calendar-check text-primary me-2"></i>Attendance By Date
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item text-muted">Attendance</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">
+          Attendance By Date
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- SECTION 1: Select Criteria -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Select Criteria</h5>
+      <i class="bi bi-chevron-up text-muted"></i>
+    </div>
+    <div class="card-body px-4 pt-4 pb-4">
+      <form method="GET" action="{% url 'attendance_by_date' %}" id="searchCriteriaForm">
+        <input type="hidden" name="show" value="{{ show_entries }}">
+        <div class="row g-4 align-items-end">
+          <!-- Attendance Date -->
+          <div class="col-md-5">
+            <label class="form-label text-white fw-semibold" style="font-size: 0.9rem;">
+              Attendance Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" name="date" id="dateSelect" class="form-control"
+                   style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 44px;"
+                   value="{{ selected_date }}" required>
+          </div>
+
+          <!-- Search Button -->
+          <div class="col-md-3">
+            <button type="submit" class="btn px-4 py-2 d-inline-flex align-items-center justify-content-center"
+                    style="border: 1.5px dashed #10b981; color: #10b981; background-color: rgba(16, 185, 129, 0.1); font-size: 0.9rem; border-radius: 6px; min-width: 120px;">
+              <i class="bi bi-search me-2"></i>Search
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Attendance List -->
+  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Attendance List</h5>
+    </div>
+    
+    <div class="card-body p-4">
+      
+      <!-- Top Filters & Search (Standard CRUD Pattern) -->
+      <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <!-- Show Entries dropdown -->
+        <div class="d-flex align-items-center gap-2">
+          <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+          <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+            <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+            <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+            <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+          </select>
+        </div>
+        
+        <!-- Search bar and action buttons -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <form method="GET" action="{% url 'attendance_by_date' %}" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="show" value="{{ show_entries }}">
+            <input type="hidden" name="date" value="{{ selected_date }}">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+            <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" 
+                   style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+          </form>
+          
+          <div class="d-flex gap-1 no-print">
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-copy">Copy</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-csv">CSV</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-excel">Excel</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-pdf">PDF</button>
+            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-print">Print</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Data Table -->
+      <div class="table-responsive">
+        <table class="table table-examly table-hover table-bordered align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+              <th class="ps-3 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Enrollment No</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student Name</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Center</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Attendance</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Remark</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in page_obj %}
+            <tr>
+              <td class="ps-3 text-white-50" style="font-size: 0.9rem;">
+                {{ forloop.counter0|add:page_obj.start_index }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ item.enrollment_no }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ item.student.full_name }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ item.batch.course.name }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ item.batch.course.center.name|default:"-" }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {% if item.status == 'present' %}
+                  <span class="badge" style="background-color: rgba(25, 135, 84, 0.2); color: #198754; border: 1px solid #198754;">Present</span>
+                {% elif item.status == 'absent' %}
+                  <span class="badge" style="background-color: rgba(220, 53, 69, 0.2); color: #dc3545; border: 1px solid #dc3545;">Absent</span>
+                {% elif item.status == 'late' %}
+                  <span class="badge" style="background-color: rgba(253, 126, 20, 0.2); color: #fd7e14; border: 1px solid #fd7e14;">Late</span>
+                {% elif item.status == 'holiday' %}
+                  <span class="badge" style="background-color: rgba(13, 202, 240, 0.2); color: #0dcaf0; border: 1px solid #0dcaf0;">Holiday</span>
+                {% elif item.status == 'half_day' %}
+                  <span class="badge" style="background-color: rgba(255, 193, 7, 0.2); color: #ffc107; border: 1px solid #ffc107;">Half Day</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ item.status|title }}</span>
+                {% endif %}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ item.remark }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                {% if searched %}
+                <i class="bi bi-people text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                No attendance records found for this date.
+                {% else %}
+                <i class="bi bi-calendar-event text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                Select an Attendance Date to view records.
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <span class="text-muted" style="font-size: 0.85rem;">
+          Showing {% if page_obj.paginator.count > 0 %}{{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}{% else %}0 to 0 of 0{% endif %} records
+        </span>
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation">
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&show={{ show_entries }}&date={{ selected_date }}">&lt;</a>
+              </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active">
+                  <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}&q={{ query }}&show={{ show_entries }}&date={{ selected_date }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}&q={{ query }}&show={{ show_entries }}&date={{ selected_date }}">&gt;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function () {
+  // Show entries dropdown logic
+  $('#showEntriesSelect').change(function() {
+    let url = new URL(window.location.href);
+    url.searchParams.set('show', $(this).val());
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  });
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+{% endblock %}

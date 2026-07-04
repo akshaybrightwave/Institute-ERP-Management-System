@@ -1,13 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseForbidden
-from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt
-from .forms import ExamForm, QuestionForm, OptionForm
+from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
+from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt, ExamSchedule
+from .forms import ExamForm, QuestionForm, OptionForm, ExamScheduleForm
 from apps.accounts.views import admin_required
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.utils.timezone import now
 from django.db.models import Avg, Max, Min, Q, Count, F
 from django.core.paginator import Paginator
+from apps.centers.models import Center
+from apps.courses.models import Course
+from apps.academics.models import AcademicSession
 from apps.students.models import StudentProfile
 from apps.batches.models import Batch
 import csv
@@ -644,6 +647,77 @@ def export_batch_performance_csv(request):
             f"{pass_rate:.1f}%"
         ])
     return response
+
+
+@admin_required
+def exam_schedule_list(request):
+    form = ExamScheduleForm()
+
+    if request.method == 'POST':
+        form = ExamScheduleForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Schedule created successfully.')
+            return redirect('exam_schedule_list')
+
+    query = request.GET.get('q', '').strip()
+    qs = ExamSchedule.objects.all().order_by('-id')
+    if query:
+        qs = qs.filter(
+            Q(course__name__icontains=query) |
+            Q(center__name__icontains=query) |
+            Q(exam_center__name__icontains=query) |
+            Q(session__session_name__icontains=query)
+        )
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'exam/exam_schedule_list.html', {
+        'form': form,
+        'page_obj': page_obj,
+        'query': query,
+    })
+
+
+@admin_required
+def exam_schedule_edit(request, pk):
+    schedule = get_object_or_404(ExamSchedule, pk=pk)
+
+    if request.method == 'POST':
+        form = ExamScheduleForm(request.POST, instance=schedule)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Schedule updated successfully.')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
+            return redirect('exam_schedule_list')
+        else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                errors = {field: list(errs) for field, errs in form.errors.items()}
+                return JsonResponse({'success': False, 'errors': errors}, status=400)
+    else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'id': schedule.pk,
+                'center': schedule.center.pk if schedule.center else '',
+                'course': schedule.course.pk if schedule.course else '',
+                'duration': schedule.duration,
+                'exam_center': schedule.exam_center.pk if schedule.exam_center else '',
+                'session': schedule.session.pk if schedule.session else '',
+            })
+        form = ExamScheduleForm(instance=schedule)
+    return redirect('exam_schedule_list')
+
+
+@admin_required
+def exam_schedule_delete(request, pk):
+    schedule = get_object_or_404(ExamSchedule, pk=pk)
+    if request.method == 'POST':
+        schedule.delete()
+        messages.success(request, 'Schedule deleted successfully.')
+        return redirect('exam_schedule_list')
+    return render(request, 'exam/exam_schedule_confirm_delete.html', {'schedule': schedule})
 
     # NOTE: All student views  → apps/students/views.py
     #       All teacher views  → apps/teachers/views.py

@@ -1,0 +1,37 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Delete Time Table | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+  <div class="row justify-content-center">
+    <div class="col-lg-5">
+      <div class="qa-card text-center" style="border: 1px solid var(--erp-border-color); background-color: var(--erp-bg-card); border-radius: 12px; padding: 2rem;">
+        <div class="card-body p-4 p-md-5">
+          <div class="feature-icon bg-danger text-white mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 12px; font-size: 24px;">
+            <i class="bi bi-exclamation-triangle"></i>
+          </div>
+          <h3 class="fw-bold mb-3" style="color: #f6f4ff;">Delete Time Table</h3>
+          <p class="text-muted mb-4">
+            Are you sure you want to delete the time table<br>
+            <strong style="color: #fff; font-size: 1.1rem;">{{ timetable.timetable_name }}</strong>?<br>
+            <small class="text-danger mt-2 d-block">This action cannot be undone.</small>
+          </p>
+
+          <form method="POST">
+            {% csrf_token %}
+            <div class="d-flex gap-2 justify-content-center">
+              <button type="submit" class="btn btn-danger px-4 py-2 fw-bold" style="background-color: #f03e65; border: none; border-radius: 8px;">
+                <i class="bi bi-trash me-1"></i>Yes, Delete
+              </button>
+              <a href="{% url 'timetable_list' %}" class="btn px-4 py-2" style="background: transparent; color: #b6b6ff; border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                Cancel
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
