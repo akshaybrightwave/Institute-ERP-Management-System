@@ -806,18 +806,18 @@
   </div>
 
   <!-- Admit Card -->
-  <button class="sidebar-item {% if request.resolver_match.url_name in 'generate_admit_card,list_admit_card' %}active{% endif %}" type="button"
+  <button class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}active{% endif %}" type="button"
           data-bs-toggle="collapse" data-bs-target="#sbAdmitCard"
-          aria-expanded="{% if request.resolver_match.url_name in 'generate_admit_card,list_admit_card' %}true{% else %}false{% endif %}">
+          aria-expanded="{% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}true{% else %}false{% endif %}">
     <i class="bi bi-card-text si-icon"></i>
     <span class="si-label">Admit Card</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub {% if request.resolver_match.url_name in 'generate_admit_card,list_admit_card' %}show{% endif %}" id="sbAdmitCard">
-    <a href="#" class="{% if request.resolver_match.url_name == 'generate_admit_card' %}active{% endif %}">
+  <div class="collapse sidebar-sub {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}show{% endif %}" id="sbAdmitCard">
+    <a href="{% url 'admit_card_create' %}" class="{% if request.resolver_match.url_name == 'admit_card_create' %}active{% endif %}">
       <i class="bi bi-plus-circle me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Generate Admit Card
     </a>
-    <a href="#" class="{% if request.resolver_match.url_name == 'list_admit_card' %}active{% endif %}">
+    <a href="{% url 'admit_card_list' %}" class="{% if request.resolver_match.url_name == 'admit_card_list' %}active{% endif %}">
       <i class="bi bi-card-text me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Admit Card(s)
     </a>
   </div>

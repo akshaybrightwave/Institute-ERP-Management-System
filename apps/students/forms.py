@@ -26,7 +26,7 @@ class StudentAdmissionForm(forms.ModelForm):
 
     class Meta:
         model = StudentAdmission
-        fields = '__all__'
+        exclude = ['status', 'approved_by', 'approved_at', 'cancelled_by', 'cancelled_at', 'cancel_reason']
         widgets = {
             'student_name': forms.TextInput(attrs={'class': 'form-control dark-input', 'placeholder': 'Enter Student Name', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}),
             'gender': forms.Select(choices=[('', 'Select Gender'), ('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}),

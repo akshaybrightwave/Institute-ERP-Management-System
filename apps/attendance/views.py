@@ -22,15 +22,8 @@ def student_attendance(request):
     if not (is_admin or is_teacher or is_center):
         return HttpResponseForbidden("Access Denied: Admins, Center users, or Teachers only.")
 
-    # Role-filtered batch queryset
-    if is_teacher:
-        teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
-        batches = Batch.objects.filter(teacher=teacher_profile).select_related('course')
-    elif is_center:
-        center = request.user.center
-        batches = Batch.objects.filter(course__center=center).select_related('course') if center else Batch.objects.none()
-    else:
-        batches = Batch.objects.all().select_related('course')
+    from apps.academics.models import TimeTable
+    batches = TimeTable.objects.all()
 
     selected_batch_id = request.GET.get('batch') or request.POST.get('batch')
     selected_date_str = request.GET.get('date') or request.POST.get('date')
@@ -49,33 +42,31 @@ def student_attendance(request):
     searched = False
 
     if selected_batch_id:
-        # Validate batch ownership
         try:
-            if is_teacher:
-                selected_batch = batches.get(pk=selected_batch_id)
-            elif is_center:
-                selected_batch = batches.get(pk=selected_batch_id)
-            else:
-                selected_batch = Batch.objects.select_related('course').get(pk=selected_batch_id)
-        except Batch.DoesNotExist:
-            return HttpResponseForbidden("Access Denied: Batch not accessible.")
+            selected_batch = TimeTable.objects.get(pk=selected_batch_id)
+        except TimeTable.DoesNotExist:
+            return HttpResponseForbidden("Access Denied: Time Table not accessible.")
 
     if request.method == 'POST' and selected_batch:
-        # ── SAVE attendance ──
+        # ── SAVE attendance using StudentAdmission directly ──
         teacher_profile_obj = None
         if is_teacher:
             teacher_profile_obj = get_object_or_404(TeacherProfile, user=request.user)
 
-        students = selected_batch.studentprofile_set.all()
+        from apps.students.models import StudentAdmission
+        admissions = StudentAdmission.objects.filter(
+            timetable_course=selected_batch.timetable_name
+        ).order_by('student_name')
+
         saved_count = 0
-        for student in students:
-            status = request.POST.get(f'status_{student.id}', 'present')
-            remark = request.POST.get(f'remark_{student.id}', '').strip()
+        for admission in admissions:
+            status = request.POST.get(f'status_{admission.id}', 'present')
+            remark = request.POST.get(f'remark_{admission.id}', '').strip()
             if status not in ['present', 'late', 'absent', 'holiday', 'half_day']:
                 status = 'present'
             Attendance.objects.update_or_create(
-                student=student,
-                batch=selected_batch,
+                student=admission,
+                timetable_name=selected_batch.timetable_name,
                 date=selected_date,
                 defaults={
                     'status': status,
@@ -91,22 +82,25 @@ def student_attendance(request):
     # ── GET: load students if batch selected ──
     if selected_batch and request.GET.get('batch'):
         searched = True
-        students = selected_batch.studentprofile_set.all().order_by('full_name')
-        existing = {att.student_id: att for att in Attendance.objects.filter(batch=selected_batch, date=selected_date)}
-
-        # Enrich with enrollment_no from StudentAdmission
         from apps.students.models import StudentAdmission
-        name_to_enrollment = {
-            adm.student_name: adm.enrollment_no
-            for adm in StudentAdmission.objects.filter(student_name__in=[s.full_name for s in students])
+        admissions = StudentAdmission.objects.filter(
+            timetable_course=selected_batch.timetable_name
+        ).order_by('student_name')
+
+        existing = {
+            att.student_id: att
+            for att in Attendance.objects.filter(
+                timetable_name=selected_batch.timetable_name,
+                date=selected_date
+            )
         }
 
-        for idx, student in enumerate(students, start=1):
-            att = existing.get(student.id)
+        for idx, admission in enumerate(admissions, start=1):
+            att = existing.get(admission.id)
             student_list.append({
                 'idx': idx,
-                'student': student,
-                'enrollment_no': name_to_enrollment.get(student.full_name, '—'),
+                'student': admission,
+                'enrollment_no': admission.enrollment_no,
                 'status': att.status if att else 'present',
                 'remark': att.remark if att else '',
             })
@@ -414,7 +408,7 @@ def attendance_edit(request, pk):
 
 @login_required
 def attendance_by_date(request):
-    """View to show attendance list by date with export functionality."""
+    """Attendance Report — pivot matrix by TimeTable + date range."""
     is_admin = request.user.role == 'admin'
     is_teacher = request.user.role == 'teacher'
     is_center = request.user.role == 'center'
@@ -422,66 +416,94 @@ def attendance_by_date(request):
     if not (is_admin or is_teacher or is_center):
         return HttpResponseForbidden("Access Denied.")
 
-    selected_date_str = request.GET.get('date')
-    selected_date = None
-    query = request.GET.get('q', '')
-    show_entries = request.GET.get('show', '10')
-
-    if selected_date_str:
-        try:
-            selected_date = datetime_date.fromisoformat(selected_date_str)
-        except ValueError:
-            messages.error(request, "Invalid date format.")
-
-    # Base Queryset
-    attendances = Attendance.objects.none()
-    
-    if selected_date:
-        attendances = Attendance.objects.select_related('student', 'batch', 'batch__course', 'batch__course__center').filter(date=selected_date).order_by('student__full_name')
-        
-        # Apply role-based filtering
-        if is_teacher:
-            teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
-            attendances = attendances.filter(batch__teacher=teacher_profile)
-        elif is_center:
-            center = request.user.center
-            if center:
-                attendances = attendances.filter(batch__course__center=center)
-            else:
-                attendances = Attendance.objects.none()
-
-        # Apply search query
-        if query:
-            attendances = attendances.filter(
-                Q(student__full_name__icontains=query) |
-                Q(batch__course__name__icontains=query) |
-                Q(status__icontains=query) |
-                Q(remark__icontains=query)
-            )
-
-    try:
-        show_entries_int = int(show_entries)
-    except ValueError:
-        show_entries_int = 10
-        
-    paginator = Paginator(attendances, show_entries_int)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Fetch all admissions to map names to enrollment nos
+    from apps.academics.models import TimeTable
     from apps.students.models import StudentAdmission
-    student_names = [att.student.full_name for att in page_obj]
-    admissions = StudentAdmission.objects.filter(student_name__in=student_names)
-    name_to_enrollment = {adm.student_name: adm.enrollment_no for adm in admissions}
-    
-    for att in page_obj:
-        att.enrollment_no = name_to_enrollment.get(att.student.full_name, '—')
+
+    timetables = TimeTable.objects.all().order_by('timetable_name')
+
+    selected_tt_id = request.GET.get('timetable', '')
+    date_range_str = request.GET.get('date_range', '')
+    searched = False
+
+    selected_timetable = None
+    date_columns = []
+    student_rows = []
+    start_date = None
+    end_date = None
+
+    if selected_tt_id:
+        try:
+            selected_timetable = TimeTable.objects.get(pk=selected_tt_id)
+        except TimeTable.DoesNotExist:
+            selected_timetable = None
+
+    if selected_timetable and date_range_str:
+        # Parse date range "YYYY-MM-DD - YYYY-MM-DD"
+        parts = [p.strip() for p in date_range_str.split(' - ')]
+        try:
+            start_date = datetime_date.fromisoformat(parts[0])
+            end_date = datetime_date.fromisoformat(parts[1]) if len(parts) > 1 else start_date
+        except (ValueError, IndexError):
+            start_date = end_date = None
+
+    if selected_timetable and start_date and end_date:
+        searched = True
+        # Build list of all dates in range
+        from datetime import timedelta
+        delta = (end_date - start_date).days
+        date_columns = [start_date + timedelta(days=i) for i in range(delta + 1)]
+
+        # Get all admissions for this timetable
+        admissions = StudentAdmission.objects.filter(
+            timetable_course=selected_timetable.timetable_name
+        ).order_by('student_name')
+
+        # Get all attendance records in this range for this timetable
+        records = Attendance.objects.filter(
+            timetable_name=selected_timetable.timetable_name,
+            date__range=(start_date, end_date)
+        ).values('student_id', 'date', 'status')
+
+        # Build lookup: {student_id: {date: status}}
+        att_lookup = {}
+        for rec in records:
+            att_lookup.setdefault(rec['student_id'], {})[rec['date']] = rec['status']
+
+        STATUS_LETTER = {
+            'present': 'P',
+            'late': 'L',
+            'absent': 'A',
+            'holiday': 'H',
+            'half_day': 'F',
+        }
+        STATUS_COLOR = {
+            'present': '#10b981',
+            'late': '#f59e0b',
+            'absent': '#ef4444',
+            'holiday': '#818cf8',
+            'half_day': '#06b6d4',
+        }
+
+        for adm in admissions:
+            day_data = []
+            for d in date_columns:
+                status = att_lookup.get(adm.id, {}).get(d, '')
+                day_data.append({
+                    'status': STATUS_LETTER.get(status, '—'),
+                    'color': STATUS_COLOR.get(status, 'rgba(255,255,255,0.3)'),
+                })
+            student_rows.append({
+                'name': adm.student_name,
+                'enrollment': adm.enrollment_no,
+                'days': day_data,
+            })
 
     context = {
-        'page_obj': page_obj,
-        'selected_date': selected_date_str if selected_date_str else '',
-        'query': query,
-        'show_entries': show_entries,
-        'searched': bool(selected_date_str),
+        'timetables': timetables,
+        'selected_tt_id': selected_tt_id,
+        'date_range_str': date_range_str,
+        'searched': searched,
+        'date_columns': date_columns,
+        'student_rows': student_rows,
     }
     return render(request, 'attendance/attendance_by_date.html', context)

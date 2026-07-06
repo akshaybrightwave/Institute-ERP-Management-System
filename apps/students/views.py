@@ -331,19 +331,50 @@ def delete_student_exam_attempt(request, attempt_id):
 
 @login_required
 def student_profile(request):
-    student = request.user
-    attempts = StudentExamAttempt.objects.filter(student=student)
-    total_attempts = attempts.count()
+    from django.db.models import Q
+    from django.contrib.auth import get_user_model
 
+    is_admin_or_center = request.user.role in ['admin', 'center']
+    student_id = request.GET.get('student_id')
+    admission = None
+    profile = None
+
+    if is_admin_or_center and student_id:
+        try:
+            admission = StudentAdmission.objects.select_related('course', 'center').get(id=student_id)
+            profile = StudentProfile.objects.filter(user__username=admission.enrollment_no).first()
+            if not profile and admission.email:
+                profile = StudentProfile.objects.filter(email=admission.email).first()
+        except StudentAdmission.DoesNotExist:
+            pass
+
+    if not admission:
+        student = request.user
+        try:
+            profile = student.studentprofile
+            admission = StudentAdmission.objects.select_related('course', 'center').filter(
+                Q(enrollment_no=student.username) | Q(email=profile.email)
+            ).first()
+        except StudentProfile.DoesNotExist:
+            profile = None
+            admission = StudentAdmission.objects.select_related('course', 'center').filter(enrollment_no=student.username).first()
+
+    base_template = 'accounts/admin_dashboard.html' if is_admin_or_center else 'accounts/base.html'
+
+    attempts = []
+    if profile:
+        attempts = StudentExamAttempt.objects.filter(student=profile.user)
+    elif admission:
+        User = get_user_model()
+        user_obj = User.objects.filter(username=admission.enrollment_no).first()
+        if user_obj:
+            attempts = StudentExamAttempt.objects.filter(student=user_obj)
+
+    total_attempts = len(attempts)
     if total_attempts > 0:
         average_score = sum(a.score for a in attempts) / total_attempts
     else:
         average_score = 0
-
-    try:
-        profile = student.studentprofile
-    except StudentProfile.DoesNotExist:
-        profile = None
 
     present_days = 0
     absent_days = 0
@@ -365,40 +396,58 @@ def student_profile(request):
             attendance_percentage = round((present_days / total_days) * 100, 1)
         recent_attendances = student_attendances.order_by('-date')[:5]
 
-        # Fee calculations
-        from django.db.models import Sum
-        from apps.fees.models import FeePayment
-        from decimal import Decimal
+    # Fee calculations
+    from django.db.models import Sum
+    from apps.fees.models import FeePayment
+    from decimal import Decimal
 
-        if profile.batch and profile.batch.course:
-            course_fee = profile.batch.course.fees
-        paid_amount = FeePayment.objects.filter(student=profile).aggregate(total=Sum('amount'))['total'] or 0.00
+    if admission and admission.course:
+        course_fee = admission.course.fees
+    elif profile and profile.batch and profile.batch.course:
+        course_fee = profile.batch.course.fees
 
-        course_fee = Decimal(str(course_fee))
-        paid_amount = Decimal(str(paid_amount))
-        pending_amount = course_fee - paid_amount
+    target_profile = profile
+    if admission and not target_profile:
+        target_profile = StudentProfile.objects.filter(user__username=admission.enrollment_no).first()
+        if not target_profile and admission.email:
+            target_profile = StudentProfile.objects.filter(email=admission.email).first()
 
-        if paid_amount == 0:
-            fee_status = 'PENDING'
-        elif pending_amount <= 0:
-            fee_status = 'PAID'
-        else:
-            fee_status = 'PARTIAL'
+    if target_profile:
+        paid_amount = FeePayment.objects.filter(student=target_profile).aggregate(total=Sum('amount'))['total'] or 0.00
+    else:
+        paid_amount = 0.00
 
-        # Certificate calculations
-        from apps.certificates.models import Certificate
-        from apps.certificates.views import get_student_eligibility
-        
-        student_certificates = Certificate.objects.filter(student=profile)
+    course_fee = Decimal(str(course_fee)) if course_fee else Decimal('0.00')
+    paid_amount = Decimal(str(paid_amount))
+    pending_amount = course_fee - paid_amount
+
+    if paid_amount == 0:
+        fee_status = 'PENDING'
+    elif pending_amount <= 0:
+        fee_status = 'PAID'
+    else:
+        fee_status = 'PARTIAL'
+
+    # Certificate calculations
+    from apps.certificates.models import Certificate
+    from apps.certificates.views import get_student_eligibility
+    
+    if target_profile:
+        student_certificates = Certificate.objects.filter(student=target_profile)
         issued_count = student_certificates.filter(status='issued').count()
-        eligibility = get_student_eligibility(profile)
+        eligibility = get_student_eligibility(target_profile)
     else:
         student_certificates = []
         issued_count = 0
         eligibility = {'eligible': False, 'reason': 'No student profile.'}
 
-    return render(request, 'student/student_profile.html', {
-        'student': student,
+    template_name = 'student/student_profile_admin.html' if is_admin_or_center else 'student/student_profile.html'
+
+    return render(request, template_name, {
+        'student': profile.user if profile else None,
+        'profile': profile,
+        'admission': admission,
+        'base_template': base_template,
         'attempts': attempts,
         'total_attempts': total_attempts,
         'average_score': round(average_score, 2),

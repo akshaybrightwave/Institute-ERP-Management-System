@@ -1,22 +1,22 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
 {% load static %}
 
 {% block title %}Account Overview | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
   <!-- Breadcrumbs & Title -->
   <div class="mb-4">
-    <h2 class="fw-bold text-dark mb-1">
+    <h2 class="fw-bold text-white mb-1">
       <i class="bi bi-person-fill text-primary me-2"></i>Account Overview
     </h2>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
         <li class="breadcrumb-item">
-          <a href="{% url 'home' %}" class="text-decoration-none text-muted">Home</a>
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
         </li>
         <li class="breadcrumb-item text-muted">Student</li>
-        <li class="breadcrumb-item text-dark active" aria-current="page">Profile</li>
+        <li class="breadcrumb-item text-white-50 active" aria-current="page">Profile</li>
       </ol>
     </nav>
   </div>

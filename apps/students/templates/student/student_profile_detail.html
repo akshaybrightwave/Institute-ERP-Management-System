@@ -1,0 +1,164 @@
+<div class="row g-4">
+  <!-- SECTION 1: Account Header Profile Overview Card -->
+  <div class="col-12">
+    <div class="profile-header-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; position: relative; overflow: hidden;">
+      
+      <!-- Top right decorative accent -->
+      <div style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: linear-gradient(135deg, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0)); transform: rotate(45deg); pointer-events: none;"></div>
+
+      <div class="row align-items-center g-4">
+        <!-- Photo and Primary Details -->
+        <div class="col-lg-7 col-12">
+          <div class="d-flex align-items-center flex-wrap gap-4 text-center text-sm-start">
+            <div class="position-relative mx-auto mx-sm-0">
+              {% if admission.photo %}
+                <img src="{{ admission.photo.url }}" alt="{{ admission.student_name }}" class="rounded-3 border border-secondary" style="width: 110px; height: 110px; object-fit: cover;">
+              {% elif profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" alt="{{ admission.student_name }}" class="rounded-3 border border-secondary" style="width: 110px; height: 110px; object-fit: cover;">
+              {% else %}
+                <div class="rounded-3 bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 110px; height: 110px; font-size: 2.5rem;">
+                  <i class="bi bi-person"></i>
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="flex-grow-1">
+              <h3 class="fw-bold text-white mb-2 d-flex align-items-center justify-content-center justify-content-sm-start gap-2">
+                {{ admission.student_name }}
+                <span class="text-primary" style="font-size: 1.1rem;"><i class="bi bi-patch-check-fill"></i></span>
+                <span class="text-success" style="font-size: 1.1rem;"><i class="bi bi-check-circle-fill"></i></span>
+              </h3>
+
+              <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 text-white-50" style="font-size: 0.88rem;">
+                <span><i class="bi bi-person text-muted me-1"></i> Student</span>
+                <span><i class="bi bi-geo-alt text-muted me-1"></i> {{ admission.address|truncatechars:20 }}</span>
+                <span><i class="bi bi-envelope text-muted me-1"></i> {{ admission.email }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pill/Overview Cards -->
+        <div class="col-lg-5 col-12">
+          <div class="d-flex flex-wrap gap-2 justify-content-lg-end justify-content-center">
+            <!-- Enrollment Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
+              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">ENROLLMENT NO</span>
+              <span class="fw-bold text-white small">{{ admission.enrollment_no }}</span>
+            </div>
+
+            <!-- DOB Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
+              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">DATE OF BIRTH</span>
+              <span class="fw-bold text-white small">{{ admission.dob|date:"d-m-Y"|default:"—" }}</span>
+            </div>
+
+            <!-- Gender Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 90px;">
+              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">GENDER</span>
+              <span class="fw-bold text-white small">{{ admission.gender|default:"—" }}</span>
+            </div>
+
+            <!-- Remaining Course Fee Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); min-width: 120px;">
+              <span class="d-block text-danger-emphasis fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #f87171 !important;">REMAINING FEE</span>
+              <span class="fw-bold text-white small">₹{{ pending_amount|floatformat:0 }}</span>
+            </div>
+
+            <!-- Total Course Fee Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); min-width: 120px;">
+              <span class="d-block text-success-emphasis fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #34d399 !important;">TOTAL FEE</span>
+              <span class="fw-bold text-white small">₹{{ course_fee|floatformat:0 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabbed Menu -->
+      <div class="mt-5 border-top border-secondary pt-3">
+        <ul class="nav nav-pills gap-1 flex-wrap" style="border: none;">
+          <li class="nav-item">
+            <a class="nav-link active px-4 py-2 text-white bg-primary rounded" href="#" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-grid-fill me-1"></i> Overview</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" href="#" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-pencil-square me-1"></i> Update</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" href="#" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-wallet2 me-1"></i> Fees Record</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" href="#" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-file-earmark-pdf me-1"></i> Document(s)</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" href="#" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-key-fill me-1"></i> Change Password</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" href="#" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-bell-fill me-1"></i> Notification(s)</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" href="#" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-gear-fill me-1"></i> Setting</a>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 2: Account Overview Details Table Card -->
+  <div class="col-12">
+    <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+      <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Account Overview</h5>
+
+      <div class="table-responsive">
+        <table class="table table-dark table-borderless align-middle mb-0 text-white-50" style="font-size: 0.92rem; background: transparent;">
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td class="py-3 fw-bold text-white" style="width: 20%;">Center Name</td>
+              <td class="py-3 text-white" style="width: 30%;">{{ admission.center.name|default:"—" }}</td>
+              <td class="py-3 fw-bold text-white" style="width: 20%;">Duration</td>
+              <td class="py-3 text-white" style="width: 30%;">{{ admission.course.duration|default:"—" }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td class="py-3 fw-bold text-white">Course Name</td>
+              <td class="py-3 text-white">{{ admission.course.name|default:"—" }}</td>
+              <td class="py-3 fw-bold text-white">Email</td>
+              <td class="py-3 text-white">{{ admission.email|default:"—" }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td class="py-3 fw-bold text-white">Mobile</td>
+              <td class="py-3 text-white">
+                {{ admission.whatsapp_no }}
+                <span class="badge bg-primary ms-2" style="font-size: 0.75rem;">Self</span>
+              </td>
+              <td class="py-3 fw-bold text-white">Mother Name</td>
+              <td class="py-3 text-white">{{ admission.mother_name|default:"—" }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td class="py-3 fw-bold text-white">Father Name</td>
+              <td class="py-3 text-white">{{ admission.father_name|default:"—" }}</td>
+              <td class="py-3 fw-bold text-white">City Name</td>
+              <td class="py-3 text-white">{{ admission.district|default:"—" }}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td class="py-3 fw-bold text-white">State Name</td>
+              <td class="py-3 text-white">{{ admission.state|default:"—" }}</td>
+              <td class="py-3 fw-bold text-white">Pincode</td>
+              <td class="py-3 text-white">{{ admission.pincode|default:"—" }}</td>
+            </tr>
+            <tr>
+              <td class="py-3 fw-bold text-white">Address</td>
+              <td class="py-3 text-white" colspan="3">{{ admission.address|default:"—" }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .hover-nav-pill:hover {
+    background-color: rgba(255,255,255,0.05) !important;
+    color: #fff !important;
+  }
+</style>

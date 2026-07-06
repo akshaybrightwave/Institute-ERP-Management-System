@@ -16,10 +16,12 @@ class Attendance(models.Model):
     batch = models.ForeignKey(
         Batch,
         on_delete=models.CASCADE,
-        related_name='attendances'
+        related_name='attendances',
+        null=True, blank=True
     )
+    timetable_name = models.CharField(max_length=255, null=True, blank=True)
     student = models.ForeignKey(
-        StudentProfile,
+        'students.StudentAdmission',
         on_delete=models.CASCADE,
         related_name='attendances'
     )
@@ -40,7 +42,7 @@ class Attendance(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('student', 'batch', 'date')
+        unique_together = ('student', 'timetable_name', 'date')
 
     def __str__(self):
-        return f"{self.student.full_name} - {self.date} - {self.status}"
+        return f"{self.student.student_name} - {self.date} - {self.status}"

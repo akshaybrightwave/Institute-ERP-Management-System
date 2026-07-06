@@ -1,15 +1,15 @@
 {% extends 'accounts/admin_dashboard.html' %}
 {% load static %}
 
-{% block title %}Attendance By Date | Examly{% endblock %}
+{% block title %}Attendance Report | Examly{% endblock %}
 
 {% block erp_content %}
 <div class="container py-2">
 
-  <!-- Breadcrumbs & Title -->
+  <!-- Title & Breadcrumb -->
   <div class="mb-4">
     <h2 class="fw-bold text-white mb-1">
-      <i class="bi bi-calendar-check text-primary me-2"></i>Attendance By Date
+      <i class="bi bi-calendar-range text-primary me-2"></i>Attendance Report
     </h2>
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
       <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
@@ -17,39 +17,54 @@
           <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
         </li>
         <li class="breadcrumb-item text-muted">Student</li>
-        <li class="breadcrumb-item text-muted">Attendance</li>
-        <li class="breadcrumb-item active text-white-50" aria-current="page">
-          Attendance By Date
-        </li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Attendance-report</li>
       </ol>
     </nav>
   </div>
 
   <!-- SECTION 1: Select Criteria -->
-  <div class="card border-0 shadow-sm rounded-3 mb-4" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
+  <div class="card border-0 shadow-sm rounded-3 mb-4" style="background-color: var(--erp-bg-card); border: 1px solid rgba(99,102,241,0.4) !important; box-shadow: 0 0 0 1px rgba(99,102,241,0.3);">
     <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
       <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Select Criteria</h5>
       <i class="bi bi-chevron-up text-muted"></i>
     </div>
     <div class="card-body px-4 pt-4 pb-4">
-      <form method="GET" action="{% url 'attendance_by_date' %}" id="searchCriteriaForm">
-        <input type="hidden" name="show" value="{{ show_entries }}">
+      <form method="GET" action="" id="reportForm">
         <div class="row g-4 align-items-end">
-          <!-- Attendance Date -->
+
+          <!-- Select Timetable -->
+          <div class="col-md-4">
+            <label class="form-label text-white fw-semibold" style="font-size: 0.9rem;">
+              Select Timetable <span class="text-danger">*</span>
+            </label>
+            <select name="timetable" id="timetableSelect" class="form-select"
+                    style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 44px;">
+              <option value="">-- Select Timetable --</option>
+              {% for tt in timetables %}
+              <option value="{{ tt.id }}" {% if selected_tt_id == tt.id|stringformat:"s" %}selected{% endif %}>
+                {{ tt.timetable_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Date Range -->
           <div class="col-md-5">
             <label class="form-label text-white fw-semibold" style="font-size: 0.9rem;">
               Attendance Date <span class="text-danger">*</span>
             </label>
-            <input type="date" name="date" id="dateSelect" class="form-control"
+            <input type="text" name="date_range" id="dateRangePicker"
+                   class="form-control"
                    style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 44px;"
-                   value="{{ selected_date }}" required>
+                   placeholder="YYYY-MM-DD - YYYY-MM-DD"
+                   value="{{ date_range_str }}" autocomplete="off">
           </div>
 
           <!-- Search Button -->
           <div class="col-md-3">
             <button type="submit" class="btn px-4 py-2 d-inline-flex align-items-center justify-content-center"
                     style="border: 1.5px dashed #10b981; color: #10b981; background-color: rgba(16, 185, 129, 0.1); font-size: 0.9rem; border-radius: 6px; min-width: 120px;">
-              <i class="bi bi-search me-2"></i>Search
+              <i class="bi bi-calendar-event me-2"></i>Search
             </button>
           </div>
         </div>
@@ -57,150 +72,67 @@
     </div>
   </div>
 
-  <!-- SECTION 2: Attendance List -->
-  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
-    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
-      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Attendance List</h5>
-    </div>
-    
-    <div class="card-body p-4">
-      
-      <!-- Top Filters & Search (Standard CRUD Pattern) -->
-      <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <!-- Show Entries dropdown -->
-        <div class="d-flex align-items-center gap-2">
-          <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
-          <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
-            <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
-            <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
-            <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
-          </select>
-        </div>
-        
-        <!-- Search bar and action buttons -->
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-          <form method="GET" action="{% url 'attendance_by_date' %}" class="d-flex align-items-center gap-2">
-            <input type="hidden" name="show" value="{{ show_entries }}">
-            <input type="hidden" name="date" value="{{ selected_date }}">
-            <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
-            <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" 
-                   style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
-          </form>
-          
-          <div class="d-flex gap-1 no-print">
-            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-copy">Copy</button>
-            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-csv">CSV</button>
-            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-excel">Excel</button>
-            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-pdf">PDF</button>
-            <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3 btn-export-print">Print</button>
-          </div>
-        </div>
-      </div>
+  <!-- Legend -->
+  {% if searched %}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(16,185,129,0.15); color: #10b981; border: 1px solid #10b981; font-size: 0.82rem;">P : Present</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid #f59e0b; font-size: 0.82rem;">E : Late With Excuse</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid #f59e0b; font-size: 0.82rem;">L : Late</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; font-size: 0.82rem;">A : Absent</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(129,140,248,0.15); color: #818cf8; border: 1px solid #818cf8; font-size: 0.82rem;">H : Holiday</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(6,182,212,0.15); color: #06b6d4; border: 1px solid #06b6d4; font-size: 0.82rem;">F : Half Day</span>
+  </div>
+  {% endif %}
 
-      <!-- Main Data Table -->
+  <!-- SECTION 2: Pivot Matrix Table -->
+  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
+    <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-examly table-hover table-bordered align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+        <table class="table table-bordered align-middle mb-0" style="border-color: rgba(255,255,255,0.08) !important; min-width: max-content;">
           <thead>
-            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
-              <th class="ps-3 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Enrollment No</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student Name</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Center</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Attendance</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Remark</th>
+            <tr style="background-color: rgba(255,255,255,0.04);">
+              <th class="ps-4 fw-bold text-white" style="font-size: 0.85rem; min-width: 180px; border-color: rgba(255,255,255,0.08) !important; position: sticky; left: 0; background-color: #1a1a2e; z-index: 2;">
+                Student Name
+              </th>
+              {% for d in date_columns %}
+              <th class="text-center fw-semibold text-muted" style="font-size: 0.78rem; min-width: 95px; border-color: rgba(255,255,255,0.08) !important;">
+                {{ d|date:"Y-m-d" }}
+              </th>
+              {% endfor %}
+              {% if not searched %}
+              <th class="text-center text-muted" style="font-size: 0.8rem;">No data</th>
+              {% endif %}
             </tr>
           </thead>
           <tbody>
-            {% for item in page_obj %}
-            <tr>
-              <td class="ps-3 text-white-50" style="font-size: 0.9rem;">
-                {{ forloop.counter0|add:page_obj.start_index }}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {{ item.enrollment_no }}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {{ item.student.full_name }}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {{ item.batch.course.name }}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {{ item.batch.course.center.name|default:"-" }}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {% if item.status == 'present' %}
-                  <span class="badge" style="background-color: rgba(25, 135, 84, 0.2); color: #198754; border: 1px solid #198754;">Present</span>
-                {% elif item.status == 'absent' %}
-                  <span class="badge" style="background-color: rgba(220, 53, 69, 0.2); color: #dc3545; border: 1px solid #dc3545;">Absent</span>
-                {% elif item.status == 'late' %}
-                  <span class="badge" style="background-color: rgba(253, 126, 20, 0.2); color: #fd7e14; border: 1px solid #fd7e14;">Late</span>
-                {% elif item.status == 'holiday' %}
-                  <span class="badge" style="background-color: rgba(13, 202, 240, 0.2); color: #0dcaf0; border: 1px solid #0dcaf0;">Holiday</span>
-                {% elif item.status == 'half_day' %}
-                  <span class="badge" style="background-color: rgba(255, 193, 7, 0.2); color: #ffc107; border: 1px solid #ffc107;">Half Day</span>
-                {% else %}
-                  <span class="badge bg-secondary">{{ item.status|title }}</span>
-                {% endif %}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {{ item.remark }}
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="7" class="text-center text-muted py-5">
-                {% if searched %}
-                <i class="bi bi-people text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
-                No attendance records found for this date.
-                {% else %}
-                <i class="bi bi-calendar-event text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
-                Select an Attendance Date to view records.
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
+            {% if student_rows %}
+              {% for row in student_rows %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 fw-semibold text-white" style="font-size: 0.88rem; border-color: rgba(255,255,255,0.08) !important; position: sticky; left: 0; background-color: var(--erp-bg-card); z-index: 1;">
+                  {{ row.name }}
+                </td>
+                {% for day in row.days %}
+                <td class="text-center fw-bold" style="font-size: 0.88rem; color: {{ day.color }}; border-color: rgba(255,255,255,0.05) !important;">
+                  {{ day.status }}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="20" class="text-center py-5 text-muted" style="background: transparent; border: none;">
+                  <div class="d-flex flex-column align-items-center justify-content-center">
+                    <i class="bi bi-calendar-x" style="font-size: 2.5rem; color: #6366f1; opacity: 0.5;"></i>
+                    <p class="text-white-50 mt-3 fw-semibold mb-0" style="font-size: 0.95rem;">
+                      {% if searched %}No attendance records found for this period.{% else %}Select a Timetable and Date Range to view report.{% endif %}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>
-
-      <!-- Pagination Footer -->
-      <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <span class="text-muted" style="font-size: 0.85rem;">
-          Showing {% if page_obj.paginator.count > 0 %}{{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }}{% else %}0 to 0 of 0{% endif %} records
-        </span>
-        {% if page_obj.has_other_pages %}
-        <nav aria-label="Page navigation">
-          <ul class="pagination pagination-sm mb-0">
-            {% if page_obj.has_previous %}
-              <li class="page-item">
-                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}&q={{ query }}&show={{ show_entries }}&date={{ selected_date }}">&lt;</a>
-              </li>
-            {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-              {% if page_obj.number == num %}
-                <li class="page-item active">
-                  <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
-                </li>
-              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item">
-                  <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}&q={{ query }}&show={{ show_entries }}&date={{ selected_date }}">{{ num }}</a>
-                </li>
-              {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-              <li class="page-item">
-                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}&q={{ query }}&show={{ show_entries }}&date={{ selected_date }}">&gt;</a>
-              </li>
-            {% endif %}
-          </ul>
-        </nav>
-        {% endif %}
-      </div>
-
     </div>
   </div>
 
@@ -208,15 +140,38 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Flatpickr date range picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
 <script>
 $(function () {
-  // Show entries dropdown logic
-  $('#showEntriesSelect').change(function() {
-    let url = new URL(window.location.href);
-    url.searchParams.set('show', $(this).val());
-    url.searchParams.set('page', '1');
-    window.location.href = url.toString();
+  // Init flatpickr date range
+  flatpickr("#dateRangePicker", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    defaultDate: "{{ date_range_str }}".split(' - ').filter(Boolean),
+    onChange: function(selectedDates, dateStr, instance) {
+      // automatically format as "YYYY-MM-DD - YYYY-MM-DD"
+    },
+    onClose: function(selectedDates, dateStr, instance) {
+      if (selectedDates.length === 2) {
+        const fmt = d => d.toISOString().slice(0, 10);
+        instance.element.value = fmt(selectedDates[0]) + ' - ' + fmt(selectedDates[1]);
+      }
+    }
   });
+
+  // Timetable select2
+  if ($.fn.select2) {
+    $('#timetableSelect').select2({
+      theme: 'bootstrap-5',
+      placeholder: '-- Select Timetable --',
+      allowClear: true,
+      width: '100%'
+    });
+  }
 });
 </script>
 
