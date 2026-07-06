@@ -1,0 +1,170 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Update Marksheet | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-file-earmark-diff text-primary me-2"></i>Update Marksheet
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">
+          Update Marksheet
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <!-- SECTION 1: Update Marksheet Form -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Update Marksheet</h5>
+
+        <form method="POST" id="marksheetForm" novalidate>
+          {% csrf_token %}
+
+          <!-- Issue Date -->
+          <div class="col-md-4 col-sm-6 col-12 mb-4">
+            <label for="id_issue_date" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+              Issue Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" name="issue_date" id="id_issue_date" class="form-control text-white" value="{{ result.issue_date|date:'Y-m-d' }}" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 6px;" required>
+          </div>
+
+          <!-- Table -->
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-hover align-middle text-center mb-0" style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+              <thead class="table-dark" style="border-bottom: 2px solid rgba(255,255,255,0.25);">
+                <tr>
+                  <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Subject Code</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Subject Name</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Subject Type</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Min Marks</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Max Marks</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px; width: 180px;">Obtain</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in rows %}
+                <tr style="border-color: rgba(255,255,255,0.1) !important;">
+                  <td class="text-white fw-semibold" style="padding: 14px 16px;">{{ row.code }}</td>
+                  <td class="text-start text-white-50" style="padding: 14px 16px;">{{ row.name }}</td>
+                  <td class="text-white-50" style="padding: 14px 16px;">{{ row.type }}</td>
+                  <td class="text-white-50" style="padding: 14px 16px;">{{ row.min }}</td>
+                  <td class="text-white-50" style="padding: 14px 16px;">{{ row.max }}</td>
+                  <td style="padding: 10px 16px;">
+                    <input type="number" name="{{ row.input_name }}" class="form-control form-control-sm text-center text-white marks-input" data-max="{{ row.max }}" value="{{ row.obtained|default:'' }}" placeholder="Enter Marks" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;" min="0" max="{{ row.max }}">
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-4 text-muted">
+                    No subjects found for this course and duration.
+                  </td>
+                </tr>
+                {% endfor %}
+                <!-- Grand Total Row -->
+                <tr class="fw-bold" style="background-color: rgba(255,255,255,0.05); border-top: 2px solid rgba(255,255,255,0.25);">
+                  <td colspan="3" class="text-start text-uppercase ps-4 text-white">Total Marks</td>
+                  <td class="text-white-50">—</td>
+                  <td id="grand-max" class="text-white">{{ total_max }}</td>
+                  <td id="grand-obtained" class="text-success">{{ total_obtained }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex justify-content-end gap-2 border-top border-secondary pt-3 mt-4">
+            <a href="{% url 'result_list' %}" class="btn btn-outline-secondary px-4 py-2 rounded-3 text-white-50" style="border-color: rgba(255,255,255,0.15);">
+              Close
+            </a>
+            <button type="submit" class="btn btn-publish px-4 py-2 rounded-3">
+              <i class="bi bi-save me-1"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .btn-publish {
+    background-color: #10b981 !important;
+    border: none;
+    color: #fff;
+    transition: all 0.2s ease-in-out;
+  }
+  .btn-publish:hover {
+    background-color: #059669 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+  /* Remove spinner controls in Chrome/Safari/Edge/Opera */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  /* Remove spinner controls in Firefox */
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
+</style>
+
+<script>
+$(function() {
+  // Live calculation of grand total
+  function calculateTotal() {
+    let grandObtained = 0;
+    let anyInput = false;
+    $('.marks-input').each(function() {
+      const valStr = $(this).val();
+      if (valStr.trim() !== '') {
+        const val = parseInt(valStr);
+        if (!isNaN(val)) {
+          grandObtained += val;
+          anyInput = true;
+        }
+      }
+    });
+    $('#grand-obtained').text(anyInput ? grandObtained : '0');
+  }
+
+  $('.marks-input').on('inputChange input', function() {
+    // Validate bounds
+    const maxVal = parseInt($(this).data('max')) || 100;
+    const currentVal = parseInt($(this).val());
+    if (currentVal > maxVal) {
+      $(this).val(maxVal);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Validation Alert',
+        text: `Obtained marks cannot exceed Maximum Marks (${maxVal}).`,
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-primary px-4'
+        },
+        buttonsStyling: false
+      });
+    }
+    calculateTotal();
+  });
+
+  calculateTotal();
+});
+</script>
+{% endblock %}

@@ -24,6 +24,7 @@ urlpatterns = [
     path('subjects/', include('apps.subjects.urls')),
     path('academics/', include('apps.academics.urls')),
     path('admit-cards/', include('apps.admit_card.urls')),
+    path('results/', include('apps.results.urls')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,156 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}View Result Sheet | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-4">
+
+  <!-- Action Bar (Hidden on Print) -->
+  <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <a href="{% url 'result_list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to List
+    </a>
+    <button onclick="window.print();" class="btn btn-primary px-4">
+      <i class="bi bi-printer me-1"></i> Print Result
+    </button>
+  </div>
+
+  <!-- Result Container -->
+  <div class="card border-0 shadow-sm mx-auto" style="max-width: 800px; background-color: #fff; color: #333; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);">
+    
+    <!-- Header Banner -->
+    <div class="text-center text-white p-4" style="background: linear-gradient(135deg, #2b1055 0%, #7597de 100%); border-bottom: 5px solid #10b981;">
+      <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
+        <div style="width: 50px; height: 50px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-award-fill text-primary" style="font-size: 1.8rem;"></i>
+        </div>
+        <div>
+          <h3 class="fw-bold mb-0 text-uppercase" style="letter-spacing: 1px; font-size: 1.6rem;">{{ result.student.center.name|default:"INSTITUTE NAME" }}</h3>
+          <p class="mb-0 text-white-50 small">{{ result.student.center.address|default:"Institute Address Details" }}</p>
+        </div>
+      </div>
+      <h5 class="fw-bold text-success mt-3 mb-0 text-uppercase" style="letter-spacing: 2px; color: #10b981 !important;">OFFICIAL STUDENT MARKSHEET</h5>
+    </div>
+
+    <div class="card-body p-4">
+      <div class="row g-4">
+        <!-- Student Details -->
+        <div class="col-md-9 col-12">
+          <table class="table table-borderless align-middle mb-0 text-dark" style="font-size: 0.95rem;">
+            <tbody>
+              <tr>
+                <td class="fw-bold text-muted" style="width: 180px;">Student Name:</td>
+                <td class="fw-bold text-dark text-uppercase">{{ result.student.student_name }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Enrollment Number:</td>
+                <td class="fw-bold text-dark">{{ result.student.enrollment_no }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Course:</td>
+                <td class="text-dark">{{ result.student.course.name }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Course Duration:</td>
+                <td class="text-dark">{{ result.course_duration }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Academic Session:</td>
+                <td class="text-dark">{{ result.session.session_name }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Result Type:</td>
+                <td class="text-dark"><span class="badge bg-success px-3">{{ result.result_type }}</span></td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Issue Date:</td>
+                <td class="text-dark">{{ result.issue_date|date:"d-m-Y" }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Center:</td>
+                <td class="text-dark">{{ result.student.center.name }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Student Photo -->
+        <div class="col-md-3 col-12 text-center d-flex flex-column align-items-center justify-content-start">
+          <div style="width: 135px; height: 165px; border: 2px solid #ddd; border-radius: 4px; overflow: hidden; background-color: #f8f9fa;" class="mb-2">
+            {% if result.student.photo %}
+              <img src="{{ result.student.photo.url }}" alt="{{ result.student.student_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+              <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+                <i class="bi bi-person-fill" style="font-size: 3rem;"></i>
+                <span style="font-size: 0.75rem;">NO PHOTO</span>
+              </div>
+            {% endif %}
+          </div>
+          <span class="text-muted small fw-semibold text-uppercase">Student Photograph</span>
+        </div>
+      </div>
+
+      <!-- Marksheet Details Section -->
+      <div class="mt-5 pt-3 border-top">
+        <h6 class="fw-bold text-dark text-uppercase mb-3" style="font-size: 0.95rem;">Performance Summary</h6>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle text-center" style="font-size: 0.9rem;">
+            <thead class="table-light">
+              <tr>
+                <th>Subject / Component</th>
+                <th>Maximum Marks</th>
+                <th>Marks Obtained</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-start fw-semibold">Theory &amp; Academic Component</td>
+                <td>100</td>
+                <td>85</td>
+                <td><span class="text-success fw-bold">Pass</span></td>
+              </tr>
+              <tr>
+                <td class="text-start fw-semibold">Practical &amp; Lab Assignments</td>
+                <td>50</td>
+                <td>44</td>
+                <td><span class="text-success fw-bold">Pass</span></td>
+              </tr>
+              <tr>
+                <td class="text-start fw-semibold">Viva &amp; Presentation</td>
+                <td>50</td>
+                <td>42</td>
+                <td><span class="text-success fw-bold">Pass</span></td>
+              </tr>
+              <tr class="table-light fw-bold">
+                <td class="text-start text-dark">GRAND TOTAL</td>
+                <td>200</td>
+                <td>171</td>
+                <td><span class="badge bg-success px-3">FIRST DIVISION</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Signatures Footer -->
+      <div class="row mt-5 pt-4 text-center">
+        <div class="col-4">
+          <div class="mx-auto border-bottom" style="width: 140px; height: 40px;"></div>
+          <span class="text-muted small fw-semibold d-block mt-2">Prepared By</span>
+        </div>
+        <div class="col-4">
+          <div class="mx-auto border-bottom" style="width: 140px; height: 40px;"></div>
+          <span class="text-muted small fw-semibold d-block mt-2">Checked By</span>
+        </div>
+        <div class="col-4">
+          <div class="mx-auto border-bottom" style="width: 140px; height: 40px;"></div>
+          <span class="text-muted small fw-semibold d-block mt-2">Controller of Examinations</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

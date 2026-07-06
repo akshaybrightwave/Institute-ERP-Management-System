@@ -1,13 +1,12 @@
 from django import forms
 from django.utils import timezone
-from .models import Certificate
+from .models import Result
 from apps.centers.models import Center
 from apps.students.models import StudentAdmission
 from apps.academics.models import AcademicSession
-from apps.results.models import Result
 
 
-class CertificateForm(forms.ModelForm):
+class ResultForm(forms.ModelForm):
     center = forms.ModelChoiceField(
         queryset=Center.objects.all(),
         required=True,
@@ -22,12 +21,11 @@ class CertificateForm(forms.ModelForm):
     )
 
     class Meta:
-        model = Certificate
-        fields = ['student', 'course_duration', 'issue_date', 'examination_conducted_date']
+        model = Result
+        fields = ['student', 'course_duration', 'issue_date']
         widgets = {
             'student': forms.Select(attrs={'class': 'form-select', 'id': 'id_student'}),
             'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'id': 'id_issue_date'}),
-            'examination_conducted_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'id': 'id_examination_conducted_date'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -87,6 +85,7 @@ class CertificateForm(forms.ModelForm):
             choices.append(f"{unit} {i}")
         return choices
 
+
     def clean(self):
         cleaned_data = super().clean()
         student = cleaned_data.get('student')
@@ -94,7 +93,7 @@ class CertificateForm(forms.ModelForm):
 
         if self.user and self.user.role == 'center' and student:
             if student.center != self.user.center:
-                raise forms.ValidationError("You can only generate certificates for students in your center.")
+                raise forms.ValidationError("You can only generate results for students in your center.")
 
         # Find Academic Session
         session = AcademicSession.objects.filter(status=True).first()
@@ -105,20 +104,12 @@ class CertificateForm(forms.ModelForm):
             raise forms.ValidationError("No academic session is configured in the system.")
 
         if student and course_duration:
-            # Prevent duplicate certificate
-            qs = Certificate.objects.filter(student=student, session=session, course_duration=course_duration)
+            qs = Result.objects.filter(student=student, session=session, course_duration=course_duration)
             if self.instance and self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise forms.ValidationError(
-                    f"Certificate already exists for student {student.student_name} for '{course_duration}' in session '{session.session_name}'."
-                )
-                
-            # Verify Result exists
-            result_qs = Result.objects.filter(student=student, session=session, course_duration=course_duration)
-            if not result_qs.exists():
-                raise forms.ValidationError(
-                    "The selected student's result for the chosen course duration has not been published yet. Please publish the student's result first, then generate the certificate."
+                    f"Result already exists for student {student.student_name} for '{course_duration}' in session '{session.session_name}'."
                 )
 
         cleaned_data['session'] = session
