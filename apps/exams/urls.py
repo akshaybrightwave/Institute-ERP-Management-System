@@ -9,6 +9,7 @@ urlpatterns = [
     path('exams/<int:exam_id>/', views.exam_detail, name='exam_detail'),
     path('exams/<int:exam_id>/edit/', views.edit_exam, name='edit_exam'),
     path('exams/<int:exam_id>/delete/', views.delete_exam, name='delete_exam'),
+    path('exams/<int:exam_id>/toggle-status/', views.ajax_toggle_exam_status, name='ajax_toggle_exam_status'),
 
     # Question CRUD (shared for Admin + Teacher)
     path('exam_list_dashboard/', views.exam_question_dashboard_view, name='exam_dashboard'),

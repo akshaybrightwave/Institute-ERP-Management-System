@@ -47,62 +47,86 @@ def exam_list(request):
     is_teacher = request.user.role == 'teacher'
     
     if is_center:
-        exams = Exam.objects.filter(batches__course__center=request.user.center).distinct()
+        exams = Exam.objects.filter(center=request.user.center)
     elif is_teacher:
         exams = Exam.objects.filter(created_by=request.user)
     else:
         exams = Exam.objects.all()
 
-    query = request.GET.get('q', '').strip()
-    if query:
-        exams = exams.filter(title__icontains=query)
+    # Search filter
+    q = request.GET.get('q', '').strip()
+    if q:
+        exams = exams.filter(
+            Q(title__icontains=q) |
+            Q(course__name__icontains=q) |
+            Q(course_duration__icontains=q)
+        )
 
-    exams_data = []
-    for exam in exams.order_by('-date', 'title'):
-        batches_list = exam.batches.all()
-        if is_center:
-            batches_list = batches_list.filter(course__center=request.user.center)
-            student_count = StudentProfile.objects.filter(batch__in=batches_list, batch__course__center=request.user.center).count()
-            attempts_qs = exam.attempts.filter(student__studentprofile__batch__course__center=request.user.center)
-        else:
-            student_count = StudentProfile.objects.filter(batch__in=batches_list).count()
-            attempts_qs = exam.attempts.all()
-            
-        attempts_count = attempts_qs.count()
-        completed_attempts = attempts_qs.filter(is_completed=True)
-        completed_count = completed_attempts.count()
-        avg_score = completed_attempts.aggregate(avg=Avg('score'))['avg'] or 0.0
-        
-        exams_data.append({
-            'exam': exam,
-            'batches_list': batches_list,
-            'student_count': student_count,
-            'attempts_count': attempts_count,
-            'avg_score': round(avg_score, 1),
-            'status': 'Published' if exam.is_published else 'Draft'
-        })
+    # Order by newest first
+    exams = exams.order_by('-id')
+
+    # Export to CSV
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="exams.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Exam Title', 'Course', 'Course Duration', 'Start Date & Time', 'End Date & Time', 'Exam Timer', 'Status'])
+        for exam in exams:
+            start_str = exam.start_datetime.strftime('%Y-%m-%d %H:%M') if exam.start_datetime else 'No Schedule'
+            end_str = exam.end_datetime.strftime('%Y-%m-%d %H:%M') if exam.end_datetime else 'No Schedule'
+            timer_str = f"{exam.duration_minutes} Minutes" if exam.duration_minutes else 'No Timer'
+            status_str = 'Active' if exam.is_published else 'Inactive'
+            writer.writerow([
+                exam.title,
+                exam.course.name if exam.course else 'No Course',
+                exam.course_duration or '',
+                start_str,
+                end_str,
+                timer_str,
+                status_str
+            ])
+        return response
+
+    # Pagination
+    show_entries = request.GET.get('show', '10')
+    try:
+        limit = int(show_entries)
+    except ValueError:
+        limit = 10
+
+    paginator = Paginator(exams, limit)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
 
     return render(request, 'exam/exam_list.html', {
-        'exams_data': exams_data,
-        'query': query,
+        'page_obj': page_obj,
+        'query': q,
+        'show_entries': show_entries,
         'is_center': is_center,
         'is_admin': is_admin,
+        'is_teacher': is_teacher,
     })
+
+
+TIMER_CHOICES = [10, 15, 20, 30, 45, 60, 90, 120, 150, 180]
 
 
 @user_passes_test(is_admin_center_or_teacher)
 def add_exam(request):
-    is_center = request.user.role == 'center'
+    is_center_role = request.user.role == 'center'
     if request.method == 'POST':
         form = ExamForm(request.POST, user=request.user)
         if form.is_valid():
             exam = form.save(commit=False)
-            if is_center:
+            if is_center_role:
                 exam.center = request.user.center
             exam.created_by = request.user
             # Populate date field for backwards compatibility
             if exam.start_datetime:
                 exam.date = exam.start_datetime.date()
+            # If is_published comes as hidden "1", set it
+            if request.POST.get('is_published') == '1':
+                exam.is_published = True
             exam.save()
             form.save_m2m()
             messages.success(request, "Exam created successfully!")
@@ -111,7 +135,11 @@ def add_exam(request):
             messages.error(request, "Please correct the errors in the form.")
     else:
         form = ExamForm(user=request.user)
-    return render(request, 'exam/add_exam.html', {'form': form})
+    return render(request, 'exam/add_exam.html', {
+        'form': form,
+        'is_center': is_center_role,
+        'timer_choices': TIMER_CHOICES,
+    })
 
 
 @login_required
@@ -129,31 +157,78 @@ def ajax_get_course_durations(request):
         return JsonResponse({'choices': []})
 
 
-@user_passes_test(is_admin_or_teacher)
+@user_passes_test(is_admin_center_or_teacher)
 def edit_exam(request, exam_id):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    is_teacher = request.user.role == 'teacher'
+
     exam = get_object_or_404(Exam, id=exam_id)
 
-    # Teacher can edit only exams connected to their assigned batches
-    if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
-        return redirect('exam_list')
+    if is_center and exam.center != request.user.center:
+        return HttpResponseForbidden("Access Denied: You do not manage this center's exams.")
 
-    form = ExamForm(request.POST or None, instance=exam, user=request.user)
-    if form.is_valid():
-        form.save()
-        return redirect('exam_list')
+    if is_teacher:
+        if exam.created_by != request.user:
+            return HttpResponseForbidden("Access Denied: You did not create this exam.")
+
+    if request.method == 'POST':
+        form = ExamForm(request.POST, instance=exam, user=request.user)
+        if form.is_valid():
+            exam_obj = form.save(commit=False)
+            if exam_obj.start_datetime:
+                exam_obj.date = exam_obj.start_datetime.date()
+            exam_obj.save()
+            form.save_m2m()
+            messages.success(request, "Exam updated successfully!")
+            return redirect('exam_list')
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = ExamForm(instance=exam, user=request.user)
     return render(request, 'exam/edit_exam.html', {'form': form, 'exam': exam})
 
 
-@user_passes_test(is_admin_or_teacher)
+@login_required
 def delete_exam(request, exam_id):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied.")
+
     exam = get_object_or_404(Exam, id=exam_id)
 
-    # Teacher can delete only exams connected to their assigned batches
-    if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
-        return redirect('exam_list')
+    if is_center and exam.center != request.user.center:
+        return HttpResponseForbidden("Access Denied: You do not manage this center's exams.")
 
     exam.delete()
+    messages.success(request, "Exam deleted successfully!")
     return redirect('exam_list')
+
+
+@login_required
+def ajax_toggle_exam_status(request, exam_id):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    if not (is_admin or is_center):
+        return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
+    
+    exam = get_object_or_404(Exam, id=exam_id)
+    if is_center and exam.center != request.user.center:
+        return JsonResponse({'success': False, 'message': 'Access Denied: You do not manage this exam.'}, status=403)
+        
+    if request.method == 'POST':
+        import json
+        try:
+            data = json.loads(request.body)
+            status_val = data.get('status') # 'Active' or 'Inactive'
+            exam.is_published = (status_val == 'Active')
+            exam.save()
+            return JsonResponse({'success': True, 'is_published': exam.is_published})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
 
 
 # ---------------------------------------------------------------------------
