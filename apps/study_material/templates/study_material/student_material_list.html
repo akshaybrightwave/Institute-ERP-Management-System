@@ -1,0 +1,160 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}My Study Material | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-book text-primary me-2"></i>My Study Material
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">My-study-material</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <!-- Student Course Summary Alert -->
+    <div class="col-12">
+      <div class="alert alert-info border-0 rounded-3 p-3 mb-1 d-flex align-items-center gap-3"
+           style="background: rgba(13, 202, 240, 0.08); border: 1px solid rgba(13, 202, 240, 0.2) !important;">
+        <i class="bi bi-info-circle-fill text-info" style="font-size: 1.3rem;"></i>
+        <div>
+          <h6 class="fw-bold mb-0 text-info" style="font-size: 0.95rem;">Assigned Course</h6>
+          <span style="font-size: 0.85rem; color: #b6effb;">
+            Showing materials for <strong>{{ admission.course.name }}</strong> (Center: {{ admission.center.name }})
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listing Card -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">Study Materials</h5>
+          <i class="bi bg-transparent bi-chevron-up text-muted"></i>
+        </div>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div></div> <!-- Spacer -->
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form method="GET" action="{% url 'study_material_list' %}" class="d-flex align-items-center gap-2">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query|default:'' }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+            </form>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Title</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">File Type</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Uploaded Date</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 text-white" style="font-size: 0.9rem; font-weight: 500;">
+                  {{ item.course.name }}
+                </td>
+                <td class="fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  {{ item.title }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  <span class="badge bg-secondary px-2 py-1" style="font-size: 0.75rem;">{{ item.file_type }}</span>
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.created_at|date:"d-m-Y" }}
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end">
+                    <!-- View Link -->
+                    {% if item.file_type == 'Video Link' %}
+                    <a href="{{ item.external_url }}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #1d4ed8; border: none; border-radius: 4px; font-size: 0.85rem;" target="_blank">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    {% else %}
+                    <a href="{{ item.upload_file.url }}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #1d4ed8; border: none; border-radius: 4px; font-size: 0.85rem;" target="_blank">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    {% endif %}
+
+                    <!-- Download Link (if file uploaded) -->
+                    {% if item.file_type != 'Video Link' and item.upload_file %}
+                    <a href="{% url 'study_material_download' item.pk %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #0d9488; border: none; border-radius: 4px; font-size: 0.85rem;">
+                      <i class="bi bi-download"></i> Download
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-5 text-muted">
+                  <i class="bi bi-file-earmark-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No study materials available for your course yet.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

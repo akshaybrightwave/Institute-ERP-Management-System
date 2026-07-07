@@ -93,6 +93,9 @@ INSTALLED_APPS = [
     'apps.hr',
     'apps.subjects',
     'apps.academics',
+    'apps.admit_card',
+    'apps.results',
+    'apps.study_material',
 ]
 
 MIDDLEWARE = [

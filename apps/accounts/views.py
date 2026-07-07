@@ -291,8 +291,8 @@ def admin_dashboard(request):
     from django.db.models import Count, Q
     
     total_certificates = Certificate.objects.count()
-    issued_certificates_count = Certificate.objects.filter(status='issued').count()
-    revoked_certificates_count = Certificate.objects.filter(status='revoked').count()
+    issued_certificates_count = total_certificates
+    revoked_certificates_count = 0
 
     # Calculate count of eligible students
     paid_map = {p['student_id']: p['total'] or Decimal('0.00') for p in FeePayment.objects.values('student_id').annotate(total=Sum('amount'))}

@@ -270,7 +270,14 @@ def batch_report(request):
     )
     att_map = {a['student__batch_id']: (a['total'], a['present']) for a in att_stats if a['student__batch_id']}
 
-    cert_stats = Certificate.objects.filter(status='issued').values('batch_id').annotate(total=Count('id'))
+    from django.db.models import Subquery, OuterRef
+    student_profile_batch = StudentProfile.objects.filter(
+        user__username=OuterRef('student__enrollment_no')
+    ).values('batch_id')[:1]
+    
+    cert_stats = Certificate.objects.annotate(
+        batch_id=Subquery(student_profile_batch)
+    ).values('batch_id').annotate(total=Count('id'))
     cert_map = {c['batch_id']: c['total'] for c in cert_stats if c['batch_id']}
 
     batches_data = []
@@ -753,7 +760,11 @@ def certificate_report(request):
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
             return HttpResponseForbidden("Access Denied: Teacher profile missing.")
-        certs = Certificate.objects.filter(batch__teacher=teacher_profile)
+        # Filter certificates by students belonging to this teacher's batches
+        teacher_student_usernames = StudentProfile.objects.filter(
+            batch__teacher=teacher_profile
+        ).values_list('user__username', flat=True)
+        certs = Certificate.objects.filter(student__enrollment_no__in=teacher_student_usernames)
         batches = Batch.objects.filter(teacher=teacher_profile)
         courses = Course.objects.filter(batch__teacher=teacher_profile).distinct()
         student_qs = StudentProfile.objects.filter(batch__teacher=teacher_profile)
@@ -768,17 +779,23 @@ def certificate_report(request):
     selected_status = request.GET.get('status')
 
     if selected_batch:
-        certs = certs.filter(batch_id=selected_batch)
+        enrolled_usernames = StudentProfile.objects.filter(batch_id=selected_batch).values_list('user__username', flat=True)
+        certs = certs.filter(student__enrollment_no__in=enrolled_usernames)
         student_qs = student_qs.filter(batch_id=selected_batch)
     if selected_course:
         certs = certs.filter(course_id=selected_course)
         student_qs = student_qs.filter(batch__course_id=selected_course)
     if selected_status:
-        certs = certs.filter(status=selected_status)
+        if selected_status == 'issued':
+            pass
+        elif selected_status == 'revoked':
+            certs = certs.none()
+        else:
+            certs = certs.none()
 
     total_certs = certs.count()
-    certs_issued_count = certs.filter(status='issued').count()
-    certs_revoked_count = certs.filter(status='revoked').count()
+    certs_issued_count = total_certs
+    certs_revoked_count = 0
 
     # Eligible Students Calculation
     students_stats = student_qs.annotate(
@@ -804,7 +821,14 @@ def certificate_report(request):
         if fee_eligible and attendance_eligible:
             eligible_students_count += 1
 
-    certs = certs.select_related('student', 'batch', 'course').order_by('-issue_date', 'student__full_name')
+    from django.db.models import Subquery, OuterRef
+    student_profile_batch_name = StudentProfile.objects.filter(
+        user__username=OuterRef('student__enrollment_no')
+    ).values('batch__name')[:1]
+
+    certs = certs.select_related('student', 'course').annotate(
+        student_batch_name=Subquery(student_profile_batch_name)
+    ).order_by('-issue_date', 'student__student_name')
 
     # CSV Export (Feature 7)
     if request.GET.get('export') == 'csv':
@@ -815,11 +839,11 @@ def certificate_report(request):
         for cert in certs:
             writer.writerow([
                 cert.certificate_number,
-                cert.student.full_name,
+                cert.student.student_name,
                 cert.course.name,
-                cert.batch.name,
+                cert.student_batch_name or '-',
                 cert.issue_date.strftime('%Y-%m-%d'),
-                cert.get_status_display()
+                'Active'
             ])
         return response
 

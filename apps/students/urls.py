@@ -24,4 +24,5 @@ urlpatterns = [
     path('cancel/<int:pk>/', views.student_cancel_action, name='student_cancel_action'),
     path('revert-pending/<int:pk>/', views.student_revert_pending_action, name='student_revert_pending_action'),
     path('list-by-center/', views.student_list_by_center, name='student_list_by_center'),
+    path('passout-student/', views.passout_student_list, name='passout_student_list'),
 ]

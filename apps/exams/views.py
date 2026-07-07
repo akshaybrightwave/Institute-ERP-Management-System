@@ -90,19 +90,43 @@ def exam_list(request):
     })
 
 
-@user_passes_test(is_admin_or_teacher)
+@user_passes_test(is_admin_center_or_teacher)
 def add_exam(request):
+    is_center = request.user.role == 'center'
     if request.method == 'POST':
         form = ExamForm(request.POST, user=request.user)
         if form.is_valid():
             exam = form.save(commit=False)
+            if is_center:
+                exam.center = request.user.center
             exam.created_by = request.user
+            # Populate date field for backwards compatibility
+            if exam.start_datetime:
+                exam.date = exam.start_datetime.date()
             exam.save()
             form.save_m2m()
+            messages.success(request, "Exam created successfully!")
             return redirect('exam_list')
+        else:
+            messages.error(request, "Please correct the errors in the form.")
     else:
         form = ExamForm(user=request.user)
     return render(request, 'exam/add_exam.html', {'form': form})
+
+
+@login_required
+def ajax_get_course_durations(request):
+    course_id = request.GET.get('course_id')
+    if not course_id:
+        return JsonResponse({'choices': []})
+    try:
+        course = Course.objects.get(id=course_id)
+        from apps.results.forms import ResultForm
+        temp_form = ResultForm()
+        choices = temp_form._parse_duration_choices(course.duration)
+        return JsonResponse({'choices': choices})
+    except Course.DoesNotExist:
+        return JsonResponse({'choices': []})
 
 
 @user_passes_test(is_admin_or_teacher)

@@ -64,14 +64,19 @@ def student_dashboard(request):
     # Certificate Calculations
     from apps.certificates.models import Certificate
     from apps.certificates.views import get_student_eligibility
+    from django.db.models import Q
 
     certificates = []
     issued_certificates_count = 0
     eligibility = {'eligible': False, 'reason': 'No student profile.'}
 
     if profile:
-        certificates = Certificate.objects.filter(student=profile)
-        issued_certificates_count = certificates.filter(status='issued').count()
+        admission = StudentAdmission.objects.filter(
+            Q(enrollment_no=request.user.username) | Q(email=profile.email)
+        ).first()
+        if admission:
+            certificates = Certificate.objects.filter(student=admission)
+            issued_certificates_count = certificates.count()
         eligibility = get_student_eligibility(profile)
 
     context = {
@@ -432,13 +437,16 @@ def student_profile(request):
     from apps.certificates.models import Certificate
     from apps.certificates.views import get_student_eligibility
     
-    if target_profile:
-        student_certificates = Certificate.objects.filter(student=target_profile)
-        issued_count = student_certificates.filter(status='issued').count()
-        eligibility = get_student_eligibility(target_profile)
+    if admission:
+        student_certificates = Certificate.objects.filter(student=admission)
+        issued_count = student_certificates.count()
     else:
         student_certificates = []
         issued_count = 0
+
+    if target_profile:
+        eligibility = get_student_eligibility(target_profile)
+    else:
         eligibility = {'eligible': False, 'reason': 'No student profile.'}
 
     template_name = 'student/student_profile_admin.html' if is_admin_or_center else 'student/student_profile.html'
@@ -902,6 +910,73 @@ def student_list_by_center(request):
     return render(request, 'student/list_by_center.html', {
         'centers': centers,
         'selected_center_id': selected_center_id,
+        'page_obj': page_obj,
+        'query': q,
+        'show_entries': show_entries,
+    })
+
+
+@login_required
+def passout_student_list(request):
+    """List students who have been issued certificates (passout students)."""
+    from django.core.paginator import Paginator
+    from django.db.models import Q
+    from apps.certificates.models import Certificate
+    
+    # Permission check: Only Admin and Center allowed
+    if request.user.role not in ['admin', 'center']:
+        return redirect('student_dashboard')
+
+    qs = Certificate.objects.select_related('student', 'center', 'course').all()
+
+    if request.user.role == 'center':
+        qs = qs.filter(center=request.user.center)
+
+    # Search
+    q = request.GET.get('q', '').strip()
+    if q:
+        qs = qs.filter(
+            Q(student__enrollment_no__icontains=q) |
+            Q(student__student_name__icontains=q) |
+            Q(student__whatsapp_no__icontains=q) |
+            Q(student__email__icontains=q) |
+            Q(course__name__icontains=q)
+        )
+
+    # Export (CSV)
+    if request.GET.get('export') == 'csv':
+        import csv
+        from django.http import HttpResponse
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="passout_students.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Enrollment No', 'Name', 'Contact', 'Email', 'Course', 'Course Duration'])
+        for item in qs:
+            writer.writerow([
+                item.student.enrollment_no,
+                item.student.student_name,
+                item.student.whatsapp_no,
+                item.student.email or '-',
+                item.course.name,
+                item.course_duration or '-'
+            ])
+        return response
+
+    # Ordering
+    qs = qs.order_by('-id')
+
+    # Pagination
+    show_entries = request.GET.get('show', '10')
+    try:
+        per_page = int(show_entries)
+    except ValueError:
+        per_page = 10
+
+    paginator = Paginator(qs, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'student/passout_student_list.html', {
         'page_obj': page_obj,
         'query': q,
         'show_entries': show_entries,

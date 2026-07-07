@@ -10,7 +10,71 @@ from django.core.paginator import Paginator
 
 from .models import Certificate
 from .forms import CertificateForm
-from apps.students.models import StudentAdmission
+from decimal import Decimal
+from django.db.models import Sum
+from apps.attendance.models import Attendance
+from apps.fees.models import FeePayment
+
+
+def get_student_eligibility(student):
+    if not student or not student.batch:
+        return {
+            'eligible': False,
+            'reason': "Student has no assigned batch.",
+            'attendance_pct': 0.0,
+            'fee_status': 'PENDING',
+            'pending_amount': Decimal('0.00'),
+            'paid_amount': Decimal('0.00'),
+            'course_fee': Decimal('0.00')
+        }
+
+    # Attendance calculations
+    attendances = Attendance.objects.filter(student=student)
+    total_att = attendances.count()
+    if total_att > 0:
+        present_count = attendances.filter(status='present').count()
+        attendance_pct = round((present_count / total_att) * 100, 1)
+    else:
+        attendance_pct = 0.0
+
+    attendance_eligible = attendance_pct >= 75.0
+
+    # Fee calculations
+    course_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+    paid_amount = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    course_fee = Decimal(str(course_fee))
+    paid_amount = Decimal(str(paid_amount))
+    pending_amount = course_fee - paid_amount
+
+    if paid_amount == 0:
+        fee_status = 'PENDING'
+    elif pending_amount <= 0:
+        fee_status = 'PAID'
+    else:
+        fee_status = 'PARTIAL'
+
+    fee_eligible = pending_amount <= 0
+
+    eligible = attendance_eligible and fee_eligible
+
+    reasons = []
+    if not attendance_eligible:
+        reasons.append(f"Attendance is {attendance_pct}% (minimum 75% required).")
+    if not fee_eligible:
+        reasons.append(f"Fees pending: ₹{pending_amount} (must be PAID).")
+
+    reason = " ".join(reasons) if reasons else "Eligible"
+
+    return {
+        'eligible': eligible,
+        'reason': reason,
+        'attendance_pct': attendance_pct,
+        'fee_status': fee_status,
+        'pending_amount': pending_amount,
+        'paid_amount': paid_amount,
+        'course_fee': course_fee
+    }
 
 
 def _handle_list_and_csv(request, is_center):
@@ -93,6 +157,8 @@ def certificate_create(request):
         'form': form,
         'page_obj': page_obj,
         'query': query,
+        'is_admin': is_admin,
+        'is_center': is_center,
     })
 
 
@@ -118,6 +184,8 @@ def certificate_list(request):
     return render(request, 'certificates/certificate_list.html', {
         'page_obj': page_obj,
         'query': query,
+        'is_admin': is_admin,
+        'is_center': is_center,
     })
 
 

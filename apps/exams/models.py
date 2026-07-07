@@ -6,9 +6,16 @@ from apps.soft_delete import SoftDeleteModel
 class Exam(SoftDeleteModel):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    date = models.DateField()
-    total_marks = models.IntegerField()
+    date = models.DateField(null=True, blank=True)
+    total_marks = models.IntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=20)
+
+    center = models.ForeignKey('centers.Center', on_delete=models.SET_NULL, null=True, blank=True, related_name='exams_list')
+    course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='exams_list')
+    course_duration = models.CharField(max_length=100, null=True, blank=True)
+    total_questions = models.PositiveIntegerField(default=0)
+    start_datetime = models.DateTimeField(null=True, blank=True)
+    end_datetime = models.DateTimeField(null=True, blank=True)
 
     is_published = models.BooleanField(default=False)
 

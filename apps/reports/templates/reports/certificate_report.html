@@ -108,17 +108,13 @@
                         {% for cert in certs %}
                         <tr>
                             <td class="ps-4 fw-semibold"><code>{{ cert.certificate_number }}</code></td>
-                            <td class="fw-semibold">{{ cert.student.full_name }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ cert.batch.name }}</span></td>
-                            <td>{{ cert.course.name }}</td>
-                            <td>{{ cert.issue_date }}</td>
-                            <td class="pe-4 text-end">
-                                {% if cert.status == 'issued' %}
-                                    <span class="badge-soft-success"><i class="bi bi-patch-check-fill me-1"></i>Active</span>
-                                {% else %}
-                                    <span class="badge-soft-danger"><i class="bi bi-x-octagon-fill me-1"></i>Revoked</span>
-                                {% endif %}
-                            </td>
+                             <td class="fw-semibold">{{ cert.student.student_name }}</td>
+                             <td><span class="badge bg-light text-dark border">{{ cert.student_batch_name|default:"-" }}</span></td>
+                             <td>{{ cert.course.name }}</td>
+                             <td>{{ cert.issue_date }}</td>
+                             <td class="pe-4 text-end">
+                                 <span class="badge-soft-success"><i class="bi bi-patch-check-fill me-1"></i>Active</span>
+                             </td>
                         </tr>
                         {% empty %}
                         <tr>
