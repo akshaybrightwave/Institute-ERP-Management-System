@@ -210,7 +210,17 @@ def study_material_download(request, pk):
 def ajax_get_courses(request):
     center_id = request.GET.get('center_id')
     if not center_id:
-        return JsonResponse({'courses': []})
-    courses = Course.objects.filter(Q(center_id=center_id) | Q(center__isnull=True)).order_by('name')
+        if request.user.role == 'center':
+            if not request.user.center:
+                return JsonResponse({'courses': []})
+            courses = Course.objects.filter(
+                Q(center=request.user.center) | Q(center__isnull=True)
+            ).order_by('name')
+        elif request.user.role in ('admin', 'teacher'):
+            courses = Course.objects.all().order_by('name')
+        else:
+            return JsonResponse({'courses': []})
+    else:
+        courses = Course.objects.filter(Q(center_id=center_id) | Q(center__isnull=True)).order_by('name')
     data = [{'id': c.id, 'name': c.name} for c in courses]
     return JsonResponse({'courses': data})

@@ -108,3 +108,18 @@ class ExamSchedule(SoftDeleteModel):
     # NOTE: StudentProfile and TeacherProfile have been moved to:
     #   apps/students/models.py  →  StudentProfile
     #   apps/teachers/models.py  →  TeacherProfile
+
+
+class ExamStudentAssignment(SoftDeleteModel):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='student_assignments')
+    student = models.ForeignKey('students.StudentAdmission', on_delete=models.CASCADE, related_name='exam_assignments')
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('exam', 'student')
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.student.student_name}"

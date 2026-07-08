@@ -1,46 +1,359 @@
 {% extends 'accounts/admin_dashboard.html' %}
-{% load widget_tweaks %}
+{% load static %}
 
-{% block title %}{{ action }} Center | Examly{% endblock %}
+{% block title %}Add Center | Examly{% endblock %}
 
 {% block erp_content %}
-<div class="container py-2">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card border-0">
-                <div class="card-body p-4 p-md-5">
-                    <div class="text-center mb-4">
-                        <div class="feature-icon"><i class="bi bi-building"></i></div>
-                        <h3 class="fw-bold mb-1">{{ action }} Center</h3>
-                        <p class="text-muted">Enter details for the center.</p>
-                    </div>
+<div class="container-fluid py-2">
 
-                    <form method="post">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label">{{ field.label }}</label>
-                                {{ field|add_class:"form-control" }}
-                                {% if field.help_text %}
-                                    <small class="text-muted">{{ field.help_text|safe }}</small>
-                                {% endif %}
-                                {% for error in field.errors %}
-                                    <p class="text-danger small mt-1 mb-0">{{ error }}</p>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                        <div class="d-flex gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary fw-bold flex-grow-1 py-2">
-                                <i class="bi bi-check-circle me-1"></i> Save Center
-                            </button>
-                            <a href="{% url 'center_list' %}" class="btn btn-outline-primary py-2">
-                                <i class="bi bi-x-circle me-1"></i> Cancel
-                            </a>
-                        </div>
-                    </form>
+  <!-- Page Header -->
+  <div class="mb-4 d-flex align-items-center gap-2">
+    <div style="background-color: rgba(255,255,255,0.1); border-radius: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+      <i class="bi bi-building-add text-white fs-5"></i>
+    </div>
+    <div>
+        <h3 class="fw-bold text-white mb-0" style="font-size: 1.2rem;">Add</h3>
+        <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+          <ol class="breadcrumb mb-0" style="font-size: 0.8rem;">
+            <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a></li>
+            <li class="breadcrumb-item text-muted">Center</li>
+            <li class="breadcrumb-item active text-white" aria-current="page">Add</li>
+          </ol>
+        </nav>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12">
+      <form method="POST" action="{% url 'center_create' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-input); color: #fff;">
+                    {{ message }}
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% if form.errors %}
+            <div class="alert alert-danger" style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">
+                <ul class="mb-0">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <!-- Single Main Form Card matching Screenshot -->
+        <div class="qa-card" style="background-color: transparent; border: 1px solid #3b82f6; border-radius: 8px; padding: 24px;">
+            <div class="mb-4">
+                <h6 class="fw-bold mb-0 text-white">Center Form</h6>
+            </div>
+            
+            <!-- Row 1 -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Institute Owner Name <span class="text-danger">*</span></label>
+                    {{ form.owner_name }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Institute Name <span class="text-danger">*</span></label>
+                    {{ form.name }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Qualification of institute head <span class="text-danger">*</span></label>
+                    {{ form.head_qualification }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Prefix Roll No. <span class="text-danger">*</span></label>
+                    {{ form.prefix_roll_no }}
                 </div>
             </div>
+
+            <!-- Row 2 -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Date of birth <span class="text-danger">*</span></label>
+                    {{ form.owner_dob }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Pan Number <span class="text-danger">*</span></label>
+                    {{ form.pan_number }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Aadhar Number <span class="text-danger">*</span></label>
+                    {{ form.aadhar_number }}
+                </div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="row g-3 mb-3">
+                <div class="col-12">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Institite Full Address <span class="text-danger">*</span></label>
+                    {{ form.address }}
+                </div>
+            </div>
+
+            <!-- Row 4 -->
+            <div class="row g-3 mb-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Upload Image of franchise Owner <span class="text-danger">*</span></label>
+                    <div class="d-flex align-items-center">
+                        {{ form.owner_image }}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Pincode <span class="text-danger">*</span></label>
+                    {{ form.pincode }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Select State <span class="text-danger">*</span></label>
+                    {{ form.state }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Select District <span class="text-danger">*</span></label>
+                    {{ form.district }}
+                </div>
+            </div>
+
+            <!-- Row 5 -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Number of Staff <span class="text-danger">*</span></label>
+                    {{ form.staff_count }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Number of class rooms <span class="text-danger">*</span></label>
+                    {{ form.classrooms_count }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Total Computers <span class="text-danger">*</span></label>
+                    {{ form.computers_count }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Space of Computer Center <span class="text-danger">*</span></label>
+                    {{ form.space_sqft }}
+                </div>
+            </div>
+
+            <!-- Row 6 -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Whatsapp Number <span class="text-danger">*</span></label>
+                    {{ form.whatsapp_number }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Contact Number <span class="text-danger">*</span></label>
+                    {{ form.phone }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">E-Mail ID <span class="text-danger">*</span></label>
+                    {{ form.email }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Password <span class="text-danger">*</span></label>
+                    {{ form.password }}
+                </div>
+            </div>
+
+            <!-- Row 7 -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Reception <span class="text-danger">*</span></label>
+                    {{ form.has_reception }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Staff Room <span class="text-danger">*</span></label>
+                    {{ form.has_staff_room }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Water Supply <span class="text-danger">*</span></label>
+                    {{ form.has_water_supply }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Toilet <span class="text-danger">*</span></label>
+                    {{ form.has_toilet }}
+                </div>
+            </div>
+
+            <!-- Row 8 -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label text-white-50" style="font-size: 0.85rem;">Valid Upto <span class="text-danger">*</span></label>
+                    {{ form.valid_upto }}
+                </div>
+            </div>
+
+            <hr class="border-secondary mb-4">
+
+            <!-- Upload Documents Section -->
+            <div class="mb-4">
+                <h6 class="fw-bold mb-3 text-white">Upload Documents</h6>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="form-control text-white-50 d-flex align-items-center h-100" style="background-color: transparent; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                            Aadhar Card&nbsp;<span class="text-danger">*</span>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.aadhar_doc }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="form-control text-white-50 d-flex align-items-center h-100" style="background-color: transparent; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                            Signature&nbsp;<span class="text-danger">*</span>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.signature_doc }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="form-control text-white-50 d-flex align-items-center h-100" style="background-color: transparent; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                            Centre Logo&nbsp;<span class="text-danger">*</span>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.logo_doc }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="form-control text-white-50 d-flex align-items-center h-100" style="background-color: transparent; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                            Address Proof
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.address_proof }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="form-control text-white-50 d-flex align-items-center h-100" style="background-color: transparent; border-color: rgba(255,255,255,0.1); font-size: 0.85rem;">
+                            Agreement
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.agreement_doc }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex mt-4">
+                <button type="submit" class="btn text-white px-4 py-2 fw-bold" style="background-color: transparent; border: 1px dashed #3b82f6; border-radius: 6px; font-size: 0.95rem; color: #3b82f6 !important;">
+                    <i class="bi bi-file-earmark-plus me-1"></i> Publish
+                </button>
+            </div>
+
         </div>
+
+      </form>
     </div>
+  </div>
+
 </div>
+
+<style>
+/* Base input styling for dark theme */
+.qa-card input, .qa-card select, .qa-card textarea {
+    background-color: transparent !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+    font-size: 0.9rem;
+    padding: 10px 12px;
+}
+.qa-card input:focus, .qa-card select:focus, .qa-card textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Date picker icon inversion */
+::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Full India State → Districts mapping
+const stateDistricts = {
+  'Andhra Pradesh': ['Alluri Sitharama Raju','Anakapalli','Ananthapuramu','Bapatla','Chittoor','East Godavari','Eluru','Guntur','Kakinada','Konaseema','Krishna','Kurnool','Manyam','Nandyal','Nellore','Ntr','Palnadu','Prakasam','Sri Balaji','Sri Sathya Sai','Srikakulam','Tirupati','Visakhapatnam','Vizianagaram','West Godavari','YSR Kadapa'],
+  'Arunachal Pradesh': ['Anjaw','Changlang','Dibang Valley','East Kameng','East Siang','Kamle','Kra Daadi','Kurung Kumey','Lepa Rada','Lohit','Longding','Lower Dibang Valley','Lower Siang','Lower Subansiri','Namsai','Pakke Kessang','Papum Pare','Shi Yomi','Siang','Tawang','Tirap','Upper Dibang Valley','Upper Siang','Upper Subansiri','West Kameng','West Siang'],
+  'Assam': ['Bajali','Baksa','Barpeta','Biswanath','Bongaigaon','Cachar','Charaideo','Chirang','Darrang','Dhemaji','Dhubri','Dibrugarh','Dima Hasao','Goalpara','Golaghat','Hailakandi','Hojai','Jorhat','Kamrup','Kamrup Metropolitan','Karbi Anglong','Karimganj','Kokrajhar','Lakhimpur','Majuli','Morigaon','Nagaon','Nalbari','Sivasagar','Sonitpur','South Salmara-Mankachar','Tamulpur','Tinsukia','Udalguri','West Karbi Anglong'],
+  'Bihar': ['Araria','Arwal','Aurangabad','Banka','Begusarai','Bhagalpur','Bhojpur','Buxar','Darbhanga','East Champaran','Gaya','Gopalganj','Jamui','Jehanabad','Kaimur','Katihar','Khagaria','Kishanganj','Lakhisarai','Madhepura','Madhubani','Munger','Muzaffarpur','Nalanda','Nawada','Patna','Purnia','Rohtas','Saharsa','Samastipur','Saran','Sheikhpura','Sheohar','Sitamarhi','Siwan','Supaul','Vaishali','West Champaran'],
+  'Chhattisgarh': ['Balod','Baloda Bazar','Balrampur','Bastar','Bemetara','Bijapur','Bilaspur','Dantewada','Dhamtari','Durg','Gariaband','Gaurela-Pendra-Marwahi','Janjgir-Champa','Jashpur','Kabirdham','Kanker','Khairagarh','Kondagaon','Korba','Koriya','Mahasamund','Manendragarh','Mohla-Manpur','Mungeli','Narayanpur','Raigarh','Raipur','Rajnandgaon','Sakti','Sarangarh-Bilaigarh','Sukma','Surajpur','Surguja'],
+  'Goa': ['North Goa','South Goa'],
+  'Gujarat': ['Ahmedabad','Amreli','Anand','Aravalli','Banaskantha','Bharuch','Bhavnagar','Botad','Chhota Udaipur','Dahod','Dang','Devbhumi Dwarka','Gandhinagar','Gir Somnath','Jamnagar','Junagadh','Kheda','Kutch','Mahisagar','Mehsana','Morbi','Narmada','Navsari','Panchmahal','Patan','Porbandar','Rajkot','Sabarkantha','Surat','Surendranagar','Tapi','Vadodara','Valsad'],
+  'Haryana': ['Ambala','Bhiwani','Charkhi Dadri','Faridabad','Fatehabad','Gurugram','Hisar','Jhajjar','Jind','Kaithal','Karnal','Kurukshetra','Mahendragarh','Nuh','Palwal','Panchkula','Panipat','Rewari','Rohtak','Sirsa','Sonipat','Yamunanagar'],
+  'Himachal Pradesh': ['Bilaspur','Chamba','Hamirpur','Kangra','Kinnaur','Kullu','Lahaul and Spiti','Mandi','Shimla','Sirmaur','Solan','Una'],
+  'Jharkhand': ['Bokaro','Chatra','Deoghar','Dhanbad','Dumka','East Singhbhum','Garhwa','Giridih','Godda','Gumla','Hazaribagh','Jamtara','Khunti','Koderma','Latehar','Lohardaga','Pakur','Palamu','Ramgarh','Ranchi','Sahebganj','Seraikela Kharsawan','Simdega','West Singhbhum'],
+  'Karnataka': ['Bagalkote','Ballari','Belagavi','Bengaluru Rural','Bengaluru Urban','Bidar','Chamarajanagar','Chikkaballapura','Chikkamagaluru','Chitradurga','Dakshina Kannada','Davangere','Dharwad','Gadag','Hassan','Haveri','Kalaburagi','Kodagu','Kolar','Koppal','Mandya','Mysuru','Raichur','Ramanagara','Shivamogga','Tumakuru','Udupi','Uttara Kannada','Vijayapura','Yadgir'],
+  'Kerala': ['Alappuzha','Ernakulam','Idukki','Kannur','Kasaragod','Kollam','Kottayam','Kozhikode','Malappuram','Palakkad','Pathanamthitta','Thiruvananthapuram','Thrissur','Wayanad'],
+  'Madhya Pradesh': ['Agar Malwa','Alirajpur','Anuppur','Ashoknagar','Balaghat','Barwani','Betul','Bhind','Bhopal','Burhanpur','Chachaura','Chhatarpur','Chhindwara','Damoh','Datia','Dewas','Dhar','Dindori','Guna','Gwalior','Harda','Hoshangabad','Indore','Jabalpur','Jhabua','Katni','Khandwa','Khargone','Maihar','Mandla','Mandsaur','Morena','Mauganj','Narsinghpur','Neemuch','Niwari','Panna','Raisen','Rajgarh','Ratlam','Rewa','Sagar','Satna','Sehore','Seoni','Shahdol','Shajapur','Sheopur','Shivpuri','Sidhi','Singrauli','Tikamgarh','Ujjain','Umaria','Vidisha'],
+  'Maharashtra': ['Ahmednagar','Akola','Amravati','Aurangabad','Beed','Bhandara','Buldhana','Chandrapur','Dhule','Gadchiroli','Gondia','Hingoli','Jalgaon','Jalna','Kolhapur','Latur','Mumbai City','Mumbai Suburban','Nagpur','Nanded','Nandurbar','Nashik','Osmanabad','Palghar','Parbhani','Pune','Raigad','Ratnagiri','Sangli','Satara','Sindhudurg','Solapur','Thane','Wardha','Washim','Yavatmal'],
+  'Manipur': ['Bishnupur','Chandel','Churachandpur','Imphal East','Imphal West','Jiribam','Kakching','Kamjong','Kangpokpi','Noney','Pherzawl','Senapati','Tamenglong','Tengnoupal','Thoubal','Ukhrul'],
+  'Meghalaya': ['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills','North Garo Hills','Ri Bhoi','South Garo Hills','South West Garo Hills','South West Khasi Hills','West Garo Hills','West Jaintia Hills','West Khasi Hills'],
+  'Mizoram': ['Aizawl','Champhai','Hnahthial','Khawzawl','Kolasib','Lawngtlai','Lunglei','Mamit','Saitual','Serchhip','Siaha'],
+  'Nagaland': ['Chumoukedima','Dimapur','Kiphire','Kohima','Longleng','Mokokchung','Mon','Niuland','Noklak','Peren','Phek','Shamator','Tseminyü','Tuensang','Wokha','Zunheboto'],
+  'Odisha': ['Angul','Balangir','Balasore','Bargarh','Bhadrak','Boudh','Cuttack','Deogarh','Dhenkanal','Gajapati','Ganjam','Jagatsinghpur','Jajpur','Jharsuguda','Kalahandi','Kandhamal','Kendrapara','Kendujhar','Khordha','Koraput','Malkangiri','Mayurbhanj','Nabarangpur','Nayagarh','Nuapada','Puri','Rayagada','Sambalpur','Sonepur','Sundargarh'],
+  'Punjab': ['Amritsar','Barnala','Bathinda','Faridkot','Fatehgarh Sahib','Fazilka','Ferozepur','Gurdaspur','Hoshiarpur','Jalandhar','Kapurthala','Ludhiana','Malerkotla','Mansa','Moga','Mohali','Muktsar','Pathankot','Patiala','Rupnagar','Sangrur','Shaheed Bhagat Singh Nagar','Tarn Taran'],
+  'Rajasthan': ['Ajmer','Alwar','Banswara','Baran','Barmer','Bharatpur','Bhilwara','Bikaner','Bundi','Chittorgarh','Churu','Dausa','Dholpur','Dungarpur','Ganganagar','Hanumangarh','Jaipur','Jaisalmer','Jalore','Jhalawar','Jhunjhunu','Jodhpur','Karauli','Kota','Nagaur','Pali','Pratapgarh','Rajsamand','Sawai Madhopur','Sikar','Sirohi','Tonk','Udaipur'],
+  'Sikkim': ['East Sikkim','North Sikkim','Pakyong','Soreng','South Sikkim','West Sikkim'],
+  'Tamil Nadu': ['Ariyalur','Chengalpattu','Chennai','Coimbatore','Cuddalore','Dharmapuri','Dindigul','Erode','Kallakurichi','Kanchipuram','Kanyakumari','Karur','Krishnagiri','Madurai','Mayiladuthurai','Nagapattinam','Namakkal','Nilgiris','Perambalur','Pudukkottai','Ramanathapuram','Ranipet','Salem','Sivaganga','Tenkasi','Thanjavur','Theni','Thoothukudi','Tiruchirappalli','Tirunelveli','Tirupathur','Tiruppur','Tiruvallur','Tiruvannamalai','Tiruvarur','Vellore','Viluppuram','Virudhunagar'],
+  'Telangana': ['Adilabad','Bhadradri Kothagudem','Hanumakonda','Hyderabad','Jagtial','Jangaon','Jayashankar Bhupalpally','Jogulamba Gadwal','Kamareddy','Karimnagar','Khammam','Komaram Bheem','Mahabubabad','Mahabubnagar','Mancherial','Medak','Medchal Malkajgiri','Mulugu','Nagarkurnool','Nalgonda','Narayanpet','Nirmal','Nizamabad','Peddapalli','Rajanna Sircilla','Rangareddy','Sangareddy','Siddipet','Suryapet','Vikarabad','Wanaparthy','Warangal','Yadadri Bhuvanagiri'],
+  'Tripura': ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','Sipahijala','South Tripura','Unakoti','West Tripura'],
+  'Uttar Pradesh': ['Agra','Aligarh','Ambedkar Nagar','Amethi','Amroha','Auraiya','Ayodhya','Azamgarh','Baghpat','Bahraich','Ballia','Balrampur','Banda','Barabanki','Bareilly','Basti','Bhadohi','Bijnor','Budaun','Bulandshahr','Chandauli','Chitrakoot','Deoria','Etah','Etawah','Farrukhabad','Fatehpur','Firozabad','Gautam Buddha Nagar','Ghaziabad','Ghazipur','Gonda','Gorakhpur','Hamirpur','Hapur','Hardoi','Hathras','Jalaun','Jaunpur','Jhansi','Kannauj','Kanpur Dehat','Kanpur Nagar','Kasganj','Kaushambi','Kheri','Kushinagar','Lalitpur','Lucknow','Maharajganj','Mahoba','Mainpuri','Mathura','Mau','Meerut','Mirzapur','Moradabad','Muzaffarnagar','Pilibhit','Pratapgarh','Prayagraj','Raebareli','Rampur','Saharanpur','Sambhal','Sant Kabir Nagar','Shahjahanpur','Shamli','Shravasti','Siddharthnagar','Sitapur','Sonbhadra','Sultanpur','Unnao','Varanasi'],
+  'Uttarakhand': ['Almora','Bageshwar','Chamoli','Champawat','Dehradun','Haridwar','Nainital','Pauri Garhwal','Pithoragarh','Rudraprayag','Tehri Garhwal','Udham Singh Nagar','Uttarkashi'],
+  'West Bengal': ['Alipurduar','Bankura','Birbhum','Cooch Behar','Dakshin Dinajpur','Darjeeling','Hooghly','Howrah','Jalpaiguri','Jhargram','Kalimpong','Kolkata','Malda','Murshidabad','Nadia','North 24 Parganas','Paschim Bardhaman','Paschim Medinipur','Purba Bardhaman','Purba Medinipur','Purulia','South 24 Parganas','Uttar Dinajpur'],
+  // Union Territories
+  'Andaman and Nicobar Islands': ['Nicobar','North and Middle Andaman','South Andaman'],
+  'Chandigarh': ['Chandigarh'],
+  'Dadra and Nagar Haveli and Daman and Diu': ['Dadra and Nagar Haveli','Daman','Diu'],
+  'Delhi': ['Central Delhi','East Delhi','New Delhi','North Delhi','North East Delhi','North West Delhi','Shahdara','South Delhi','South East Delhi','South West Delhi','West Delhi'],
+  'Jammu and Kashmir': ['Anantnag','Bandipora','Baramulla','Budgam','Doda','Ganderbal','Jammu','Kathua','Kishtwar','Kulgam','Kupwara','Poonch','Pulwama','Rajouri','Ramban','Reasi','Samba','Shopian','Srinagar','Udhampur'],
+  'Ladakh': ['Kargil','Leh'],
+  'Lakshadweep': ['Lakshadweep'],
+  'Puducherry': ['Karaikal','Mahe','Puducherry','Yanam'],
+};
+
+const stateEl = document.getElementById('id_state');
+const districtEl = document.getElementById('id_district');
+
+function populateDistricts(selectedState, selectedDistrict) {
+  districtEl.innerHTML = '<option value="">Select a City</option>';
+  if (selectedState && stateDistricts[selectedState]) {
+    stateDistricts[selectedState].sort().forEach(function(dist) {
+      const opt = document.createElement('option');
+      opt.value = dist;
+      opt.textContent = dist;
+      if (dist === selectedDistrict) opt.selected = true;
+      districtEl.appendChild(opt);
+    });
+  }
+}
+
+// On page load — preserve existing value if editing
+populateDistricts(stateEl.value, '{{ form.district.value|default:"" }}');
+
+stateEl.addEventListener('change', function() {
+  populateDistricts(this.value, '');
+});
+</script>
 {% endblock %}

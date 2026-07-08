@@ -33,4 +33,12 @@ urlpatterns = [
     path('schedules/', views.exam_schedule_list, name='exam_schedule_list'),
     path('schedules/<int:pk>/edit/', views.exam_schedule_edit, name='exam_schedule_edit'),
     path('schedules/<int:pk>/delete/', views.exam_schedule_delete, name='exam_schedule_delete'),
+    
+    # Assign Exam To Student
+    path('assign/student/', views.assign_exam_student_list, name='assign_exam_student'),
+    path('ajax/get-eligible-students/', views.ajax_get_eligible_students, name='ajax_get_eligible_students'),
+    path('ajax/save-student-assignments/', views.ajax_save_student_assignments, name='ajax_save_student_assignments'),
+
+    path('student-exams/', views.admin_student_exam_list, name='admin_student_exam_list'),
+    path('student-exams/<int:pk>/delete/', views.delete_student_exam_attempt_ajax, name='delete_student_exam_attempt_ajax'),
 ]

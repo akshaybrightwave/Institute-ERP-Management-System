@@ -1,3 +1,5 @@
+import uuid
+from apps.accounts.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -40,11 +42,31 @@ def center_list(request):
 @admin_required
 def center_create(request):
     if request.method == 'POST':
-        form = CenterForm(request.POST)
+        form = CenterForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            # Generate a unique code
+            center = form.save(commit=False)
+            if not center.code:
+                center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
+            center.save()
+            
+            # Create user for the center
+            email = form.cleaned_data.get('email')
+            password = form.cleaned_data.get('password')
+            
+            # Use email as username if not provided
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=password,
+                role='center',
+                center=center
+            )
+            
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = CenterForm()
     return render(request, 'centers/center_form.html', {'form': form, 'action': 'Create'})
@@ -449,3 +471,65 @@ def center_dashboard(request):
     }
     return render(request, 'centers/center_dashboard.html', context)
 
+
+from apps.courses.models import Course
+import json
+
+@admin_required
+def assign_courses(request):
+    centers = Center.objects.all().order_by('name')
+    courses = Course.objects.all().order_by('name')
+    return render(request, 'centers/assign_courses.html', {
+        'centers': centers,
+        'courses': courses
+    })
+
+@admin_required
+def api_center_courses(request, center_id):
+    center = get_object_or_404(Center, pk=center_id)
+    assigned = center.assigned_courses.all()
+    assigned_ids = list(assigned.values_list('id', flat=True))
+    courses_data = []
+    for c in assigned:
+        courses_data.append({
+            'id': c.id,
+            'name': c.name,
+            'duration': c.duration,
+            'fees': str(c.fees) if c.fees else '0',
+            'is_active': not c.is_deleted
+        })
+    center_data = {
+        'id': center.id,
+        'name': center.name,
+        'owner_name': center.owner_name or 'N/A',
+        'logo_url': center.logo_doc.url if center.logo_doc else None
+    }
+    return JsonResponse({
+        'center': center_data,
+        'assigned_ids': assigned_ids,
+        'assigned_courses': courses_data
+    })
+
+@admin_required
+def api_assign_course_toggle(request):
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+    try:
+        data = json.loads(request.body)
+        center_id = data.get('center_id')
+        course_id = data.get('course_id')
+        action = data.get('action') # 'assign' or 'remove'
+        
+        center = Center.objects.get(pk=center_id)
+        course = Course.objects.get(pk=course_id)
+        
+        if action == 'assign':
+            center.assigned_courses.add(course)
+            msg = 'Course assigned successfully.'
+        else:
+            center.assigned_courses.remove(course)
+            msg = 'Course removed successfully.'
+            
+        return JsonResponse({'success': True, 'message': msg})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)

@@ -1128,15 +1128,30 @@
   </div>
 
   <!-- Assign Exam -->
-  <a href="{% url 'exam_dashboard' %}"
-    class="sidebar-item {% if request.resolver_match.url_name == 'exam_dashboard' %}active{% endif %}">
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbAssignExam"
+    aria-expanded="{% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}true{% else %}false{% endif %}">
     <i class="bi bi-plus-circle si-icon"></i>
     <span class="si-label">Assign Exam</span>
-  </a>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}show{% endif %}"
+    id="sbAssignExam">
+    <a href="#"
+      class="{% if request.resolver_match.url_name == 'assign_exam_center' %}active{% endif %}">
+      <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Center
+    </a>
+    <a href="{% url 'assign_exam_student' %}"
+      class="{% if request.resolver_match.url_name == 'assign_exam_student' %}active{% endif %}">
+      <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Student
+    </a>
+  </div>
 
   <!-- Student Exam(s) -->
-  <a href="{% url 'student_exam_list' %}"
-    class="sidebar-item {% if request.resolver_match.url_name == 'student_exam_list' %}active{% endif %}">
+  <a href="{% url 'admin_student_exam_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'admin_student_exam_list' %}active{% endif %}">
     <i class="bi bi-person-check si-icon"></i>
     <span class="si-label">Student Exam(S)</span>
   </a>
@@ -1146,19 +1161,35 @@
 
   <!-- Center Information -->
   <button
-    class="sidebar-item {% if request.resolver_match.url_name in 'center_list,center_add,center_edit' %}active{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name in 'center_list,center_create,center_edit,assign_courses' %}active{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbCenterInfo"
-    aria-expanded="{% if request.resolver_match.url_name in 'center_list,center_add,center_edit' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name in 'center_list,center_create,center_edit,assign_courses' %}true{% else %}false{% endif %}">
     <i class="bi bi-people si-icon"></i>
     <span class="si-label">Center Information</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'center_list,center_add,center_edit' %}show{% endif %}"
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'center_list,center_create,center_edit,assign_courses' %}show{% endif %}"
     id="sbCenterInfo">
+    <a href="{% url 'center_create' %}"
+      class="{% if request.resolver_match.url_name == 'center_create' %}active{% endif %}">
+      <i class="bi bi-plus-square text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Add Center
+    </a>
+    <a href="{% url 'assign_courses' %}"
+      class="{% if request.resolver_match.url_name == 'assign_courses' %}active{% endif %}">
+      <i class="bi bi-journal-plus text-info me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Assign Courses
+    </a>
+    <a href="#"
+      class="">
+      <i class="bi bi-clipboard-minus text-warning me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Pending Centers
+    </a>
     <a href="{% url 'center_list' %}"
       class="{% if request.resolver_match.url_name == 'center_list' %}active{% endif %}">
-      <i class="bi bi-list-ul me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Center List
+      <i class="bi bi-clipboard-check text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Center
+    </a>
+    <a href="#"
+      class="">
+      <i class="bi bi-clipboard-x text-danger me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Deleted Center List
     </a>
   </div>
 
