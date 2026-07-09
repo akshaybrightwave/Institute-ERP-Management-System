@@ -12,12 +12,7 @@ class Course(SoftDeleteModel):
         null=True,
         blank=True
     )
-    center = models.ForeignKey(
-        Center,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
-    )
+
     name = models.CharField(max_length=255)
     duration = models.CharField(max_length=100)
     fees = models.DecimalField(

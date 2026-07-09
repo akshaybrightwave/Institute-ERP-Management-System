@@ -40,6 +40,53 @@ def center_list(request):
 
 
 @admin_required
+def pending_centers(request):
+    query = request.GET.get('q', '').strip()
+    name_filter = request.GET.get('name', '').strip()
+    state_filter = request.GET.get('state', '').strip()
+    city_filter = request.GET.get('city', '').strip()
+    
+    # Assuming pending means the associated User is not active
+    qs = Center.objects.filter(center_user__is_active=False).order_by('-id')
+    
+    if query:
+        qs = qs.filter(name__icontains=query)
+    if name_filter:
+        qs = qs.filter(name__icontains=name_filter)
+    if state_filter:
+        qs = qs.filter(state__icontains=state_filter)
+    if city_filter:
+        qs = qs.filter(district__icontains=city_filter)
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'centers/pending_centers.html', {
+        'page_obj': page_obj,
+        'query': query,
+    })
+
+
+@admin_required
+def center_info_list(request):
+    query = request.GET.get('q', '').strip()
+    
+    # Base queryset for all active centers (not soft-deleted)
+    qs = Center.objects.prefetch_related('course_assignments').order_by('-id')
+    
+    if query:
+        qs = qs.filter(name__icontains=query)
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'centers/center_info_list.html', {
+        'page_obj': page_obj,
+        'query': query,
+    })
+
+
+@admin_required
 def center_create(request):
     if request.method == 'POST':
         form = CenterForm(request.POST, request.FILES)
@@ -182,14 +229,14 @@ def center_dashboard(request):
 
     # 1. Overview Metrics (Feature 1)
     total_courses = Course.objects.filter(center=center).count()
-    total_batches = Batch.objects.filter(course__center=center).count()
-    total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__course__center=center).distinct().count()
-    total_students = User.objects.filter(role='student', is_deleted=False, studentprofile__batch__course__center=center).distinct().count()
-    total_exams = Exam.objects.filter(batches__course__center=center).distinct().count()
-    total_certificates = Certificate.objects.filter(course__center=center).count()
+    total_batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
+    total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__center=center).distinct().count()
+    total_students = User.objects.filter(role='student', is_deleted=False, studentprofile__batch__center=center).distinct().count()
+    total_exams = Exam.objects.filter(batches__course__assignments__center=center, course__assignments__is_active=True).distinct().count()
+    total_certificates = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
 
     # 2. Attendance Summary (Feature 2)
-    att_stats = Attendance.objects.filter(batch__course__center=center).aggregate(
+    att_stats = Attendance.objects.filter(batch__center=center).aggregate(
         total=Count('id'),
         present=Count('id', filter=Q(status='present')),
         absent=Count('id', filter=Q(status='absent'))
@@ -202,19 +249,19 @@ def center_dashboard(request):
     # 2.5 Attendance Monitoring Metrics (Phase 10.10)
     today = datetime.date.today()
     att_present_today = Attendance.objects.filter(
-        batch__course__center=center, 
+        batch__center=center, 
         date=today, 
         status='present'
     ).count()
     att_absent_today = Attendance.objects.filter(
-        batch__course__center=center, 
+        batch__center=center, 
         date=today, 
         status='absent'
     ).count()
     
     start_of_month = today.replace(day=1)
     monthly_stats = Attendance.objects.filter(
-        batch__course__center=center, 
+        batch__center=center, 
         date__gte=start_of_month, 
         date__lte=today
     ).aggregate(
@@ -226,7 +273,7 @@ def center_dashboard(request):
     att_monthly_pct = round((monthly_present / monthly_total * 100), 1) if monthly_total > 0 else 0.0
     
     # Students Below 75% Overall Attendance (having at least 1 attendance log)
-    center_students = StudentProfile.objects.filter(batch__course__center=center)
+    center_students = StudentProfile.objects.filter(batch__center=center)
     low_attendance_students = center_students.annotate(
         total_att=Count('attendances'),
         present_att=Count('attendances', filter=Q(attendances__status='present'))
@@ -237,12 +284,12 @@ def center_dashboard(request):
     ).count()
 
     # 3. Fees Summary (Feature 3)
-    total_fees_collected = FeePayment.objects.filter(student__batch__course__center=center).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    total_course_fees = StudentProfile.objects.filter(batch__course__center=center).aggregate(total=Sum('batch__course__fees'))['total'] or Decimal('0.00')
+    total_fees_collected = FeePayment.objects.filter(student__batch__center=center).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    total_course_fees = StudentProfile.objects.filter(batch__center=center).aggregate(total=Sum('batch__course__fees'))['total'] or Decimal('0.00')
     total_pending_fees = Decimal(str(total_course_fees)) - Decimal(str(total_fees_collected))
     
     # Calculate Paid / Pending Students using annotated single query
-    students_stats = StudentProfile.objects.filter(batch__course__center=center).annotate(
+    students_stats = StudentProfile.objects.filter(batch__center=center).annotate(
         paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'))
     ).select_related('batch', 'batch__course')
     
@@ -256,11 +303,11 @@ def center_dashboard(request):
             pending_students_count += 1
 
     # 4. Certificate Summary (Feature 4)
-    certs_issued_count = Certificate.objects.filter(course__center=center, status='issued').count()
-    certs_revoked_count = Certificate.objects.filter(course__center=center, status='revoked').count()
+    certs_issued_count = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True, status='issued').count()
+    certs_revoked_count = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True, status='revoked').count()
     
     # Eligible Students Calculation
-    att_map = {a['student_id']: (a['total'], a['present']) for a in Attendance.objects.filter(batch__course__center=center).values('student_id').annotate(total=Count('id'), present=Count('id', filter=Q(status='present')))}
+    att_map = {a['student_id']: (a['total'], a['present']) for a in Attendance.objects.filter(batch__center=center).values('student_id').annotate(total=Count('id'), present=Count('id', filter=Q(status='present')))}
 
     eligible_students_count = 0
     for student in students_stats:
@@ -275,21 +322,21 @@ def center_dashboard(request):
             eligible_students_count += 1
 
     # 5. Exam Summary (Feature 5)
-    active_exams_count = Exam.objects.filter(batches__course__center=center, is_published=True).distinct().count()
+    active_exams_count = Exam.objects.filter(batches__course__assignments__center=center, course__assignments__is_active=True, is_published=True).distinct().count()
     completed_exams_count = Exam.objects.filter(
-        batches__course__center=center, 
-        attempts__student__studentprofile__batch__course__center=center,
+        batches__course__assignments__center=center, course__assignments__is_active=True, 
+        attempts__student__studentprofile__batch__center=center,
         attempts__is_completed=True
     ).distinct().count()
-    total_attempts = StudentExamAttempt.objects.filter(student__studentprofile__batch__course__center=center).count()
+    total_attempts = StudentExamAttempt.objects.filter(student__studentprofile__batch__center=center).count()
 
     # Phase 10.9: Center Exam Operations & Monitoring calculations
-    center_exams = Exam.objects.filter(batches__course__center=center).distinct()
+    center_exams = Exam.objects.filter(batches__course__assignments__center=center, course__assignments__is_active=True).distinct()
     mon_total_exams = center_exams.count()
     mon_published_exams = center_exams.filter(is_published=True).count()
     mon_active_exams = center_exams.filter(is_published=True).filter(Q(end_date__isnull=True) | Q(end_date__gte=timezone.now())).count()
     
-    center_attempts = StudentExamAttempt.objects.filter(student__studentprofile__batch__course__center=center)
+    center_attempts = StudentExamAttempt.objects.filter(student__studentprofile__batch__center=center)
     mon_total_attempts = center_attempts.count()
     mon_students_appeared = center_attempts.values('student').distinct().count()
     
@@ -342,7 +389,7 @@ def center_dashboard(request):
     mon_top_performers = sorted(student_averages, key=lambda x: x['avg_pct'], reverse=True)[:5]
     mon_low_performers = sorted(student_averages, key=lambda x: x['avg_pct'])[:5]
     
-    center_batches = Batch.objects.filter(course__center=center).prefetch_related('exams')
+    center_batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True).prefetch_related('exams')
     mon_batch_perf = []
     for batch in center_batches:
         students_count = StudentProfile.objects.filter(batch=batch).count()
@@ -384,18 +431,18 @@ def center_dashboard(request):
 
     # 6. Recent Students (Feature 6)
     recent_students = StudentProfile.objects.filter(
-        batch__course__center=center
+        batch__center=center
     ).select_related('batch', 'user').order_by('-user__date_joined')[:5]
 
     # 7. Recent Batches (Feature 7)
     recent_batches = Batch.objects.filter(
-        course__center=center
+        course__assignments__center=center, course__assignments__is_active=True
     ).select_related('course', 'teacher').order_by('-id')[:5]
 
     # 8. Upcoming Exams (Feature 8)
     today = datetime.date.today()
     upcoming_exams = Exam.objects.filter(
-        batches__course__center=center,
+        batches__course__assignments__center=center, course__assignments__is_active=True,
         date__gte=today
     ).distinct().prefetch_related('batches').order_by('date')[:5]
 
@@ -405,7 +452,7 @@ def center_dashboard(request):
     
     # Exam Participation Rate
     student_exams = StudentProfile.objects.filter(
-        batch__course__center=center,
+        batch__center=center,
         batch__isnull=False
     ).annotate(
         exam_count=Count('batch__exams')
@@ -414,13 +461,13 @@ def center_dashboard(request):
     )
     total_potential_attempts = student_exams['total_potential'] or 0
     actual_attempts = StudentExamAttempt.objects.filter(
-        student__studentprofile__batch__course__center=center,
+        student__studentprofile__batch__center=center,
         is_completed=True
     ).count()
     exam_participation_rate = (actual_attempts / total_potential_attempts * 100) if total_potential_attempts > 0 else 0.0
     
     # Certificate Eligibility Rate
-    total_students_enrolled = StudentProfile.objects.filter(batch__course__center=center).count()
+    total_students_enrolled = StudentProfile.objects.filter(batch__center=center).count()
     cert_eligibility_rate = (eligible_students_count / total_students_enrolled * 100) if total_students_enrolled > 0 else 0.0
 
     context = {
@@ -473,6 +520,7 @@ def center_dashboard(request):
 
 
 from apps.courses.models import Course
+from apps.centers.models import CenterCourseAssignment
 import json
 
 @admin_required
@@ -487,21 +535,30 @@ def assign_courses(request):
 @admin_required
 def api_center_courses(request, center_id):
     center = get_object_or_404(Center, pk=center_id)
-    assigned = center.assigned_courses.all()
-    assigned_ids = list(assigned.values_list('id', flat=True))
+    # Use CenterCourseAssignment as the source of truth (Phase 1+)
+    assignments = CenterCourseAssignment.objects.filter(
+        center=center
+    ).select_related('course').order_by('-assigned_date')
+
+    assigned_ids = [a.course_id for a in assignments]
     courses_data = []
-    for c in assigned:
+    for assignment in assignments:
+        c = assignment.course
         courses_data.append({
             'id': c.id,
             'name': c.name,
             'duration': c.duration,
             'fees': str(c.fees) if c.fees else '0',
-            'is_active': not c.is_deleted
+            'assigned_date': assignment.assigned_date.strftime('%d %b %Y') if assignment.assigned_date else 'N/A',
+            'is_active': assignment.is_active
         })
     center_data = {
         'id': center.id,
         'name': center.name,
+        'code': center.code,
         'owner_name': center.owner_name or 'N/A',
+        'status': 'Inactive' if center.is_deleted else 'Active',
+        'total_assigned': len(assignments),
         'logo_url': center.logo_doc.url if center.logo_doc else None
     }
     return JsonResponse({
@@ -518,18 +575,33 @@ def api_assign_course_toggle(request):
         data = json.loads(request.body)
         center_id = data.get('center_id')
         course_id = data.get('course_id')
-        action = data.get('action') # 'assign' or 'remove'
-        
+        action = data.get('action')  # 'assign' or 'remove'
+
         center = Center.objects.get(pk=center_id)
         course = Course.objects.get(pk=course_id)
-        
+
         if action == 'assign':
-            center.assigned_courses.add(course)
+            # Create assignment in CenterCourseAssignment (Phase 1+)
+            assignment, created = CenterCourseAssignment.objects.get_or_create(
+                center=center,
+                course=course,
+                defaults={
+                    'is_active': True,
+                    'assigned_by': request.user if request.user.is_authenticated else None
+                }
+            )
+            if not created:
+                # Already exists — make sure it's active
+                assignment.is_active = True
+                assignment.save(update_fields=['is_active'])
+
             msg = 'Course assigned successfully.'
         else:
-            center.assigned_courses.remove(course)
+            # Remove from CenterCourseAssignment
+            CenterCourseAssignment.objects.filter(center=center, course=course).delete()
+
             msg = 'Course removed successfully.'
-            
+
         return JsonResponse({'success': True, 'message': msg})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=400)

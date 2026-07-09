@@ -46,8 +46,8 @@ def subject_list(request):
             qs = Subject.objects.none()
             deleted_qs = Subject.all_objects.none()
         else:
-            qs = Subject.objects.filter(course__center=request.user.center).select_related('course')
-            deleted_qs = Subject.all_objects.filter(course__center=request.user.center, is_deleted=True).select_related('course')
+            qs = Subject.objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True).distinct().select_related('course')
+            deleted_qs = Subject.all_objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True, is_deleted=True).distinct().select_related('course')
     else:
         qs = Subject.objects.all().select_related('course')
         deleted_qs = Subject.all_objects.filter(is_deleted=True).select_related('course')

@@ -11,4 +11,6 @@ urlpatterns = [
     path('assign-courses/', views.assign_courses, name='assign_courses'),
     path('api/center-courses/<int:center_id>/', views.api_center_courses, name='api_center_courses'),
     path('api/assign-course-toggle/', views.api_assign_course_toggle, name='api_assign_course_toggle'),
+    path('pending/', views.pending_centers, name='pending_centers'),
+    path('info-list/', views.center_info_list, name='center_info_list'),
 ]

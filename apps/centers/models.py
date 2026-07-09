@@ -45,8 +45,39 @@ class Center(SoftDeleteModel):
     address_proof = models.FileField(upload_to='centers/docs/', null=True, blank=True)
     agreement_doc = models.FileField(upload_to='centers/docs/', null=True, blank=True)
 
-    # Master courses assigned to this center
-    assigned_courses = models.ManyToManyField('courses.Course', related_name='assigned_centers', blank=True)
+
 
     def __str__(self):
         return self.name
+
+
+class CenterCourseAssignment(models.Model):
+    """
+    Explicit through-model replacing the simple ManyToManyField.
+    """
+    center = models.ForeignKey(
+        'Center',
+        on_delete=models.CASCADE,
+        related_name='course_assignments'
+    )
+    course = models.ForeignKey(
+        'courses.Course',
+        on_delete=models.CASCADE,
+        related_name='assignments'
+    )
+    is_active = models.BooleanField(default=True)
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(
+        'accounts.User',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='course_assignments_made'
+    )
+
+    class Meta:
+        unique_together = ('center', 'course')
+        ordering = ['-assigned_date']
+
+    def __str__(self):
+        return f"{self.center.name} \u2192 {self.course.name}"

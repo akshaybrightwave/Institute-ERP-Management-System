@@ -408,9 +408,9 @@ def exam_detail(request, exam_id):
 
     # Check center/teacher isolation
     if is_center:
-        if not exam.batches.filter(course__center=request.user.center).exists():
+        if not exam.batches.filter(course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
             return HttpResponseForbidden("Access Denied: This exam is not assigned to your center's batches.")
-        batches = exam.batches.filter(course__center=request.user.center)
+        batches = exam.batches.filter(course__assignments__center=request.user.center, course__assignments__is_active=True)
     elif is_teacher:
         from apps.teachers.models import TeacherProfile
         profile = TeacherProfile.objects.filter(user=request.user).first()
@@ -423,8 +423,8 @@ def exam_detail(request, exam_id):
     # Student Count: count of unique students in batches assigned to this exam
     from apps.students.models import StudentProfile
     if is_center:
-        student_count = StudentProfile.objects.filter(batch__in=batches, batch__course__center=request.user.center).count()
-        attempts = exam.attempts.filter(student__studentprofile__batch__course__center=request.user.center)
+        student_count = StudentProfile.objects.filter(batch__in=batches, batch__center=request.user.center).count()
+        attempts = exam.attempts.filter(student__studentprofile__batch__center=request.user.center)
     elif is_teacher:
         student_count = StudentProfile.objects.filter(batch__in=batches, batch__teacher=profile).count()
         attempts = exam.attempts.filter(student__studentprofile__batch__teacher=profile)
@@ -483,18 +483,18 @@ def center_exam_results(request, exam_id):
     
     # Check center isolation
     if is_center:
-        if not exam.batches.filter(course__center=request.user.center).exists():
+        if not exam.batches.filter(course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
             return HttpResponseForbidden("Access Denied: Exam belongs to another center.")
             
     attempts = exam.attempts.select_related('student__studentprofile__batch').all()
     if is_center:
-        attempts = attempts.filter(student__studentprofile__batch__course__center=request.user.center)
+        attempts = attempts.filter(student__studentprofile__batch__center=request.user.center)
         
     # Filter by batch
     batch_id = request.GET.get('batch', '').strip()
     if batch_id:
         # Verify batch belongs to center
-        if is_center and not Batch.objects.filter(id=batch_id, course__center=request.user.center).exists():
+        if is_center and not Batch.objects.filter(id=batch_id, course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
             return HttpResponseForbidden("Access Denied: Batch belongs to another center.")
         attempts = attempts.filter(student__studentprofile__batch_id=batch_id)
         
@@ -522,7 +522,7 @@ def center_exam_results(request, exam_id):
         fail_count = 0
         
     if is_center:
-        batches = exam.batches.filter(course__center=request.user.center)
+        batches = exam.batches.filter(course__assignments__center=request.user.center, course__assignments__is_active=True)
     else:
         batches = exam.batches.all()
         
@@ -551,7 +551,7 @@ def center_attempts_list(request):
     attempts_qs = StudentExamAttempt.objects.select_related('student__studentprofile__batch__course', 'exam').order_by('-start_time')
     
     if is_center:
-        attempts_qs = attempts_qs.filter(student__studentprofile__batch__course__center=request.user.center)
+        attempts_qs = attempts_qs.filter(student__studentprofile__batch__center=request.user.center)
         
     # Search / Filters
     query = request.GET.get('q', '').strip()
@@ -561,11 +561,11 @@ def center_attempts_list(request):
     if query:
         attempts_qs = attempts_qs.filter(student__studentprofile__full_name__icontains=query)
     if batch_id:
-        if is_center and not Batch.objects.filter(id=batch_id, course__center=request.user.center).exists():
+        if is_center and not Batch.objects.filter(id=batch_id, course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
             return HttpResponseForbidden("Access Denied: Batch belongs to another center.")
         attempts_qs = attempts_qs.filter(student__studentprofile__batch_id=batch_id)
     if exam_id:
-        if is_center and not Exam.objects.filter(id=exam_id, batches__course__center=request.user.center).exists():
+        if is_center and not Exam.objects.filter(id=exam_id, batches__course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
             return HttpResponseForbidden("Access Denied: Exam belongs to another center.")
         attempts_qs = attempts_qs.filter(exam_id=exam_id)
         
@@ -576,8 +576,8 @@ def center_attempts_list(request):
     
     # Filter dropdown options
     if is_center:
-        batches = Batch.objects.filter(course__center=request.user.center)
-        exams = Exam.objects.filter(batches__course__center=request.user.center).distinct()
+        batches = Batch.objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True)
+        exams = Exam.objects.filter(batches__course__assignments__center=request.user.center, course__assignments__is_active=True).distinct()
     else:
         batches = Batch.objects.all()
         exams = Exam.objects.all()
@@ -633,12 +633,12 @@ def export_exam_results_csv(request, exam_id):
         
     exam = get_object_or_404(Exam, id=exam_id)
     if is_center:
-        if not exam.batches.filter(course__center=request.user.center).exists():
+        if not exam.batches.filter(course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
             return HttpResponseForbidden("Access Denied.")
             
     attempts = exam.attempts.select_related('student__studentprofile__batch').all()
     if is_center:
-        attempts = attempts.filter(student__studentprofile__batch__course__center=request.user.center)
+        attempts = attempts.filter(student__studentprofile__batch__center=request.user.center)
         
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="exam_{exam_id}_results.csv"'
@@ -670,7 +670,7 @@ def export_student_performance_csv(request):
         
     students = StudentProfile.objects.select_related('batch__course').all()
     if is_center:
-        students = students.filter(batch__course__center=request.user.center)
+        students = students.filter(batch__center=request.user.center)
         
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="student_performance.csv"'
@@ -709,7 +709,7 @@ def export_batch_performance_csv(request):
         
     batches = Batch.objects.select_related('course').all()
     if is_center:
-        batches = batches.filter(course__center=request.user.center)
+        batches = batches.filter(course__assignments__center=request.user.center, course__assignments__is_active=True)
         
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="batch_performance.csv"'
@@ -982,7 +982,7 @@ def admin_student_exam_list(request):
     if role == 'admin':
         pass
     elif role == 'center':
-        queryset = queryset.filter(student__studentprofile__batch__course__center=request.user.center)
+        queryset = queryset.filter(student__studentprofile__batch__center=request.user.center)
     elif role == 'teacher':
         queryset = queryset.filter(exam__created_by=request.user)
     elif role == 'student':
@@ -1022,7 +1022,7 @@ def delete_student_exam_attempt_ajax(request, pk):
         if role == 'admin':
             pass
         elif role == 'center':
-            if attempt.student.studentprofile.batch.course.center != request.user.center:
+            if attempt.student.studentprofile.batch.center != request.user.center:
                 return JsonResponse({'success': False, 'message': 'Permission denied.'})
         elif role == 'teacher':
             if attempt.exam.created_by != request.user:

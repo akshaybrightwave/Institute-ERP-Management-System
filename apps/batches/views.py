@@ -19,7 +19,7 @@ def batch_list(request):
         if not request.user.center:
             batches = Batch.objects.none()
         else:
-            batches = Batch.objects.filter(course__center=request.user.center).select_related('course', 'teacher').annotate(student_count=Count('studentprofile'))
+            batches = Batch.objects.filter(center=request.user.center).select_related('course', 'teacher').annotate(student_count=Count('studentprofile'))
     else:
         batches = Batch.objects.all().select_related('course', 'teacher').annotate(student_count=Count('studentprofile'))
         
@@ -67,7 +67,7 @@ def batch_create(request):
             else:
                 form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
-                    Q(batch__course__center=request.user.center) | Q(batch__isnull=True)
+                    Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
         if form.is_valid():
             if request.user.role == 'center':
@@ -86,7 +86,7 @@ def batch_create(request):
             else:
                 form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
-                    Q(batch__course__center=request.user.center) | Q(batch__isnull=True)
+                    Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
                 
     return render(request, 'batches/batch_form.html', {'form': form, 'action': 'Create'})
@@ -111,7 +111,7 @@ def batch_update(request, pk):
             else:
                 form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
-                    Q(batch__course__center=request.user.center) | Q(batch__isnull=True)
+                    Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
         if form.is_valid():
             if request.user.role == 'center':
@@ -130,7 +130,7 @@ def batch_update(request, pk):
             else:
                 form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
-                    Q(batch__course__center=request.user.center) | Q(batch__isnull=True)
+                    Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
                 
     return render(request, 'batches/batch_form.html', {'form': form, 'action': 'Update', 'batch': batch})

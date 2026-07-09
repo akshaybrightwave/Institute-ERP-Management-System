@@ -33,8 +33,8 @@ def fees_list(request):
     
     if is_center:
         center = request.user.center
-        students_qs = students_qs.filter(batch__course__center=center)
-        batches = Batch.objects.filter(course__center=center)
+        students_qs = students_qs.filter(batch__center=center)
+        batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         students_qs = students_qs.filter(batch__teacher=teacher_profile)
@@ -82,7 +82,7 @@ def fees_list(request):
     if is_admin or is_center:
         payments_qs = FeePayment.objects.select_related('student__batch__course').all().order_by('-payment_date', '-id')
         if is_center:
-            payments_qs = payments_qs.filter(student__batch__course__center=request.user.center)
+            payments_qs = payments_qs.filter(student__batch__center=request.user.center)
             
         # Search/Filter in payments
         if query:
@@ -102,8 +102,8 @@ def fees_list(request):
     
     if is_center:
         center = request.user.center
-        metrics_students = metrics_students.filter(batch__course__center=center)
-        metrics_payments = metrics_payments.filter(student__batch__course__center=center)
+        metrics_students = metrics_students.filter(batch__center=center)
+        metrics_payments = metrics_payments.filter(student__batch__center=center)
     elif is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         metrics_students = metrics_students.filter(batch__teacher=teacher_profile)
@@ -175,7 +175,7 @@ def search_fee_payment(request):
     payments_qs = FeePayment.objects.select_related('student').all().order_by('-payment_date', '-id')
     
     if is_center:
-        payments_qs = payments_qs.filter(student__batch__course__center=request.user.center)
+        payments_qs = payments_qs.filter(student__batch__center=request.user.center)
         
     if query:
         q_filter = Q(id__icontains=query) | Q(reference_number__icontains=query) | Q(student__full_name__icontains=query) | Q(student__phone__icontains=query)
@@ -228,7 +228,7 @@ def payment_create(request):
     if selected_student_id:
         try:
             if is_center:
-                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__course__center=request.user.center)
+                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__center=request.user.center)
             else:
                 student_profile = StudentProfile.objects.get(pk=selected_student_id)
                 
@@ -275,7 +275,7 @@ def payment_update(request, pk):
     
     # Check center isolation
     if is_center:
-        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.course.center != request.user.center:
+        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.center != request.user.center:
             return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
             
     selected_student_id = None
@@ -289,7 +289,7 @@ def payment_update(request, pk):
     if selected_student_id:
         try:
             if is_center:
-                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__course__center=request.user.center)
+                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__center=request.user.center)
             else:
                 student_profile = StudentProfile.objects.get(pk=selected_student_id)
                 
@@ -337,7 +337,7 @@ def payment_delete(request, pk):
     
     # Check center isolation
     if is_center:
-        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.course.center != request.user.center:
+        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.center != request.user.center:
             return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
             
     if request.method == 'POST':
@@ -411,7 +411,7 @@ def student_fee_autocomplete(request):
             Q(email__icontains=q)
         )
         if is_center and request.user.center:
-            qs = qs.filter(batch__course__center=request.user.center)
+            qs = qs.filter(batch__center=request.user.center)
         qs = qs.order_by('full_name')[:20]
 
         profiles = list(qs)
@@ -463,7 +463,7 @@ def student_fee_summary_ajax(request):
     try:
         qs = StudentProfile.objects.select_related('batch__course')
         if is_center and request.user.center:
-            student = qs.get(pk=student_id, batch__course__center=request.user.center)
+            student = qs.get(pk=student_id, batch__center=request.user.center)
         else:
             student = qs.get(pk=student_id)
     except StudentProfile.DoesNotExist:

@@ -121,28 +121,43 @@
                 <i class="bi bi-info-circle text-info"></i>
             </div>
             
-            <div class="text-center py-2">
-                <img id="centerLogo" src="{% static 'images/default_profile.png' %}" alt="Center Logo" class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover; border: 2px solid rgba(255,255,255,0.1);">
+            <div class="text-center py-2 mb-3">
+                <img id="centerLogo" src="{% static 'images/default_profile.png' %}" alt="Center Logo" class="rounded-circle mb-3 shadow" style="width: 90px; height: 90px; object-fit: cover; border: 3px solid rgba(255,255,255,0.1);">
                 <h5 class="fw-bold text-white mb-1" id="centerName">-</h5>
-                <p class="text-muted small mb-0">
-                    <i class="bi bi-person me-1"></i><span id="centerOwner">-</span>
-                </p>
+                <p class="text-muted small mb-0"><span id="centerCode" class="badge bg-soft-primary text-primary px-2 py-1">-</span></p>
+            </div>
+            <div class="bg-dark rounded p-3 mb-2" style="border: 1px solid rgba(255,255,255,0.05);">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Owner</span>
+                    <span class="text-white small fw-bold" id="centerOwner">-</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Status</span>
+                    <span class="small fw-bold" id="centerStatus">-</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Total Assigned</span>
+                    <span class="text-white small fw-bold badge bg-primary" id="centerTotalAssigned">0</span>
+                </div>
             </div>
         </div>
         
     </div>
 
     <!-- Right Column: Courses Selection & Assigned Table -->
-    <div class="col-lg-8 col-12">
+    <div class="col-lg-8 col-12" id="rightPanel" style="display: none;">
         
-        <!-- SECTION 3: All Courses -->
+        <!-- SECTION 3: Available Courses -->
         <div class="qa-card mb-4" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
             <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
-                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">All Courses</h6>
-                <i class="bi bi-journals text-success"></i>
+                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Available Courses</h6>
+                <div class="input-group" style="width: 250px;">
+                    <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control dark-input border-secondary" id="courseSearch" placeholder="Search courses...">
+                </div>
             </div>
             
-            <div class="row g-3" id="allCoursesList">
+            <div class="row g-3 pe-2" id="allCoursesList" style="max-height: 400px; overflow-y: auto; overflow-x: hidden;">
                 {% for course in courses %}
                 <div class="col-md-6 col-12">
                     <div class="course-card-item p-3 d-flex justify-content-between align-items-center">
@@ -167,7 +182,7 @@
         <!-- SECTION 4: Assigned Courses -->
         <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
             <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
-                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Assigned Courses List</h6>
+                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Assigned Courses</h6>
                 <i class="bi bi-list-check text-warning"></i>
             </div>
             
@@ -175,10 +190,11 @@
                 <table class="table table-examly table-hover table-bordered align-middle mb-0">
                     <thead>
                         <tr>
-                            <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 80px;">S.No</th>
+                            <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
                             <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course Name</th>
                             <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Duration</th>
-                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course Fee</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Fees</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Assigned Date</th>
                             <th class="pe-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">Status</th>
                         </tr>
                     </thead>
@@ -223,8 +239,9 @@ $(document).ready(function() {
         if (!centerId) {
             // Hide Center Info & Reset
             $('#centerInfoCard').slideUp();
+            $('#rightPanel').fadeOut();
             $('.course-toggle').prop('checked', false).prop('disabled', true);
-            $('#assignedCoursesTableBody').html('<tr><td colspan="5" class="text-center py-4 text-muted">Please select a center to view assigned courses.</td></tr>');
+            $('#assignedCoursesTableBody').html('<tr><td colspan="6" class="text-center py-4 text-muted">Please select a center to view assigned courses.</td></tr>');
             return;
         }
         
@@ -235,10 +252,19 @@ $(document).ready(function() {
             success: function(response) {
                 // Update Center Info Card
                 $('#centerName').text(response.center.name);
+                $('#centerCode').text(response.center.code);
                 $('#centerOwner').text(response.center.owner_name);
                 $('#centerLogo').attr('src', response.center.logo_url ? response.center.logo_url : defaultAvatar);
+                $('#centerTotalAssigned').text(response.center.total_assigned);
+                
+                if (response.center.status === 'Active') {
+                    $('#centerStatus').html('<span class="text-success">Active</span>');
+                } else {
+                    $('#centerStatus').html('<span class="text-danger">Inactive</span>');
+                }
                 
                 $('#centerInfoCard').slideDown();
+                $('#rightPanel').fadeIn();
                 
                 // Reset and Update Toggle States
                 $('.course-toggle').prop('checked', false).prop('disabled', false);
@@ -348,7 +374,7 @@ $(document).ready(function() {
         $tbody.empty();
         
         if (coursesData.length === 0) {
-            $tbody.html('<tr><td colspan="5" class="text-center py-4 text-muted">No courses assigned to this center yet.</td></tr>');
+            $tbody.html('<tr><td colspan="6" class="text-center py-4 text-muted">No courses assigned to this center yet.</td></tr>');
             return;
         }
         
@@ -359,16 +385,34 @@ $(document).ready(function() {
                 
             const row = `
                 <tr>
-                    <td class="ps-4 fw-semibold text-muted">${index + 1}.</td>
+                    <td class="ps-4 fw-semibold text-muted">${index + 1}</td>
                     <td class="fw-semibold text-white">${course.name}</td>
                     <td><span class="badge bg-soft-info text-info rounded-pill px-2 py-1" style="background: rgba(13, 202, 240, 0.12);">${course.duration}</span></td>
                     <td class="text-white-50">₹ ${course.fees}</td>
+                    <td class="text-muted small">${course.assigned_date}</td>
                     <td class="pe-4">${statusBadge}</td>
                 </tr>
             `;
             $tbody.append(row);
         });
+        
+        // Update Total Assigned Counter in Info Card
+        $('#centerTotalAssigned').text(coursesData.length);
     }
+
+    // Course List Client-Side Filtering
+    $('#courseSearch').on('keyup', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        
+        $('#allCoursesList .col-md-6').each(function() {
+            const courseName = $(this).find('h6').text().toLowerCase();
+            if (courseName.includes(searchTerm)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
 });
 </script>
 {% endblock %}

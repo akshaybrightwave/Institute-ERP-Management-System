@@ -139,7 +139,7 @@ def mark_attendance(request, batch_id):
             return HttpResponseForbidden("Access Denied: You are not the assigned teacher for this batch.")
     elif is_center:
         center = request.user.center
-        if not center or batch.course.center != center:
+        if not center or batch.center != center:
             return HttpResponseForbidden("Access Denied: This batch does not belong to your center.")
             
     # Get selected date, defaulting to today
@@ -212,9 +212,9 @@ def attendance_list(request):
             batches = Batch.objects.none()
             students = StudentProfile.objects.none()
         else:
-            attendances = attendances.filter(batch__course__center=center)
-            batches = Batch.objects.filter(course__center=center)
-            students = StudentProfile.objects.filter(batch__course__center=center)
+            attendances = attendances.filter(batch__center=center)
+            batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
+            students = StudentProfile.objects.filter(batch__center=center)
     else:
         batches = Batch.objects.all()
         students = StudentProfile.objects.all()
@@ -311,7 +311,7 @@ def attendance_create(request):
     
     if student_id:
         if request.user.role == 'center':
-            student_obj = get_object_or_404(StudentProfile, id=student_id, batch__course__center=request.user.center)
+            student_obj = get_object_or_404(StudentProfile, id=student_id, batch__center=request.user.center)
         else:
             student_obj = get_object_or_404(StudentProfile, id=student_id)
             
@@ -365,8 +365,8 @@ def attendance_edit(request, pk):
     
     # Check center isolation
     if request.user.role == 'center':
-        if not attendance.batch or not attendance.batch.course or attendance.batch.course.center != request.user.center:
-            return HttpResponseForbidden("Access Denied: You cannot manage attendance for another center.")
+        if not attendance.batch or not attendance.batch.course or attendance.batch.center != request.user.center:
+            return HttpResponseForbidden("Access Denied: You do not manage this batch's attendance.")
             
     from .forms import AttendanceForm
     
