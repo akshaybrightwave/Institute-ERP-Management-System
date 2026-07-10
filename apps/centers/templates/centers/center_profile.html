@@ -1,0 +1,546 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Center Overview | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-building text-primary me-2"></i>Center Information
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Center</li>
+        <li class="breadcrumb-item text-white active" aria-current="page">List Center</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <!-- SECTION 1: Center Header Profile Overview Card -->
+    <div class="col-12">
+      <div class="profile-header-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; position: relative; overflow: hidden;">
+        
+        <!-- Top right decorative accent -->
+        <div style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: linear-gradient(135deg, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0)); transform: rotate(45deg); pointer-events: none;"></div>
+
+        <div class="row align-items-center g-4">
+          <!-- Photo and Primary Details -->
+          <div class="col-lg-7 col-12">
+            <div class="d-flex align-items-center flex-wrap gap-4 text-center text-sm-start">
+              <div class="position-relative mx-auto mx-sm-0">
+                {% if center.logo_doc %}
+                  <img src="{{ center.logo_doc.url }}" alt="{{ center.name }}" class="rounded-3 border border-secondary" style="width: 110px; height: 110px; object-fit: cover;">
+                {% else %}
+                  <div class="rounded-3 bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 110px; height: 110px; font-size: 2.5rem;">
+                    <i class="bi bi-building"></i>
+                  </div>
+                {% endif %}
+              </div>
+
+              <div class="flex-grow-1">
+                <h3 class="fw-bold text-white mb-2 d-flex align-items-center justify-content-center justify-content-sm-start gap-2">
+                  {{ center.name }}
+                  <span class="text-primary" style="font-size: 1.1rem;"><i class="bi bi-patch-check-fill"></i></span>
+                  <span class="text-success" style="font-size: 1.1rem;"><i class="bi bi-check-circle-fill"></i></span>
+                </h3>
+
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 text-white-50" style="font-size: 0.88rem;">
+                  <span><i class="bi bi-building text-muted me-1"></i> Institute ID: {{ center.code }}</span>
+                  <span><i class="bi bi-geo-alt text-muted me-1"></i> {{ center.address|truncatechars:35 }}</span>
+                  <span><i class="bi bi-envelope text-muted me-1"></i> {{ center.email }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pill/Overview Cards -->
+          <div class="col-lg-5 col-12">
+            <div class="d-flex flex-wrap gap-2 justify-content-lg-end justify-content-center">
+              <!-- Total Students Box -->
+              <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
+                <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">TOTAL STUDENTS</span>
+                <span class="fw-bold text-white small">{{ total_students }}</span>
+              </div>
+
+              <!-- Total Courses Box -->
+              <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
+                <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">TOTAL COURSES</span>
+                <span class="fw-bold text-white small">{{ total_courses }}</span>
+              </div>
+
+              <!-- Reg Date Box -->
+              <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 120px;">
+                <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">REGISTRATION DATE</span>
+                <span class="fw-bold text-white small">{{ registration_date|date:"d-m-Y"|default:"—" }}</span>
+              </div>
+
+              <!-- Valid Upto Box -->
+              <div class="p-2 px-3 rounded text-center" style="background-color: rgba(245, 158, 11, 0.05); border: 1px dashed rgba(245, 158, 11, 0.3); min-width: 120px;">
+                <span class="d-block text-warning-emphasis fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #fbbf24 !important;">VALID UPTO</span>
+                <span class="fw-bold text-white small">{{ center.valid_upto|date:"d-m-Y"|default:"—" }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabbed Menu -->
+        <div class="mt-5 border-top border-secondary pt-3">
+          <ul class="nav nav-pills gap-1 flex-wrap" id="centerProfileTabs" role="tablist" style="border: none;">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active px-4 py-2 text-white bg-primary rounded" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true" style="font-size: 0.9rem; font-weight: 500;">
+                <i class="bi bi-grid-fill me-1"></i> Overview
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false" style="font-size: 0.9rem; font-weight: 500; background: transparent; border: none;">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Documents
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false" style="font-size: 0.9rem; font-weight: 500; background: transparent; border: none;">
+                <i class="bi bi-key-fill me-1"></i> Change Password
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="fees-tab" data-bs-toggle="tab" data-bs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="false" style="font-size: 0.9rem; font-weight: 500; background: transparent; border: none;">
+                <i class="bi bi-wallet2 me-1"></i> Fee System
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="notifications-tab" data-bs-toggle="tab" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false" style="font-size: 0.9rem; font-weight: 500; background: transparent; border: none;">
+                <i class="bi bi-bell-fill me-1"></i> Notifications
+              </button>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 2: Tab Content Cards -->
+    <div class="col-12">
+      <div class="tab-content" id="centerProfileTabContent">
+        
+        <!-- Tab 1: Overview -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+          <div class="card border-0" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px;">
+            <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Center Overview Details</h5>
+            <div class="table-responsive">
+              <table class="table table-examly align-middle mb-0 text-white-50" style="font-size: 0.9rem;">
+                <tbody>
+                  <tr>
+                    <th class="ps-3 text-white" style="width: 30%;"><i class="bi bi-person me-2 text-primary"></i>Owner Name</th>
+                    <td>{{ center.owner_name|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-mortarboard me-2 text-primary"></i>Qualification</th>
+                    <td>{{ center.head_qualification|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-envelope me-2 text-primary"></i>Email Address</th>
+                    <td>{{ center.email|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-telephone me-2 text-primary"></i>Mobile Number</th>
+                    <td>{{ center.phone|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-calendar-event me-2 text-primary"></i>Date of Birth</th>
+                    <td>{{ center.owner_dob|date:"d-m-Y"|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-whatsapp me-2 text-success"></i>WhatsApp Number</th>
+                    <td>{{ center.whatsapp_number|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-card-heading me-2 text-primary"></i>PAN Number</th>
+                    <td>{{ center.pan_number|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-fingerprint me-2 text-primary"></i>Aadhaar Number</th>
+                    <td>{{ center.aadhar_number|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-geo me-2 text-primary"></i>City / District</th>
+                    <td>{{ center.district|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-map me-2 text-primary"></i>State</th>
+                    <td>{{ center.state|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-geo-alt me-2 text-primary"></i>Complete Address</th>
+                    <td>{{ center.address|default:"—" }}</td>
+                  </tr>
+                  <tr>
+                    <th class="ps-3 text-white"><i class="bi bi-mailbox me-2 text-primary"></i>Pincode</th>
+                    <td>{{ center.pincode|default:"—" }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Documents -->
+        <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+          <div class="card border-0" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px;">
+            <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Center Documents</h5>
+            
+            <div class="row g-4">
+              <!-- Owner Image -->
+              <div class="col-md-4 col-sm-6">
+                <div class="p-3 rounded text-center" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mb-3 text-primary"><i class="bi bi-image" style="font-size: 2.5rem;"></i></div>
+                  <h6 class="fw-bold text-white mb-1">Owner Image</h6>
+                  {% if center.owner_image %}
+                    <a href="{{ center.owner_image.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">View Document</a>
+                  {% else %}
+                    <span class="text-muted d-block mt-2">Not Uploaded</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Aadhaar Card -->
+              <div class="col-md-4 col-sm-6">
+                <div class="p-3 rounded text-center" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mb-3 text-primary"><i class="bi bi-file-earmark-pdf" style="font-size: 2.5rem;"></i></div>
+                  <h6 class="fw-bold text-white mb-1">Aadhaar Card</h6>
+                  {% if center.aadhar_doc %}
+                    <a href="{{ center.aadhar_doc.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">View Document</a>
+                  {% else %}
+                    <span class="text-muted d-block mt-2">Not Uploaded</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Signature -->
+              <div class="col-md-4 col-sm-6">
+                <div class="p-3 rounded text-center" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mb-3 text-primary"><i class="bi bi-pen" style="font-size: 2.5rem;"></i></div>
+                  <h6 class="fw-bold text-white mb-1">Signature Document</h6>
+                  {% if center.signature_doc %}
+                    <a href="{{ center.signature_doc.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">View Document</a>
+                  {% else %}
+                    <span class="text-muted d-block mt-2">Not Uploaded</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Address Proof -->
+              <div class="col-md-4 col-sm-6">
+                <div class="p-3 rounded text-center" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mb-3 text-primary"><i class="bi bi-geo-alt" style="font-size: 2.5rem;"></i></div>
+                  <h6 class="fw-bold text-white mb-1">Address Proof</h6>
+                  {% if center.address_proof %}
+                    <a href="{{ center.address_proof.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">View Document</a>
+                  {% else %}
+                    <span class="text-muted d-block mt-2">Not Uploaded</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Agreement Document -->
+              <div class="col-md-4 col-sm-6">
+                <div class="p-3 rounded text-center" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mb-3 text-primary"><i class="bi bi-file-earmark-text" style="font-size: 2.5rem;"></i></div>
+                  <h6 class="fw-bold text-white mb-1">Agreement Document</h6>
+                  {% if center.agreement_doc %}
+                    <a href="{{ center.agreement_doc.url }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">View Document</a>
+                  {% else %}
+                    <span class="text-muted d-block mt-2">Not Uploaded</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Tab 3: Change Password -->
+        <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+          <div class="card border-0" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px;">
+            <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Reset Account Password</h5>
+            
+            {% if center.center_user %}
+              <div class="col-md-6 col-12">
+                <p class="text-white-50 small mb-4">Reset the dashboard password for the account associated with this center: <strong>{{ center.center_user.username }}</strong>.</p>
+                <form method="POST" action="{% url 'superadmin_user_reset_password' center.center_user.id %}">
+                  {% csrf_token %}
+                  <div class="mb-3">
+                    <label class="form-label text-white">New Password</label>
+                    <input type="password" name="password" class="form-control dark-input text-white" placeholder="Enter new password" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input);">
+                  </div>
+                  <button type="submit" class="btn btn-primary px-4 py-2">
+                    <i class="bi bi-key-fill me-1"></i> Update Password
+                  </button>
+                </form>
+              </div>
+            {% else %}
+              <p class="text-warning"><i class="bi bi-exclamation-triangle me-2"></i>No user login account is currently associated with this Center.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Tab 4: Fee System -->
+        <div class="tab-pane fade" id="fees" role="tabpanel" aria-labelledby="fees-tab">
+          <div class="card border-0" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px;">
+            <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Wallet & Fee System</h5>
+            
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="p-4 rounded h-100" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                  <h6 class="text-white-50 mb-2">Current Wallet Balance</h6>
+                  <h2 class="fw-bold text-white mb-4">₹ {{ center.wallet_balance|floatformat:2 }}</h2>
+                  <button type="button" class="btn btn-primary px-4 py-2 btn-load-wallet" 
+                          data-pk="{{ center.pk }}" 
+                          data-url="{% url 'center_load_wallet' center.pk %}" 
+                          data-name="{{ center.name }}">
+                    <i class="bi bi-plus-lg me-1"></i> Add Funds
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-4 rounded h-100" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                  <h6 class="text-white-50 mb-2">Fee Configuration</h6>
+                  <p class="text-muted small">This center has direct access to courses, student exams, and schedules as assigned. All transactional fee records can be tracked in the main reports panel.</p>
+                  <a href="{% url 'fees_list' %}" class="btn btn-outline-secondary text-white border-secondary mt-3">
+                    <i class="bi bi-cash-stack me-1"></i> Open Fees Module
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Notifications -->
+        <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+          <div class="card border-0" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px;">
+            <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Notifications & Alerts</h5>
+            <p class="text-muted small mb-0">No active system alerts or custom notifications sent to this branch yet.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Reuse the Load Wallet Modal exactly as in center_info_list -->
+<div class="modal fade" id="walletModal" tabindex="-1" aria-labelledby="walletModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: #12141c; border: 1px solid #1c1f2c; border-radius: 12px; color: #fff;">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white" id="walletModalLabel">
+          <i class="bi bi-wallet2 text-primary me-2"></i>Load Wallet
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger d-none" id="walletModalError"></div>
+        <div class="mb-3">
+          <label class="form-label text-muted small">Center</label>
+          <div class="fw-semibold text-white" id="walletCenterName">—</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-muted small">Current Balance</label>
+          <div class="fw-bold text-primary" id="walletCurrentBalance">₹ 0.00</div>
+        </div>
+        <!-- Preset Amount Buttons -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-white">Select Amount</label>
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="500">₹500</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="1000">₹1,000</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="2000">₹2,000</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="5000">₹5,000</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="10000">₹10,000</button>
+          </div>
+        </div>
+        <!-- Custom Amount -->
+        <div class="mb-3">
+          <label for="walletAmount" class="form-label fw-semibold text-white">
+            Custom Amount <span class="text-danger">*</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #aaa;">₹</span>
+            <input type="number" id="walletAmount" class="form-control dark-input text-white" placeholder="Enter amount" min="1" step="0.01"
+                   style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input);">
+          </div>
+          <div class="text-danger small mt-1 d-none" id="walletAmountError"></div>
+        </div>
+        <!-- Description -->
+        <div class="mb-3">
+          <label for="walletDescription" class="form-label fw-semibold text-white">Description</label>
+          <input type="text" id="walletDescription" class="form-control dark-input text-white" placeholder="Optional note"
+                 style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-save-modal px-4 py-2" id="btnWalletSave">
+          <i class="bi bi-wallet-fill me-1"></i> Load Wallet
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // CSRF Utility
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // Handle simple tab switches locally using Bootstrap 5 tabs
+  const tabElList = [].slice.call(document.querySelectorAll('#centerProfileTabs button'));
+  tabElList.forEach(function (tabEl) {
+    tabEl.addEventListener('click', function (event) {
+      event.preventDefault();
+      // Remove active from all tabs
+      tabElList.forEach(t => {
+        t.classList.remove('active', 'bg-primary');
+        t.classList.add('text-white-50');
+      });
+      // Add active to current
+      tabEl.classList.add('active', 'bg-primary');
+      tabEl.classList.remove('text-white-50');
+    });
+  });
+
+  // Load Wallet Logic
+  const walletModalEl  = document.getElementById('walletModal');
+  const bsWalletModal  = new bootstrap.Modal(walletModalEl);
+  const walletCenterName    = document.getElementById('walletCenterName');
+  const walletCurrentBal    = document.getElementById('walletCurrentBalance');
+  const walletAmountInput   = document.getElementById('walletAmount');
+  const walletDescInput     = document.getElementById('walletDescription');
+  const walletModalError    = document.getElementById('walletModalError');
+  const walletAmountError   = document.getElementById('walletAmountError');
+  const btnWalletSave       = document.getElementById('btnWalletSave');
+  let   walletUrl           = '';
+
+  function showWalletError(msg) {
+    walletModalError.textContent = msg;
+    walletModalError.classList.remove('d-none');
+  }
+
+  function clearWalletErrors() {
+    walletModalError.classList.add('d-none');
+    walletAmountError.textContent = '';
+    walletAmountError.classList.add('d-none');
+  }
+
+  // Open wallet modal on + click
+  document.querySelectorAll('.btn-load-wallet').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      walletUrl = btn.dataset.url;
+      clearWalletErrors();
+      walletAmountInput.value = '';
+      walletDescInput.value = '';
+      walletCenterName.textContent = btn.dataset.name;
+      walletCurrentBal.textContent = '₹ …';
+      document.querySelectorAll('.btn-preset-amount').forEach(b => b.classList.remove('btn-primary', 'text-white'));
+
+      fetch(walletUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            walletCurrentBal.textContent = '₹ ' + parseFloat(data.wallet_balance).toFixed(2);
+          }
+          bsWalletModal.show();
+        })
+        .catch(() => bsWalletModal.show());
+    });
+  });
+
+  // Preset amount buttons
+  document.querySelectorAll('.btn-preset-amount').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      walletAmountInput.value = btn.dataset.amount;
+      document.querySelectorAll('.btn-preset-amount').forEach(b => {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-secondary');
+      });
+      btn.classList.remove('btn-outline-secondary');
+      btn.classList.add('btn-primary');
+    });
+  });
+
+  // Save wallet
+  btnWalletSave.addEventListener('click', function () {
+    clearWalletErrors();
+    const amount = walletAmountInput.value.trim();
+    if (!amount || parseFloat(amount) <= 0) {
+      walletAmountError.textContent = 'Please enter a valid amount greater than zero.';
+      walletAmountError.classList.remove('d-none');
+      return;
+    }
+
+    btnWalletSave.disabled = true;
+    btnWalletSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    formData.append('amount', amount);
+    formData.append('description', walletDescInput.value.trim());
+
+    fetch(walletUrl, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        bsWalletModal.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Wallet Loaded!',
+          text: data.message,
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        }).then(() => window.location.reload());
+      } else {
+        const errs = data.errors || {};
+        const firstKey = Object.keys(errs)[0];
+        const msg = firstKey ? errs[firstKey][0] : 'Validation error.';
+        showWalletError(msg);
+      }
+    })
+    .catch(() => showWalletError('An error occurred. Please try again.'))
+    .finally(() => {
+      btnWalletSave.disabled = false;
+      btnWalletSave.innerHTML = '<i class="bi bi-wallet-fill me-1"></i> Load Wallet';
+    });
+  });
+
+})();
+</script>
+{% endblock %}

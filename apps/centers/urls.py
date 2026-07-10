@@ -13,4 +13,14 @@ urlpatterns = [
     path('api/assign-course-toggle/', views.api_assign_course_toggle, name='api_assign_course_toggle'),
     path('pending/', views.pending_centers, name='pending_centers'),
     path('info-list/', views.center_info_list, name='center_info_list'),
+    path('<int:pk>/load-wallet/', views.load_wallet, name='center_load_wallet'),
+    path('<int:pk>/profile/', views.center_profile, name='center_profile'),
+    path('deleted/', views.deleted_centers, name='deleted_centers'),
+    path('<int:pk>/restore/', views.restore_center, name='restore_center'),
+    
+    # Center Certificates
+    path('certificates/', views.center_certificate_list, name='center_certificate_list'),
+    path('certificates/add/', views.center_certificate_create, name='center_certificate_create'),
+    path('certificates/<int:pk>/', views.center_certificate_detail, name='center_certificate_detail'),
+    path('certificates/<int:pk>/delete/', views.center_certificate_delete, name='center_certificate_delete'),
 ]

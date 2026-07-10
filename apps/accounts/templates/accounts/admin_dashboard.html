@@ -1159,17 +1159,16 @@
   <!-- ── CENTER AREA ── -->
   <div class="sidebar-section">Center Area</div>
 
-  <!-- Center Information -->
   <button
-    class="sidebar-item {% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers' %}active{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers,deleted_centers' %}active{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbCenterInfo"
-    aria-expanded="{% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers,deleted_centers' %}true{% else %}false{% endif %}">
     <i class="bi bi-people si-icon"></i>
     <span class="si-label">Center Information</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers' %}show{% endif %}"
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers,deleted_centers' %}show{% endif %}"
     id="sbCenterInfo">
     <a href="{% url 'center_create' %}"
       class="{% if request.resolver_match.url_name == 'center_create' %}active{% endif %}">
@@ -1187,15 +1186,15 @@
       class="{% if request.resolver_match.url_name == 'center_info_list' %}active{% endif %}">
       <i class="bi bi-clipboard-check text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Center
     </a>
-    <a href="#"
-      class="">
+    <a href="{% url 'deleted_centers' %}"
+      class="{% if request.resolver_match.url_name == 'deleted_centers' %}active{% endif %}">
       <i class="bi bi-clipboard-x text-danger me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Deleted Center List
     </a>
   </div>
 
   <!-- Center Certificate -->
-  <a href="{% url 'certificate_list' %}"
-    class="sidebar-item {% if request.resolver_match.url_name == 'certificate_list' %}active{% endif %}">
+  <a href="{% url 'center_certificate_create' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'center_certificate_create' or request.resolver_match.url_name == 'center_certificate_list' %}active{% endif %}">
     <i class="bi bi-award si-icon"></i>
     <span class="si-label">Center Certificate</span>
   </a>

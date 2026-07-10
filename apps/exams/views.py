@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import user_passes_test, login_required
 from django.utils.timezone import now
 from django.db.models import Avg, Max, Min, Q, Count, F
 from django.core.paginator import Paginator
-from apps.centers.models import Center
+from apps.centers.models import Center, CenterCourseAssignment
 from apps.courses.models import Course
 from apps.academics.models import AcademicSession
 from apps.students.models import StudentProfile, StudentAdmission
@@ -602,7 +602,8 @@ def center_attempt_detail(request, attempt_id):
     if user.role == 'admin':
         is_authorized = True
     elif user.role == 'center':
-        if attempt.student.studentprofile.batch and attempt.student.studentprofile.batch.course.center == user.center:
+        if attempt.student.studentprofile.batch and CenterCourseAssignment.objects.filter(
+                center=user.center, course=attempt.student.studentprofile.batch.course).exists():
             is_authorized = True
     elif user.role == 'student':
         if attempt.student == user:

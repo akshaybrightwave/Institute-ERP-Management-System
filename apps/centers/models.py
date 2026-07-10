@@ -45,7 +45,12 @@ class Center(SoftDeleteModel):
     address_proof = models.FileField(upload_to='centers/docs/', null=True, blank=True)
     agreement_doc = models.FileField(upload_to='centers/docs/', null=True, blank=True)
 
-
+    # Wallet
+    wallet_balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0.00
+    )
 
     def __str__(self):
         return self.name
@@ -81,3 +86,31 @@ class CenterCourseAssignment(models.Model):
 
     def __str__(self):
         return f"{self.center.name} \u2192 {self.course.name}"
+
+
+class CenterCertificate(SoftDeleteModel):
+    center = models.ForeignKey(
+        'Center',
+        on_delete=models.CASCADE,
+        related_name='center_certificates'
+    )
+    certificate_number = models.CharField(max_length=100, unique=True)
+    issue_date = models.DateField()
+    valid_upto = models.DateField(null=True, blank=True)
+    certificate_status = models.CharField(max_length=50, default='Active')
+
+    created_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_center_certificates'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'centers_centercertificate'
+
+    def __str__(self):
+        return f"{self.certificate_number} - {self.center.name}"

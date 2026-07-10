@@ -92,17 +92,24 @@ class CenterForm(forms.ModelForm):
                     self.fields[field].widget.attrs['class'] += ' form-control'
                 
         # Make fields required as per prompt
+        is_update = self.instance and self.instance.pk
         for f in ['owner_name', 'name', 'head_qualification', 'prefix_roll_no', 'owner_dob',
                   'pan_number', 'aadhar_number', 'address', 'pincode', 'state', 'district',
                   'staff_count', 'classrooms_count', 'computers_count', 'space_sqft',
-                  'whatsapp_number', 'phone', 'email', 'valid_upto',
-                  'owner_image', 'aadhar_doc', 'signature_doc', 'logo_doc']:
+                  'whatsapp_number', 'phone', 'email', 'valid_upto']:
             if f in self.fields:
                 self.fields[f].required = True
+
+        for f in ['owner_image', 'aadhar_doc', 'signature_doc', 'logo_doc']:
+            if f in self.fields:
+                self.fields[f].required = not is_update
                 
         # Optional files
         self.fields['address_proof'].required = False
         self.fields['agreement_doc'].required = False
+
+        if is_update:
+            self.fields['password'].required = False
 
         # Custom placeholders for empty dropdowns
         state_choices = [
@@ -153,7 +160,10 @@ class CenterForm(forms.ModelForm):
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
+        qs = User.objects.filter(email=email)
+        if self.instance and self.instance.pk and hasattr(self.instance, 'center_user') and self.instance.center_user:
+            qs = qs.exclude(pk=self.instance.center_user.pk)
+        if qs.exists():
             raise forms.ValidationError("Email is already in use by another account.")
         return email
 
@@ -180,3 +190,16 @@ class CenterForm(forms.ModelForm):
         if not re.match(r'^\d{12}$', aadhar):
             raise forms.ValidationError("Enter a valid 12-digit Aadhar number.")
         return aadhar
+
+from .models import CenterCertificate
+
+class CenterCertificateForm(forms.ModelForm):
+    class Meta:
+        model = CenterCertificate
+        fields = ['center', 'issue_date', 'valid_upto', 'certificate_status']
+        widgets = {
+            'center': forms.Select(attrs={'class': 'form-select'}),
+            'issue_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'valid_upto': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'certificate_status': forms.Select(choices=[('Active', 'Active'), ('Expired', 'Expired'), ('Revoked', 'Revoked')], attrs={'class': 'form-select'})
+        }

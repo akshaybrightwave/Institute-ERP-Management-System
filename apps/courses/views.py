@@ -5,6 +5,12 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.core.paginator import Paginator
 from .models import Course
 from .forms import CourseForm
+from apps.centers.models import CenterCourseAssignment
+
+
+def _center_manages_course(user_center, course):
+    """Return True if the user's center has this course assigned via CenterCourseAssignment."""
+    return CenterCourseAssignment.objects.filter(center=user_center, course=course).exists()
 
 
 @login_required
@@ -20,11 +26,14 @@ def course_list(request):
         form = CourseForm(request.POST, user=request.user)
         if form.is_valid():
             course = form.save(commit=False)
-            if request.user.role == 'center':
-                if not request.user.center:
-                    return HttpResponseForbidden("Access Denied: You do not manage any center.")
-                course.center = request.user.center
             course.save()
+            # If a center user creates a course, auto-assign it to their center
+            if request.user.role == 'center' and request.user.center:
+                CenterCourseAssignment.objects.get_or_create(
+                    center=request.user.center,
+                    course=course,
+                    defaults={'assigned_by': request.user}
+                )
             messages.success(request, 'Course created successfully.')
             return redirect('course_list')
         
@@ -35,11 +44,17 @@ def course_list(request):
             qs = Course.objects.none()
             deleted_qs = Course.all_objects.none()
         else:
-            qs = Course.objects.filter(center=request.user.center).select_related('center', 'category')
-            deleted_qs = Course.all_objects.filter(center=request.user.center, is_deleted=True).select_related('center', 'category')
+            # Courses assigned to this center via CenterCourseAssignment
+            assigned_course_ids = CenterCourseAssignment.objects.filter(
+                center=request.user.center
+            ).values_list('course_id', flat=True)
+            qs = Course.objects.filter(id__in=assigned_course_ids).select_related('category')
+            deleted_qs = Course.all_objects.filter(
+                id__in=assigned_course_ids, is_deleted=True
+            ).select_related('category')
     else:
-        qs = Course.objects.all().select_related('center', 'category')
-        deleted_qs = Course.all_objects.filter(is_deleted=True).select_related('center', 'category')
+        qs = Course.objects.all().select_related('category')
+        deleted_qs = Course.all_objects.filter(is_deleted=True).select_related('category')
         
     if query:
         qs = qs.filter(name__icontains=query)
@@ -71,7 +86,7 @@ def course_update(request, pk):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
         
     course = get_object_or_404(Course.all_objects, pk=pk)
-    if request.user.role == 'center' and course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
         
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -82,9 +97,8 @@ def course_update(request, pk):
             if not name:
                 return JsonResponse({'success': False, 'errors': {'name': ['Course name is required.']}})
                 
-            # Duplicate check under the same center
-            center = course.center
-            qs = Course.objects.filter(name__iexact=name, center=center).exclude(pk=course.pk)
+            # Duplicate check by name
+            qs = Course.objects.filter(name__iexact=name).exclude(pk=course.pk)
             if qs.exists():
                 return JsonResponse({'success': False, 'errors': {'name': ['Course with this name already exists.']}})
                 
@@ -116,7 +130,7 @@ def course_delete(request, pk):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
         
     course = get_object_or_404(Course, pk=pk)
-    if request.user.role == 'center' and course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
         
     if request.method == 'POST':
@@ -131,7 +145,7 @@ def course_restore(request, pk):
     if request.user.role not in ('admin', 'center'):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
     course = get_object_or_404(Course.all_objects, pk=pk)
-    if request.user.role == 'center' and course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
     course.restore()
     messages.success(request, 'Course restored successfully.')
@@ -143,7 +157,7 @@ def course_permanent_delete(request, pk):
     if request.user.role not in ('admin', 'center'):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
     course = get_object_or_404(Course.all_objects, pk=pk)
-    if request.user.role == 'center' and course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
     if request.method == 'POST':
         course.hard_delete()

@@ -6,6 +6,12 @@ from django.core.paginator import Paginator
 from .models import Subject, SubjectOrder
 from .forms import SubjectForm
 from apps.courses.models import Course
+from apps.centers.models import CenterCourseAssignment
+
+
+def _center_manages_course(user_center, course):
+    """Return True if the user's center has this course assigned via CenterCourseAssignment."""
+    return CenterCourseAssignment.objects.filter(center=user_center, course=course).exists()
 
 
 @login_required
@@ -77,7 +83,7 @@ def subject_update(request, pk):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
 
     subject = get_object_or_404(Subject.all_objects, pk=pk)
-    if request.user.role == 'center' and subject.course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, subject.course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -119,7 +125,7 @@ def subject_delete(request, pk):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
 
     subject = get_object_or_404(Subject, pk=pk)
-    if request.user.role == 'center' and subject.course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, subject.course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
 
     if request.method == 'POST':
@@ -134,7 +140,7 @@ def subject_restore(request, pk):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
 
     subject = get_object_or_404(Subject.all_objects, pk=pk)
-    if request.user.role == 'center' and subject.course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, subject.course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
 
     subject.restore()
@@ -148,7 +154,7 @@ def subject_permanent_delete(request, pk):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
 
     subject = get_object_or_404(Subject.all_objects, pk=pk)
-    if request.user.role == 'center' and subject.course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, subject.course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's courses.")
 
     if request.method == 'POST':

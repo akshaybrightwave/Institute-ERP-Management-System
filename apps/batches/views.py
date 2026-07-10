@@ -6,8 +6,22 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.core.paginator import Paginator
 from apps.courses.models import Course
 from apps.teachers.models import TeacherProfile
+from apps.centers.models import CenterCourseAssignment
 from .models import Batch
 from .forms import BatchForm
+
+
+def _center_manages_course(user_center, course):
+    """Return True if the user's center has this course assigned via CenterCourseAssignment."""
+    return CenterCourseAssignment.objects.filter(center=user_center, course=course).exists()
+
+
+def _center_course_qs(user_center):
+    """Queryset of courses assigned to the given center."""
+    assigned_ids = CenterCourseAssignment.objects.filter(
+        center=user_center
+    ).values_list('course_id', flat=True)
+    return Course.objects.filter(id__in=assigned_ids)
 
 
 @login_required
@@ -33,7 +47,7 @@ def batch_detail(request, pk):
         
     batch = get_object_or_404(Batch.objects.select_related('course', 'teacher'), pk=pk)
     
-    if request.user.role == 'center' and batch.course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, batch.course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's batches.")
         
     students = batch.studentprofile_set.all()
@@ -65,14 +79,14 @@ def batch_create(request):
                 form.fields['course'].queryset = Course.objects.none()
                 form.fields['teacher'].queryset = TeacherProfile.objects.none()
             else:
-                form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
+                form.fields['course'].queryset = _center_course_qs(request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
                     Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
         if form.is_valid():
             if request.user.role == 'center':
                 course = form.cleaned_data.get('course')
-                if not request.user.center or course.center != request.user.center:
+                if not request.user.center or not _center_manages_course(request.user.center, course):
                     return HttpResponseForbidden("Access Denied: You cannot assign batch to other center's course.")
             form.save()
             messages.success(request, 'Batch created successfully.')
@@ -84,7 +98,7 @@ def batch_create(request):
                 form.fields['course'].queryset = Course.objects.none()
                 form.fields['teacher'].queryset = TeacherProfile.objects.none()
             else:
-                form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
+                form.fields['course'].queryset = _center_course_qs(request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
                     Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
@@ -99,7 +113,7 @@ def batch_update(request, pk):
         
     batch = get_object_or_404(Batch, pk=pk)
     
-    if request.user.role == 'center' and batch.course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, batch.course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's batches.")
         
     if request.method == 'POST':
@@ -109,14 +123,14 @@ def batch_update(request, pk):
                 form.fields['course'].queryset = Course.objects.none()
                 form.fields['teacher'].queryset = TeacherProfile.objects.none()
             else:
-                form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
+                form.fields['course'].queryset = _center_course_qs(request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
                     Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
         if form.is_valid():
             if request.user.role == 'center':
                 course = form.cleaned_data.get('course')
-                if not request.user.center or course.center != request.user.center:
+                if not request.user.center or not _center_manages_course(request.user.center, course):
                     return HttpResponseForbidden("Access Denied: You cannot assign batch to other center's course.")
             form.save()
             messages.success(request, 'Batch updated successfully.')
@@ -128,7 +142,7 @@ def batch_update(request, pk):
                 form.fields['course'].queryset = Course.objects.none()
                 form.fields['teacher'].queryset = TeacherProfile.objects.none()
             else:
-                form.fields['course'].queryset = Course.objects.filter(center=request.user.center)
+                form.fields['course'].queryset = _center_course_qs(request.user.center)
                 form.fields['teacher'].queryset = TeacherProfile.objects.filter(
                     Q(batch__center=request.user.center) | Q(batch__isnull=True)
                 ).distinct()
@@ -143,7 +157,7 @@ def batch_delete(request, pk):
         
     batch = get_object_or_404(Batch, pk=pk)
     
-    if request.user.role == 'center' and batch.course.center != request.user.center:
+    if request.user.role == 'center' and not _center_manages_course(request.user.center, batch.course):
         return HttpResponseForbidden("Access Denied: You do not manage this center's batches.")
         
     if request.method == 'POST':

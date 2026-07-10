@@ -86,6 +86,54 @@ def center_info_list(request):
     })
 
 
+from django.views.decorators.http import require_http_methods
+from decimal import Decimal, InvalidOperation
+
+
+@admin_required
+@require_http_methods(["GET", "POST"])
+def load_wallet(request, pk):
+    """
+    GET  → return center name + current wallet balance as JSON (for modal population)
+    POST → add the submitted amount to the center's wallet_balance
+    """
+    center = get_object_or_404(Center, pk=pk)
+
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'AJAX only'}, status=400)
+
+    if request.method == 'GET':
+        return JsonResponse({
+            'success': True,
+            'center_name': center.name,
+            'wallet_balance': str(center.wallet_balance),
+        })
+
+    # POST — validate and credit the wallet
+    amount_raw = request.POST.get('amount', '').strip()
+    description = request.POST.get('description', '').strip()
+
+    if not amount_raw:
+        return JsonResponse({'success': False, 'errors': {'amount': ['Amount is required.']}})
+
+    try:
+        amount = Decimal(amount_raw)
+    except InvalidOperation:
+        return JsonResponse({'success': False, 'errors': {'amount': ['Enter a valid numeric amount.']}})
+
+    if amount <= 0:
+        return JsonResponse({'success': False, 'errors': {'amount': ['Amount must be greater than zero.']}})
+
+    center.wallet_balance += amount
+    center.save(update_fields=['wallet_balance'])
+
+    return JsonResponse({
+        'success': True,
+        'new_balance': str(center.wallet_balance),
+        'message': f'₹{amount} added to {center.name} wallet successfully.',
+    })
+
+
 @admin_required
 def center_create(request):
     if request.method == 'POST':
@@ -119,13 +167,43 @@ def center_create(request):
     return render(request, 'centers/center_form.html', {'form': form, 'action': 'Create'})
 
 
+from django.utils import timezone
+
 @admin_required
 def center_update(request, pk):
     center = get_object_or_404(Center, pk=pk)
     if request.method == 'POST':
-        form = CenterForm(request.POST, instance=center)
+        form = CenterForm(request.POST, request.FILES, instance=center)
         if form.is_valid():
-            form.save()
+            center = form.save()
+            
+            # Sync user model details
+            password = form.cleaned_data.get('password')
+            email = form.cleaned_data.get('email')
+            if hasattr(center, 'center_user') and center.center_user:
+                user_updated = False
+                if email and center.center_user.email != email:
+                    center.center_user.username = email
+                    center.center_user.email = email
+                    user_updated = True
+                if password:
+                    center.center_user.set_password(password)
+                    user_updated = True
+                if user_updated:
+                    center.center_user.save()
+            
+            # Update Profile Status
+            status_val = request.POST.get('is_deleted')
+            if status_val is not None:
+                is_deleted = status_val == 'true' or status_val == 'True' or status_val == '1'
+                if center.is_deleted != is_deleted:
+                    center.is_deleted = is_deleted
+                    if is_deleted:
+                        center.deleted_at = timezone.now()
+                    else:
+                        center.deleted_at = None
+                    center.save(update_fields=['is_deleted', 'deleted_at'])
+            
             messages.success(request, 'Center updated successfully.')
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': True})
@@ -138,10 +216,31 @@ def center_update(request, pk):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'id': center.pk,
+                'owner_name': center.owner_name,
                 'name': center.name,
                 'code': center.code,
+                'head_qualification': center.head_qualification,
+                'prefix_roll_no': center.prefix_roll_no,
+                'owner_dob': center.owner_dob.strftime('%Y-%m-%d') if center.owner_dob else '',
+                'pan_number': center.pan_number,
+                'aadhar_number': center.aadhar_number,
                 'address': center.address,
+                'pincode': center.pincode,
+                'state': center.state,
+                'district': center.district,
+                'staff_count': center.staff_count,
+                'classrooms_count': center.classrooms_count,
+                'computers_count': center.computers_count,
+                'space_sqft': center.space_sqft,
+                'whatsapp_number': center.whatsapp_number,
                 'phone': center.phone,
+                'email': center.email,
+                'has_reception': 'True' if center.has_reception else 'False',
+                'has_staff_room': 'True' if center.has_staff_room else 'False',
+                'has_water_supply': 'True' if center.has_water_supply else 'False',
+                'has_toilet': 'True' if center.has_toilet else 'False',
+                'valid_upto': center.valid_upto.strftime('%Y-%m-%d') if center.valid_upto else '',
+                'is_deleted': center.is_deleted,
             })
         form = CenterForm(instance=center)
     return render(request, 'centers/center_form.html', {'form': form, 'action': 'Update', 'center': center})
@@ -605,3 +704,189 @@ def api_assign_course_toggle(request):
         return JsonResponse({'success': True, 'message': msg})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+@admin_required
+def center_profile(request, pk):
+    center = get_object_or_404(
+        Center.all_objects.select_related('center_user')
+        .prefetch_related('admissions', 'course_assignments'),
+        pk=pk
+    )
+    total_students = center.admissions.count()
+    total_courses = center.course_assignments.count()
+    registration_date = center.center_user.date_joined if hasattr(center, 'center_user') and center.center_user else None
+
+    return render(request, 'centers/center_profile.html', {
+        'center': center,
+        'total_students': total_students,
+        'total_courses': total_courses,
+        'registration_date': registration_date,
+    })
+
+
+@admin_required
+def deleted_centers(request):
+    query = request.GET.get('q', '').strip()
+    
+    # Base queryset for all soft-deleted centers
+    qs = Center.all_objects.filter(is_deleted=True).prefetch_related('course_assignments').order_by('-deleted_at')
+    
+    if query:
+        qs = qs.filter(name__icontains=query)
+
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    return render(request, 'centers/deleted_centers.html', {
+        'page_obj': page_obj,
+        'query': query,
+    })
+
+
+@admin_required
+def restore_center(request, pk):
+    center = get_object_or_404(Center.all_objects, pk=pk)
+    if request.method == 'POST':
+        center.restore()
+        if hasattr(center, 'center_user') and center.center_user:
+            center.center_user.restore()
+        messages.success(request, 'Center restored successfully.')
+        return redirect('deleted_centers')
+    return redirect('deleted_centers')
+
+
+import csv
+from django.db import transaction
+from django.db.models import Q
+from django.http import HttpResponse, HttpResponseForbidden
+from .models import CenterCertificate
+from .forms import CenterCertificateForm
+import uuid
+
+def _handle_center_cert_list_and_csv(request, is_center):
+    qs = CenterCertificate.objects.select_related('center', 'created_by').all()
+    if is_center:
+        qs = qs.filter(center=request.user.center)
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        qs = qs.filter(
+            Q(center__name__icontains=query) |
+            Q(center__code__icontains=query) |
+            Q(certificate_number__icontains=query)
+        )
+    qs = qs.order_by('-id')
+
+    # Handle CSV Export
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="center_certificates.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Institute Code', 'Institute Name', 'Owner Name', 'Issue Date', 'Valid Upto', 'Status'])
+        for cert in qs:
+            writer.writerow([
+                cert.center.code if cert.center else '',
+                cert.center.name if cert.center else '',
+                cert.center.owner_name if cert.center else '',
+                cert.issue_date,
+                cert.valid_upto,
+                cert.certificate_status
+            ])
+        return response
+
+    return qs, query
+
+@admin_required
+def center_certificate_list(request):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    
+    qs, query = _handle_center_cert_list_and_csv(request, is_center)
+    if isinstance(qs, HttpResponse):
+        return qs
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    show_entries = request.GET.get('show', '10')
+
+    return render(request, 'centers/center_certificate_list.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'is_admin': is_admin,
+        'is_center': is_center,
+        'show_entries': show_entries,
+    })
+
+@admin_required
+def center_certificate_create(request):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied: Only Admin or Center can generate certificates.")
+
+    if request.method == 'POST':
+        form = CenterCertificateForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    cert_obj = form.save(commit=False)
+                    cert_obj.created_by = request.user
+                    
+                    # Generate unique certificate number
+                    cert_obj.certificate_number = f"CCERT-{uuid.uuid4().hex[:8].upper()}"
+                    
+                    cert_obj.save()
+                messages.success(request, f"Certificate for {cert_obj.center.name} generated successfully!")
+                return redirect('center_certificate_create')
+            except Exception as e:
+                messages.error(request, str(e))
+        else:
+            if not form.non_field_errors():
+                messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CenterCertificateForm()
+
+    qs, query = _handle_center_cert_list_and_csv(request, is_center)
+    if isinstance(qs, HttpResponse):
+        return qs
+
+    paginator = Paginator(qs, int(request.GET.get('show', 10)))
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    show_entries = request.GET.get('show', '10')
+
+    return render(request, 'centers/center_certificate_create.html', {
+        'form': form,
+        'page_obj': page_obj,
+        'query': query,
+        'is_admin': is_admin,
+        'is_center': is_center,
+        'show_entries': show_entries,
+    })
+
+@admin_required
+def center_certificate_detail(request, pk):
+    cert = get_object_or_404(CenterCertificate.objects.select_related('center'), pk=pk)
+    
+    if request.user.role == 'center' and cert.center != request.user.center:
+        return HttpResponseForbidden("Access Denied: This certificate belongs to another center.")
+
+    return render(request, 'centers/center_certificate_detail.html', {
+        'cert': cert
+    })
+
+@admin_required
+def center_certificate_delete(request, pk):
+    cert = get_object_or_404(CenterCertificate, pk=pk)
+    if request.user.role == 'center' and cert.center != request.user.center:
+        return HttpResponseForbidden("Access Denied")
+
+    if request.method == 'POST':
+        cert.delete()
+        messages.success(request, f"Certificate {cert.certificate_number} deleted successfully.")
+    
+    return redirect(request.META.get('HTTP_REFERER', 'center_certificate_create'))

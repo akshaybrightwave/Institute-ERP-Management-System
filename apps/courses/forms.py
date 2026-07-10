@@ -1,6 +1,7 @@
 from django import forms
 from .models import Course
 from apps.categories.models import Category
+from apps.centers.models import CenterCourseAssignment
 
 
 class CourseForm(forms.ModelForm):
@@ -56,17 +57,18 @@ class CourseForm(forms.ModelForm):
         else:
             self.add_error('duration_value', 'Course duration is required.')
 
-        # Check duplicates under the same center
+        # Duplicate name check scoped to the user's center (via CenterCourseAssignment)
         if name:
-            center = None
-            if self.user and self.user.role == 'center':
-                center = self.user.center
-            elif self.instance and self.instance.pk:
-                center = self.instance.center
-                
-            qs = Course.objects.filter(name__iexact=name, center=center)
+            qs = Course.objects.filter(name__iexact=name)
             if self.instance and self.instance.pk:
                 qs = qs.exclude(pk=self.instance.pk)
+            # If a center-role user is creating, scope duplicate check to courses
+            # already assigned to their center so we don't block globally-named courses.
+            if self.user and self.user.role == 'center' and self.user.center:
+                center_course_ids = CenterCourseAssignment.objects.filter(
+                    center=self.user.center
+                ).values_list('course_id', flat=True)
+                qs = qs.filter(id__in=center_course_ids)
             if qs.exists():
                 self.add_error('name', 'Course with this name already exists.')
 

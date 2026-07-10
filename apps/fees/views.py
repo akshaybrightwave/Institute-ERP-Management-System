@@ -359,7 +359,7 @@ def payment_receipt(request, pk):
     if user.role == 'admin':
         is_authorized = True
     elif user.role == 'center':
-        if user.center and payment.student.batch and payment.student.batch.course and payment.student.batch.course.center == user.center:
+        if user.center and payment.student.batch and payment.student.batch.center == user.center:
             is_authorized = True
     elif user.role == 'student':
         if payment.student.user == user:
