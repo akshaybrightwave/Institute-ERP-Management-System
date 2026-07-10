@@ -7,7 +7,8 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from apps.accounts.views import admin_required
 from .models import Center
-from .forms import CenterForm
+from .forms import CenterCertificateUpdateForm, CenterForm
+from .services import create_center_certificate_for_center
 
 
 @admin_required
@@ -20,7 +21,12 @@ def center_list(request):
             post_data['phone'] = '1234567890'
         form = CenterForm(post_data)
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                center = form.save(commit=False)
+                if not center.code:
+                    center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
+                center.save()
+                create_center_certificate_for_center(center, created_by=request.user)
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
 
@@ -139,24 +145,27 @@ def center_create(request):
     if request.method == 'POST':
         form = CenterForm(request.POST, request.FILES)
         if form.is_valid():
-            # Generate a unique code
-            center = form.save(commit=False)
-            if not center.code:
-                center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
-            center.save()
-            
-            # Create user for the center
-            email = form.cleaned_data.get('email')
-            password = form.cleaned_data.get('password')
-            
-            # Use email as username if not provided
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                password=password,
-                role='center',
-                center=center
-            )
+            with transaction.atomic():
+                # Generate a unique code
+                center = form.save(commit=False)
+                if not center.code:
+                    center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
+                center.save()
+
+                create_center_certificate_for_center(center, created_by=request.user)
+                
+                # Create user for the center
+                email = form.cleaned_data.get('email')
+                password = form.cleaned_data.get('password')
+                
+                # Use email as username if not provided
+                User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    role='center',
+                    center=center
+                )
             
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
@@ -761,8 +770,6 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
 from .models import CenterCertificate
-from .forms import CenterCertificateForm
-import uuid
 
 def _handle_center_cert_list_and_csv(request, is_center):
     qs = CenterCertificate.objects.select_related('center', 'created_by').all()
@@ -806,11 +813,10 @@ def center_certificate_list(request):
     if isinstance(qs, HttpResponse):
         return qs
 
-    paginator = Paginator(qs, 10)
+    show_entries = request.GET.get('show', '10')
+    paginator = Paginator(qs, int(show_entries))
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-
-    show_entries = request.GET.get('show', '10')
 
     return render(request, 'centers/center_certificate_list.html', {
         'page_obj': page_obj,
@@ -822,51 +828,11 @@ def center_certificate_list(request):
 
 @admin_required
 def center_certificate_create(request):
-    is_admin = request.user.role == 'admin'
-    is_center = request.user.role == 'center'
-
-    if not (is_admin or is_center):
-        return HttpResponseForbidden("Access Denied: Only Admin or Center can generate certificates.")
-
-    if request.method == 'POST':
-        form = CenterCertificateForm(request.POST)
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    cert_obj = form.save(commit=False)
-                    cert_obj.created_by = request.user
-                    
-                    # Generate unique certificate number
-                    cert_obj.certificate_number = f"CCERT-{uuid.uuid4().hex[:8].upper()}"
-                    
-                    cert_obj.save()
-                messages.success(request, f"Certificate for {cert_obj.center.name} generated successfully!")
-                return redirect('center_certificate_create')
-            except Exception as e:
-                messages.error(request, str(e))
-        else:
-            if not form.non_field_errors():
-                messages.error(request, 'Please correct the errors below.')
-    else:
-        form = CenterCertificateForm()
-
-    qs, query = _handle_center_cert_list_and_csv(request, is_center)
-    if isinstance(qs, HttpResponse):
-        return qs
-
-    paginator = Paginator(qs, int(request.GET.get('show', 10)))
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    show_entries = request.GET.get('show', '10')
-
-    return render(request, 'centers/center_certificate_create.html', {
-        'form': form,
-        'page_obj': page_obj,
-        'query': query,
-        'is_admin': is_admin,
-        'is_center': is_center,
-        'show_entries': show_entries,
-    })
+    messages.info(
+        request,
+        'Center certificates are generated automatically when a center is created.'
+    )
+    return redirect('center_certificate_list')
 
 @admin_required
 def center_certificate_detail(request, pk):
@@ -880,8 +846,32 @@ def center_certificate_detail(request, pk):
     })
 
 @admin_required
+def center_certificate_update(request, pk):
+    cert = get_object_or_404(
+        CenterCertificate.objects.select_related('center'),
+        pk=pk
+    )
+    if request.user.role == 'center' and cert.center != request.user.center:
+        return HttpResponseForbidden("Access Denied: This certificate belongs to another center.")
+
+    if request.method == 'POST':
+        form = CenterCertificateUpdateForm(request.POST, instance=cert)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Certificate {cert.certificate_number} updated successfully.")
+            return redirect('center_certificate_list')
+        messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CenterCertificateUpdateForm(instance=cert)
+
+    return render(request, 'centers/center_certificate_edit.html', {
+        'form': form,
+        'cert': cert,
+    })
+
+@admin_required
 def center_certificate_delete(request, pk):
-    cert = get_object_or_404(CenterCertificate, pk=pk)
+    cert = get_object_or_404(CenterCertificate.objects.select_related('center'), pk=pk)
     if request.user.role == 'center' and cert.center != request.user.center:
         return HttpResponseForbidden("Access Denied")
 

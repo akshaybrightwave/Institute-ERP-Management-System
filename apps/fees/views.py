@@ -3,14 +3,123 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Sum, Q, DecimalField
 from django.db.models.functions import Coalesce
+from apps.accounts.views import admin_required
 from apps.students.models import StudentProfile
 from apps.batches.models import Batch
 from apps.teachers.models import TeacherProfile
-from .models import FeePayment
-from .forms import FeePaymentForm
+from .models import CenterPaymentSetting, FeePayment, StudentPaymentSetting
+from .forms import CenterPaymentSettingForm, FeePaymentForm, StudentPaymentSettingForm
+from .services import sync_center_payment_settings, sync_student_payment_settings
 from decimal import Decimal
+
+
+@admin_required
+def student_payment_setting(request):
+    sync_student_payment_settings()
+
+    if request.method == 'POST':
+        if request.POST.get('action') == 'sync':
+            created_count = sync_student_payment_settings()
+            if created_count:
+                messages.success(request, f"{created_count} student payment setting(s) synced successfully.")
+            else:
+                messages.info(request, "Student payment settings are already synced.")
+            return redirect('student_payment_setting')
+
+        settings_qs = StudentPaymentSetting.objects.only(
+            'id', 'title', 'amount', 'is_visible', 'sort_order'
+        ).order_by('sort_order', 'title')
+        forms = []
+        is_valid = True
+        for setting in settings_qs:
+            form = StudentPaymentSettingForm(
+                {
+                    'amount': request.POST.get(f'amount_{setting.pk}', ''),
+                    'is_visible': request.POST.get(f'is_visible_{setting.pk}') == 'on',
+                },
+                instance=setting,
+            )
+            forms.append((setting, form))
+            if not form.is_valid():
+                is_valid = False
+
+        if is_valid:
+            with transaction.atomic():
+                StudentPaymentSetting.objects.bulk_update(
+                    [form.save(commit=False) for _, form in forms],
+                    ['amount', 'is_visible']
+                )
+            messages.success(request, "Student payment settings updated successfully.")
+            return redirect('student_payment_setting')
+
+        messages.error(request, "Please correct the errors below.")
+        rows = forms
+    else:
+        rows = [
+            (setting, StudentPaymentSettingForm(instance=setting))
+            for setting in StudentPaymentSetting.objects.only(
+                'id', 'title', 'amount', 'is_visible', 'sort_order'
+            ).order_by('sort_order', 'title')
+        ]
+
+    return render(request, 'fees/student_payment_setting.html', {
+        'rows': rows,
+    })
+
+
+@admin_required
+def center_payment_setting(request):
+    sync_center_payment_settings()
+
+    if request.method == 'POST':
+        if request.POST.get('action') == 'sync':
+            created_count = sync_center_payment_settings()
+            if created_count:
+                messages.success(request, f"{created_count} center payment setting(s) synced successfully.")
+            else:
+                messages.info(request, "Center payment settings are already synced.")
+            return redirect('center_payment_setting')
+
+        settings_qs = CenterPaymentSetting.objects.only(
+            'id', 'title', 'amount', 'is_visible', 'sort_order'
+        ).order_by('sort_order', 'title')
+        forms = []
+        is_valid = True
+        for setting in settings_qs:
+            form = CenterPaymentSettingForm(
+                {
+                    'amount': request.POST.get(f'amount_{setting.pk}', ''),
+                    'is_visible': request.POST.get(f'is_visible_{setting.pk}') == 'on',
+                },
+                instance=setting,
+            )
+            forms.append((setting, form))
+            if not form.is_valid():
+                is_valid = False
+
+        if is_valid:
+            with transaction.atomic():
+                for _, form in forms:
+                    form.save()
+            messages.success(request, "Center payment settings updated successfully.")
+            return redirect('center_payment_setting')
+
+        messages.error(request, "Please correct the errors below.")
+        rows = forms
+    else:
+        rows = [
+            (setting, CenterPaymentSettingForm(instance=setting))
+            for setting in CenterPaymentSetting.objects.only(
+                'id', 'title', 'amount', 'is_visible', 'sort_order'
+            ).order_by('sort_order', 'title')
+        ]
+
+    return render(request, 'fees/center_payment_setting.html', {
+        'rows': rows,
+    })
 
 
 @login_required

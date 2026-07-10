@@ -22,5 +22,6 @@ urlpatterns = [
     path('certificates/', views.center_certificate_list, name='center_certificate_list'),
     path('certificates/add/', views.center_certificate_create, name='center_certificate_create'),
     path('certificates/<int:pk>/', views.center_certificate_detail, name='center_certificate_detail'),
+    path('certificates/<int:pk>/edit/', views.center_certificate_update, name='center_certificate_edit'),
     path('certificates/<int:pk>/delete/', views.center_certificate_delete, name='center_certificate_delete'),
 ]

@@ -1199,6 +1199,30 @@
     <span class="si-label">Center Certificate</span>
   </a>
 
+  <!-- Payment Area -->
+  <div class="sidebar-section">Payment Area</div>
+
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbPaymentSetting"
+    aria-expanded="{% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}true{% else %}false{% endif %}">
+    <i class="bi bi-bank si-icon"></i>
+    <span class="si-label">Payment Setting</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}show{% endif %}"
+    id="sbPaymentSetting">
+    <a href="{% url 'student_payment_setting' %}"
+      class="{% if request.resolver_match.url_name == 'student_payment_setting' %}active{% endif %}">
+      <i class="bi bi-bank text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Student
+    </a>
+    <a href="{% url 'center_payment_setting' %}"
+      class="{% if request.resolver_match.url_name == 'center_payment_setting' %}active{% endif %}">
+      <i class="bi bi-bank text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Center
+    </a>
+  </div>
+
   <!-- Footer: Login as centre -->
   <div class="sidebar-footer">
     <a href="{% url 'center_list' %}" class="btn-login-centre">

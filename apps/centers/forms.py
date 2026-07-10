@@ -203,3 +203,14 @@ class CenterCertificateForm(forms.ModelForm):
             'valid_upto': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'certificate_status': forms.Select(choices=[('Active', 'Active'), ('Expired', 'Expired'), ('Revoked', 'Revoked')], attrs={'class': 'form-select'})
         }
+
+
+class CenterCertificateUpdateForm(forms.ModelForm):
+    class Meta:
+        model = CenterCertificate
+        fields = ['issue_date', 'valid_upto', 'certificate_status']
+        widgets = {
+            'issue_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'valid_upto': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'certificate_status': forms.Select(choices=[('Active', 'Active'), ('Expired', 'Expired'), ('Revoked', 'Revoked')], attrs={'class': 'form-select'})
+        }

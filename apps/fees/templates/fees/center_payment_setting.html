@@ -1,0 +1,192 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Center Payment Setting | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <div class="mb-3">
+    <h2 class="fw-bold mb-1 d-flex align-items-center gap-2" style="color:#fff;">
+      <i class="bi bi-bank" style="color:#4a6cf7; font-size:1.6rem;"></i>
+      Center Payment Setting
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none" style="color:#888;">Home</a></li>
+        <li class="breadcrumb-item" style="color:#888;">Payment</li>
+        <li class="breadcrumb-item active" style="color:#888;">Center Payment Setting</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3 flex-wrap gap-3">
+      <h5 class="fw-bold mb-0 text-white">Center Payment Setting</h5>
+      <form method="POST" class="m-0">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="sync">
+        <button type="submit" class="btn btn-outline-secondary px-4 py-2 rounded-3 text-white-50" style="border-color: rgba(255,255,255,0.15);">
+          <i class="bi bi-arrow-repeat me-1"></i> Sync Fee Data
+        </button>
+      </form>
+    </div>
+
+    <form method="POST" id="centerPaymentSettingForm" novalidate>
+      {% csrf_token %}
+
+      <div class="table-responsive">
+        <table class="table table-examly table-hover align-middle mb-0">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+              <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem;">#</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Title</th>
+              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Amount</th>
+              <th class="pe-4 text-uppercase text-muted" style="font-size: 0.8rem;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for setting, form in rows %}
+            <tr style="border-color: rgba(255,255,255,0.05) !important;">
+              <td class="ps-4 text-white-50" style="font-size: 0.9rem;">{{ forloop.counter }}</td>
+              <td class="fw-semibold text-white" style="font-size: 0.9rem;">{{ setting.title }}</td>
+              <td style="max-width: 220px;">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text fw-bold" style="background: var(--erp-bg-input); border-color: var(--erp-border-input); color:#aaa;">₹</span>
+                  <input type="number"
+                         name="amount_{{ setting.pk }}"
+                         class="form-control dark-input text-white center-payment-amount"
+                         value="{{ form.amount.value|default_if_none:'' }}"
+                         min="0"
+                         step="0.01"
+                         required
+                         style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 0 6px 6px 0;">
+                </div>
+                {% if form.amount.errors %}
+                  <div class="text-danger small mt-1">{{ form.amount.errors.0 }}</div>
+                {% endif %}
+              </td>
+              <td class="pe-4">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="form-check form-switch m-0">
+                    <input class="form-check-input center-payment-status"
+                           type="checkbox"
+                           role="switch"
+                           id="status_{{ setting.pk }}"
+                           name="is_visible_{{ setting.pk }}"
+                           {% if form.is_visible.value %}checked{% endif %}>
+                  </div>
+                  <span class="badge rounded-pill px-3 py-2 status-label {% if form.is_visible.value %}bg-success bg-opacity-10 text-success{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}" style="font-size: 0.75rem; font-weight: 500;">
+                    {% if form.is_visible.value %}Show{% else %}Hide{% endif %}
+                  </span>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center py-5 text-muted">
+                <i class="bi bi-wallet2 text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                No center payment settings found. Use Sync Fee Data.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 border-top border-secondary pt-3 mt-4">
+        <button type="submit" id="saveCenterPaymentSettings" class="btn btn-publish px-4 py-2 rounded-3">
+          <i class="bi bi-save me-1"></i> Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .dark-modal-swal {
+    background-color: var(--erp-bg-card) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+  .btn-publish {
+    background-color: #10b981 !important;
+    border: none;
+    color: #fff;
+    transition: all 0.2s ease-in-out;
+  }
+  .btn-publish:hover {
+    background-color: #059669 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+  .center-payment-status {
+    cursor: pointer;
+  }
+</style>
+
+<script>
+$(function() {
+  $('.center-payment-status').on('change', function() {
+    const label = $(this).closest('td').find('.status-label');
+    if (this.checked) {
+      label.text('Show')
+        .removeClass('bg-secondary text-secondary')
+        .addClass('bg-success text-success');
+    } else {
+      label.text('Hide')
+        .removeClass('bg-success text-success')
+        .addClass('bg-secondary text-secondary');
+    }
+  });
+
+  $('#centerPaymentSettingForm').on('submit', function(e) {
+    let hasError = false;
+    $('.center-payment-amount').each(function() {
+      const value = $(this).val().trim();
+      const numberValue = Number(value);
+      if (value === '' || Number.isNaN(numberValue) || numberValue < 0) {
+        hasError = true;
+        $(this).addClass('is-invalid');
+      } else {
+        $(this).removeClass('is-invalid');
+      }
+    });
+
+    if (hasError) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Amount',
+        text: 'Amount is required and cannot be negative.',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-primary px-4'
+        },
+        buttonsStyling: false
+      });
+    }
+  });
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+{% endblock %}
