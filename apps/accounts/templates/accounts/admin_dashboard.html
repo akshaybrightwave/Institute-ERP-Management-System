@@ -888,12 +888,13 @@
 <aside class="erp-sidebar">
 
   <!-- Dashboard -->
-  <a href="{% url 'admin_dashboard' %}" class="sidebar-dash-item">
+  <a href="{% if request.user.role == 'center' %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="sidebar-dash-item">
     <i class="bi bi-grid-1x2-fill"></i>
     <span>Dashboard</span>
   </a>
 
   <!-- ── ACADEMICS ── -->
+  {% if request.user.role != 'center' %}
   <div class="sidebar-section">Academics</div>
 
   <!-- Course Area -->
@@ -943,6 +944,7 @@
   </a>
 
   <!-- ── STUDENT AREA ── -->
+  {% endif %}
   <div class="sidebar-section">Student Area</div>
 
   <button
@@ -1127,6 +1129,7 @@
     </a>
   </div>
 
+  {% if request.user.role != 'center' %}
   <!-- Assign Exam -->
   <button
     class="sidebar-item {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}active{% endif %}"
@@ -1148,6 +1151,7 @@
       <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Student
     </a>
   </div>
+  {% endif %}
 
   <!-- Student Exam(s) -->
   <a href="{% url 'admin_student_exam_list' %}"
@@ -1157,6 +1161,7 @@
   </a>
 
   <!-- ── CENTER AREA ── -->
+  {% if request.user.role != 'center' %}
   <div class="sidebar-section">Center Area</div>
 
   <button
@@ -1229,6 +1234,7 @@
       <i class="bi bi-box-arrow-in-right"></i> Login as centre
     </a>
   </div>
+  {% endif %}
 
 </aside>
 
