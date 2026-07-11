@@ -51,11 +51,20 @@ class StudentAdmissionForm(forms.ModelForm):
             'aadhar_no': forms.TextInput(attrs={'class': 'form-control dark-input', 'placeholder': 'Enter Aadhar No.', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
         super().__init__(*args, **kwargs)
         from apps.academics.models import TimeTable
+        from apps.centers.models import Center
         self.fields['center'].empty_label = "Select a Center"
         self.fields['course'].empty_label = "Select a Course"
+        
+        if user and user.role == 'center':
+            if user.center:
+                self.fields['center'].queryset = Center.objects.filter(id=user.center.id)
+                self.fields['center'].initial = user.center
+                self.fields['center'].empty_label = None
+
         self.fields['timetable_course'].widget = forms.Select(
             choices=[('', 'Select a Course')] + [(t.timetable_name, t.timetable_name) for t in TimeTable.objects.all()],
             attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}
@@ -108,3 +117,10 @@ class StudentAdmissionForm(forms.ModelForm):
             choices=[('', 'Select a City'), ('Mumbai', 'Mumbai'), ('Thane', 'Thane'), ('Pune', 'Pune'), ('Surat', 'Surat')],
             attrs={'class': 'form-control dark-input', 'style': 'background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px; color: #fff;'}
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        user = getattr(self, 'user', None)
+        if user and hasattr(user, 'role') and user.role == 'center' and getattr(user, 'center', None):
+            cleaned_data['center'] = user.center
+        return cleaned_data

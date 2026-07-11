@@ -62,9 +62,27 @@ def admit_card_list(request):
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
     is_teacher = request.user.role == 'teacher'
+    is_student = request.user.role == 'student'
 
-    if not (is_admin or is_center or is_teacher):
+    if not (is_admin or is_center or is_teacher or is_student):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
+
+    if is_student:
+        profile = getattr(request.user, 'studentprofile', None)
+        qs = AdmitCard.objects.select_related('student', 'session', 'student__course', 'student__center').all()
+        if profile:
+            qs = qs.filter(Q(student__enrollment_no=request.user.username) | Q(student__email=profile.email))
+        else:
+            qs = qs.filter(student__enrollment_no=request.user.username)
+        
+        paginator = Paginator(qs.order_by('-created_at', '-id'), 10)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        return render(request, 'admit_card/admit_card_list.html', {
+            'page_obj': page_obj,
+            'is_student': True,
+        })
 
     res = _handle_list_and_csv(request, is_center)
     if res[1]:
@@ -130,15 +148,21 @@ def admit_card_view(request, pk):
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
     is_teacher = request.user.role == 'teacher'
+    is_student = request.user.role == 'student'
 
-    if not (is_admin or is_center or is_teacher):
+    if not (is_admin or is_center or is_teacher or is_student):
         return HttpResponseForbidden("Access Denied.")
 
     admit_card = get_object_or_404(
         AdmitCard.objects.select_related('student', 'session', 'student__course', 'student__center'),
         pk=pk
     )
-    if is_center and admit_card.student.center != request.user.center:
+    
+    if is_student:
+        profile = getattr(request.user, 'studentprofile', None)
+        if not (admit_card.student.enrollment_no == request.user.username or (profile and profile.email and admit_card.student.email == profile.email)):
+            return HttpResponseForbidden("Access Denied: You cannot view other students' admit cards.")
+    elif is_center and admit_card.student.center != request.user.center:
         return HttpResponseForbidden("Access Denied: Student is not in your center.")
 
     return render(request, 'admit_card/admit_card_view.html', {

@@ -96,9 +96,14 @@ from django.views.decorators.http import require_http_methods
 from decimal import Decimal, InvalidOperation
 
 
-@admin_required
+@login_required
 @require_http_methods(["GET", "POST"])
 def load_wallet(request, pk):
+    is_admin = request.user.role in ('admin', 'superadmin')
+    is_center = request.user.role == 'center'
+
+    if not (is_admin or (is_center and request.user.center and request.user.center.pk == pk)):
+        return JsonResponse({'success': False, 'error': 'Access Denied: You do not manage this center.'}, status=403)
     """
     GET  → return center name + current wallet balance as JSON (for modal population)
     POST → add the submitted amount to the center's wallet_balance
@@ -349,7 +354,7 @@ def center_dashboard(request):
     pending_admissions = admission_counts['pending'] or 0
     cancelled_admissions = admission_counts['cancelled'] or 0
 
-    active_students = students.filter(user__is_deleted=False).count()
+    active_students = students.filter(user__is_active=True, user__is_deleted=False).count()
     total_students = students.count()
     passout_students = Certificate.objects.filter(center=center).count()
     total_course_categories = assigned_courses.exclude(course__category__isnull=True).values('course__category_id').distinct().count()
@@ -384,18 +389,18 @@ def center_dashboard(request):
     ).distinct().prefetch_related('batches').order_by('date')[:5]
 
     dashboard_cards = [
-        {'label': 'Active Students', 'value': active_students, 'icon': 'bi-mortarboard-fill', 'class': 'bg-g-purple', 'url': reverse('student_list_by_center'), 'action': 'View List'},
-        {'label': 'Passout Students', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-teal', 'url': reverse('passout_student_list'), 'action': 'View List'},
-        {'label': 'Course Categories', 'value': total_course_categories, 'icon': 'bi-tags-fill', 'class': 'bg-g-green', 'url': reverse('course_list'), 'action': 'View Courses'},
-        {'label': 'Assigned Courses', 'value': total_assigned_courses, 'icon': 'bi-journal-bookmark-fill', 'class': 'bg-g-pink', 'url': reverse('course_list'), 'action': 'View Courses'},
-        {'label': 'Admissions', 'value': total_admissions, 'icon': 'bi-person-plus-fill', 'class': 'bg-g-blue', 'url': reverse('student_list_by_center'), 'action': 'View List'},
-        {'label': 'Approved Admissions', 'value': approved_admissions, 'icon': 'bi-person-check-fill', 'class': 'bg-g-orange', 'url': reverse('student_approved_list'), 'action': 'View List'},
-        {'label': 'Pending Admissions', 'value': pending_admissions, 'icon': 'bi-hourglass-split', 'class': 'bg-g-red', 'url': reverse('student_pending_list'), 'action': 'View List'},
-        {'label': 'Cancelled Admissions', 'value': cancelled_admissions, 'icon': 'bi-person-x-fill', 'class': 'bg-g-violet', 'url': reverse('student_cancelled_list'), 'action': 'View List'},
-        {'label': 'Admit Cards', 'value': total_admit_cards, 'icon': 'bi-card-text', 'class': 'bg-g-crimson', 'url': reverse('admit_card_list'), 'action': 'View List'},
-        {'label': 'Results', 'value': total_results, 'icon': 'bi-file-earmark-bar-graph-fill', 'class': 'bg-g-amber', 'url': reverse('result_list'), 'action': 'View List'},
-        {'label': 'ID Cards', 'value': total_id_cards, 'icon': 'bi-person-badge-fill', 'class': 'bg-g-olive', 'url': reverse('student_id_card'), 'action': 'View Cards'},
-        {'label': 'Fee Collection', 'value': f"Rs.{total_fee_collection}", 'icon': 'bi-cash-stack', 'class': 'bg-g-navy', 'url': reverse('fees_list'), 'action': 'View Fees', 'small': True},
+        {'label': 'Active Student(s)', 'value': active_students, 'icon': 'bi-mortarboard-fill', 'class': 'bg-g-purple', 'url': reverse('student_list_by_center'), 'action': 'View List'},
+        {'label': 'Passout Student(s)', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-teal', 'url': reverse('passout_student_list'), 'action': 'View List'},
+        {'label': 'Course Category', 'value': total_course_categories, 'icon': 'bi-tags-fill', 'class': 'bg-g-green', 'url': reverse('category_list'), 'action': 'Manage Category'},
+        {'label': 'Course(s)', 'value': total_assigned_courses, 'icon': 'bi-journal-bookmark-fill', 'class': 'bg-g-pink', 'url': reverse('course_list'), 'action': 'Manage Course'},
+        {'label': 'Admission(s)', 'value': total_admissions, 'icon': 'bi-person-plus-fill', 'class': 'bg-g-blue', 'url': reverse('student_admission'), 'action': 'Admission Student'},
+        {'label': 'Approved Admission(s)', 'value': approved_admissions, 'icon': 'bi-person-check-fill', 'class': 'bg-g-orange', 'url': reverse('student_approved_list'), 'action': 'View List'},
+        {'label': 'Pending Admission(s)', 'value': pending_admissions, 'icon': 'bi-hourglass-split', 'class': 'bg-g-red', 'url': reverse('student_pending_list'), 'action': 'View List'},
+        {'label': 'Cancelled Admission(s)', 'value': cancelled_admissions, 'icon': 'bi-person-x-fill', 'class': 'bg-g-violet', 'url': reverse('student_cancelled_list'), 'action': 'View List'},
+        {'label': 'Admit Card Generate', 'value': total_admit_cards, 'icon': 'bi-card-text', 'class': 'bg-g-crimson', 'url': reverse('admit_card_create'), 'action': 'Generate Admit Card'},
+        {'label': 'Result Generate', 'value': total_results, 'icon': 'bi-file-earmark-bar-graph-fill', 'class': 'bg-g-amber', 'url': reverse('result_create'), 'action': 'Generate Result'},
+        {'label': 'ID Card Generate', 'value': total_id_cards, 'icon': 'bi-person-badge-fill', 'class': 'bg-g-olive', 'url': reverse('student_id_card'), 'action': 'Generate ID Card'},
+        {'label': 'Fee Collection', 'value': total_fee_collection, 'icon': 'bi-bank', 'class': 'bg-g-navy', 'url': reverse('fees_list'), 'action': 'Collect Fee', 'small': True, 'is_currency': True},
     ]
 
     context = {
@@ -519,8 +524,15 @@ def api_assign_course_toggle(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
-@admin_required
+@login_required
 def center_profile(request, pk):
+    is_admin = request.user.role in ('admin', 'superadmin')
+    is_center = request.user.role == 'center'
+
+    if not (is_admin or (is_center and request.user.center and request.user.center.pk == pk)):
+        from django.http import HttpResponseForbidden
+        return HttpResponseForbidden("Access Denied: You do not have permission to view this profile.")
+
     center = get_object_or_404(
         Center.all_objects.select_related('center_user')
         .prefetch_related('admissions', 'course_assignments'),
@@ -608,8 +620,10 @@ def _handle_center_cert_list_and_csv(request, is_center):
 
     return qs, query
 
-@admin_required
+@login_required
 def center_certificate_list(request):
+    if request.user.role not in ['admin', 'center', 'superadmin']:
+        return HttpResponseForbidden("Access Denied.")
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
     
@@ -630,8 +644,10 @@ def center_certificate_list(request):
         'show_entries': show_entries,
     })
 
-@admin_required
+@login_required
 def center_certificate_create(request):
+    if request.user.role not in ['admin', 'center', 'superadmin']:
+        return HttpResponseForbidden("Access Denied.")
     messages.info(
         request,
         'Center certificates are generated automatically when a center is created.'
@@ -651,8 +667,10 @@ def center_certificate_detail(request, pk):
         'cert': cert
     })
 
-@admin_required
+@login_required
 def center_certificate_update(request, pk):
+    if request.user.role not in ['admin', 'center', 'superadmin']:
+        return HttpResponseForbidden("Access Denied.")
     cert = get_object_or_404(
         CenterCertificate.objects.select_related('center'),
         pk=pk
@@ -675,8 +693,10 @@ def center_certificate_update(request, pk):
         'cert': cert,
     })
 
-@admin_required
+@login_required
 def center_certificate_delete(request, pk):
+    if request.user.role not in ['admin', 'center', 'superadmin']:
+        return HttpResponseForbidden("Access Denied.")
     cert = get_object_or_404(CenterCertificate.objects.select_related('center'), pk=pk)
     if request.user.role == 'center' and cert.center != request.user.center:
         return HttpResponseForbidden("Access Denied")

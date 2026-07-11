@@ -1,7 +1,7 @@
 {% extends 'accounts/admin_dashboard.html' %}
 {% load static %}
 
-{% block title %}Manage Exams | Examly{% endblock %}
+{% block title %}{% if is_center %}Exam Requests{% else %}Manage Exams{% endif %} | Examly{% endblock %}
 
 {% block erp_content %}
 <div class="container py-2">
@@ -9,15 +9,19 @@
   <!-- Page Header -->
   <div class="mb-4">
     <h2 class="fw-bold text-white mb-1">
+      {% if is_center %}
+      <i class="bi bi-journal-text text-primary me-2"></i>Exam Requests
+      {% else %}
       <i class="bi bi-journal-text text-primary me-2"></i>Manage Exams
+      {% endif %}
     </h2>
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
       <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
         <li class="breadcrumb-item">
-          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+          <a href="{% if is_center %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="text-decoration-none text-muted">Home</a>
         </li>
         <li class="breadcrumb-item text-muted">Online Exam</li>
-        <li class="breadcrumb-item active text-white-50" aria-current="page">Manage Exams</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">{% if is_center %}Requests{% else %}Manage Exams{% endif %}</li>
       </ol>
     </nav>
   </div>
@@ -28,10 +32,14 @@
     <div class="col-12">
       <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
         <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
-          <h5 class="fw-bold mb-0 text-white">List Exams</h5>
+          <h5 class="fw-bold mb-0 text-white">{% if is_center %}List Requests{% else %}List Exams{% endif %}</h5>
           {% if is_admin %}
           <a href="{% url 'add_exam' %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
             <i class="bi bi-plus-circle"></i> Add Exam
+          </a>
+          {% elif is_center %}
+          <a href="{% url 'add_exam' %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
+            <i class="bi bi-plus-circle"></i> Request Exam
           </a>
           {% endif %}
         </div>
@@ -69,6 +77,14 @@
           <table class="table table-examly table-hover align-middle mb-0" id="exam-table">
             <thead>
               <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                {% if is_center %}
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">Request ID</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Message</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Created Date</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">Current Status</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
+                {% else %}
                 <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 50px;">#</th>
                 <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Title</th>
                 <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
@@ -77,11 +93,59 @@
                 <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Timer</th>
                 <th class="text-uppercase text-muted" style="font-size: 0.8rem; width: 90px;">Status</th>
                 <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Action</th>
+                {% endif %}
               </tr>
             </thead>
             <tbody>
               {% for item in page_obj %}
               <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                {% if is_center %}
+                <!-- Request ID -->
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  REQ-{{ item.id }}
+                </td>
+
+                <!-- Course -->
+                <td class="text-white" style="font-size: 0.9rem; font-weight: 500;">
+                  {{ item.course.name|default:"—" }}
+                </td>
+
+                <!-- Message -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.description|default:"—" }}
+                </td>
+
+                <!-- Request Date -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.start_datetime|date:"d M Y, H:i"|default:"—" }}
+                </td>
+
+                <!-- Status Badge -->
+                <td>
+                  {% if item.is_published %}
+                    <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.75rem;">Approved</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.75rem;">Pending</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end flex-wrap">
+                    {% if not item.is_published %}
+                    <!-- Allow edit/delete only if pending -->
+                    <a href="{% url 'edit_exam' item.id %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
+                      <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <button type="button" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1 btn-delete-exam" style="background-color: #f43f5e; border: none; border-radius: 4px; font-size: 0.85rem;" data-url="{% url 'delete_exam' item.id %}" data-title="{{ item.title }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% else %}
+                    <span class="text-muted small">No Actions</span>
+                    {% endif %}
+                  </div>
+                </td>
+                {% else %}
                 <!-- # -->
                 <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
                   {{ forloop.counter0|add:page_obj.start_index }}
@@ -173,6 +237,7 @@
                     {% endif %}
                   </div>
                 </td>
+                {% endif %}
               </tr>
               {% empty %}
               <tr>

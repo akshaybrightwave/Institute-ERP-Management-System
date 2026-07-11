@@ -1,7 +1,7 @@
 {% extends 'accounts/admin_dashboard.html' %}
 {% load widget_tweaks %}
 
-{% block title %}Edit Exam | Examly{% endblock %}
+{% block title %}{% if is_center %}Edit Request{% else %}Edit Exam{% endif %} | Examly{% endblock %}
 
 {% block erp_content %}
 <div class="container-fluid py-4">
@@ -9,17 +9,23 @@
     <div class="col-xl-9 col-lg-10 col-12">
       <!-- Breadcrumb -->
       <div class="dash-breadcrumb mb-4">
-        <a href="{% url 'home' %}">Home</a>
+        <a href="{% if is_center %}{% url 'center_dashboard' %}{% else %}{% url 'home' %}{% endif %}">Home</a>
         <span style="margin: 0 6px;">&mdash;</span>
-        <a href="{% url 'exam_list' %}">Exams</a>
+        <a href="{% url 'exam_list' %}">{% if is_center %}Requests{% else %}Exams{% endif %}</a>
         <span style="margin: 0 6px;">&mdash;</span>
-        <span class="current">Edit Exam</span>
+        <span class="current">{% if is_center %}Edit Request{% else %}Edit Exam{% endif %}</span>
       </div>
 
       <!-- Card -->
       <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 28px;">
         <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
-          <h5 class="fw-bold mb-0 text-white"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Exam: {{ exam.title }}</h5>
+          <h5 class="fw-bold mb-0 text-white">
+            {% if is_center %}
+              <i class="bi bi-pencil-square me-2 text-primary"></i>Edit Request: {{ exam.course.name }}
+            {% else %}
+              <i class="bi bi-pencil-square me-2 text-primary"></i>Edit Exam: {{ exam.title }}
+            {% endif %}
+          </h5>
           <a href="{% url 'exam_list' %}" class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">
             <i class="bi bi-arrow-left"></i> Back to List
           </a>
@@ -36,132 +42,174 @@
           </div>
           {% endif %}
 
-          <div class="row g-3">
-            <!-- Title -->
-            <div class="col-12 mb-3">
-              <label for="id_title" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Exam Title <span class="text-danger">*</span>
-              </label>
-              {% render_field form.title class="form-control text-white dark-input" %}
-              {% if form.title.errors %}
-                <span class="text-danger small">{{ form.title.errors.0 }}</span>
-              {% endif %}
+          {% if is_center %}
+            <div class="row g-3">
+              <!-- Course -->
+              <div class="col-12 mb-3">
+                <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course class="form-select dark-input" %}
+                {% if form.course.errors %}
+                  <span class="text-danger small">{{ form.course.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Message (description field) -->
+              <div class="col-12 mb-3">
+                <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Message <span class="text-danger">*</span>
+                </label>
+                {% render_field form.description class="form-control text-white dark-input" rows="4" placeholder="Enter Message" %}
+                {% if form.description.errors %}
+                  <span class="text-danger small">{{ form.description.errors.0 }}</span>
+                {% endif %}
+              </div>
             </div>
 
-            <!-- Description -->
-            <div class="col-12 mb-3">
-              <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Description <span class="text-danger">*</span>
-              </label>
-              {% render_field form.description class="form-control text-white dark-input" %}
-              {% if form.description.errors %}
-                <span class="text-danger small">{{ form.description.errors.0 }}</span>
-              {% endif %}
+            <!-- Hidden fields -->
+            {% render_field form.center class="d-none" %}
+
+            <div class="mt-4 text-start">
+              <button type="submit" class="btn text-primary px-4 py-2" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-save me-1"></i> Update Request
+              </button>
+              <a href="{% url 'exam_list' %}" class="btn btn-link text-white-50 ms-3 text-decoration-none" style="font-size: 0.95rem;">
+                Cancel
+              </a>
             </div>
 
-            <!-- Center -->
-            <div class="col-md-6 col-12 mb-3">
-              <label for="id_center" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Center <span class="text-muted">(Optional for Global)</span>
-              </label>
-              {% render_field form.center class="form-select dark-input" %}
-              {% if form.center.errors %}
-                <span class="text-danger small">{{ form.center.errors.0 }}</span>
-              {% endif %}
+          {% else %}
+
+            <div class="row g-3">
+              <!-- Title -->
+              <div class="col-12 mb-3">
+                <label for="id_title" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Exam Title <span class="text-danger">*</span>
+                </label>
+                {% render_field form.title class="form-control text-white dark-input" %}
+                {% if form.title.errors %}
+                  <span class="text-danger small">{{ form.title.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Description -->
+              <div class="col-12 mb-3">
+                <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Description <span class="text-danger">*</span>
+                </label>
+                {% render_field form.description class="form-control text-white dark-input" %}
+                {% if form.description.errors %}
+                  <span class="text-danger small">{{ form.description.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Center -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_center" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Center <span class="text-muted">(Optional for Global)</span>
+                </label>
+                {% render_field form.center class="form-select dark-input" %}
+                {% if form.center.errors %}
+                  <span class="text-danger small">{{ form.center.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Course -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course class="form-select dark-input" %}
+                {% if form.course.errors %}
+                  <span class="text-danger small">{{ form.course.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Course Duration -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_course_duration" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course Duration <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course_duration class="form-select dark-input" %}
+                {% if form.course_duration.errors %}
+                  <span class="text-danger small">{{ form.course_duration.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Maximum Questions -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_total_questions" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Maximum Questions <span class="text-danger">*</span>
+                </label>
+                {% render_field form.total_questions class="form-control text-white dark-input" %}
+                {% if form.total_questions.errors %}
+                  <span class="text-danger small">{{ form.total_questions.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Exam Timer -->
+              <div class="col-md-4 col-12 mb-3">
+                <label for="id_duration_minutes" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Exam Timer (Minutes) <span class="text-danger">*</span>
+                </label>
+                {% render_field form.duration_minutes class="form-control text-white dark-input" %}
+                {% if form.duration_minutes.errors %}
+                  <span class="text-danger small">{{ form.duration_minutes.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Start DateTime -->
+              <div class="col-md-4 col-12 mb-3">
+                <label for="id_start_datetime" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Start Date/Time <span class="text-danger">*</span>
+                </label>
+                {% render_field form.start_datetime class="form-control text-white dark-input" %}
+                {% if form.start_datetime.errors %}
+                  <span class="text-danger small">{{ form.start_datetime.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- End DateTime -->
+              <div class="col-md-4 col-12 mb-3">
+                <label for="id_end_datetime" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  End Date/Time <span class="text-danger">*</span>
+                </label>
+                {% render_field form.end_datetime class="form-control text-white dark-input" %}
+                {% if form.end_datetime.errors %}
+                  <span class="text-danger small">{{ form.end_datetime.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Publish Button / Checkbox -->
+              <div class="col-12 mb-3 d-flex align-items-center">
+                <label for="id_is_published" class="form-check-label fw-semibold text-white-50 me-2" style="font-size: 0.9rem;">
+                  Publish Exam Now
+                </label>
+                {% render_field form.is_published class="form-check-input ms-2" %}
+                {% if form.is_published.errors %}
+                  <span class="text-danger small ms-3">{{ form.is_published.errors.0 }}</span>
+                {% endif %}
+              </div>
             </div>
 
-            <!-- Course -->
-            <div class="col-md-6 col-12 mb-3">
-              <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Course <span class="text-danger">*</span>
-              </label>
-              {% render_field form.course class="form-select dark-input" %}
-              {% if form.course.errors %}
-                <span class="text-danger small">{{ form.course.errors.0 }}</span>
-              {% endif %}
+            <div class="mt-4 text-start">
+              <button type="submit" class="btn text-primary px-4 py-2" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-save me-1"></i> Update Exam
+              </button>
+              <a href="{% url 'exam_list' %}" class="btn btn-link text-white-50 ms-3 text-decoration-none" style="font-size: 0.95rem;">
+                Cancel
+              </a>
             </div>
 
-            <!-- Course Duration -->
-            <div class="col-md-6 col-12 mb-3">
-              <label for="id_course_duration" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Course Duration <span class="text-danger">*</span>
-              </label>
-              {% render_field form.course_duration class="form-select dark-input" %}
-              {% if form.course_duration.errors %}
-                <span class="text-danger small">{{ form.course_duration.errors.0 }}</span>
-              {% endif %}
-            </div>
-
-            <!-- Maximum Questions -->
-            <div class="col-md-6 col-12 mb-3">
-              <label for="id_total_questions" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Maximum Questions <span class="text-danger">*</span>
-              </label>
-              {% render_field form.total_questions class="form-control text-white dark-input" %}
-              {% if form.total_questions.errors %}
-                <span class="text-danger small">{{ form.total_questions.errors.0 }}</span>
-              {% endif %}
-            </div>
-
-            <!-- Exam Timer -->
-            <div class="col-md-4 col-12 mb-3">
-              <label for="id_duration_minutes" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Exam Timer (Minutes) <span class="text-danger">*</span>
-              </label>
-              {% render_field form.duration_minutes class="form-control text-white dark-input" %}
-              {% if form.duration_minutes.errors %}
-                <span class="text-danger small">{{ form.duration_minutes.errors.0 }}</span>
-              {% endif %}
-            </div>
-
-            <!-- Start DateTime -->
-            <div class="col-md-4 col-12 mb-3">
-              <label for="id_start_datetime" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Start Date/Time <span class="text-danger">*</span>
-              </label>
-              {% render_field form.start_datetime class="form-control text-white dark-input" %}
-              {% if form.start_datetime.errors %}
-                <span class="text-danger small">{{ form.start_datetime.errors.0 }}</span>
-              {% endif %}
-            </div>
-
-            <!-- End DateTime -->
-            <div class="col-md-4 col-12 mb-3">
-              <label for="id_end_datetime" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                End Date/Time <span class="text-danger">*</span>
-              </label>
-              {% render_field form.end_datetime class="form-control text-white dark-input" %}
-              {% if form.end_datetime.errors %}
-                <span class="text-danger small">{{ form.end_datetime.errors.0 }}</span>
-              {% endif %}
-            </div>
-
-            <!-- Publish Button / Checkbox -->
-            <div class="col-12 mb-3 d-flex align-items-center">
-              <label for="id_is_published" class="form-check-label fw-semibold text-white-50 me-2" style="font-size: 0.9rem;">
-                Publish Exam Now
-              </label>
-              {% render_field form.is_published class="form-check-input ms-2" %}
-              {% if form.is_published.errors %}
-                <span class="text-danger small ms-3">{{ form.is_published.errors.0 }}</span>
-              {% endif %}
-            </div>
-          </div>
-
-          <div class="mt-4 text-start">
-            <button type="submit" class="btn text-primary px-4 py-2" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
-              <i class="bi bi-save me-1"></i> Update Exam
-            </button>
-            <a href="{% url 'exam_list' %}" class="btn btn-link text-white-50 ms-3 text-decoration-none" style="font-size: 0.95rem;">
-              Cancel
-            </a>
-          </div>
+          {% endif %}
         </form>
       </div>
     </div>
   </div>
 </div>
 
+{% if not is_center %}
 <!-- AJAX cascading script -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -249,4 +297,5 @@ $(document).ready(function() {
   }
 });
 </script>
+{% endif %}
 {% endblock %}

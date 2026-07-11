@@ -2,7 +2,7 @@
 {% load widget_tweaks %}
 {% load static %}
 
-{% block title %}Add Exam | Examly{% endblock %}
+{% block title %}{% if is_center %}Request for Exam{% else %}Add Exam{% endif %} | Examly{% endblock %}
 
 {% block erp_content %}
 <div class="container py-2">
@@ -10,15 +10,19 @@
   <!-- Page Header -->
   <div class="mb-4">
     <h2 class="fw-bold text-white mb-1">
+      {% if is_center %}
+      <i class="bi bi-file-earmark-plus text-primary me-2"></i>Request for Exam
+      {% else %}
       <i class="bi bi-plus-circle text-primary me-2"></i>Add Exam
+      {% endif %}
     </h2>
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
       <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
         <li class="breadcrumb-item">
-          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+          <a href="{% if is_center %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="text-decoration-none text-muted">Home</a>
         </li>
         <li class="breadcrumb-item text-muted">Exam</li>
-        <li class="breadcrumb-item active text-white-50" aria-current="page">Add</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">{% if is_center %}Request{% else %}Add{% endif %}</li>
       </ol>
     </nav>
   </div>
@@ -28,7 +32,7 @@
       <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
 
         <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
-          <h5 class="fw-bold mb-0 text-white">Add New Exam</h5>
+          <h5 class="fw-bold mb-0 text-white">{% if is_center %}Request New Exam{% else %}Add New Exam{% endif %}</h5>
         </div>
 
         <form method="POST" id="createExamForm">
@@ -42,33 +46,9 @@
           </div>
           {% endif %}
 
-          <!-- Exam Title -->
-          <div class="mb-3">
-            <label for="id_title" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-              Exam Title <span class="text-danger">*</span>
-            </label>
-            {% render_field form.title class="form-control text-white dark-input" rows="2" placeholder="Enter Title" %}
-            {% if form.title.errors %}
-              <span class="text-danger small">{{ form.title.errors.0 }}</span>
-            {% endif %}
-          </div>
-
-          <!-- Description -->
-          <div class="mb-3">
-            <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-              Description
-            </label>
-            {% render_field form.description class="form-control text-white dark-input" rows="3" placeholder="Enter Description" %}
-            {% if form.description.errors %}
-              <span class="text-danger small">{{ form.description.errors.0 }}</span>
-            {% endif %}
-          </div>
-
-          <!-- Row: Course | Select Duration | Max Questions -->
-          <div class="row g-3 mb-3">
-
+          {% if is_center %}
             <!-- Course -->
-            <div class="col-md-4 col-12">
+            <div class="mb-3">
               <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
                 Course <span class="text-danger">*</span>
               </label>
@@ -78,104 +58,161 @@
               {% endif %}
             </div>
 
-            <!-- Duration -->
-            <div class="col-md-4 col-12">
-              <label for="id_course_duration" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Select Duration in Year / Month <span class="text-danger">*</span>
+            <!-- Message (description field) -->
+            <div class="mb-3">
+              <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Message <span class="text-danger">*</span>
               </label>
-              {% render_field form.course_duration class="form-select dark-input" %}
-              {% if form.course_duration.errors %}
-                <span class="text-danger small">{{ form.course_duration.errors.0 }}</span>
+              {% render_field form.description class="form-control text-white dark-input" rows="4" placeholder="Enter Message" %}
+              {% if form.description.errors %}
+                <span class="text-danger small">{{ form.description.errors.0 }}</span>
               {% endif %}
             </div>
 
-            <!-- Max Questions -->
-            <div class="col-md-4 col-12">
-              <label for="id_total_questions" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
-                Max Questions
-              </label>
-              {% render_field form.total_questions class="form-control text-white dark-input" min="0" placeholder="0" %}
-              {% if form.total_questions.errors %}
-                <span class="text-danger small">{{ form.total_questions.errors.0 }}</span>
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Row: Exam Schedule | Exam Timer -->
-          <div class="row g-3 mb-4">
-
-            <!-- Exam Schedule (toggle + date range) -->
-            <div class="col-md-6 col-12">
-              <label class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">Exam Schedule</label>
-              <div class="erp-toggle-box d-flex align-items-center gap-2">
-                <!-- Toggle switch -->
-                <div class="form-check form-switch mb-0 me-1">
-                  <input class="form-check-input" type="checkbox" id="scheduleToggle"
-                    {% if form.start_datetime.value %}checked{% endif %}
-                    style="cursor: pointer;">
-                </div>
-                <!-- Dual datetime inputs -->
-                <div id="scheduleDates" class="d-flex align-items-center gap-1 flex-grow-1
-                  {% if not form.start_datetime.value %}erp-field-disabled{% endif %}">
-                  <input type="datetime-local" id="id_start_datetime" name="start_datetime"
-                    class="erp-inline-input flex-1"
-                    value="{{ form.start_datetime.value|default:'' }}">
-                  <span class="text-white-50 px-1" style="font-size:0.8rem;">—</span>
-                  <input type="datetime-local" id="id_end_datetime" name="end_datetime"
-                    class="erp-inline-input flex-1"
-                    value="{{ form.end_datetime.value|default:'' }}">
-                </div>
-              </div>
-              {% if form.start_datetime.errors %}
-                <span class="text-danger small">{{ form.start_datetime.errors.0 }}</span>
-              {% endif %}
-              {% if form.end_datetime.errors %}
-                <span class="text-danger small">{{ form.end_datetime.errors.0 }}</span>
-              {% endif %}
-            </div>
-
-            <!-- Exam Timer (toggle + time picker HH:MM) -->
-            <div class="col-md-6 col-12">
-              <label class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">Exam Timer</label>
-              <div class="erp-toggle-box d-flex align-items-center gap-2">
-                <!-- Toggle switch -->
-                <div class="form-check form-switch mb-0 me-1">
-                  <input class="form-check-input" type="checkbox" id="timerToggle"
-                    {% if form.duration_minutes.value %}checked{% endif %}
-                    style="cursor: pointer;">
-                </div>
-                <!-- Time picker HH:MM — converted to minutes on submit -->
-                <div id="timerField" class="flex-grow-1
-                  {% if not form.duration_minutes.value %}erp-field-disabled{% endif %}">
-                  <input type="time" id="timerTimePicker"
-                    class="erp-inline-input w-100"
-                    value="">
-                </div>
-              </div>
-              <!-- Hidden field for actual minutes value sent to Django -->
-              <input type="hidden" id="id_duration_minutes" name="duration_minutes"
-                value="{{ form.duration_minutes.value|default:'' }}">
-              {% if form.duration_minutes.errors %}
-                <span class="text-danger small">{{ form.duration_minutes.errors.0 }}</span>
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Hidden center field for admin (so form validates) -->
-          {% if not is_center %}
-            <input type="hidden" id="id_center" name="center" value="">
-          {% else %}
+            <!-- Hidden center field -->
             {% render_field form.center class="d-none" %}
-          {% endif %}
 
-          <!-- Publish Button -->
-          <div class="mt-3 text-start d-flex align-items-center gap-2">
-            <button type="submit" class="btn text-primary px-4 py-2" id="publishBtn" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
-              <i class="bi bi-cloud-arrow-up me-1"></i> Publish
-            </button>
-            <!-- Hidden is_published: submit sets it true always on this form -->
-            <input type="hidden" name="is_published" value="1">
-          </div>
+            <!-- Submit Button -->
+            <div class="mt-4 text-start">
+              <button type="submit" class="btn text-primary px-4 py-2" id="publishBtn" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-file-earmark-plus me-1"></i> Submit Request
+              </button>
+            </div>
+
+          {% else %}
+
+            <!-- Exam Title -->
+            <div class="mb-3">
+              <label for="id_title" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Exam Title <span class="text-danger">*</span>
+              </label>
+              {% render_field form.title class="form-control text-white dark-input" rows="2" placeholder="Enter Title" %}
+              {% if form.title.errors %}
+                <span class="text-danger small">{{ form.title.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Description
+              </label>
+              {% render_field form.description class="form-control text-white dark-input" rows="3" placeholder="Enter Description" %}
+              {% if form.description.errors %}
+                <span class="text-danger small">{{ form.description.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Row: Course | Select Duration | Max Questions -->
+            <div class="row g-3 mb-3">
+
+              <!-- Course -->
+              <div class="col-md-4 col-12">
+                <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course class="form-select dark-input" %}
+                {% if form.course.errors %}
+                  <span class="text-danger small">{{ form.course.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Duration -->
+              <div class="col-md-4 col-12">
+                <label for="id_course_duration" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Select Duration in Year / Month <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course_duration class="form-select dark-input" %}
+                {% if form.course_duration.errors %}
+                  <span class="text-danger small">{{ form.course_duration.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Max Questions -->
+              <div class="col-md-4 col-12">
+                <label for="id_total_questions" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Max Questions
+                </label>
+                {% render_field form.total_questions class="form-control text-white dark-input" min="0" placeholder="0" %}
+                {% if form.total_questions.errors %}
+                  <span class="text-danger small">{{ form.total_questions.errors.0 }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Row: Exam Schedule | Exam Timer -->
+            <div class="row g-3 mb-4">
+
+              <!-- Exam Schedule (toggle + date range) -->
+              <div class="col-md-6 col-12">
+                <label class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">Exam Schedule</label>
+                <div class="erp-toggle-box d-flex align-items-center gap-2">
+                  <!-- Toggle switch -->
+                  <div class="form-check form-switch mb-0 me-1">
+                    <input class="form-check-input" type="checkbox" id="scheduleToggle"
+                      {% if form.start_datetime.value %}checked{% endif %}
+                      style="cursor: pointer;">
+                  </div>
+                  <!-- Dual datetime inputs -->
+                  <div id="scheduleDates" class="d-flex align-items-center gap-1 flex-grow-1
+                    {% if not form.start_datetime.value %}erp-field-disabled{% endif %}">
+                    <input type="datetime-local" id="id_start_datetime" name="start_datetime"
+                      class="erp-inline-input flex-1"
+                      value="{{ form.start_datetime.value|default:'' }}">
+                    <span class="text-white-50 px-1" style="font-size:0.8rem;">—</span>
+                    <input type="datetime-local" id="id_end_datetime" name="end_datetime"
+                      class="erp-inline-input flex-1"
+                      value="{{ form.end_datetime.value|default:'' }}">
+                  </div>
+                </div>
+                {% if form.start_datetime.errors %}
+                  <span class="text-danger small">{{ form.start_datetime.errors.0 }}</span>
+                {% endif %}
+                {% if form.end_datetime.errors %}
+                  <span class="text-danger small">{{ form.end_datetime.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Exam Timer (toggle + time picker HH:MM) -->
+              <div class="col-md-6 col-12">
+                <label class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">Exam Timer</label>
+                <div class="erp-toggle-box d-flex align-items-center gap-2">
+                  <!-- Toggle switch -->
+                  <div class="form-check form-switch mb-0 me-1">
+                    <input class="form-check-input" type="checkbox" id="timerToggle"
+                      {% if form.duration_minutes.value %}checked{% endif %}
+                      style="cursor: pointer;">
+                  </div>
+                  <!-- Time picker HH:MM — converted to minutes on submit -->
+                  <div id="timerField" class="flex-grow-1
+                    {% if not form.duration_minutes.value %}erp-field-disabled{% endif %}">
+                    <input type="time" id="timerTimePicker"
+                      class="erp-inline-input w-100"
+                      value="">
+                  </div>
+                </div>
+                <!-- Hidden field for actual minutes value sent to Django -->
+                <input type="hidden" id="id_duration_minutes" name="duration_minutes"
+                  value="{{ form.duration_minutes.value|default:'' }}">
+                {% if form.duration_minutes.errors %}
+                  <span class="text-danger small">{{ form.duration_minutes.errors.0 }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Hidden center field for admin (so form validates) -->
+            <input type="hidden" id="id_center" name="center" value="">
+
+            <!-- Publish Button -->
+            <div class="mt-3 text-start d-flex align-items-center gap-2">
+              <button type="submit" class="btn text-primary px-4 py-2" id="publishBtn" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-cloud-arrow-up me-1"></i> Publish
+              </button>
+              <!-- Hidden is_published: submit sets it true always on this form -->
+              <input type="hidden" name="is_published" value="1">
+            </div>
+
+          {% endif %}
 
         </form>
       </div>

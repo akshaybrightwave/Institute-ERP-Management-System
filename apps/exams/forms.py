@@ -59,7 +59,29 @@ class ExamForm(forms.ModelForm):
                 self.fields['center'].queryset = Center.objects.filter(id=user_center.id)
                 self.fields['center'].initial = user_center
                 self.fields['center'].widget.attrs.update({'disabled': 'disabled'})
-                self.fields['course'].queryset = Course.objects.filter(Q(center=user_center) | Q(center__isnull=True))
+                
+                # Only show courses assigned to the logged-in center via CenterCourseAssignment
+                self.fields['course'].queryset = Course.objects.filter(
+                    assignments__center=user_center,
+                    assignments__is_active=True
+                ).distinct().order_by('name')
+
+                # Re-label description as Message and make required
+                self.fields['description'].label = "Message"
+                self.fields['description'].required = True
+                self.fields['description'].widget.attrs.update({
+                    'placeholder': 'Enter Message',
+                    'rows': 4
+                })
+
+                # Make admin-only fields optional for Center request submission
+                self.fields['title'].required = False
+                self.fields['course_duration'].required = False
+                self.fields['start_datetime'].required = False
+                self.fields['end_datetime'].required = False
+                self.fields['total_questions'].required = False
+                self.fields['duration_minutes'].required = False
+                self.fields['center'].required = False
             else:
                 self.fields['center'].queryset = Center.objects.all().order_by('name')
                 self.fields['course'].queryset = Course.objects.all().order_by('name')
@@ -78,7 +100,15 @@ class ExamForm(forms.ModelForm):
             center_id = self.user.center.id
 
         if center_id:
-            self.fields['course'].queryset = Course.objects.filter(Q(center_id=center_id) | Q(center__isnull=True)).order_by('name')
+            if self.user and self.user.role == 'center':
+                self.fields['course'].queryset = Course.objects.filter(
+                    assignments__center_id=center_id,
+                    assignments__is_active=True
+                ).distinct().order_by('name')
+            else:
+                self.fields['course'].queryset = Course.objects.filter(
+                    Q(center_id=center_id) | Q(center__isnull=True)
+                ).order_by('name')
         
         if course_id:
             try:
@@ -101,29 +131,47 @@ class ExamForm(forms.ModelForm):
 
         if self.user and self.user.role == 'center':
             cleaned_data['center'] = self.user.center
+            
+            # Server-side validation that selected course belongs to the center
+            if course:
+                if not Course.objects.filter(
+                    id=course.id,
+                    assignments__center=self.user.center,
+                    assignments__is_active=True
+                ).exists():
+                    self.add_error('course', "Selected Course is not assigned to your Center.")
 
-        if total_questions is not None and total_questions <= 0:
-            self.add_error('total_questions', "Maximum Questions must be greater than zero.")
+            # Automatically populate default values for required fields
+            if course:
+                cleaned_data['title'] = f"Exam Request - {course.name}"
+            cleaned_data['is_published'] = False
+            from django.utils.timezone import now
+            cleaned_data['start_datetime'] = now()
+            cleaned_data['date'] = now().date()
 
-        if duration_minutes is not None and duration_minutes <= 0:
-            self.add_error('duration_minutes', "Exam Timer must be greater than zero.")
+        else:
+            if total_questions is not None and total_questions <= 0:
+                self.add_error('total_questions', "Maximum Questions must be greater than zero.")
 
-        if start_datetime and end_datetime:
-            if start_datetime >= end_datetime:
-                self.add_error('start_datetime', "Start DateTime must be before End DateTime.")
-                self.add_error('end_datetime', "End DateTime must be after Start DateTime.")
+            if duration_minutes is not None and duration_minutes <= 0:
+                self.add_error('duration_minutes', "Exam Timer must be greater than zero.")
 
-        # Duplicate check: Course + Course Duration + Same Start DateTime
-        if course and course_duration and start_datetime:
-            dup_qs = Exam.objects.filter(
-                course=course,
-                course_duration=course_duration,
-                start_datetime=start_datetime
-            )
-            if self.instance and self.instance.pk:
-                dup_qs = dup_qs.exclude(pk=self.instance.pk)
-            if dup_qs.exists():
-                raise forms.ValidationError("An exam with this Course, Duration, and Start Date/Time already exists.")
+            if start_datetime and end_datetime:
+                if start_datetime >= end_datetime:
+                    self.add_error('start_datetime', "Start DateTime must be before End DateTime.")
+                    self.add_error('end_datetime', "End DateTime must be after Start DateTime.")
+
+            # Duplicate check: Course + Course Duration + Same Start DateTime
+            if course and course_duration and start_datetime:
+                dup_qs = Exam.objects.filter(
+                    course=course,
+                    course_duration=course_duration,
+                    start_datetime=start_datetime
+                )
+                if self.instance and self.instance.pk:
+                    dup_qs = dup_qs.exclude(pk=self.instance.pk)
+                if dup_qs.exists():
+                    raise forms.ValidationError("An exam with this Course, Duration, and Start Date/Time already exists.")
 
         return cleaned_data
 

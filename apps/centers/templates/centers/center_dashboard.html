@@ -151,11 +151,11 @@
         <div class="d-flex align-items-center justify-content-between gap-3">
           <div>
             <div class="center-wallet-label">Wallet Balance</div>
-            <div class="center-wallet-value">Rs.{{ wallet_balance }}</div>
+            <div class="center-wallet-value">₹ {{ wallet_balance|floatformat:2 }}</div>
           </div>
-          <button class="btn btn-primary center-icon-btn" type="button" title="Wallet managed by admin">
+          <a href="{% url 'center_profile' center.pk %}#fees" class="btn btn-primary center-icon-btn" title="Load Wallet">
             <i class="bi bi-plus-lg"></i>
-          </button>
+          </a>
         </div>
       </div>
       {% if center_certificate %}
@@ -163,7 +163,7 @@
         <i class="bi bi-award"></i> View Certificate
       </a>
       {% endif %}
-      <a href="{% url 'center_dashboard' %}" class="btn btn-outline-secondary center-icon-btn" title="Profile">
+      <a href="{% url 'center_profile' center.pk %}" class="btn btn-outline-secondary center-icon-btn" title="Profile">
         <i class="bi bi-person-circle"></i>
       </a>
       <a href="{% url 'logout' %}" class="btn btn-outline-secondary center-icon-btn" title="Logout">
@@ -188,7 +188,9 @@
     <div class="erp-card {{ card.class }}">
       <div class="erp-card-body">
         <div class="erp-card-title">{{ card.label }}</div>
-        <div class="erp-card-number{% if card.small %} sm{% endif %}">{{ card.value }}</div>
+        <div class="erp-card-number{% if card.small %} sm{% endif %}">
+          {% if card.is_currency %}&#8377;{% endif %}{{ card.value }}
+        </div>
         <div class="erp-card-bg-icon"><i class="bi {{ card.icon }}"></i></div>
       </div>
       <a href="{{ card.url }}" class="erp-card-footer">

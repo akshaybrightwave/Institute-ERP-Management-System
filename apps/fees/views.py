@@ -127,9 +127,41 @@ def fees_list(request):
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
     is_teacher = request.user.role == 'teacher'
+    is_student = request.user.role == 'student'
     
-    if not (is_admin or is_center or is_teacher):
+    if not (is_admin or is_center or is_teacher or is_student):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
+        
+    if is_student:
+        profile = getattr(request.user, 'studentprofile', None)
+        if not profile:
+            return HttpResponseForbidden("Access Denied: No student profile found.")
+            
+        payments = FeePayment.objects.filter(student=profile).select_related('student__batch__course').order_by('-payment_date', '-id')
+        
+        course_fee = profile.batch.course.fees if (profile.batch and profile.batch.course) else Decimal('0.00')
+        paid_amount = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        pending_amount = course_fee - paid_amount
+        
+        if paid_amount == 0:
+            fee_status = 'PENDING'
+        elif pending_amount <= 0:
+            fee_status = 'PAID'
+        else:
+            fee_status = 'PARTIAL'
+            
+        paginator = Paginator(payments, 10)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        return render(request, 'fees/student_fees_record.html', {
+            'page_obj': page_obj,
+            'course_fee': course_fee,
+            'paid_amount': paid_amount,
+            'pending_amount': pending_amount,
+            'fee_status': fee_status,
+            'student_profile': profile,
+        })
         
     tab = request.GET.get('tab', 'students')
     query = request.GET.get('q', '').strip()

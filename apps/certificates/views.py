@@ -166,12 +166,28 @@ def certificate_create(request):
 def certificate_list(request):
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
-    
-    # Read-only for teachers
     is_teacher = request.user.role == 'teacher'
+    is_student = request.user.role == 'student'
 
-    if not (is_admin or is_center or is_teacher):
+    if not (is_admin or is_center or is_teacher or is_student):
         return HttpResponseForbidden("Access Denied.")
+
+    if is_student:
+        profile = getattr(request.user, 'studentprofile', None)
+        qs = Certificate.objects.select_related('student', 'center', 'course', 'session').all()
+        if profile:
+            qs = qs.filter(Q(student__enrollment_no=request.user.username) | Q(student__email=profile.email))
+        else:
+            qs = qs.filter(student__enrollment_no=request.user.username)
+        
+        paginator = Paginator(qs.order_by('-id'), 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        return render(request, 'certificates/certificate_list.html', {
+            'page_obj': page_obj,
+            'is_student': True,
+        })
 
     qs, query = _handle_list_and_csv(request, is_center)
     if isinstance(qs, HttpResponse):
@@ -197,8 +213,8 @@ def certificate_detail(request, pk):
         return HttpResponseForbidden("Access Denied: This certificate belongs to another center.")
     
     if request.user.role == 'student':
-        # Verify if student's profile matches this admission
-        if cert.student.email != request.user.email:
+        profile = getattr(request.user, 'studentprofile', None)
+        if not (cert.student.enrollment_no == request.user.username or (profile and profile.email and cert.student.email == profile.email) or cert.student.email == request.user.email):
             return HttpResponseForbidden("Access Denied: You can only view your own certificates.")
 
     return render(request, 'certificates/certificate_detail.html', {

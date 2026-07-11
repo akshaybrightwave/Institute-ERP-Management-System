@@ -430,6 +430,22 @@
     });
   });
 
+  // Activate tab based on URL hash (e.g., #fees)
+  const hash = window.location.hash;
+  if (hash) {
+    const tabTriggerEl = document.querySelector(`#centerProfileTabs button[data-bs-target="${hash}"]`);
+    if (tabTriggerEl) {
+      const tab = new bootstrap.Tab(tabTriggerEl);
+      tab.show();
+      tabElList.forEach(t => {
+        t.classList.remove('active', 'bg-primary');
+        t.classList.add('text-white-50');
+      });
+      tabTriggerEl.classList.add('active', 'bg-primary');
+      tabTriggerEl.classList.remove('text-white-50');
+    }
+  }
+
   // Load Wallet Logic
   const walletModalEl  = document.getElementById('walletModal');
   const bsWalletModal  = new bootstrap.Modal(walletModalEl);

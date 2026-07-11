@@ -48,11 +48,12 @@ def exam_list(request):
     is_teacher = request.user.role == 'teacher'
     
     if is_center:
-        exams = Exam.objects.filter(center=request.user.center)
+        # Retrieve all (active and soft-deleted) requests to show Pending and Approved states
+        exams = Exam.all_objects.filter(center=request.user.center).select_related('course')
     elif is_teacher:
-        exams = Exam.objects.filter(created_by=request.user)
+        exams = Exam.objects.filter(created_by=request.user).select_related('course', 'center')
     else:
-        exams = Exam.objects.all()
+        exams = Exam.objects.all().select_related('course', 'center')
 
     # Search filter
     q = request.GET.get('q', '').strip()
@@ -71,21 +72,34 @@ def exam_list(request):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="exams.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Exam Title', 'Course', 'Course Duration', 'Start Date & Time', 'End Date & Time', 'Exam Timer', 'Status'])
-        for exam in exams:
-            start_str = exam.start_datetime.strftime('%Y-%m-%d %H:%M') if exam.start_datetime else 'No Schedule'
-            end_str = exam.end_datetime.strftime('%Y-%m-%d %H:%M') if exam.end_datetime else 'No Schedule'
-            timer_str = f"{exam.duration_minutes} Minutes" if exam.duration_minutes else 'No Timer'
-            status_str = 'Active' if exam.is_published else 'Inactive'
-            writer.writerow([
-                exam.title,
-                exam.course.name if exam.course else 'No Course',
-                exam.course_duration or '',
-                start_str,
-                end_str,
-                timer_str,
-                status_str
-            ])
+        if is_center:
+            writer.writerow(['Request ID', 'Course', 'Message', 'Created Date', 'Current Status'])
+            for exam in exams:
+                status_str = 'Approved' if exam.is_published else 'Pending'
+                created_str = exam.start_datetime.strftime('%Y-%m-%d %H:%M') if exam.start_datetime else 'No Date'
+                writer.writerow([
+                    f"REQ-{exam.id}",
+                    exam.course.name if exam.course else 'No Course',
+                    exam.description,
+                    created_str,
+                    status_str
+                ])
+        else:
+            writer.writerow(['Exam Title', 'Course', 'Course Duration', 'Start Date & Time', 'End Date & Time', 'Exam Timer', 'Status'])
+            for exam in exams:
+                start_str = exam.start_datetime.strftime('%Y-%m-%d %H:%M') if exam.start_datetime else 'No Schedule'
+                end_str = exam.end_datetime.strftime('%Y-%m-%d %H:%M') if exam.end_datetime else 'No Schedule'
+                timer_str = f"{exam.duration_minutes} Minutes" if exam.duration_minutes else 'No Timer'
+                status_str = 'Active' if exam.is_published else 'Inactive'
+                writer.writerow([
+                    exam.title,
+                    exam.course.name if exam.course else 'No Course',
+                    exam.course_duration or '',
+                    start_str,
+                    end_str,
+                    timer_str,
+                    status_str
+                ])
         return response
 
     # Pagination
@@ -121,16 +135,25 @@ def add_exam(request):
             exam = form.save(commit=False)
             if is_center_role:
                 exam.center = request.user.center
+                exam.title = form.cleaned_data.get('title')
+                exam.is_published = False
+                exam.start_datetime = now()
+                exam.date = now().date()
+            else:
+                # Populate date field for backwards compatibility
+                if exam.start_datetime:
+                    exam.date = exam.start_datetime.date()
+                # If is_published comes as hidden "1", set it
+                if request.POST.get('is_published') == '1':
+                    exam.is_published = True
+            
             exam.created_by = request.user
-            # Populate date field for backwards compatibility
-            if exam.start_datetime:
-                exam.date = exam.start_datetime.date()
-            # If is_published comes as hidden "1", set it
-            if request.POST.get('is_published') == '1':
-                exam.is_published = True
             exam.save()
             form.save_m2m()
-            messages.success(request, "Exam created successfully!")
+            if is_center_role:
+                messages.success(request, "Exam request submitted successfully!")
+            else:
+                messages.success(request, "Exam created successfully!")
             return redirect('exam_list')
         else:
             messages.error(request, "Please correct the errors in the form.")
@@ -166,8 +189,12 @@ def edit_exam(request, exam_id):
 
     exam = get_object_or_404(Exam, id=exam_id)
 
-    if is_center and exam.center != request.user.center:
-        return HttpResponseForbidden("Access Denied: You do not manage this center's exams.")
+    if is_center:
+        if exam.center != request.user.center:
+            return HttpResponseForbidden("Access Denied: You do not manage this center's exams.")
+        if exam.is_published:
+            messages.error(request, "Approved requests cannot be edited.")
+            return redirect('exam_list')
 
     if is_teacher:
         if exam.created_by != request.user:
@@ -177,8 +204,14 @@ def edit_exam(request, exam_id):
         form = ExamForm(request.POST, instance=exam, user=request.user)
         if form.is_valid():
             exam_obj = form.save(commit=False)
-            if exam_obj.start_datetime:
-                exam_obj.date = exam_obj.start_datetime.date()
+            if is_center:
+                exam_obj.title = form.cleaned_data.get('title')
+                exam_obj.is_published = False
+                exam_obj.start_datetime = now()
+                exam_obj.date = now().date()
+            else:
+                if exam_obj.start_datetime:
+                    exam_obj.date = exam_obj.start_datetime.date()
             exam_obj.save()
             form.save_m2m()
             messages.success(request, "Exam updated successfully!")
@@ -187,7 +220,7 @@ def edit_exam(request, exam_id):
             messages.error(request, "Please correct the errors in the form.")
     else:
         form = ExamForm(instance=exam, user=request.user)
-    return render(request, 'exam/edit_exam.html', {'form': form, 'exam': exam})
+    return render(request, 'exam/edit_exam.html', {'form': form, 'exam': exam, 'is_center': is_center})
 
 
 @login_required
@@ -200,8 +233,12 @@ def delete_exam(request, exam_id):
 
     exam = get_object_or_404(Exam, id=exam_id)
 
-    if is_center and exam.center != request.user.center:
-        return HttpResponseForbidden("Access Denied: You do not manage this center's exams.")
+    if is_center:
+        if exam.center != request.user.center:
+            return HttpResponseForbidden("Access Denied: You do not manage this center's exams.")
+        if exam.is_published:
+            messages.error(request, "Approved requests cannot be deleted.")
+            return redirect('exam_list')
 
     exam.delete()
     messages.success(request, "Exam deleted successfully!")
@@ -214,6 +251,9 @@ def ajax_toggle_exam_status(request, exam_id):
     is_center = request.user.role == 'center'
     if not (is_admin or is_center):
         return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
+    
+    if is_center:
+        return JsonResponse({'success': False, 'message': 'Access Denied: Centers cannot change request status.'}, status=403)
     
     exam = get_object_or_404(Exam, id=exam_id)
     if is_center and exam.center != request.user.center:

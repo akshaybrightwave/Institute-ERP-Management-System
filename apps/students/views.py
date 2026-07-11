@@ -11,46 +11,109 @@ from apps.accounts.views import admin_required
 
 
 # ---------------------------------------------------------------------------
-# Student Dashboard
+# Student Dashboard Helper & View
 # ---------------------------------------------------------------------------
+
+def get_fee_emis(course_fee, paid_amount):
+    """
+    Generates installment schedule. Let's divide course fee into 4 equal monthly installments.
+    """
+    from decimal import Decimal
+    course_fee = Decimal(str(course_fee))
+    paid_amount = Decimal(str(paid_amount))
+    
+    if course_fee <= 0:
+        return []
+        
+    num_installments = 4
+    inst_amount = (course_fee / num_installments).quantize(Decimal('0.01'))
+    
+    emis = []
+    accumulated_paid = paid_amount
+    
+    for i in range(1, num_installments + 1):
+        # Last installment handles rounding differences
+        amt = inst_amount if i < num_installments else (course_fee - inst_amount * (num_installments - 1))
+        
+        if accumulated_paid >= amt:
+            status = 'Paid'
+            paid_amt = amt
+            accumulated_paid -= amt
+        elif accumulated_paid > 0:
+            status = 'Partially Paid'
+            paid_amt = accumulated_paid
+            accumulated_paid = Decimal('0.00')
+        else:
+            status = 'Pending'
+            paid_amt = Decimal('0.00')
+            
+        emis.append({
+            'installment_no': i,
+            'amount': amt,
+            'paid_amount': paid_amt,
+            'status': status,
+            'due_date': f"Month {i}"
+        })
+    return emis
+
 
 @login_required
 def student_dashboard(request):
     if request.user.role != 'student':
         return redirect('login')
 
-    attempts = StudentExamAttempt.objects.filter(student=request.user)
-    total_attempts = attempts.count()
-    average_score = sum(a.score for a in attempts) / total_attempts if total_attempts > 0 else 0
+    from django.db.models import Sum, Q
+    from apps.fees.models import FeePayment
+    from apps.certificates.models import Certificate
+    from apps.certificates.views import get_student_eligibility
+    from apps.attendance.models import Attendance
+    from decimal import Decimal
+    from django.contrib import messages
+    from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import update_session_auth_hash
 
+    # 1. Fetch Profile & Admission info
     try:
-        profile = request.user.studentprofile
+        profile = StudentProfile.objects.select_related('batch__course', 'batch__center').get(user=request.user)
         batch = profile.batch
     except StudentProfile.DoesNotExist:
         profile = None
         batch = None
+
+    admission = None
+    if profile:
+        admission = StudentAdmission.objects.select_related('course', 'center').filter(
+            Q(enrollment_no=request.user.username) | Q(email=profile.email)
+        ).first()
+    else:
+        admission = StudentAdmission.objects.select_related('course', 'center').filter(
+            enrollment_no=request.user.username
+        ).first()
+
+    # 2. Exam calculations
+    attempts = StudentExamAttempt.objects.filter(student=request.user)
+    total_attempts = attempts.count()
+    average_score = sum(a.score for a in attempts) / total_attempts if total_attempts > 0 else 0
 
     if batch:
         total_exams = Exam.objects.filter(is_published=True, batches=batch).count()
     else:
         total_exams = 0
 
-    # Fee Calculations
-    from django.db.models import Sum
-    from apps.fees.models import FeePayment
-    from decimal import Decimal
-
-    course_fee = 0.00
-    paid_amount = 0.00
-    pending_amount = 0.00
+    # 3. Fee Calculations
+    course_fee = Decimal('0.00')
+    paid_amount = Decimal('0.00')
+    pending_amount = Decimal('0.00')
     fee_status = 'PENDING'
+    fee_payments = []
 
     if profile:
         if batch and batch.course:
-            course_fee = batch.course.fees
-        paid_amount = FeePayment.objects.filter(student=profile).aggregate(total=Sum('amount'))['total'] or 0.00
+            course_fee = Decimal(str(batch.course.fees))
         
-        course_fee = Decimal(str(course_fee))
+        # Get all payments
+        fee_payments = FeePayment.objects.filter(student=profile).select_related('student__batch__course').order_by('-payment_date', '-id')
+        paid_amount = fee_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
         paid_amount = Decimal(str(paid_amount))
         pending_amount = course_fee - paid_amount
         
@@ -61,25 +124,51 @@ def student_dashboard(request):
         else:
             fee_status = 'PARTIAL'
 
-    # Certificate Calculations
-    from apps.certificates.models import Certificate
-    from apps.certificates.views import get_student_eligibility
-    from django.db.models import Q
+    # EMI Schedule
+    emis = get_fee_emis(course_fee, paid_amount)
 
+    # 4. Certificate Calculations
     certificates = []
     issued_certificates_count = 0
     eligibility = {'eligible': False, 'reason': 'No student profile.'}
 
+    if admission:
+        certificates = Certificate.objects.filter(student=admission)
+        issued_certificates_count = certificates.count()
     if profile:
-        admission = StudentAdmission.objects.filter(
-            Q(enrollment_no=request.user.username) | Q(email=profile.email)
-        ).first()
-        if admission:
-            certificates = Certificate.objects.filter(student=admission)
-            issued_certificates_count = certificates.count()
         eligibility = get_student_eligibility(profile)
 
+    # 5. Change Password Form
+    password_form = PasswordChangeForm(request.user)
+    if request.method == 'POST' and request.POST.get('action') == 'change_password':
+        password_form = PasswordChangeForm(request.user, request.POST)
+        if password_form.is_valid():
+            user = password_form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('student_dashboard')
+        else:
+            messages.error(request, 'Please correct the error below.')
+
+    # 6. Notifications
+    notifications = [
+        {
+            'title': 'Welcome to Examly!',
+            'message': 'Welcome to your student portal. Here you can view your profile, download your ID card, view attendance, download admit cards, check marksheets, and attempt exams.',
+            'date': 'Just now',
+            'icon': 'bi-bell-fill text-primary'
+        },
+        {
+            'title': 'Exam System Guidelines',
+            'message': 'Make sure you have a stable internet connection before starting any online exam.',
+            'date': '1 day ago',
+            'icon': 'bi-info-circle-fill text-info'
+        }
+    ]
+
     context = {
+        'profile': profile,
+        'admission': admission,
         'total_exams': total_exams,
         'total_attempts': total_attempts,
         'average_score': round(average_score, 1),
@@ -87,9 +176,13 @@ def student_dashboard(request):
         'paid_amount': paid_amount,
         'pending_amount': pending_amount,
         'fee_status': fee_status,
+        'fee_payments': fee_payments,
+        'emis': emis,
         'certificates': certificates,
         'issued_certificates_count': issued_certificates_count,
         'eligibility': eligibility,
+        'password_form': password_form,
+        'notifications': notifications,
     }
     return render(request, 'student/student_dashboard.html', context)
 
@@ -336,6 +429,9 @@ def delete_student_exam_attempt(request, attempt_id):
 
 @login_required
 def student_profile(request):
+    if request.user.role == 'student':
+        return student_dashboard(request)
+
     from django.db.models import Q
     from django.contrib.auth import get_user_model
 
@@ -490,16 +586,57 @@ def edit_student_profile(request):
     return render(request, 'student/edit_profile.html', {'form': form})
 
 
-@admin_required
+@login_required
+def student_my_attendance(request):
+    if request.user.role != 'student':
+        return HttpResponseForbidden("Access Denied: Students only.")
+
+    from apps.attendance.models import Attendance
+    from django.db.models import Q
+    from django.core.paginator import Paginator
+
+    try:
+        profile = request.user.studentprofile
+        admission = StudentAdmission.objects.select_related('course', 'center').filter(
+            Q(enrollment_no=request.user.username) | Q(email=profile.email)
+        ).first()
+    except StudentProfile.DoesNotExist:
+        profile = None
+        admission = StudentAdmission.objects.select_related('course', 'center').filter(
+            enrollment_no=request.user.username
+        ).first()
+
+    if not admission:
+        attendances = Attendance.objects.none()
+    else:
+        attendances = Attendance.objects.filter(student=admission).select_related('batch', 'marked_by').order_by('-date')
+
+    # Paginate
+    paginator = Paginator(attendances, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'student/my_attendance.html', {
+        'page_obj': page_obj,
+        'admission': admission,
+    })
+
+
+@login_required
 def student_admission_view(request):
+    if request.user.role not in ['admin', 'center', 'superadmin']:
+        return HttpResponseForbidden("Access Denied.")
     if request.method == 'POST':
-        form = StudentAdmissionForm(request.POST, request.FILES)
+        form = StudentAdmissionForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            form.save()
+            admission = form.save(commit=False)
+            if request.user.role == 'center':
+                admission.center = request.user.center
+            admission.save()
             messages.success(request, 'Student Admission processed successfully.')
             return redirect('student_admission')
     else:
-        form = StudentAdmissionForm()
+        form = StudentAdmissionForm(user=request.user)
     
     return render(request, 'student/student_admission.html', {'form': form})
 
@@ -508,9 +645,11 @@ def student_admission_view(request):
 # Student Details — Search & Quick Profile
 # ---------------------------------------------------------------------------
 
-@admin_required
+@login_required
 def student_details_view(request):
     """Search student by enrollment no / name / mobile and display quick profile."""
+    if request.user.role not in ['admin', 'center', 'superadmin']:
+        return HttpResponseForbidden("Access Denied.")
     from django.http import JsonResponse
     from django.db.models import Q
 
@@ -521,11 +660,10 @@ def student_details_view(request):
     enrollment = request.GET.get('enrollment', '').strip()
     if enrollment:
         try:
-            admission = (
-                StudentAdmission.objects
-                .select_related('center', 'course')
-                .get(enrollment_no=enrollment)
-            )
+            qs = StudentAdmission.objects.select_related('center', 'course')
+            if request.user.role == 'center':
+                qs = qs.filter(center=request.user.center)
+            admission = qs.get(enrollment_no=enrollment)
         except StudentAdmission.DoesNotExist:
             error = 'No student found with that Enrollment Number / Name / Mobile.'
 
@@ -539,15 +677,19 @@ def student_details_view(request):
 @login_required
 def student_search_autocomplete(request):
     """Return JSON list of students matching query for Select2 autocomplete."""
+    if request.user.role not in ['admin', 'center', 'superadmin']:
+        return HttpResponseForbidden("Access Denied.")
     from django.http import JsonResponse
     from django.db.models import Q
 
     q = request.GET.get('q', '').strip()
     results = []
     if q:
+        qs = StudentAdmission.objects.all()
+        if request.user.role == 'center':
+            qs = qs.filter(center=request.user.center)
         qs = (
-            StudentAdmission.objects
-            .filter(
+            qs.filter(
                 Q(enrollment_no__icontains=q) |
                 Q(student_name__icontains=q) |
                 Q(whatsapp_no__icontains=q)
@@ -576,21 +718,37 @@ def student_search_autocomplete(request):
 @login_required
 def student_id_card_view(request):
     """Search student and display ID card preview for printing."""
-    student_id = request.GET.get('student_id', '').strip()
+    if request.user.role not in ['admin', 'center', 'superadmin', 'student']:
+        return HttpResponseForbidden("Access Denied.")
+    
+    from django.db.models import Q
     admission = None
     error = None
 
-    if student_id:
+    if request.user.role == 'student':
         try:
-            admission = (
-                StudentAdmission.objects
-                .select_related('center', 'course')
-                .get(pk=student_id)
-            )
-        except StudentAdmission.DoesNotExist:
-            error = 'No student found with that ID.'
-        except ValueError:
-            error = 'Invalid Student ID provided.'
+            profile = request.user.studentprofile
+            admission = StudentAdmission.objects.select_related('center', 'course').filter(
+                Q(enrollment_no=request.user.username) | Q(email=profile.email)
+            ).first()
+        except StudentProfile.DoesNotExist:
+            admission = StudentAdmission.objects.select_related('center', 'course').filter(
+                enrollment_no=request.user.username
+            ).first()
+        if not admission:
+            error = 'No admission record found for your user.'
+    else:
+        student_id = request.GET.get('student_id', '').strip()
+        if student_id:
+            try:
+                qs = StudentAdmission.objects.select_related('center', 'course')
+                if request.user.role == 'center':
+                    qs = qs.filter(center=request.user.center)
+                admission = qs.get(pk=student_id)
+            except StudentAdmission.DoesNotExist:
+                error = 'No student found with that ID.'
+            except ValueError:
+                error = 'Invalid Student ID provided.'
 
     return render(request, 'student/student_id_card.html', {
         'admission': admission,
@@ -615,7 +773,7 @@ def student_pending_list(request):
     qs = StudentAdmission.objects.filter(status='Pending').select_related('center', 'course')
 
     if request.user.role == 'center':
-        qs = qs.filter(center__code=request.user.username)  # Center can only see their own admissions
+        qs = qs.filter(center=request.user.center)  # Center can only see their own admissions
 
     # Search
     q = request.GET.get('q', '').strip()
@@ -664,7 +822,7 @@ def student_approve_action(request, pk):
             admission = StudentAdmission.objects.get(pk=pk, status__in=['Pending', 'Cancelled'])
             
             # Center can only approve own students
-            if request.user.role == 'center' and admission.center and admission.center.code != request.user.username:
+            if request.user.role == 'center' and admission.center and admission.center != request.user.center:
                 messages.error(request, 'Permission denied.')
                 return redirect(redirect_url)
 
@@ -699,7 +857,7 @@ def student_cancel_action(request, pk):
             admission = StudentAdmission.objects.get(pk=pk, status__in=['Pending', 'Cancelled'])
             
             # Center can only cancel own students
-            if request.user.role == 'center' and admission.center and admission.center.code != request.user.username:
+            if request.user.role == 'center' and admission.center and admission.center != request.user.center:
                 messages.error(request, 'Permission denied.')
                 return redirect(redirect_url)
 
@@ -737,7 +895,7 @@ def student_approved_list(request):
     qs = StudentAdmission.objects.filter(status='Approved').select_related('center', 'course')
 
     if request.user.role == 'center':
-        qs = qs.filter(center__code=request.user.username)
+        qs = qs.filter(center=request.user.center)
 
     # Search
     q = request.GET.get('q', '').strip()
@@ -783,7 +941,7 @@ def student_cancelled_list(request):
     qs = StudentAdmission.objects.filter(status='Cancelled').select_related('center', 'course')
 
     if request.user.role == 'center':
-        qs = qs.filter(center__code=request.user.username)
+        qs = qs.filter(center=request.user.center)
 
     # Search
     q = request.GET.get('q', '').strip()
@@ -828,7 +986,7 @@ def student_revert_pending_action(request, pk):
             admission = StudentAdmission.objects.get(pk=pk)
             
             # Center can only revert own students
-            if request.user.role == 'center' and admission.center and admission.center.code != request.user.username:
+            if request.user.role == 'center' and admission.center and admission.center != request.user.center:
                 messages.error(request, 'Permission denied.')
                 return redirect('student_approved_list')
 
@@ -865,12 +1023,11 @@ def student_list_by_center(request):
     
     # If the user is a center, force selected_center_id to be their own center
     if request.user.role == 'center':
-        try:
-            user_center = Center.objects.get(code=request.user.username)
-            selected_center_id = str(user_center.id)
+        if request.user.center:
+            selected_center_id = str(request.user.center.id)
             # Filter centers list to only their own center for center role
-            centers = centers.filter(id=user_center.id)
-        except Center.DoesNotExist:
+            centers = centers.filter(id=request.user.center.id)
+        else:
             messages.error(request, 'Center not found for your account.')
             return redirect('admin_dashboard')
             

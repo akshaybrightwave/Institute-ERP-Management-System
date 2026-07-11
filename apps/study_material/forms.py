@@ -40,8 +40,13 @@ class StudyMaterialForm(forms.ModelForm):
             user_center = self.user.center
             self.fields['center'].queryset = Center.objects.filter(id=user_center.id)
             self.fields['center'].initial = user_center
+            self.fields['center'].empty_label = None
+            self.fields['center'].required = False
             self.fields['center'].widget.attrs.update({'disabled': 'disabled'})
-            self.fields['course'].queryset = Course.objects.filter(Q(center=user_center) | Q(center__isnull=True))
+            self.fields['course'].queryset = Course.objects.filter(
+                assignments__center=user_center,
+                assignments__is_active=True
+            ).distinct().order_by('name')
         else:
             self.fields['center'].queryset = Center.objects.all().order_by('name')
             self.fields['course'].queryset = Course.objects.all().order_by('name')
@@ -56,7 +61,10 @@ class StudyMaterialForm(forms.ModelForm):
         if center_id:
             if self.user and self.user.role == 'center':
                 center_id = self.user.center.id
-            self.fields['course'].queryset = Course.objects.filter(Q(center_id=center_id) | Q(center__isnull=True)).order_by('name')
+            self.fields['course'].queryset = Course.objects.filter(
+                assignments__center_id=center_id,
+                assignments__is_active=True
+            ).distinct().order_by('name')
 
     def clean(self):
         cleaned_data = super().clean()

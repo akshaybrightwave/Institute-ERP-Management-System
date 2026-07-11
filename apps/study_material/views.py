@@ -205,7 +205,6 @@ def study_material_download(request, pk):
     return FileResponse(material.upload_file.open('rb'), as_attachment=True)
 
 
-# AJAX Cascade endpoints
 @login_required
 def ajax_get_courses(request):
     center_id = request.GET.get('center_id')
@@ -214,13 +213,17 @@ def ajax_get_courses(request):
             if not request.user.center:
                 return JsonResponse({'courses': []})
             courses = Course.objects.filter(
-                Q(center=request.user.center) | Q(center__isnull=True)
-            ).order_by('name')
+                assignments__center=request.user.center,
+                assignments__is_active=True
+            ).distinct().order_by('name')
         elif request.user.role in ('admin', 'teacher'):
             courses = Course.objects.all().order_by('name')
         else:
             return JsonResponse({'courses': []})
     else:
-        courses = Course.objects.filter(Q(center_id=center_id) | Q(center__isnull=True)).order_by('name')
+        courses = Course.objects.filter(
+            assignments__center_id=center_id,
+            assignments__is_active=True
+        ).distinct().order_by('name')
     data = [{'id': c.id, 'name': c.name} for c in courses]
     return JsonResponse({'courses': data})

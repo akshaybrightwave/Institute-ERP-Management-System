@@ -267,9 +267,14 @@ def admin_dashboard(request):
     from apps.courses.models import Course
     from apps.batches.models import Batch
     from apps.attendance.models import Attendance
-    from apps.students.models import StudentProfile
+    from apps.students.models import StudentProfile, StudentAdmission
     from apps.fees.models import FeePayment
-    from django.db.models import Sum, F
+    from apps.categories.models import Category
+    from apps.admit_card.models import AdmitCard
+    from apps.results.models import Result
+    from apps.exams.models import Exam
+    from apps.certificates.models import Certificate
+    from django.db.models import Sum, F, Count, Q
     from django.db.models.functions import Coalesce
     from decimal import Decimal
 
@@ -286,9 +291,7 @@ def admin_dashboard(request):
     ).count()
 
     # Certificate & Exam metrics
-    from apps.certificates.models import Certificate
     from apps.exams.models import StudentExamAttempt
-    from django.db.models import Count, Q
     
     total_certificates = Certificate.objects.count()
     issued_certificates_count = total_certificates
@@ -328,6 +331,27 @@ def admin_dashboard(request):
     passed_attempts = StudentExamAttempt.objects.filter(is_completed=True, score__gte=F('exam__pass_percentage')).count()
     exam_pass_rate = round((passed_attempts / total_attempts * 100), 1) if total_attempts > 0 else 0.0
 
+    # New Admin KPI metrics
+    total_course_categories = Category.objects.count()
+    
+    admission_counts = StudentAdmission.objects.aggregate(
+        total=Count('id'),
+        approved=Count('id', filter=Q(status='Approved')),
+        pending=Count('id', filter=Q(status='Pending')),
+        cancelled=Count('id', filter=Q(status='Cancelled')),
+    )
+    total_admissions = admission_counts['total'] or 0
+    approved_admissions = admission_counts['approved'] or 0
+    pending_admissions = admission_counts['pending'] or 0
+    cancelled_admissions = admission_counts['cancelled'] or 0
+
+    total_admit_cards = AdmitCard.objects.count()
+    total_results = Result.objects.count()
+    total_id_cards = approved_admissions
+
+    total_pending_centers = Center.objects.filter(center_user__is_active=False).count()
+    total_approved_centers = Center.objects.filter(center_user__is_active=True).count()
+
     context = {
         'total_students': User.objects.filter(role='student', is_deleted=False).count(),
         'total_teachers': User.objects.filter(role='teacher', is_deleted=False).count(),
@@ -353,6 +377,18 @@ def admin_dashboard(request):
         'fee_collection_rate': fee_collection_rate,
         'exam_pass_rate': exam_pass_rate,
         'certificate_issuance_count': issued_certificates_count,
+        
+        # New context variables
+        'total_course_categories': total_course_categories,
+        'total_admissions': total_admissions,
+        'approved_admissions': approved_admissions,
+        'pending_admissions': pending_admissions,
+        'cancelled_admissions': cancelled_admissions,
+        'total_admit_cards': total_admit_cards,
+        'total_results': total_results,
+        'total_id_cards': total_id_cards,
+        'total_pending_centers': total_pending_centers,
+        'total_approved_centers': total_approved_centers,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 

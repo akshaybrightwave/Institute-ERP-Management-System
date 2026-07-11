@@ -41,6 +41,8 @@ class CertificateForm(forms.ModelForm):
             user_center = self.user.center
             self.fields['center'].queryset = Center.objects.filter(id=user_center.id)
             self.fields['center'].initial = user_center
+            self.fields['center'].empty_label = None
+            self.fields['center'].required = False
             self.fields['center'].widget.attrs.update({'disabled': 'disabled'})
             self.fields['student'].queryset = StudentAdmission.objects.filter(
                 center=user_center,
@@ -92,8 +94,9 @@ class CertificateForm(forms.ModelForm):
         student = cleaned_data.get('student')
         course_duration = cleaned_data.get('course_duration')
 
-        if self.user and self.user.role == 'center' and student:
-            if student.center != self.user.center:
+        if self.user and self.user.role == 'center':
+            cleaned_data['center'] = self.user.center
+            if student and student.center != self.user.center:
                 raise forms.ValidationError("You can only generate certificates for students in your center.")
 
         # Find Academic Session
