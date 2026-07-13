@@ -1,7 +1,7 @@
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt, ExamSchedule, ExamStudentAssignment
+from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt, ExamSchedule, ExamStudentAssignment, ExamCentre
 from .forms import ExamForm, QuestionForm, OptionForm, ExamScheduleForm
 from apps.accounts.views import admin_required
 from django.contrib import messages
@@ -1153,3 +1153,126 @@ def edit_student_exam_attempt_ajax(request, pk):
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
+
+# ---------------------------------------------------------------------------
+# Exam Centre CRUD — Admin only, independent from Center Information
+# ---------------------------------------------------------------------------
+
+@admin_required
+def exam_centre_list(request):
+    """
+    List all Exam Centres and handle the Add form via POST.
+    Admin-only. Completely independent from Center Information.
+    """
+    query = request.GET.get('q', '').strip()
+    centres = ExamCentre.objects.all()
+    if query:
+        centres = centres.filter(
+            Q(centre_name__icontains=query) |
+            Q(centre_code__icontains=query) |
+            Q(address__icontains=query)
+        )
+
+    if request.method == 'POST':
+        centre_name = request.POST.get('centre_name', '').strip()
+        centre_code = request.POST.get('centre_code', '').strip()
+        address = request.POST.get('address', '').strip()
+        is_active = request.POST.get('is_active') == 'on'
+
+        errors = {}
+        if not centre_name:
+            errors['centre_name'] = 'Centre name is required.'
+        if not centre_code:
+            errors['centre_code'] = 'Centre code is required.'
+        elif ExamCentre.objects.filter(centre_code__iexact=centre_code).exists():
+            errors['centre_code'] = 'A centre with this code already exists.'
+        if not address:
+            errors['address'] = 'Address is required.'
+
+        if not errors:
+            ExamCentre.objects.create(
+                centre_name=centre_name,
+                centre_code=centre_code.upper(),
+                address=address,
+                is_active=is_active,
+            )
+            messages.success(request, f'Exam Centre "{centre_name}" created successfully.')
+            return redirect('center_list')
+
+        # Validation failed — re-render with errors and sticky values
+        paginator = Paginator(centres, 10)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        return render(request, 'exam/exam_centre_list.html', {
+            'page_obj': page_obj,
+            'query': query,
+            'form_errors': errors,
+            'form_data': request.POST,
+        })
+
+    paginator = Paginator(centres, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'exam/exam_centre_list.html', {
+        'page_obj': page_obj,
+        'query': query,
+    })
+
+
+@admin_required
+def exam_centre_edit(request, pk):
+    """
+    AJAX endpoint:
+      GET  → returns current field values as JSON
+      POST → validates and saves updated fields, returns JSON
+    """
+    centre = get_object_or_404(ExamCentre, pk=pk)
+
+    if request.method == 'GET' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'centre_name': centre.centre_name,
+            'centre_code': centre.centre_code,
+            'address': centre.address,
+            'is_active': centre.is_active,
+        })
+
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        centre_name = request.POST.get('centre_name', '').strip()
+        centre_code = request.POST.get('centre_code', '').strip()
+        address = request.POST.get('address', '').strip()
+        is_active = request.POST.get('is_active') == 'true'
+
+        errors = {}
+        if not centre_name:
+            errors['centre_name'] = ['Centre name is required.']
+        if not centre_code:
+            errors['centre_code'] = ['Centre code is required.']
+        elif ExamCentre.objects.filter(centre_code__iexact=centre_code).exclude(pk=pk).exists():
+            errors['centre_code'] = ['A centre with this code already exists.']
+        if not address:
+            errors['address'] = ['Address is required.']
+
+        if errors:
+            return JsonResponse({'success': False, 'errors': errors})
+
+        centre.centre_name = centre_name
+        centre.centre_code = centre_code.upper()
+        centre.address = address
+        centre.is_active = is_active
+        centre.save()
+        return JsonResponse({'success': True})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=400)
+
+
+@admin_required
+def exam_centre_delete(request, pk):
+    """
+    Soft-deletes an Exam Centre. Accepts GET (redirect-based) or POST.
+    Also handles AJAX DELETE / POST requests.
+    """
+    centre = get_object_or_404(ExamCentre, pk=pk)
+    centre_name = centre.centre_name
+    centre.delete()  # SoftDeleteModel.delete()
+    messages.success(request, f'Exam Centre "{centre_name}" deleted successfully.')
+    return redirect('center_list')

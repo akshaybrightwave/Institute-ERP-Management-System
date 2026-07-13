@@ -560,9 +560,9 @@ def student_profile(request):
     pending_amount = 0.00
     fee_status = 'PENDING'
 
-    if profile:
+    if admission:
         from apps.attendance.models import Attendance
-        student_attendances = Attendance.objects.filter(student=profile)
+        student_attendances = Attendance.objects.filter(student=admission)
         present_days = student_attendances.filter(status='present').count()
         absent_days = student_attendances.filter(status='absent').count()
         total_days = present_days + absent_days

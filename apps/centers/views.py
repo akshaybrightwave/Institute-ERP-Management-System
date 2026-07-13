@@ -8,64 +8,7 @@ from django.core.paginator import Paginator
 from apps.accounts.views import admin_required
 from .models import Center
 from .forms import CenterCertificateUpdateForm, CenterForm
-from django.db import transaction
 from .services import create_center_certificate_for_center
-
-
-def sync_center_user(center, password=None):
-    """
-    Automatically creates or links a Django User account for the Center.
-    Reuses existing user matching by Center Email.
-    """
-    from apps.accounts.models import User
-
-    if not center.email:
-        return None
-
-    # Step 1: Search user by center email
-    user = User.objects.filter(email__iexact=center.email).first()
-
-    pw = password if password else 'center123'
-
-    # Step 2: If no User exists, create one
-    if not user:
-        # Determine username: Center Code (preferred)
-        username = center.code if center.code else center.email
-        
-        # Security validation: Prevent duplicate usernames
-        if User.objects.filter(username=username).exists():
-            username = center.email
-
-        # Final safety check in case the email is also taken as a username
-        if User.objects.filter(username=username).exists():
-            username = f"{username}_{uuid.uuid4().hex[:4]}"
-
-        first_name = center.name[:150]
-        
-        user = User.objects.create_user(
-            username=username,
-            email=center.email,
-            password=pw,
-            role='center',
-            center=center,
-            first_name=first_name
-        )
-    else:
-        # Update existing User role and link Center if required
-        user_updated = False
-        if user.role != 'center':
-            user.role = 'center'
-            user_updated = True
-        if user.center != center:
-            user.center = center
-            user_updated = True
-        if password:
-            user.set_password(password)
-            user_updated = True
-        if user_updated:
-            user.save()
-
-    return user
 
 
 @admin_required
@@ -84,8 +27,6 @@ def center_list(request):
                     center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
                 center.save()
                 create_center_certificate_for_center(center, created_by=request.user)
-                # Auto-create/link Center User
-                sync_center_user(center, password=form.cleaned_data.get('password'))
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
 
@@ -155,14 +96,9 @@ from django.views.decorators.http import require_http_methods
 from decimal import Decimal, InvalidOperation
 
 
-@login_required
+@admin_required
 @require_http_methods(["GET", "POST"])
 def load_wallet(request, pk):
-    is_admin = request.user.role in ('admin', 'superadmin')
-    is_center = request.user.role == 'center'
-
-    if not (is_admin or (is_center and request.user.center and request.user.center.pk == pk)):
-        return JsonResponse({'success': False, 'error': 'Access Denied: You do not manage this center.'}, status=403)
     """
     GET  → return center name + current wallet balance as JSON (for modal population)
     POST → add the submitted amount to the center's wallet_balance
@@ -218,9 +154,18 @@ def center_create(request):
 
                 create_center_certificate_for_center(center, created_by=request.user)
                 
-                # Create/link user for the center
+                # Create user for the center
+                email = form.cleaned_data.get('email')
                 password = form.cleaned_data.get('password')
-                sync_center_user(center, password=password)
+                
+                # Use email as username if not provided
+                User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    role='center',
+                    center=center
+                )
             
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
@@ -255,8 +200,6 @@ def center_update(request, pk):
                     user_updated = True
                 if user_updated:
                     center.center_user.save()
-            else:
-                sync_center_user(center, password=password)
             
             # Update Profile Status
             status_val = request.POST.get('is_deleted')
@@ -406,7 +349,7 @@ def center_dashboard(request):
     pending_admissions = admission_counts['pending'] or 0
     cancelled_admissions = admission_counts['cancelled'] or 0
 
-    active_students = students.filter(user__is_active=True, user__is_deleted=False).count()
+    active_students = students.filter(user__is_deleted=False).count()
     total_students = students.count()
     passout_students = Certificate.objects.filter(center=center).count()
     total_course_categories = assigned_courses.exclude(course__category__isnull=True).values('course__category_id').distinct().count()
@@ -441,18 +384,18 @@ def center_dashboard(request):
     ).distinct().prefetch_related('batches').order_by('date')[:5]
 
     dashboard_cards = [
-        {'label': 'Active Student(s)', 'value': active_students, 'icon': 'bi-mortarboard-fill', 'class': 'bg-g-purple', 'url': reverse('student_list_by_center'), 'action': 'View List'},
-        {'label': 'Passout Student(s)', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-teal', 'url': reverse('passout_student_list'), 'action': 'View List'},
-        {'label': 'Course Category', 'value': total_course_categories, 'icon': 'bi-tags-fill', 'class': 'bg-g-green', 'url': reverse('category_list'), 'action': 'Manage Category'},
-        {'label': 'Course(s)', 'value': total_assigned_courses, 'icon': 'bi-journal-bookmark-fill', 'class': 'bg-g-pink', 'url': reverse('course_list'), 'action': 'Manage Course'},
-        {'label': 'Admission(s)', 'value': total_admissions, 'icon': 'bi-person-plus-fill', 'class': 'bg-g-blue', 'url': reverse('student_admission'), 'action': 'Admission Student'},
-        {'label': 'Approved Admission(s)', 'value': approved_admissions, 'icon': 'bi-person-check-fill', 'class': 'bg-g-orange', 'url': reverse('student_approved_list'), 'action': 'View List'},
-        {'label': 'Pending Admission(s)', 'value': pending_admissions, 'icon': 'bi-hourglass-split', 'class': 'bg-g-red', 'url': reverse('student_pending_list'), 'action': 'View List'},
-        {'label': 'Cancelled Admission(s)', 'value': cancelled_admissions, 'icon': 'bi-person-x-fill', 'class': 'bg-g-violet', 'url': reverse('student_cancelled_list'), 'action': 'View List'},
-        {'label': 'Admit Card Generate', 'value': total_admit_cards, 'icon': 'bi-card-text', 'class': 'bg-g-crimson', 'url': reverse('admit_card_create'), 'action': 'Generate Admit Card'},
-        {'label': 'Result Generate', 'value': total_results, 'icon': 'bi-file-earmark-bar-graph-fill', 'class': 'bg-g-amber', 'url': reverse('result_create'), 'action': 'Generate Result'},
-        {'label': 'ID Card Generate', 'value': total_id_cards, 'icon': 'bi-person-badge-fill', 'class': 'bg-g-olive', 'url': reverse('student_id_card'), 'action': 'Generate ID Card'},
-        {'label': 'Fee Collection', 'value': total_fee_collection, 'icon': 'bi-bank', 'class': 'bg-g-navy', 'url': reverse('fees_list'), 'action': 'Collect Fee', 'small': True, 'is_currency': True},
+        {'label': 'Active Students', 'value': active_students, 'icon': 'bi-mortarboard-fill', 'class': 'bg-g-purple', 'url': reverse('student_list_by_center'), 'action': 'View List'},
+        {'label': 'Passout Students', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-teal', 'url': reverse('passout_student_list'), 'action': 'View List'},
+        {'label': 'Course Categories', 'value': total_course_categories, 'icon': 'bi-tags-fill', 'class': 'bg-g-green', 'url': reverse('course_list'), 'action': 'View Courses'},
+        {'label': 'Assigned Courses', 'value': total_assigned_courses, 'icon': 'bi-journal-bookmark-fill', 'class': 'bg-g-pink', 'url': reverse('course_list'), 'action': 'View Courses'},
+        {'label': 'Admissions', 'value': total_admissions, 'icon': 'bi-person-plus-fill', 'class': 'bg-g-blue', 'url': reverse('student_list_by_center'), 'action': 'View List'},
+        {'label': 'Approved Admissions', 'value': approved_admissions, 'icon': 'bi-person-check-fill', 'class': 'bg-g-orange', 'url': reverse('student_approved_list'), 'action': 'View List'},
+        {'label': 'Pending Admissions', 'value': pending_admissions, 'icon': 'bi-hourglass-split', 'class': 'bg-g-red', 'url': reverse('student_pending_list'), 'action': 'View List'},
+        {'label': 'Cancelled Admissions', 'value': cancelled_admissions, 'icon': 'bi-person-x-fill', 'class': 'bg-g-violet', 'url': reverse('student_cancelled_list'), 'action': 'View List'},
+        {'label': 'Admit Cards', 'value': total_admit_cards, 'icon': 'bi-card-text', 'class': 'bg-g-crimson', 'url': reverse('admit_card_list'), 'action': 'View List'},
+        {'label': 'Results', 'value': total_results, 'icon': 'bi-file-earmark-bar-graph-fill', 'class': 'bg-g-amber', 'url': reverse('result_list'), 'action': 'View List'},
+        {'label': 'ID Cards', 'value': total_id_cards, 'icon': 'bi-person-badge-fill', 'class': 'bg-g-olive', 'url': reverse('student_id_card'), 'action': 'View Cards'},
+        {'label': 'Fee Collection', 'value': f"Rs.{total_fee_collection}", 'icon': 'bi-cash-stack', 'class': 'bg-g-navy', 'url': reverse('fees_list'), 'action': 'View Fees', 'small': True},
     ]
 
     context = {
@@ -576,15 +519,8 @@ def api_assign_course_toggle(request):
         return JsonResponse({'success': False, 'message': str(e)}, status=400)
 
 
-@login_required
+@admin_required
 def center_profile(request, pk):
-    is_admin = request.user.role in ('admin', 'superadmin')
-    is_center = request.user.role == 'center'
-
-    if not (is_admin or (is_center and request.user.center and request.user.center.pk == pk)):
-        from django.http import HttpResponseForbidden
-        return HttpResponseForbidden("Access Denied: You do not have permission to view this profile.")
-
     center = get_object_or_404(
         Center.all_objects.select_related('center_user')
         .prefetch_related('admissions', 'course_assignments'),

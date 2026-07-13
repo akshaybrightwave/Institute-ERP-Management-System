@@ -1,0 +1,440 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Exam Centre Management | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1"><i class="bi bi-geo-alt-fill text-primary me-2"></i>Exam Centre</h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a></li>
+        <li class="breadcrumb-item text-muted">Online Exam Section</li>
+        <li class="breadcrumb-item text-white active" aria-current="page">Exam Centre</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- TOP — Add Exam Centre Form -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Add Exam Centre</h6>
+          <i class="bi bi-chevron-up text-muted"></i>
+        </div>
+
+        <form method="POST" action="{% url 'center_list' %}" id="addExamCentreForm" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <div class="col-md-6 col-12">
+              <label for="id_centre_name" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Centre Name <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="centre_name" class="form-control dark-input text-white" id="id_centre_name"
+                     placeholder="e.g. City Examination Hall"
+                     value="{{ form_data.centre_name|default:'' }}" required
+                     style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              {% if form_errors.centre_name %}
+                <div class="text-danger small mt-1">{{ form_errors.centre_name }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6 col-12">
+              <label for="id_centre_code" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Centre Code <span class="text-danger">*</span>
+              </label>
+              <input type="text" name="centre_code" class="form-control dark-input text-white" id="id_centre_code"
+                     placeholder="e.g. EC001"
+                     value="{{ form_data.centre_code|default:'' }}" required
+                     style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              {% if form_errors.centre_code %}
+                <div class="text-danger small mt-1">{{ form_errors.centre_code }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label for="id_address" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Address <span class="text-danger">*</span>
+              </label>
+              <textarea name="address" rows="3" class="form-control dark-input text-white" id="id_address"
+                        placeholder="Full address of the exam venue" required
+                        style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">{{ form_data.address|default:'' }}</textarea>
+              {% if form_errors.address %}
+                <div class="text-danger small mt-1">{{ form_errors.address }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <div class="form-check form-switch mt-1">
+                <input class="form-check-input" type="checkbox" name="is_active" id="id_is_active"
+                       {% if not form_data or form_data.is_active %}checked{% endif %}>
+                <label class="form-check-label fw-semibold" for="id_is_active" style="color: #f6f4ff; font-size: 0.9rem;">
+                  Active
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4" style="width: 150px;">
+            <button type="submit" class="btn btn-publish w-100 py-2 rounded-3">
+              <i class="bi bi-file-earmark-plus me-1"></i> Publish
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- BOTTOM — Exam Centre Listing -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">List Exam Centre(s)</h6>
+          <i class="bi bi-chevron-up text-muted"></i>
+        </div>
+
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+            <select class="form-select form-select-sm dark-input" style="width: 70px;">
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-3">
+            <form method="GET" action="{% url 'center_list' %}" class="d-flex align-items-center gap-2">
+              <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" id="examCentreSearch" class="form-control form-control-sm dark-input text-white"
+                     value="{{ query }}"
+                     style="width: 200px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input);">
+            </form>
+
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">Copy</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">CSV</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">Excel</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">PDF</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">Print</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-examly table-hover table-bordered align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">CENTRE NAME</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">CODE</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">ADDRESS</th>
+                <th class="text-uppercase text-muted text-center" style="font-size: 0.8rem; width: 90px;">STATUS</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem; width: 200px;">ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for centre in page_obj %}
+              <tr>
+                <td class="ps-4 fw-semibold text-muted">{{ forloop.counter }}.</td>
+                <td class="fw-semibold text-white">{{ centre.centre_name }}</td>
+                <td>
+                  <span class="badge bg-light text-dark fw-bold border">{{ centre.centre_code }}</span>
+                </td>
+                <td class="text-white-50" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ centre.address }}
+                </td>
+                <td class="text-center">
+                  {% if centre.is_active %}
+                    <span class="badge bg-success">Active</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Inactive</span>
+                  {% endif %}
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end">
+                    <button type="button"
+                            class="btn btn-sm btn-action-edit btn-edit-exam-centre rounded-pill px-3"
+                            data-pk="{{ centre.pk }}"
+                            data-url="{% url 'exam_centre_edit' centre.pk %}"
+                            title="Edit">
+                      <i class="bi bi-pencil-square me-1"></i> Edit
+                    </button>
+                    <a href="{% url 'exam_centre_delete' centre.pk %}"
+                       class="btn btn-sm btn-action-delete btn-delete-exam-centre rounded-pill px-3 text-white text-decoration-none"
+                       data-name="{{ centre.centre_name }}"
+                       title="Delete">
+                      <i class="bi bi-trash me-1"></i> Delete
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">No exam centres found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center">
+          <div class="text-muted small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+          </div>
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Previous</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Next</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Exam Centre Modal -->
+<div class="modal fade" id="editExamCentreModal" tabindex="-1" aria-labelledby="editExamCentreModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: #12141c; border: 1px solid #1c1f2c; border-radius: 12px; color: #fff;">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white" id="editExamCentreModalLabel">Edit Exam Centre</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editExamCentreForm" method="POST" novalidate>
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-danger d-none" id="modalError"></div>
+
+          <div class="mb-3">
+            <label for="modal_centre_name" class="form-label fw-semibold text-white">
+              Centre Name <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="centre_name" class="form-control dark-input text-white" id="modal_centre_name"
+                   placeholder="Centre Name" required
+                   style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+          </div>
+
+          <div class="mb-3">
+            <label for="modal_centre_code" class="form-label fw-semibold text-white">
+              Centre Code <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="centre_code" class="form-control dark-input text-white" id="modal_centre_code"
+                   placeholder="Centre Code" required
+                   style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+          </div>
+
+          <div class="mb-3">
+            <label for="modal_address" class="form-label fw-semibold text-white">
+              Address <span class="text-danger">*</span>
+            </label>
+            <textarea name="address" rows="3" class="form-control dark-input text-white" id="modal_address"
+                      placeholder="Full address" required
+                      style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;"></textarea>
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="modal_is_active">
+              <label class="form-check-label fw-semibold text-white" for="modal_is_active">Active</label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-save-modal px-4 py-2" id="btnECUpdateSubmit">
+            <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // CSRF Utility
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const editModal    = document.getElementById('editExamCentreModal');
+  const bsModal      = new bootstrap.Modal(editModal);
+  const editForm     = document.getElementById('editExamCentreForm');
+  const nameInput    = document.getElementById('modal_centre_name');
+  const codeInput    = document.getElementById('modal_centre_code');
+  const addressInput = document.getElementById('modal_address');
+  const activeInput  = document.getElementById('modal_is_active');
+  const modalError   = document.getElementById('modalError');
+  const submitBtn    = document.getElementById('btnECUpdateSubmit');
+
+  function showError(msg) {
+    modalError.textContent = msg;
+    modalError.classList.remove('d-none');
+  }
+
+  // Handle Edit Click — fetch current data via AJAX GET
+  document.querySelectorAll('.btn-edit-exam-centre').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const url = btn.dataset.url;
+      modalError.classList.add('d-none');
+      editForm.action = url;
+
+      fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          nameInput.value    = data.centre_name;
+          codeInput.value    = data.centre_code;
+          addressInput.value = data.address;
+          activeInput.checked = data.is_active;
+          bsModal.show();
+        })
+        .catch(function () {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Unable to fetch Exam Centre data.',
+            customClass: { popup: 'dark-modal-swal' }
+          });
+        });
+    });
+  });
+
+  // Handle AJAX Update Submit
+  editForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    modalError.classList.add('d-none');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+    const formData = new FormData(editForm);
+    // Pass is_active as string 'true'/'false' so the view can read it reliably
+    formData.set('is_active', activeInput.checked ? 'true' : 'false');
+
+    fetch(editForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.success) {
+          bsModal.hide();
+          window.location.reload();
+        } else {
+          const errs = data.errors || {};
+          const firstError = Object.values(errs)[0];
+          const msg = Array.isArray(firstError) ? firstError[0] : (firstError || 'Validation error. Please check your input.');
+          showError(msg);
+        }
+      })
+      .catch(function () {
+        showError('An error occurred. Please try again.');
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-bookmark-fill me-1"></i> Save Changes';
+      });
+  });
+
+  // Django messages via SweetAlert
+  {% if messages %}
+    {% for msg in messages %}
+      {% if "created successfully" in msg.message or "updated successfully" in msg.message or "deleted successfully" in msg.message %}
+        Swal.fire({
+          icon: 'success',
+          title: '{{ msg.message }}',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        });
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  // Delete Action via SweetAlert — POST form submit
+  document.querySelectorAll('.btn-delete-exam-centre').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url  = btn.getAttribute('href');
+      const name = btn.dataset.name;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Delete Exam Centre?',
+        text: 'Are you sure you want to delete "' + name + '"?',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfInput = document.createElement('input');
+          csrfInput.type  = 'hidden';
+          csrfInput.name  = 'csrfmiddlewaretoken';
+          csrfInput.value = getCookie('csrftoken');
+          form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}
