@@ -13,6 +13,9 @@
     <h2 class="fw-bold text-white mb-1">Assigned Leads</h2>
     <p class="text-muted small">Perform counseling activities and manage conversions</p>
   </div>
+  <div>
+    <a href="{% url 'counselor_dashboard' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Back</a>
+  </div>
 </div>
 
 <!-- Filters -->
@@ -33,7 +36,7 @@
       <select name="status" class="form-select bg-dark border-secondary text-white">
         <option value="">All Statuses</option>
         {% for code, name in status_choices %}
-          <option value="{{ code }}" {% if status == code %}selected{% endif %}>{{ name }}</option>
+          <option value="{{ code }}" {% if status == code or followup_state and code == 'FOLLOW_UP_REQUIRED' %}selected{% endif %}>{{ name }}</option>
         {% endfor %}
       </select>
     </div>
@@ -91,26 +94,20 @@
       <table class="table m-table align-middle">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Mobile</th>
-            <th>Email</th>
-            <th>City</th>
-            <th>Added / Assigned</th>
-            <th>Priority</th>
-            <th>Next Follow-up</th>
-            <th>Counselor Status</th>
-            <th class="text-end">Actions</th>
+            <th class="ps-4" style="width: 20%;">Name</th>
+            <th style="width: 15%;">Mobile</th>
+            <th style="width: 12%;">Added / Assigned</th>
+            <th style="width: 10%;">Priority</th>
+            <th style="width: 15%;">Counselor Status</th>
+            <th style="width: 13%;">Last Updated</th>
+            <th class="text-end" style="width: 15%; padding-right: 4rem;">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for lead in page_obj %}
             <tr>
-              <td class="fw-bold text-muted">#{{ lead.pk }}</td>
-              <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
+              <td class="fw-bold text-white ps-4">{{ lead.inquiry.full_name }}</td>
               <td>{{ lead.inquiry.mobile_number }}</td>
-              <td>{{ lead.inquiry.email|default:"-" }}</td>
-              <td>{{ lead.inquiry.city }}</td>
               <td>
                 <span class="text-white-50">
                   {% if lead.assigned_at %}
@@ -129,21 +126,19 @@
                   <span class="badge bg-secondary"><i class="bi bi-thermometer-snow"></i> Cold</span>
                 {% endif %}
               </td>
-              <td>
-                {% if lead.next_followup_date %}
-                  {{ lead.next_followup_date|date:"d M Y" }}
-                {% else %}
-                  <span class="text-muted small">Not Scheduled</span>
-                {% endif %}
-              </td>
+
               <td>
                 <span class="badge {% if lead.counselor_status == 'NEW' %}bg-primary{% elif lead.counselor_status == 'CONTACTED' %}bg-info text-white{% elif lead.counselor_status == 'COUNSELING_DONE' %}bg-indigo{% elif lead.counselor_status == 'FOLLOW_UP_REQUIRED' %}bg-warning text-dark{% elif lead.counselor_status == 'INTERESTED' %}bg-violet{% elif lead.counselor_status == 'CONVERTED' %}bg-success{% elif lead.counselor_status == 'NOT_INTERESTED' %}bg-secondary{% elif lead.counselor_status == 'LOST' %}bg-danger{% else %}bg-dark{% endif %}" style="{% if lead.counselor_status == 'COUNSELING_DONE' %}background-color: #4f46e5;{% elif lead.counselor_status == 'INTERESTED' %}background-color: #8b5cf6;{% endif %}">
                   {{ lead.get_counselor_status_display }}
                 </span>
+              </td>
+              <td>
                 {% if lead.counselor_status_updated_at and lead.counselor_status != 'NEW' %}
-                  <div class="text-muted small mt-1" style="font-size: 0.75rem;">
+                  <span class="text-muted small">
                     <i class="bi bi-clock-history me-1"></i>{{ lead.counselor_status_updated_at|date:"d M Y" }}
-                  </div>
+                  </span>
+                {% else %}
+                  <span class="text-muted small">—</span>
                 {% endif %}
               </td>
               <td class="text-end">

@@ -7,6 +7,8 @@ urlpatterns = [
     path('admin/dashboard/', views.management_admin_dashboard, name='management_admin_dashboard'),
     path('admin/counselor-updates/', views.admin_counselor_updates, name='admin_counselor_updates'),
     path('telecaller/dashboard/', views.management_dashboard, name='management_dashboard'),
+    path('telecaller/dashboard/export/', views.export_telecaller_dashboard_csv, name='export_telecaller_dashboard_csv'),
+    path('telecaller/dashboard/message-export/', views.export_telecaller_message_numbers_csv, name='export_telecaller_message_numbers_csv'),
     path('create-user/', views.management_create_user, name='management_create_user'),
 
     # Inquiry CRUD
@@ -59,7 +61,10 @@ urlpatterns = [
 
     # Phase 11.2 Counselor Operations
     path('counselor/dashboard/', views.counselor_dashboard, name='counselor_dashboard'),
+    path('counselor/admission-trend-data/', views.counselor_admission_trend_data, name='counselor_admission_trend_data'),
     path('counselor/telecalling-dashboard/', views.counselor_telecalling_dashboard, name='counselor_telecalling_dashboard'),
+    path('counselor/telecalling-dashboard/export/', views.export_counselor_telecalling_csv, name='export_counselor_telecalling_csv'),
+    path('counselor/telecalling-dashboard/message-export/', views.export_message_numbers_csv, name='export_message_numbers_csv'),
     path('counselor/leads/', views.counselor_lead_list, name='counselor_lead_list'),
     path('counselor/leads/<int:pk>/', views.counselor_lead_detail, name='counselor_lead_detail'),
     path('counselor/leads/<int:pk>/status/', views.counselor_lead_status_update, name='counselor_lead_status_update'),

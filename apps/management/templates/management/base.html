@@ -1,4 +1,4 @@
-{% extends 'accounts/base.html' %}
+﻿{% extends 'accounts/base.html' %}
 
 {% block body_class %}app-shell management-shell{% endblock %}
 
@@ -1287,7 +1287,7 @@
       class="sidebar-item {% if request.resolver_match.url_name == 'counselor_dashboard' %}active{% endif %}">
       <i class="bi bi-grid-1x2"></i> Counselor Dashboard
     </a>
-    <a href="{% url 'counselor_lead_list' %}"
+    <a href="{% url 'counselor_lead_list' %}?status=NEW"
       class="sidebar-item {% if request.resolver_match.url_name == 'counselor_lead_list' or request.resolver_match.url_name == 'counselor_lead_detail' or request.resolver_match.url_name == 'counselor_lead_status_update' %}active{% endif %}">
       <i class="bi bi-people-fill"></i> Assigned Leads
     </a>
