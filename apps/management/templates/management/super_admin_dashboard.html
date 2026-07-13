@@ -434,6 +434,23 @@
   </div>
 </div>
 
+<!-- ── Telecalling Date Filter Bar ── -->
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div style="font-size:0.82rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">
+    <i class="bi bi-funnel me-1"></i> Filter Telecalling Data
+  </div>
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <a href="?date_filter=today" class="btn btn-sm {% if date_filter == 'today' %}btn-info{% else %}btn-outline-secondary{% endif %}" style="font-size:0.78rem;">Today</a>
+    <a href="?date_filter=yesterday" class="btn btn-sm {% if date_filter == 'yesterday' %}btn-info{% else %}btn-outline-secondary{% endif %}" style="font-size:0.78rem;">Yesterday</a>
+    <a href="?date_filter=this_week" class="btn btn-sm {% if date_filter == 'this_week' %}btn-info{% else %}btn-outline-secondary{% endif %}" style="font-size:0.78rem;">This Week</a>
+    <a href="?date_filter=this_month" class="btn btn-sm {% if date_filter == 'this_month' %}btn-info{% else %}btn-outline-secondary{% endif %}" style="font-size:0.78rem;">This Month</a>
+    <a href="?date_filter=all" class="btn btn-sm {% if date_filter == 'all' or not date_filter %}btn-info{% else %}btn-outline-secondary{% endif %}" style="font-size:0.78rem;">All Time</a>
+    <button type="button" class="btn btn-sm {% if date_filter == 'custom' %}btn-info{% else %}btn-outline-secondary{% endif %}" style="font-size:0.78rem;" data-bs-toggle="modal" data-bs-target="#saDateFilterModal">
+      <i class="bi bi-calendar-range me-1"></i>Custom{% if date_filter == 'custom' %} ✓{% endif %}
+    </button>
+  </div>
+</div>
+
 <!-- ── Three Section Panels Row ── -->
 <div class="row g-3 mb-4">
 
@@ -455,7 +472,8 @@
               <div class="ms-label">Assigned by Admin</div>
               <div class="ms-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="bi bi-person-check-fill"></i></div>
             </div>
-            <div class="ms-value sc-blue">{{ telecalling_assigned_by_admin }}</div>
+            <div class="ms-value sc-blue">{{ telecalling_assigned_by_admin.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ telecalling_assigned_by_admin.today }}</div>
           </div>
         </div>
         <div class="col-4">
@@ -464,7 +482,8 @@
               <div class="ms-label">Called</div>
               <div class="ms-icon" style="background:rgba(34,197,94,0.15); color:#22c55e;"><i class="bi bi-telephone-fill"></i></div>
             </div>
-            <div class="ms-value sc-green">{{ telecalling_called }}</div>
+            <div class="ms-value sc-green">{{ telecalling_called.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ telecalling_called.today }}</div>
           </div>
         </div>
         <div class="col-4">
@@ -473,7 +492,8 @@
               <div class="ms-label">Leads Gen.</div>
               <div class="ms-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;"><i class="bi bi-graph-up-arrow"></i></div>
             </div>
-            <div class="ms-value sc-teal">{{ telecalling_leads_generated }}</div>
+            <div class="ms-value sc-teal">{{ telecalling_leads_generated.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ telecalling_leads_generated.today }}</div>
           </div>
         </div>
       </div>
@@ -482,12 +502,14 @@
         <div class="fm-card fm-pending">
           <div class="fm-icon" style="color:#f59e0b;"><i class="bi bi-clock-fill"></i></div>
           <div class="fm-label" style="color:#f59e0b;">Pending Follow Ups</div>
-          <div class="fm-value" style="color:#fbbf24;">{{ telecalling_pending_followups }}</div>
+          <div class="fm-value" style="color:#fbbf24;">{{ telecalling_pending_followups.total }}</div>
+          <div class="small fw-bold mt-1" style="color:rgba(251, 191, 36, 0.7); font-size: 0.75rem;">Today: {{ telecalling_pending_followups.today }}</div>
         </div>
         <div class="fm-card fm-overdue">
           <div class="fm-icon" style="color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
           <div class="fm-label" style="color:#ef4444;">Overdue Follow Ups</div>
-          <div class="fm-value" style="color:#f87171;">{{ telecalling_overdue_followups }}</div>
+          <div class="fm-value" style="color:#f87171;">{{ telecalling_overdue_followups.total }}</div>
+          <div class="small fw-bold mt-1" style="color:rgba(248, 113, 113, 0.7); font-size: 0.75rem;">Today: {{ telecalling_overdue_followups.today }}</div>
         </div>
       </div>
       <a href="{% url 'management_dashboard' %}" class="sa-goto-btn">
@@ -514,7 +536,8 @@
               <div class="ms-label">Assigned by Admin</div>
               <div class="ms-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="bi bi-person-check-fill"></i></div>
             </div>
-            <div class="ms-value sc-blue">{{ ct_assigned_by_admin }}</div>
+            <div class="ms-value sc-blue">{{ ct_assigned_by_admin.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ ct_assigned_by_admin.today }}</div>
           </div>
         </div>
         <div class="col-4">
@@ -523,7 +546,8 @@
               <div class="ms-label">Called</div>
               <div class="ms-icon" style="background:rgba(34,197,94,0.15); color:#22c55e;"><i class="bi bi-telephone-fill"></i></div>
             </div>
-            <div class="ms-value sc-green">{{ ct_called }}</div>
+            <div class="ms-value sc-green">{{ ct_called.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ ct_called.today }}</div>
           </div>
         </div>
         <div class="col-4">
@@ -532,7 +556,8 @@
               <div class="ms-label">Leads Gen.</div>
               <div class="ms-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;"><i class="bi bi-graph-up-arrow"></i></div>
             </div>
-            <div class="ms-value sc-teal">{{ ct_leads_generated }}</div>
+            <div class="ms-value sc-teal">{{ ct_leads_generated.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ ct_leads_generated.today }}</div>
           </div>
         </div>
       </div>
@@ -540,12 +565,14 @@
         <div class="fm-card fm-pending">
           <div class="fm-icon" style="color:#f59e0b;"><i class="bi bi-clock-fill"></i></div>
           <div class="fm-label" style="color:#f59e0b;">Pending Follow Ups</div>
-          <div class="fm-value" style="color:#fbbf24;">{{ ct_pending_followups }}</div>
+          <div class="fm-value" style="color:#fbbf24;">{{ ct_pending_followups.total }}</div>
+          <div class="small fw-bold mt-1" style="color:rgba(251, 191, 36, 0.7); font-size: 0.75rem;">Today: {{ ct_pending_followups.today }}</div>
         </div>
         <div class="fm-card fm-overdue">
           <div class="fm-icon" style="color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
           <div class="fm-label" style="color:#ef4444;">Overdue Follow Ups</div>
-          <div class="fm-value" style="color:#f87171;">{{ ct_overdue_followups }}</div>
+          <div class="fm-value" style="color:#f87171;">{{ ct_overdue_followups.total }}</div>
+          <div class="small fw-bold mt-1" style="color:rgba(248, 113, 113, 0.7); font-size: 0.75rem;">Today: {{ ct_overdue_followups.today }}</div>
         </div>
       </div>
       <a href="{% url 'counselor_telecalling_dashboard' %}" class="sa-goto-btn">
@@ -572,7 +599,8 @@
               <div class="ms-label">Assigned by Admin</div>
               <div class="ms-icon" style="background:rgba(59,130,246,0.15); color:#3b82f6;"><i class="bi bi-person-check-fill"></i></div>
             </div>
-            <div class="ms-value sc-blue">{{ counselling_assigned }}</div>
+            <div class="ms-value sc-blue">{{ counselling_assigned.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ counselling_assigned.today }}</div>
           </div>
         </div>
         <div class="col-4">
@@ -581,7 +609,8 @@
               <div class="ms-label">Interested</div>
               <div class="ms-icon" style="background:rgba(34,197,94,0.15); color:#22c55e;"><i class="bi bi-heart-fill"></i></div>
             </div>
-            <div class="ms-value sc-green">{{ counselling_interested }}</div>
+            <div class="ms-value sc-green">{{ counselling_interested.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ counselling_interested.today }}</div>
           </div>
         </div>
         <div class="col-4">
@@ -590,7 +619,8 @@
               <div class="ms-label">Admissions Done</div>
               <div class="ms-icon" style="background:rgba(6,182,212,0.15); color:#06b6d4;"><i class="bi bi-mortarboard-fill"></i></div>
             </div>
-            <div class="ms-value sc-teal">{{ counselling_admissions_done }}</div>
+            <div class="ms-value sc-teal">{{ counselling_admissions_done.total }}</div>
+            <div class="small fw-bold text-white-50 mt-1" style="font-size: 0.75rem;">Today: {{ counselling_admissions_done.today }}</div>
           </div>
         </div>
       </div>
@@ -598,12 +628,14 @@
         <div class="fm-card fm-pending">
           <div class="fm-icon" style="color:#f59e0b;"><i class="bi bi-clock-fill"></i></div>
           <div class="fm-label" style="color:#f59e0b;">Pending Follow Ups</div>
-          <div class="fm-value" style="color:#fbbf24;">{{ counselling_pending_followups }}</div>
+          <div class="fm-value" style="color:#fbbf24;">{{ counselling_pending_followups.total }}</div>
+          <div class="small fw-bold mt-1" style="color:rgba(251, 191, 36, 0.7); font-size: 0.75rem;">Today: {{ counselling_pending_followups.today }}</div>
         </div>
         <div class="fm-card fm-overdue">
           <div class="fm-icon" style="color:#ef4444;"><i class="bi bi-exclamation-triangle-fill"></i></div>
           <div class="fm-label" style="color:#ef4444;">Overdue Follow Ups</div>
-          <div class="fm-value" style="color:#f87171;">{{ counselling_overdue_followups }}</div>
+          <div class="fm-value" style="color:#f87171;">{{ counselling_overdue_followups.total }}</div>
+          <div class="small fw-bold mt-1" style="color:rgba(248, 113, 113, 0.7); font-size: 0.75rem;">Today: {{ counselling_overdue_followups.today }}</div>
         </div>
       </div>
       <a href="{% url 'counselor_dashboard' %}" class="sa-goto-btn">
@@ -819,6 +851,35 @@
         <div class="uc-sub">Active Today: &mdash;</div>
       </div>
       <div class="uc-icon" style="background:rgba(249,115,22,0.15); color:#f97316;"><i class="bi bi-people-fill"></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Custom Date Filter Modal (Super Admin) ── -->
+<div class="modal fade" id="saDateFilterModal" tabindex="-1" aria-labelledby="saDateFilterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-secondary" style="background:#0f172a; color:#f1f5f9;">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="saDateFilterModalLabel"><i class="bi bi-calendar-range me-2 text-info"></i>Custom Date Range Filter</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="GET" action="">
+        <div class="modal-body">
+          <input type="hidden" name="date_filter" value="custom">
+          <div class="mb-3">
+            <label for="saFilterFrom" class="form-label" style="color:#94a3b8; font-size:0.85rem;">From Date</label>
+            <input type="date" class="form-control border-secondary" id="saFilterFrom" name="start_date" style="background:#1e293b; color:#f1f5f9;" {% if date_filter == 'custom' and request.GET.start_date %}value="{{ request.GET.start_date }}"{% endif %} required>
+          </div>
+          <div class="mb-3">
+            <label for="saFilterTo" class="form-label" style="color:#94a3b8; font-size:0.85rem;">To Date</label>
+            <input type="date" class="form-control border-secondary" id="saFilterTo" name="end_date" style="background:#1e293b; color:#f1f5f9;" {% if date_filter == 'custom' and request.GET.end_date %}value="{{ request.GET.end_date }}"{% endif %} required>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <a href="?date_filter=all" class="btn btn-outline-secondary btn-sm">Clear Filter</a>
+          <button type="submit" class="btn btn-info btn-sm"><i class="bi bi-funnel me-1"></i> Apply Filter</button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

@@ -250,14 +250,11 @@
       <table class="table m-table align-middle">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Name</th>
             <th>Mobile</th>
-            <th>Email</th>
-            <th>Course Interest</th>
+            <th>Course</th>
             <th>Lead Converted Date</th>
             <th>Priority</th>
-            <th>Next Follow-up</th>
             <th>Status</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -265,11 +262,17 @@
         <tbody>
           {% for lead in page_obj %}
             <tr>
-              <td class="fw-bold text-muted">#{{ lead.pk }}</td>
               <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
               <td>{{ lead.inquiry.mobile_number }}</td>
-              <td>{{ lead.inquiry.email|default:"-" }}</td>
-              <td>{{ lead.inquiry.course_interest }}</td>
+              <td>
+                {% if lead.inquiry.course_interest == 'Cyber Security' or lead.inquiry.course_interest == 'Data Scientist' or lead.inquiry.course_interest == 'Development' or lead.inquiry.course_interest == 'Data Analyst' or lead.inquiry.course_interest == 'Other' %}
+                  <span class="badge bg-dark border border-secondary text-light fw-normal d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding: 0.35em 0.65em;">
+                    <i class="bi bi-book text-info"></i> {{ lead.inquiry.course_interest }}
+                  </span>
+                {% else %}
+                  <span class="text-muted" style="font-size:0.8rem;">-</span>
+                {% endif %}
+              </td>
               <td>
                 <span class="text-white-50">
                   {% if lead.converted_at %}
@@ -286,13 +289,6 @@
                   <span class="badge bg-warning text-dark"><i class="bi bi-thermometer-half"></i> Warm</span>
                 {% else %}
                   <span class="badge bg-secondary"><i class="bi bi-thermometer-snow"></i> Cold</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if lead.next_followup_date %}
-                  {{ lead.next_followup_date|date:"d M Y" }}
-                {% else %}
-                  <span class="text-muted small">Not Scheduled</span>
                 {% endif %}
               </td>
               <td>

@@ -26,10 +26,12 @@ class Inquiry(SoftDeleteModel):
         ('BUSY', 'Busy'),
         ('NO_ANSWER', 'Ringing'),
         ('CALL_BACK', 'Call Back'),
+        ('CALL_DISCONNECTED', 'Call Disconnected'),
         ('WRONG_NUMBER', 'Wrong Number'),
         ('INTERESTED', 'Interested'),
-        ('NOT_INTERESTED', 'Not Interested'),
+        ('SWITCHED_OFF', 'Switched Off'),
         ('PENDING_FOLLOW_UP', 'Pending Follow Up'),
+        ('OTHER', 'Other'),
     )
 
     full_name = models.CharField(max_length=100, db_index=True)

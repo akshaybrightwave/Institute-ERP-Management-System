@@ -67,94 +67,107 @@
 
   <!-- Row 1: KPI Metrics -->
   <div class="row g-3 mb-4 row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-6">
-    <!-- 1. Assigned Leads -->
+    <!-- 1. Assigned Leads (only NEW/unprocessed) -->
     <div class="col">
-      <div class="erp-card bg-g-blue h-100">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Assigned Leads</div>
-          <div class="erp-card-number">{{ total_assigned.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>{{ total_assigned.today }}</strong></div>
-          <div class="erp-card-bg-icon"><i class="bi bi-people-fill"></i></div>
+      <a href="{% url 'counselor_lead_list' %}?status=NEW" class="text-decoration-none d-block h-100">
+        <div class="erp-card bg-g-blue h-100" style="cursor:pointer;">
+          <div class="erp-card-body">
+            <div class="erp-card-title text-truncate">Assigned Leads</div>
+            <div class="erp-card-number">{{ total_assigned.total }}</div>
+            <div class="text-white-50 small mt-1">Today: <strong>{{ total_assigned.today }}</strong></div>
+            <div class="erp-card-bg-icon"><i class="bi bi-people-fill"></i></div>
+          </div>
+          <div class="erp-card-footer mt-auto">
+            <i class="bi bi-list-ul"></i> View all assigned
+          </div>
         </div>
-        <a href="{% url 'counselor_lead_list' %}?assigned_date={% now 'Y-m-d' %}" class="erp-card-footer mt-auto">
-          <i class="bi bi-list-ul"></i> View today's
-        </a>
-      </div>
+      </a>
     </div>
-    
+
+
     <!-- 2. Interested Leads -->
     <div class="col">
-      <div class="erp-card bg-g-violet h-100">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Interested Leads</div>
-          <div class="erp-card-number">{{ interested_leads.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>{{ interested_leads.today }}</strong></div>
-          <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
+      <a href="{% url 'counselor_lead_list' %}?status=INTERESTED" class="text-decoration-none d-block h-100">
+        <div class="erp-card bg-g-lime h-100" style="cursor:pointer;">
+          <div class="erp-card-body">
+            <div class="erp-card-title text-truncate">Interested Leads</div>
+            <div class="erp-card-number">{{ interested_leads.total }}</div>
+            <div class="text-white-50 small mt-1">Today: <strong>{{ interested_leads.today }}</strong></div>
+            <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
+          </div>
+          <div class="erp-card-footer mt-auto">
+            <i class="bi bi-list-ul"></i> View all interested
+          </div>
         </div>
-        <a href="{% url 'counselor_lead_list' %}?status=INTERESTED&status_date={% now 'Y-m-d' %}" class="erp-card-footer mt-auto">
-          <i class="bi bi-list-ul"></i> View today's
-        </a>
-      </div>
+      </a>
     </div>
 
     <!-- 3. Not Interested -->
     <div class="col">
-      <div class="erp-card bg-g-slate h-100">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Not Interested</div>
-          <div class="erp-card-number">{{ not_interested.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>{{ not_interested.today }}</strong></div>
-          <div class="erp-card-bg-icon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
+      <a href="{% url 'counselor_lead_list' %}?status=NOT_INTERESTED" class="text-decoration-none d-block h-100">
+        <div class="erp-card bg-g-pink h-100" style="cursor:pointer;">
+          <div class="erp-card-body">
+            <div class="erp-card-title text-truncate">Not Interested</div>
+            <div class="erp-card-number">{{ not_interested.total }}</div>
+            <div class="text-white-50 small mt-1">Today: <strong>{{ not_interested.today }}</strong></div>
+            <div class="erp-card-bg-icon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
+          </div>
+          <div class="erp-card-footer mt-auto">
+            <i class="bi bi-list-ul"></i> View all not interested
+          </div>
         </div>
-        <a href="{% url 'counselor_lead_list' %}?status=NOT_INTERESTED&status_date={% now 'Y-m-d' %}" class="erp-card-footer mt-auto">
-          <i class="bi bi-list-ul"></i> View today's
-        </a>
-      </div>
+      </a>
     </div>
 
     <!-- 4. Confirmed Admissions -->
     <div class="col">
-      <div class="erp-card bg-g-green h-100">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Admissions</div>
-          <div class="erp-card-number">{{ admission_metrics.confirmed }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>{{ admission_metrics.confirmed_today }}</strong></div>
-          <div class="erp-card-bg-icon"><i class="bi bi-check-circle-fill"></i></div>
+      <a href="{% url 'counselor_lead_list' %}?status=ADMISSION" class="text-decoration-none d-block h-100">
+        <div class="erp-card bg-g-emerald h-100" style="cursor:pointer;">
+          <div class="erp-card-body">
+            <div class="erp-card-title text-truncate">Admissions</div>
+            <div class="erp-card-number">{{ admission_metrics.confirmed }}</div>
+            <div class="text-white-50 small mt-1">Today: <strong>{{ admission_metrics.confirmed_today }}</strong></div>
+            <div class="erp-card-bg-icon"><i class="bi bi-check-circle-fill"></i></div>
+          </div>
+          <div class="erp-card-footer mt-auto">
+            <i class="bi bi-list-ul"></i> View all admissions
+          </div>
         </div>
-        <a href="{% url 'counselor_lead_list' %}?status=ADMISSION&status_date={% now 'Y-m-d' %}" class="erp-card-footer mt-auto">
-          <i class="bi bi-list-ul"></i> View today's
-        </a>
-      </div>
+      </a>
     </div>
-    
+
     <!-- 5. Pending Follow-ups -->
     <div class="col">
-      <div class="erp-card bg-g-orange h-100">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Pending Follow-ups</div>
-          <div class="erp-card-number">{{ followup_req.total }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>{{ followup_req.today }}</strong></div>
-          <div class="erp-card-bg-icon"><i class="bi bi-telephone-forward-fill"></i></div>
+      <a href="{% url 'counselor_lead_list' %}?followup_state=pending" class="text-decoration-none d-block h-100">
+        <div class="erp-card bg-g-amber h-100" style="cursor:pointer;">
+          <div class="erp-card-body">
+            <div class="erp-card-title text-truncate">Pending Follow-ups</div>
+            <div class="erp-card-number">{{ followup_req.total }}</div>
+            <div class="text-white-50 small mt-1">Today: <strong>{{ followup_req.today }}</strong></div>
+            <div class="erp-card-bg-icon"><i class="bi bi-telephone-forward-fill"></i></div>
+          </div>
+          <div class="erp-card-footer mt-auto">
+            <i class="bi bi-list-ul"></i> View pending
+          </div>
         </div>
-        <a href="{% url 'counselor_lead_list' %}?followup_state=pending" class="erp-card-footer mt-auto">
-          <i class="bi bi-list-ul"></i> View pending
-        </a>
-      </div>
+      </a>
     </div>
 
     <!-- 6. Overdue Follow-Ups -->
     <div class="col">
-      <div class="erp-card bg-g-red h-100">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Overdue Follow-ups</div>
-          <div class="erp-card-number">{{ overdue_followups }} <span class="fs-6 text-white-50 fw-normal">total</span></div>
-          <div class="text-white-50 small mt-1">Today: <strong>-</strong></div>
-          <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <a href="{% url 'counselor_lead_list' %}?followup_state=overdue" class="text-decoration-none d-block h-100">
+        <div class="erp-card bg-g-red h-100" style="cursor:pointer;">
+          <div class="erp-card-body">
+            <div class="erp-card-title text-truncate">Overdue Follow-ups</div>
+            <div class="erp-card-number">{{ overdue_followups }}</div>
+            <div class="text-white-50 small mt-1">Today: <strong>-</strong></div>
+            <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          </div>
+          <div class="erp-card-footer mt-auto">
+            <i class="bi bi-list-ul"></i> Handle overdue
+          </div>
         </div>
-        <a href="{% url 'counselor_lead_list' %}?followup_state=overdue" class="erp-card-footer mt-auto">
-          <i class="bi bi-list-ul"></i> Handle overdue
-        </a>
-      </div>
+      </a>
     </div>
   </div>
 
@@ -162,7 +175,7 @@
   <!-- Row 6: Data Tables & Quick Actions -->
   <div class="row g-4">
     <!-- Main Content Area -->
-    <div class="col-xl-9 d-flex flex-column gap-4">
+    <div class="col-xl-8 d-flex flex-column gap-4">
       
       <!-- Pending Follow-Ups -->
       <div class="m-card h-auto">
@@ -309,29 +322,539 @@
       </div>
     </div>
 
-    <!-- Sidebar: Quick Actions -->
-    <div class="col-xl-3">
-      <div class="m-card h-auto mb-4">
-        <div class="m-card-title"><i class="bi bi-lightning-charge-fill text-warning"></i> Quick Actions</div>
-        <div class="d-flex flex-column gap-2">
-          <a href="{% url 'counselor_session_add' %}" class="action-btn">
-            <div class="action-icon-box"><i class="bi bi-headset"></i></div> Log Counseling Session
-          </a>
-          <a href="{% url 'counselor_followup_add' %}" class="action-btn">
-            <div class="action-icon-box"><i class="bi bi-calendar-event"></i></div> Schedule Follow-Up
-          </a>
-          <a href="{% url 'counselor_visit_add' %}" class="action-btn">
-            <div class="action-icon-box"><i class="bi bi-person-bounding-box"></i></div> Log Campus Visit
-          </a>
-          <a href="{% url 'counselor_visit_list' %}" class="action-btn">
-            <div class="action-icon-box"><i class="bi bi-door-open"></i></div> View All Visits
-          </a>
-          <a href="{% url 'counselor_reports_dashboard' %}" class="action-btn">
-            <div class="action-icon-box"><i class="bi bi-graph-up-arrow"></i></div> My Performance
-          </a>
+    <!-- Sidebar: Admission Trend -->
+    <div class="col-xl-4">
+      <div class="m-card h-auto mb-4" style="background-color: #111827; border-color: #1f2937;">
+
+        <!-- Card Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="d-flex align-items-center gap-2" style="min-width: 0;">
+            <i class="bi bi-graph-up-arrow text-primary flex-shrink-0"></i>
+            <h5 class="fw-bold mb-0 text-white text-truncate" style="font-size: 1.05rem;">Admission Trend</h5>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" id="setTargetBtn" class="btn btn-sm btn-outline-primary flex-shrink-0"
+              style="font-size: 0.78rem; padding: 0.22rem 0.5rem; white-space: nowrap;"
+              data-bs-toggle="modal" data-bs-target="#setTargetModal">
+              <i class="bi bi-bullseye"></i> Set Target
+            </button>
+            <select id="trendDateFilter" class="form-select form-select-sm flex-shrink-0"
+              style="background-color: #1f2937; color: #d1d5db; border: 1px solid #374151; width: auto; font-size: 0.82rem; box-shadow: none;"
+              onchange="handlePeriodChange(this.value)">
+              <option value="week">This Week</option>
+              <option value="month" selected>This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="year">This Year</option>
+              <option value="custom">Date Range...</option>
+            </select>
+          </div>
         </div>
+
+        <!-- Custom Date Range Picker (hidden by default) -->
+        <div id="customDateRangeContainer" class="d-none mb-3">
+          <div class="d-flex align-items-center gap-1 flex-wrap justify-content-end"
+            style="background-color: #1f2937; padding: 6px 8px; border-radius: 8px; border: 1px solid #374151;">
+            <input type="date" id="trendDateFrom" class="form-control form-control-sm"
+              style="background-color: #111827; color: #d1d5db; border: 1px solid #374151; font-size: 0.75rem; width: auto;">
+            <span style="font-size: 0.75rem; color: #9ca3af;">to</span>
+            <input type="date" id="trendDateTo" class="form-control form-control-sm"
+              style="background-color: #111827; color: #d1d5db; border: 1px solid #374151; font-size: 0.75rem; width: auto;">
+            <button type="button" class="btn btn-sm btn-primary px-2 py-0" style="font-size: 0.75rem;" onclick="applyCustomRange()">
+              <i class="bi bi-check2"></i> Apply
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary Stats Row -->
+        <div class="d-flex gap-2 mb-3">
+          <div class="flex-fill text-center p-2 rounded" style="background-color: #1f2937; border: 1px solid #374151;">
+            <div class="fw-bold text-white" id="trendTotalCount" style="font-size: 1.4rem; line-height: 1;">0</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Total Admissions</div>
+          </div>
+          <div class="flex-fill text-center p-2 rounded" style="background-color: #1f2937; border: 1px solid #374151;">
+            <div class="fw-bold" id="trendTargetDisplay" style="font-size: 1.4rem; line-height: 1; color: #818cf8;">—</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Target</div>
+          </div>
+          <div class="flex-fill text-center p-2 rounded" style="background-color: #1f2937; border: 1px solid #374151;">
+            <div class="fw-bold" id="trendProgressPct" style="font-size: 1.4rem; line-height: 1; color: #22c55e;">—</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Achievement</div>
+          </div>
+        </div>
+
+        <!-- Period Label -->
+        <div class="mb-2 d-flex justify-content-between align-items-center">
+          <span id="trendPeriodLabel" style="font-size: 0.78rem; color: #6b7280;"></span>
+          <span id="trendLoadingBadge" style="font-size: 0.72rem; color: #818cf8; display:none;">
+            <span class="spinner-border spinner-border-sm" style="width:0.7rem;height:0.7rem;"></span> Loading...
+          </span>
+        </div>
+
+        <!-- Chart Canvas -->
+        <div style="position: relative; height: 240px;">
+          <canvas id="admissionTrendChart"></canvas>
+        </div>
+
+        <!-- Legend -->
+        <div class="d-flex justify-content-between align-items-center mt-3 p-2 rounded"
+          style="background-color: rgba(31, 41, 55, 0.5); border: 1px solid #374151;">
+          <div class="d-flex flex-column w-100 text-center" style="border-right: 1px solid #4b5563;">
+            <div class="d-flex align-items-center justify-content-center gap-1"
+              style="font-size: 0.72rem; color: #d1d5db; font-weight: 600;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #6366f1; display: inline-block;"></span> Admissions
+            </div>
+            <span style="font-size: 0.68rem; color: #9ca3af;">Per Day / Month</span>
+          </div>
+          <div class="d-flex flex-column w-100 text-center" style="border-right: 1px solid #4b5563;">
+            <div class="d-flex align-items-center justify-content-center gap-1"
+              style="font-size: 0.72rem; color: #d1d5db; font-weight: 600;">
+              <span style="width: 14px; height: 2px; background-color: #f59e0b; display: inline-block; border-radius: 2px;"></span> Target
+            </div>
+            <span style="font-size: 0.68rem; color: #9ca3af;">Set Goal Line</span>
+          </div>
+          <div class="d-flex flex-column w-100 text-center">
+            <div class="d-flex align-items-center justify-content-center gap-1"
+              style="font-size: 0.72rem; color: #d1d5db; font-weight: 600;">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background-color: #22c55e; display: inline-block;"></span> Achieved
+            </div>
+            <span style="font-size: 0.68rem; color: #9ca3af;">≥ Target Bars</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Set Target Modal ─────────────────────────────────────────────── -->
+<div class="modal fade" id="setTargetModal" tabindex="-1" aria-labelledby="setTargetModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="background-color: #1f2937; border: 1px solid #374151; border-radius: 12px;">
+      <div class="modal-header" style="border-bottom: 1px solid #374151;">
+        <h6 class="modal-title text-white fw-bold" id="setTargetModalLabel">
+          <i class="bi bi-bullseye text-primary me-2"></i>Set Admission Target
+        </h6>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.82rem; color: #9ca3af;" class="mb-3">
+          Set a target number of admissions. A reference line will appear on the graph.
+        </p>
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-white" style="font-size: 0.82rem;">Target Admissions</label>
+          <input type="number" id="targetValueInput" class="form-control"
+            style="background-color: #111827; color: #d1d5db; border: 1px solid #374151; font-size: 0.9rem;"
+            placeholder="e.g. 30" min="1" max="9999">
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top: 1px solid #374151;">
+        <button type="button" class="btn btn-sm btn-outline-danger me-auto" onclick="resetTarget()" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>Reset
+        </button>
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="applyTarget()">
+          <i class="bi bi-check2-circle me-1"></i>Apply Target
+        </button>
       </div>
     </div>
   </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+  const TREND_API_URL = "{% url 'counselor_admission_trend_data' %}";
+  let trendChart     = null;
+  let currentTarget  = null;   // numeric or null
+  let currentPeriod  = 'month';
+
+  // Per-month target storage: each month counselor sets has its own key
+  //   e.g. counselor_trend_target_2026-07, counselor_trend_target_2026-06, ...
+  // This preserves full history so year/custom filters can aggregate all set targets.
+  const TODAY = new Date();
+
+  function _monthKey(year, month) {
+    return 'counselor_trend_target_' + year + '-' + String(month).padStart(2, '0');
+  }
+  // Key for the currently visible calendar month
+  const CURRENT_MONTH_KEY = _monthKey(TODAY.getFullYear(), TODAY.getMonth() + 1);
+
+  function _getStoredMonthTarget(year, month) {
+    try {
+      const v = localStorage.getItem(_monthKey(year, month));
+      return v ? parseInt(v, 10) : null;
+    } catch(e) { return null; }
+  }
+
+  /**
+   * Returns the effective numeric target for a given period, or null if none set.
+   *  - month / week : current month's target
+   *  - last_month   : last month's stored target
+   *  - year         : SUM of all monthly targets from Jan → current month (this year)
+   *  - custom       : SUM of targets for every month that overlaps the chosen date range
+   */
+  function _effectiveTarget(period, dateFrom, dateTo) {
+    const curYear  = TODAY.getFullYear();
+    const curMonth = TODAY.getMonth() + 1;
+
+    if (period === 'month' || period === 'week') {
+      return _getStoredMonthTarget(curYear, curMonth);
+    }
+    if (period === 'last_month') {
+      let lm = curMonth - 1, ly = curYear;
+      if (lm < 1) { lm = 12; ly--; }
+      return _getStoredMonthTarget(ly, lm);
+    }
+    if (period === 'year') {
+      // Sum Jan..curMonth of current year
+      let total = 0, hasAny = false;
+      for (let m = 1; m <= curMonth; m++) {
+        const t = _getStoredMonthTarget(curYear, m);
+        if (t) { total += t; hasAny = true; }
+      }
+      return hasAny ? total : null;
+    }
+    if (period === 'custom' && dateFrom && dateTo) {
+      // Iterate over each calendar month that falls within the range
+      const fromDate = new Date(dateFrom + 'T00:00:00');
+      const toDate   = new Date(dateTo   + 'T00:00:00');
+      let total = 0, hasAny = false;
+      let d = new Date(fromDate.getFullYear(), fromDate.getMonth(), 1);
+      while (d <= toDate) {
+        const t = _getStoredMonthTarget(d.getFullYear(), d.getMonth() + 1);
+        if (t) { total += t; hasAny = true; }
+        d.setMonth(d.getMonth() + 1);
+      }
+      return hasAny ? total : null;
+    }
+    return null;
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function perfColor(cumTotal) {
+    // Color is always evaluated against the MONTHLY target (currentTarget)
+    // so filters (week / custom) still reference the same benchmark
+    if (!currentTarget || currentTarget <= 0) return '#6366f1'; // default indigo
+    const pct = (cumTotal / currentTarget) * 100;
+    if (pct < 50) return '#ef4444';   // Red  – under 50 %
+    if (pct < 75) return '#f59e0b';   // Amber – 50 – 74 %
+    return '#22c55e';                  // Green – 75 %+
+  }
+
+  // ── Chart Renderer ────────────────────────────────────────────────────────
+  // data[] is already cumulative. Uses {x,y} format on a linear x-axis so
+  // threshold crossing points can be injected at fractional x positions —
+  // giving EXACT color zone boundaries (no segment ever straddles a threshold).
+  function initTrendChart(labels, data) {
+    const canvasEl = document.getElementById('admissionTrendChart');
+    const ctx      = canvasEl.getContext('2d');
+
+    // Last non-null value = actual total (data is cumulative)
+    const totalAdmissions = [...data].reverse().find(v => v !== null) || 0;
+
+    // Subtle fill gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+    gradient.addColorStop(0, 'rgba(99,102,241,0.12)');
+    gradient.addColorStop(1, 'rgba(99,102,241,0.0)');
+
+    // ── Inject threshold crossing points ─────────────────────────────────────
+    // When cumulative line crosses 50% or 75% of target, insert an exact {x,y}
+    // point AT the threshold using linear interpolation. This ensures p1 coloring
+    // is always accurate: no segment spans more than one color zone.
+    const thresholds = currentTarget
+      ? [currentTarget * 0.50, currentTarget * 0.75]
+      : [];
+
+    const xyPoints = [];
+    for (let i = 0; i < data.length; i++) {
+      const cur  = data[i];
+      const prev = i > 0 ? data[i - 1] : null;
+
+      // Detect upward threshold crossings between prev and cur
+      if (cur !== null && prev !== null && cur > prev) {
+        for (const T of thresholds) {
+          if (prev < T && cur >= T) {
+            // Fractional x position where line exactly hits T
+            const xCross = (i - 1) + (T - prev) / (cur - prev);
+            xyPoints.push({ x: xCross, y: T });
+          }
+        }
+      }
+      xyPoints.push({ x: i, y: cur });
+    }
+
+    // ── Segment coloring using p1 (end of segment) ───────────────────────────
+    // Because threshold crossing points are now injected, p1 of every segment
+    // sits within exactly ONE color zone — never spanning two zones.
+    function segColor(segCtx) {
+      if (!currentTarget || currentTarget <= 0) return '#6366f1';
+      const val = segCtx.p1.parsed.y;
+      if (val === null || val === undefined || isNaN(val)) return 'transparent';
+      const pct = (val / currentTarget) * 100;
+      if (pct <= 50) return '#ef4444';  // red   ≤ 50 %
+      if (pct <= 75) return '#f59e0b';  // amber 50–75 %
+      return '#22c55e';                  // green > 75 %
+    }
+
+    const datasets = [
+      {
+        label: 'Admissions',
+        data: xyPoints,
+        borderColor: '#6366f1',
+        backgroundColor: gradient,
+        segment: { borderColor: sc => segColor(sc) },
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        tension: 0.0,   // must be 0 — bezier curves would bypass injected points
+        fill: true,
+        borderWidth: 2.5,
+        borderCapStyle: 'round',
+        borderJoinStyle: 'round',
+      }
+    ];
+
+    // ── Milestone reference lines (50% / 75% / 100%) ─────────────────────────
+    if (currentTarget) {
+      const milestones = [
+        { pct: 0.50, label: '50% Target',  color: '#ef4444', dash: [4, 4],  width: 1.2 },
+        { pct: 0.75, label: '75% Target',  color: '#f59e0b', dash: [6, 4],  width: 1.2 },
+        { pct: 1.00, label: '100% Target', color: '#22c55e', dash: [8, 4],  width: 1.5 },
+      ];
+      milestones.forEach(m => {
+        const val = Math.round(currentTarget * m.pct * 10) / 10;
+        datasets.push({
+          label: m.label,
+          data: labels.map((_, i) => ({ x: i, y: val })),
+          borderColor: m.color,
+          borderDash: m.dash,
+          borderWidth: m.width,
+          pointRadius: 0,
+          pointHoverRadius: 0,
+          fill: false,
+          tension: 0,
+        });
+      });
+    }
+
+    if (trendChart) { trendChart.destroy(); trendChart = null; }
+
+    trendChart = new Chart(ctx, {
+      type: 'line',
+      data: { datasets },           // no top-level labels — using {x,y} linear scale
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 450 },
+        spanGaps: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1f2937',
+            borderColor: '#374151',
+            borderWidth: 1,
+            titleColor: '#f9fafb',
+            bodyColor: '#d1d5db',
+            padding: 10,
+            filter: item => item.dataset.label === 'Admissions',
+            callbacks: {
+              title: items => {
+                const xi = Math.round(items[0].parsed.x);
+                return (xi >= 0 && xi < labels.length) ? labels[xi] : '';
+              },
+              label: c => ` ${c.parsed.y} Cumulative Admission${c.parsed.y !== 1 ? 's' : ''}`,
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            min: 0,
+            max: labels.length - 1,
+            ticks: {
+              color: '#9ca3af',
+              font: { size: 10 },
+              maxTicksLimit: 10,
+              stepSize: 1,
+              callback(value) {
+                // Only show label at integer positions (skip injected threshold ticks)
+                if (Number.isInteger(value) && value >= 0 && value < labels.length) {
+                  return labels[value];
+                }
+                return '';
+              }
+            },
+            grid: { color: 'rgba(55,65,81,0.5)' }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#9ca3af', font: { size: 10 }, precision: 0, stepSize: 1 },
+            grid:  { color: 'rgba(55,65,81,0.5)' }
+          }
+        }
+      }
+    });
+  }
+
+
+  // ── Summary Stats Panel ───────────────────────────────────────────────────
+  // Always computes achievement against the persistent currentTarget,
+  // regardless of which period filter (week/month/year/custom) is active.
+  function updateSummaryStats(total, periodLabel) {
+    document.getElementById('trendTotalCount').textContent = total;
+    document.getElementById('trendPeriodLabel').textContent = periodLabel;
+
+    if (currentTarget && currentTarget > 0) {
+      const pct = Math.round((total / currentTarget) * 100);
+      const el  = document.getElementById('trendProgressPct');
+      el.textContent  = pct + '%';
+      el.style.color  = pct >= 100 ? '#22c55e' : pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
+      document.getElementById('trendTargetDisplay').textContent = currentTarget;
+    } else {
+      document.getElementById('trendProgressPct').textContent  = '—';
+      document.getElementById('trendTargetDisplay').textContent = '—';
+    }
+    // Always keep header badge in sync
+    updateTargetBadge();
+  }
+
+  // ── Target Badge in Header ────────────────────────────────────────────────
+  function updateTargetBadge() {
+    const btn = document.getElementById('setTargetBtn');
+    if (!btn) return;
+    if (currentTarget) {
+      btn.innerHTML = `<i class="bi bi-bullseye"></i> Target: ${currentTarget}`;
+      btn.classList.replace('btn-outline-primary', 'btn-warning');
+    } else {
+      btn.innerHTML = `<i class="bi bi-bullseye"></i> Set Target`;
+      btn.classList.replace('btn-warning', 'btn-outline-primary');
+    }
+  }
+
+  // ── Fetch from API ────────────────────────────────────────────────────────
+  function fetchTrendData(period, dateFrom, dateTo) {
+    const badge = document.getElementById('trendLoadingBadge');
+    badge.style.display = 'inline-flex';
+
+    let url = TREND_API_URL + '?period=' + period;
+    if (period === 'custom' && dateFrom && dateTo) {
+      url += '&date_from=' + dateFrom + '&date_to=' + dateTo;
+    }
+
+    fetch(url)
+      .then(r => {
+        if (!r.ok) throw new Error('Network response was not ok');
+        return r.json();
+      })
+      .then(result => {
+        badge.style.display = 'none';
+
+        // ── Resolve effective target for this period before rendering ────────
+        // For 'year' or 'custom', this sums all stored monthly targets in range.
+        // For 'month'/'week', it uses the current month's target.
+        // For 'last_month', it uses last month's target.
+        currentTarget = _effectiveTarget(period, dateFrom, dateTo);
+        // Keep the modal input pre-filled only for current-month context
+        if (period === 'month' || period === 'week') {
+          document.getElementById('targetValueInput').value = currentTarget || '';
+        }
+
+        // ── Cut off future days/months ────────────────────────────────────────
+        // Use the backend-computed cutoff_index (works for ALL period types:
+        // daily labels for month/week/last_month/custom AND monthly labels for year).
+        // This guarantees future bars are never rendered regardless of filter.
+        const cutoff = (typeof result.cutoff_index !== 'undefined' && result.cutoff_index >= 0)
+          ? result.cutoff_index
+          : result.labels.length - 1;
+
+        // Build cumulative array; entries beyond cutoff are null (Chart.js skips them)
+        let running = 0;
+        const cumulativeData = result.data.map((v, i) => {
+          if (i > cutoff) return null;   // future day/month — draw nothing
+          running += v;
+          return running;
+        });
+
+        initTrendChart(result.labels, cumulativeData);
+        // result.total is the backend ground-truth count (never double-counted)
+        updateSummaryStats(result.total, result.start_date + ' — ' + result.end_date);
+      })
+      .catch(err => {
+        badge.style.display = 'none';
+        console.error('Admission trend fetch error:', err);
+      });
+  }
+
+
+  // ── Period Dropdown Change ────────────────────────────────────────────────
+  function handlePeriodChange(val) {
+    currentPeriod = val;
+    const container = document.getElementById('customDateRangeContainer');
+    if (val === 'custom') {
+      container.classList.remove('d-none');
+    } else {
+      container.classList.add('d-none');
+      fetchTrendData(val);
+    }
+  }
+
+  // ── Custom Date Range Apply ───────────────────────────────────────────────
+  function applyCustomRange() {
+    const from = document.getElementById('trendDateFrom').value;
+    const to   = document.getElementById('trendDateTo').value;
+    if (!from || !to)   { alert('Please select both start and end dates.'); return; }
+    if (from > to)       { alert('Start date must be before end date.'); return; }
+    fetchTrendData('custom', from, to);
+  }
+
+  // ── Set Target (saves to current calendar month key) ─────────────────────
+  function applyTarget() {
+    const val = parseInt(document.getElementById('targetValueInput').value, 10);
+    if (isNaN(val) || val < 1) {
+      alert('Please enter a valid target (minimum 1).');
+      return;
+    }
+    currentTarget = val;
+    // Save keyed to current calendar month so history is preserved for year/custom filters
+    try { localStorage.setItem(CURRENT_MONTH_KEY, String(val)); } catch(e) {}
+
+    const modal = bootstrap.Modal.getInstance(document.getElementById('setTargetModal'));
+    if (modal) modal.hide();
+
+    updateTargetBadge();
+
+    // Re-draw with current period so target line appears immediately
+    const from = document.getElementById('trendDateFrom').value;
+    const to   = document.getElementById('trendDateTo').value;
+    fetchTrendData(currentPeriod, from, to);
+  }
+
+  // ── Reset Target (removes current month's entry only) ────────────────────
+  function resetTarget() {
+    currentTarget = null;
+    try { localStorage.removeItem(CURRENT_MONTH_KEY); } catch(e) {}
+    document.getElementById('targetValueInput').value = '';
+    updateTargetBadge();
+    fetchTrendData(currentPeriod);
+  }
+
+  // ── On Page Load ──────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    // Restore the CURRENT month's target from localStorage on page load.
+    // Other period targets (last month, year, etc.) are computed dynamically
+    // inside _effectiveTarget() when the user changes the period filter.
+    const savedThisMonth = _getStoredMonthTarget(TODAY.getFullYear(), TODAY.getMonth() + 1);
+    if (savedThisMonth) {
+      currentTarget = savedThisMonth;
+      document.getElementById('targetValueInput').value = savedThisMonth;
+      updateTargetBadge();
+    }
+
+    fetchTrendData('month');
+  });
+</script>
+{% endblock %}
+

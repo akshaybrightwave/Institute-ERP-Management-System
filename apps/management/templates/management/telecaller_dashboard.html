@@ -15,157 +15,280 @@
     <h1 class="page-title">Telecaller Dashboard</h1>
     <p class="page-subtitle">Manage your daily calls, follow-ups, and lead generation</p>
   </div>
-  <div>
-    <span class="badge bg-dark border border-secondary py-2 px-3">
-      <i class="bi bi-calendar3 me-1"></i> Today: {% now "d M Y" %}
-    </span>
-  </div>
-</div>
+  <div class="d-flex align-items-center gap-2">
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-download me-1"></i> Export
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-sm border border-secondary">
+        <li><h6 class="dropdown-header text-muted" style="font-size:0.7rem;">EXPORT BY DATE</h6></li>
+        <li><a class="dropdown-item {% if date_filter == 'today' %}fw-bold text-info{% endif %}" href="{% url 'export_telecaller_dashboard_csv' %}?date_filter=today">Today</a></li>
+        <li><a class="dropdown-item {% if date_filter == 'yesterday' %}fw-bold text-info{% endif %}" href="{% url 'export_telecaller_dashboard_csv' %}?date_filter=yesterday">Yesterday</a></li>
+        <li><a class="dropdown-item {% if date_filter == 'this_week' %}fw-bold text-info{% endif %}" href="{% url 'export_telecaller_dashboard_csv' %}?date_filter=this_week">This Week</a></li>
+        <li><a class="dropdown-item {% if date_filter == 'this_month' %}fw-bold text-info{% endif %}" href="{% url 'export_telecaller_dashboard_csv' %}?date_filter=this_month">This Month</a></li>
+        <li><a class="dropdown-item {% if date_filter == 'all' or not date_filter %}fw-bold text-info{% endif %}" href="{% url 'export_telecaller_dashboard_csv' %}?date_filter=all">All Time</a></li>
+        <li><hr class="dropdown-divider border-secondary"></li>
+        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#exportCustomDateModal">Custom Date Range...</a></li>
+        <li><hr class="dropdown-divider border-secondary"></li>
+        <li>
+          <a class="dropdown-item fw-bold text-warning" href="{% url 'export_telecaller_dashboard_csv' %}?date_filter={{ date_filter }}{% if date_filter == 'custom' %}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}{% endif %}">
+            <i class="bi bi-download me-1"></i> Export Current View
+          </a>
+        </li>
+      </ul>
+    </div>
 
-<!-- Stats Row -->
-<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5">
+    {# ── Message Export Dropdown ── #}
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-chat-dots me-1"></i> Message Export
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-sm border border-secondary" style="min-width: 200px;">
+        <li><h6 class="dropdown-header text-muted" style="font-size:0.7rem;">EXPORT NUMBERS BY DATE</h6></li>
+        <li><h6 class="dropdown-header text-muted" style="font-size:0.65rem; padding-left:1rem;">📅 Today</h6></li>
+        <li>
+          <a class="dropdown-item ps-4" href="{% url 'export_telecaller_message_numbers_csv' %}?date_filter=today_before_2pm">
+            <i class="bi bi-sunrise me-1 text-warning"></i> Before 2 PM
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item ps-4" href="{% url 'export_telecaller_message_numbers_csv' %}?date_filter=today_after_2pm">
+            <i class="bi bi-sunset me-1 text-orange"></i> After 2 PM
+          </a>
+        </li>
+        <li><hr class="dropdown-divider border-secondary"></li>
+        <li>
+          <a class="dropdown-item" href="{% url 'export_telecaller_message_numbers_csv' %}?date_filter=yesterday">
+            <i class="bi bi-calendar-minus me-1 text-info"></i> Yesterday
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{% url 'export_telecaller_message_numbers_csv' %}?date_filter=this_week">
+            <i class="bi bi-calendar-week me-1 text-primary"></i> This Week
+          </a>
+        </li>
+        <li><hr class="dropdown-divider border-secondary"></li>
+        <li><small class="dropdown-header text-muted" style="font-size:0.65rem;">Exports: Busy · Ringing · Call Back numbers only</small></li>
+      </ul>
+    </div>
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-funnel me-1"></i>
+        {% if date_filter == 'today' %}Today
+        {% elif date_filter == 'yesterday' %}Yesterday
+        {% elif date_filter == 'this_week' %}This Week
+        {% elif date_filter == 'this_month' %}This Month
+        {% elif date_filter == 'custom' %}Custom Range
+        {% else %}All Time{% endif %}
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark shadow-sm border border-secondary">
+        <li><a class="dropdown-item" href="?date_filter=today">Today</a></li>
+        <li><a class="dropdown-item" href="?date_filter=yesterday">Yesterday</a></li>
+        <li><a class="dropdown-item" href="?date_filter=this_week">This Week</a></li>
+        <li><a class="dropdown-item" href="?date_filter=this_month">This Month</a></li>
+        <li><a class="dropdown-item" href="?date_filter=all">All Time</a></li>
+        <li><hr class="dropdown-divider border-secondary"></li>
+        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#dateFilterModal">Custom Date Range...</a></li>
+      </ul>
+    </div>
+  </div>
+</div><!-- Stats Row -->
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-6">
 
   <!-- 1. Assigned Enquiries -->
   <div class="col">
-    <div class="erp-card bg-g-blue h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Assigned Enquiries</div>
-        <div class="erp-card-number">{{ assigned_inquiries.total }}</div>
-        <div class="text-white-50 small mt-1">Today: <strong>{{ assigned_inquiries.today }}</strong></div>
-        <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?call_status=NEW" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-blue h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Assigned Enquiries</div>
+          <div class="erp-card-number">{{ assigned_inquiries.total }}</div>
+          <div class="text-white-50 small mt-1">Today: <strong>{{ assigned_inquiries.today }}</strong></div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View assigned
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View assigned
-      </a>
-    </div>
+    </a>
   </div>
 
   <!-- 2. Busy -->
   <div class="col">
-    <div class="erp-card bg-g-orange h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Busy</div>
-        <div class="erp-card-number">{{ call_outcomes.busy }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=BUSY" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-orange h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Busy</div>
+          <div class="erp-card-number">{{ call_outcomes.busy }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=BUSY" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View all
-      </a>
-    </div>
+    </a>
   </div>
 
   <!-- 3. Ringing -->
   <div class="col">
-    <div class="erp-card bg-g-teal h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Ringing</div>
-        <div class="erp-card-number">{{ call_outcomes.ringing }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=NO_ANSWER" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-cyan h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Ringing</div>
+          <div class="erp-card-number">{{ call_outcomes.ringing }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=NO_ANSWER" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View all
-      </a>
-    </div>
+    </a>
   </div>
 
   <!-- 4. Call Back -->
   <div class="col">
-    <div class="erp-card bg-g-violet h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Call Back</div>
-        <div class="erp-card-number">{{ call_outcomes.call_back }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-arrow-return-left"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=CALL_BACK" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-magenta h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Call Back</div>
+          <div class="erp-card-number">{{ call_outcomes.call_back }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-arrow-return-left"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=CALL_BACK" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View all
-      </a>
-    </div>
+    </a>
   </div>
 
-  <!-- 5. Wrong Number -->
+  <!-- 5. Call Disconnected -->
   <div class="col">
-    <div class="erp-card bg-g-navy h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Wrong Number</div>
-        <div class="erp-card-number">{{ call_outcomes.wrong_number }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-telephone-x-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=CALL_DISCONNECTED" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-brown h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Call Disconnected</div>
+          <div class="erp-card-number">{{ call_outcomes.call_disconnected }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=WRONG_NUMBER" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View all
-      </a>
-    </div>
+    </a>
   </div>
 
-  <!-- 6. Interested -->
+  <!-- 6. Wrong Number -->
   <div class="col">
-    <div class="erp-card bg-g-green h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Interested</div>
-        <div class="erp-card-number">{{ call_outcomes.interested }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=WRONG_NUMBER" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-burgundy h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Wrong Number</div>
+          <div class="erp-card-number">{{ call_outcomes.wrong_number }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-telephone-x-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=INTERESTED" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View all
-      </a>
-    </div>
+    </a>
   </div>
 
-  <!-- 7. Not Interested -->
+  <!-- 7. Other -->
   <div class="col">
-    <div class="erp-card bg-g-slate h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Not Interested</div>
-        <div class="erp-card-number">{{ call_outcomes.not_interested }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-hand-thumbs-down-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=OTHER" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-slate h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Other</div>
+          <div class="erp-card-number">{{ call_outcomes.other }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-three-dots"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=NOT_INTERESTED" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View all
-      </a>
-    </div>
+    </a>
   </div>
 
-  <!-- 8. Pending Follow Up -->
+  <!-- 8. Interested -->
   <div class="col">
-    <div class="erp-card bg-g-blue h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Pending Follow Up</div>
-        <div class="erp-card-number">{{ call_outcomes.pending_follow_up }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-calendar-check-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=INTERESTED" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-lime h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Interested</div>
+          <div class="erp-card-number">{{ call_outcomes.interested }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=false" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View pending
-      </a>
-    </div>
+    </a>
   </div>
 
-  <!-- 9. Overdue Follow Up -->
+  <!-- 9. Switched Off -->
   <div class="col">
-    <div class="erp-card bg-g-crimson h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate">Overdue Follow Up</div>
-        <div class="erp-card-number">{{ call_outcomes.overdue_follow_up }}</div>
-        <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=SWITCHED_OFF" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-pink h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Switched Off</div>
+          <div class="erp-card-number">{{ call_outcomes.switched_off }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-power"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
       </div>
-      <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=true" class="erp-card-footer">
-        <i class="bi bi-list-ul"></i> View overdue
-      </a>
-    </div>
+    </a>
   </div>
 
-  <!-- 10. Convert to Lead -->
+  <!-- 10. Pending Follow Up -->
   <div class="col">
-    <div class="erp-card bg-success border border-success h-100">
-      <div class="erp-card-body">
-        <div class="erp-card-title text-truncate text-white">Convert to Lead</div>
-        <div class="erp-card-number text-white">{{ converted_to_lead.total }}</div>
-        <div class="text-white-50 small mt-1">Today: <strong>{{ converted_to_lead.today }}</strong></div>
-        <div class="erp-card-bg-icon"><i class="bi bi-arrow-right-circle-fill text-white-50"></i></div>
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=false" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-amber h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Pending Follow Up</div>
+          <div class="erp-card-number">{{ call_outcomes.pending_follow_up }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-calendar-check-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View pending
+        </div>
       </div>
-      <a href="{% url 'lead_list' %}" class="erp-card-footer border-top border-success text-white">
-        <i class="bi bi-list-ul"></i> View conversions
-      </a>
-    </div>
+    </a>
   </div>
+
+  <!-- 11. Overdue Follow Up -->
+  <div class="col">
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=true" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-red h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Overdue Follow Up</div>
+          <div class="erp-card-number">{{ call_outcomes.overdue_follow_up }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View overdue
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- 12. Convert to Lead -->
+  <div class="col">
+    <a href="{% url 'lead_list' %}" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-emerald border border-success h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate text-white">Convert to Lead</div>
+          <div class="erp-card-number text-white">{{ converted_to_lead.total }}</div>
+          <div class="text-white-50 small mt-1">Today: <strong>{{ converted_to_lead.today }}</strong></div>
+          <div class="erp-card-bg-icon"><i class="bi bi-arrow-right-circle-fill text-white-50"></i></div>
+        </div>
+        <div class="erp-card-footer border-top border-success text-white">
+          <i class="bi bi-list-ul"></i> View conversions
+        </div>
+      </div>
+    </a>
+  </div>
+
 </div>
 
 <!-- Content Grid -->
@@ -392,6 +515,64 @@
     </div>
 
 
+  </div>
+</div>
+
+<!-- Custom Date Export Modal -->
+<div class="modal fade" id="exportCustomDateModal" tabindex="-1" aria-labelledby="exportCustomDateModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="exportCustomDateModalLabel"><i class="bi bi-calendar-range me-2 text-primary"></i>Export Custom Date Range</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="GET" action="{% url 'export_telecaller_dashboard_csv' %}">
+        <div class="modal-body">
+          <input type="hidden" name="date_filter" value="custom">
+          <div class="mb-3">
+            <label for="exportDateFrom" class="form-label text-muted">From Date</label>
+            <input type="date" class="form-control bg-dark text-white border-secondary" id="exportDateFrom" name="date_from" required>
+          </div>
+          <div class="mb-3">
+            <label for="exportDateTo" class="form-label text-muted">To Date</label>
+            <input type="date" class="form-control bg-dark text-white border-secondary" id="exportDateTo" name="date_to" required>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-download me-1"></i> Export Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Date Filter Modal -->
+<div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title" id="dateFilterModalLabel"><i class="bi bi-calendar-range me-2 text-info"></i>Filter Custom Date Range</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="GET" action="">
+        <div class="modal-body">
+          <input type="hidden" name="date_filter" value="custom">
+          <div class="mb-3">
+            <label for="filterDateFrom" class="form-label text-muted">From Date</label>
+            <input type="date" class="form-control bg-dark text-white border-secondary" id="filterDateFrom" name="start_date" required>
+          </div>
+          <div class="mb-3">
+            <label for="filterDateTo" class="form-label text-muted">To Date</label>
+            <input type="date" class="form-control bg-dark text-white border-secondary" id="filterDateTo" name="end_date" required>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info"><i class="bi bi-funnel me-1"></i> Apply Filter</button>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
 {% endblock %}
