@@ -1,122 +1,460 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
 
-{% block title %}All Exams | Examly{% endblock %}
+{% block title %}{% if is_center %}Exam Requests{% else %}Manage Exams{% endif %} | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
-    <div class="page-header">
-        <div>
-            <h2><i class="bi bi-journal-text text-primary me-2"></i>All Exams</h2>
-            <p>{% if is_center %}Monitor exam performance and student attempts.{% else %}Browse, edit and manage every exam on the platform.{% endif %}</p>
-        </div>
-        {% if not is_center %}
-        <a href="{% url 'add_exam' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Add New Exam
-        </a>
-        {% endif %}
-    </div>
 
-    <div class="card border-0 mb-3">
-        <div class="card-body">
-            <form method="get" class="row g-2 align-items-center">
-                <div class="col-sm-6 col-md-4">
-                    <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Search by exam title">
-                </div>
-                <div class="col-auto d-flex gap-2">
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i> Search</button>
-                    {% if query %}
-                        <a href="{% url 'exam_list' %}" class="btn btn-outline-secondary">Clear</a>
-                    {% endif %}
-                </div>
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      {% if is_center %}
+      <i class="bi bi-journal-text text-primary me-2"></i>Exam Requests
+      {% else %}
+      <i class="bi bi-journal-text text-primary me-2"></i>Manage Exams
+      {% endif %}
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% if is_center %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Online Exam</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">{% if is_center %}Requests{% else %}Manage Exams{% endif %}</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LIST SECTION -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">{% if is_center %}List Requests{% else %}List Exams{% endif %}</h5>
+          {% if is_admin %}
+          <a href="{% url 'add_exam' %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
+            <i class="bi bi-plus-circle"></i> Add Exam
+          </a>
+          {% elif is_center %}
+          <a href="{% url 'add_exam' %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
+            <i class="bi bi-plus-circle"></i> Request Exam
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+            <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+              <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+              <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+              <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form method="GET" action="{% url 'exam_list' %}" class="d-flex align-items-center gap-2">
+              <input type="hidden" name="show" value="{{ show_entries }}">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
             </form>
-        </div>
-    </div>
 
-    <div class="card border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-examly table-hover align-middle mb-0">
-                    <thead>
-                        {% if is_center %}
-                        <tr>
-                            <th class="ps-4">Exam Name</th>
-                            <th>Assigned Batch</th>
-                            <th>Total Students</th>
-                            <th>Attempts</th>
-                            <th>Average Score</th>
-                            <th>Status</th>
-                            <th class="pe-4 text-end">Actions</th>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <th class="ps-4">Title</th>
-                            <th>Description</th>
-                            <th>Date</th>
-                            <th>Total Marks</th>
-                            <th class="pe-4 text-end">Actions</th>
-                        </tr>
-                        {% endif %}
-                    </thead>
-                    <tbody>
-                        {% for item in exams_data %}
-                        <tr>
-                            {% if is_center %}
-                            <td class="ps-4 fw-semibold">{{ item.exam.title }}</td>
-                            <td>
-                                {% for b in item.batches_list %}
-                                    <span class="badge bg-light text-dark border small">{{ b.name }}</span>
-                                {% empty %}
-                                    <span class="text-muted small italic">None</span>
-                                {% endfor %}
-                            </td>
-                            <td>{{ item.student_count }}</td>
-                            <td>{{ item.attempts_count }}</td>
-                            <td><span class="badge-soft-primary">{{ item.avg_score }}%</span></td>
-                            <td>
-                                {% if item.exam.is_published %}
-                                    <span class="badge-soft-success">Published</span>
-                                {% else %}
-                                    <span class="badge-soft-warning">Draft</span>
-                                {% endif %}
-                            </td>
-                            <td class="pe-4 text-end">
-                                <a href="{% url 'exam_detail' item.exam.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> View</a>
-                                <a href="{% url 'center_exam_results' item.exam.id %}" class="btn btn-sm btn-outline-info"><i class="bi bi-bar-chart-line"></i> Results</a>
-                            </td>
-                            {% else %}
-                            <td class="ps-4 fw-semibold">{{ item.exam.title }}</td>
-                            <td class="text-muted small">{{ item.exam.description|truncatewords:12 }}</td>
-                            <td>{{ item.exam.date }}</td>
-                            <td><span class="badge-soft-primary">{{ item.exam.total_marks }}</span></td>
-                            <td class="pe-4 text-end">
-                                <a href="{% url 'exam_detail' item.exam.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> View</a>
-                                <a href="{% url 'question_list' item.exam.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-question-circle"></i> Questions</a>
-                                <a href="{% url 'edit_exam' item.exam.id %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
-                                <a href="{% url 'delete_exam' item.exam.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this exam?');"><i class="bi bi-trash"></i> Delete</a>
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="{% if is_center %}7{% else %}5{% endif %}" class="p-0">
-                                <div class="empty-state">
-                                    <i class="bi bi-journal-x"></i>
-                                    {% if query %}
-                                        <p class="mb-0">No exams match "{{ query }}".</p>
-                                    {% else %}
-                                        <p class="mb-3">No exams created yet.</p>
-                                        {% if not is_center %}
-                                        <a href="{% url 'add_exam' %}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle me-1"></i> Add New Exam</a>
-                                        {% endif %}
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="d-flex gap-3 no-print align-items-center ms-3">
+              <span class="text-white-50 cursor-pointer" onclick="copyTable()" style="font-size: 0.9rem; cursor: pointer;">Copy</span>
+              <a href="?export=csv{% if query %}&q={{ query }}{% endif %}" class="text-white-50 text-decoration-none" style="font-size: 0.9rem;">CSV</a>
+              <span class="text-white-50 cursor-pointer" onclick="exportExcel()" style="font-size: 0.9rem; cursor: pointer;">Excel</span>
+              <span class="text-white-50 cursor-pointer" onclick="exportPDF()" style="font-size: 0.9rem; cursor: pointer;">PDF</span>
+              <span class="text-white-50 cursor-pointer" onclick="window.print()" style="font-size: 0.9rem; cursor: pointer;">Print</span>
             </div>
+          </div>
         </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0" id="exam-table">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                {% if is_center %}
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">Request ID</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Message</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Created Date</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">Current Status</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
+                {% else %}
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 50px;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Title</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Duration</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Schedule</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Timer</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; width: 90px;">Status</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Action</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                {% if is_center %}
+                <!-- Request ID -->
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  REQ-{{ item.id }}
+                </td>
+
+                <!-- Course -->
+                <td class="text-white" style="font-size: 0.9rem; font-weight: 500;">
+                  {{ item.course.name|default:"—" }}
+                </td>
+
+                <!-- Message -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.description|default:"—" }}
+                </td>
+
+                <!-- Request Date -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.start_datetime|date:"d M Y, H:i"|default:"—" }}
+                </td>
+
+                <!-- Status Badge -->
+                <td>
+                  {% if item.is_published %}
+                    <span class="badge bg-success text-white px-2 py-1" style="font-size: 0.75rem;">Approved</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.75rem;">Pending</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end flex-wrap">
+                    {% if not item.is_published %}
+                    <!-- Allow edit/delete only if pending -->
+                    <a href="{% url 'edit_exam' item.id %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
+                      <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <button type="button" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1 btn-delete-exam" style="background-color: #f43f5e; border: none; border-radius: 4px; font-size: 0.85rem;" data-url="{% url 'delete_exam' item.id %}" data-title="{{ item.title }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% else %}
+                    <span class="text-muted small">No Actions</span>
+                    {% endif %}
+                  </div>
+                </td>
+                {% else %}
+                <!-- # -->
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ forloop.counter0|add:page_obj.start_index }}
+                </td>
+
+                <!-- Title -->
+                <td class="text-white" style="font-size: 0.9rem; font-weight: 500;">
+                  {{ item.title }}
+                </td>
+
+                <!-- Course -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.course.name|default:"—" }}
+                </td>
+
+                <!-- Duration Badge -->
+                <td>
+                  {% if item.course_duration %}
+                    <span class="badge bg-primary text-white rounded-pill px-2 py-1 ms-1" style="font-size: 0.75rem; font-weight: 500;">{{ item.course_duration }}</span>
+                  {% else %}
+                    <span class="text-muted small">—</span>
+                  {% endif %}
+                </td>
+
+                <!-- Schedule -->
+                <td class="text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
+                  {% if item.start_datetime %}
+                    <span style="font-size: 0.75rem;" class="text-white-50">From:</span> {{ item.start_datetime|date:"d M Y, H:i" }}<br>
+                    <span style="font-size: 0.75rem;" class="text-white-50">To:</span> {{ item.end_datetime|date:"d M Y, H:i" }}
+                  {% else %}
+                    <span class="text-muted small">No Schedule</span>
+                  {% endif %}
+                </td>
+
+                <!-- Timer -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {% if item.duration_minutes %}
+                    {{ item.duration_minutes }} Min
+                  {% else %}
+                    <span class="text-muted small">No Timer</span>
+                  {% endif %}
+                </td>
+
+                <!-- Status Toggle -->
+                <td>
+                  {% if is_admin or is_center %}
+                  <div class="form-check form-switch">
+                    <input class="form-check-input status-toggle-switch"
+                           type="checkbox"
+                           id="toggle-{{ item.id }}"
+                           data-exam-id="{{ item.id }}"
+                           data-toggle-url="{% url 'ajax_toggle_exam_status' item.id %}"
+                           {% if item.is_published %}checked{% endif %}>
+                  </div>
+                  {% else %}
+                    {% if item.is_published %}
+                      <span class="badge bg-success text-white" style="font-size: 0.75rem;">Active</span>
+                    {% else %}
+                      <span class="badge bg-secondary text-white" style="font-size: 0.75rem;">Inactive</span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end flex-wrap">
+                    <!-- Questions (Purple) -->
+                    <a href="{% url 'question_list' item.id %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #7c3aed; border: none; border-radius: 4px; font-size: 0.85rem;">
+                      <i class="bi bi-question-circle"></i> Questions
+                    </a>
+
+                    {% if is_admin %}
+                    <!-- Edit (Blue) -->
+                    <a href="{% url 'edit_exam' item.id %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
+                      <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <!-- Delete (Red) -->
+                    <button type="button" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1 btn-delete-exam" style="background-color: #f43f5e; border: none; border-radius: 4px; font-size: 0.85rem;" data-url="{% url 'delete_exam' item.id %}" data-title="{{ item.title }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% elif is_center %}
+                    <!-- Center: Edit only own center exams -->
+                    <a href="{% url 'edit_exam' item.id %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #2563eb; border: none; border-radius: 4px; font-size: 0.85rem;">
+                      <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <button type="button" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1 btn-delete-exam" style="background-color: #f43f5e; border: none; border-radius: 4px; font-size: 0.85rem;" data-url="{% url 'delete_exam' item.id %}" data-title="{{ item.title }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% endif %}
+                  </div>
+                </td>
+                {% endif %}
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center py-5 text-muted">
+                  <i class="bi bi-journal-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No exams found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+      </div>
     </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .dark-modal-swal {
+    background-color: var(--erp-bg-card) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+</style>
+
+<script>
+$(function() {
+
+  // Show Entries pagination
+  $('#showEntriesSelect').on('change', function() {
+    const show = $(this).val();
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('show', show);
+    window.location.search = urlParams.toString();
+  });
+
+  // AJAX Status Toggle
+  $('.status-toggle-switch').on('change', function() {
+    const checkbox = $(this);
+    const examId = checkbox.data('exam-id');
+    const toggleUrl = checkbox.data('toggle-url');
+    const isChecked = checkbox.is(':checked');
+    const newStatus = isChecked ? 'Active' : 'Inactive';
+
+    // Revert immediately; wait for confirmation
+    checkbox.prop('checked', !isChecked);
+
+    Swal.fire({
+      title: 'Change status?',
+      text: `Set exam to ${newStatus}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, change it!',
+      cancelButtonText: 'No, cancel',
+      customClass: {
+        popup: 'dark-modal-swal',
+        confirmButton: 'btn btn-primary px-4 me-2',
+        cancelButton: 'btn btn-secondary px-4'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $.ajax({
+          url: toggleUrl,
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify({ 'status': newStatus }),
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          success: function(response) {
+            if (response.success) {
+              checkbox.prop('checked', isChecked);
+              Swal.fire({
+                icon: 'success',
+                title: `Exam is now ${newStatus}!`,
+                customClass: { popup: 'dark-modal-swal', confirmButton: 'btn btn-primary px-4' },
+                buttonsStyling: false
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: response.message || 'Could not update status.',
+                customClass: { popup: 'dark-modal-swal', confirmButton: 'btn btn-primary px-4' },
+                buttonsStyling: false
+              });
+            }
+          },
+          error: function() {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Server error occurred.',
+              customClass: { popup: 'dark-modal-swal', confirmButton: 'btn btn-primary px-4' },
+              buttonsStyling: false
+            });
+          }
+        });
+      }
+    });
+  });
+
+  // SweetAlert delete confirmation
+  $('.btn-delete-exam').on('click', function() {
+    const url = $(this).data('url');
+    const title = $(this).data('title');
+
+    Swal.fire({
+      title: 'Are you sure you want to delete this exam?',
+      text: `"${title}" will be soft deleted.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      customClass: {
+        popup: 'dark-modal-swal',
+        confirmButton: 'btn btn-danger px-4 me-2',
+        cancelButton: 'btn btn-secondary px-4'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+
+});
+
+function copyTable() {
+  let range = document.createRange();
+  range.selectNode(document.getElementById("exam-table"));
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  document.execCommand("copy");
+  window.getSelection().removeAllRanges();
+  Swal.fire({
+    icon: 'success',
+    title: 'Table content copied to clipboard!',
+    customClass: { popup: 'dark-modal-swal', confirmButton: 'btn btn-primary px-4' },
+    buttonsStyling: false
+  });
+}
+
+function exportExcel() {
+  window.location.href = "?export=csv{% if query %}&q={{ query }}{% endif %}";
+}
+
+function exportPDF() {
+  window.print();
+}
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+
 {% endblock %}

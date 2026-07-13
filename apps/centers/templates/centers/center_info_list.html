@@ -1,0 +1,858 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Exam Centre Management | Examly{% endblock %}
+
+{% block style %}
+{{ block.super }}
+<style>
+/* Scoped CSS specifically for #editCenterModal to ensure absolute responsiveness and navbar protection */
+#editCenterModal.modal {
+  top: var(--app-navbar-height, 68px) !important;
+  height: calc(100vh - var(--app-navbar-height, 68px)) !important;
+}
+
+#editCenterModal .modal-dialog {
+  max-height: calc(100% - 20px) !important;
+  margin: 10px auto !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+#editCenterModal .modal-content {
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+#editCenterModal #editCenterForm {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+
+#editCenterModal .modal-body {
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+  max-height: none !important;
+}
+
+#editCenterModal .modal-footer {
+  flex-shrink: 0 !important;
+}
+</style>
+{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1"><i class="bi bi-clipboard-check text-primary me-2"></i>List Center(s)</h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a></li>
+        <li class="breadcrumb-item text-muted">Center</li>
+        <li class="breadcrumb-item text-white active" aria-current="page">List</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12">
+      <!-- TABLE -->
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">List Center(s)</h6>
+          <i class="bi bi-chevron-up text-muted"></i>
+        </div>
+
+        <div class="alert mb-4 d-flex align-items-center" style="background-color: rgba(255, 193, 7, 0.05); border: 1px solid #ffc107; border-radius: 8px; padding: 12px 20px;">
+          <i class="bi bi-check-circle-fill text-warning me-3" style="font-size: 1.25rem;"></i>
+          <div>
+            <strong class="text-white">Information</strong><br>
+            <span class="text-warning" style="font-size: 0.85rem;">You can change the Prefix Roll no by clicking on it.</span>
+          </div>
+        </div>
+        
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+            <select class="form-select form-select-sm dark-input" style="width: 70px;">
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select>
+          </div>
+          
+          <div class="d-flex align-items-center gap-3">
+            <form method="GET" action="{% url 'center_list' %}" class="d-flex align-items-center gap-2">
+              <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" id="centerSearch" class="form-control form-control-sm dark-input text-white" value="{{ query }}" style="width: 200px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input);">
+            </form>
+            
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">Copy</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">CSV</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">Excel</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">PDF</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-2">Print</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-examly table-hover table-bordered align-middle mb-0" style="font-size: 0.85rem;">
+              <thead>
+                <tr>
+                  <th class="ps-4 text-uppercase text-muted">ROLL NO <i class="bi bi-chevron-up ms-1"></i></th>
+                  <th class="text-uppercase text-muted">INSTITUTE ID</th>
+                  <th class="text-uppercase text-muted">INSTITUTE NAME</th>
+                  <th class="text-uppercase text-muted">NAME</th>
+                  <th class="text-uppercase text-muted">EMAIL</th>
+                  <th class="text-uppercase text-muted">MOBILE</th>
+                  <th class="text-uppercase text-muted">WALLET</th>
+                  <th class="pe-4 text-end text-uppercase text-muted" style="width: 150px;">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for center in page_obj %}
+                <tr>
+                  <td class="ps-4 fw-semibold"><a href="#" class="text-decoration-none text-primary">{{ center.prefix_roll_no|default:center.id }}</a></td>
+                  <td class="text-white-50">{{ center.code }}</td>
+                  <td class="text-white-50" style="max-width: 200px; white-space: normal;">{{ center.name }}</td>
+                  <td class="text-white-50">{{ center.owner_name|default:"-" }}</td>
+                  <td><a href="mailto:{{ center.email }}" class="text-decoration-none text-primary">{{ center.email|default:"-" }}</a></td>
+                  <td><a href="tel:{{ center.phone }}" class="text-decoration-none text-primary fw-semibold">{{ center.phone|default:"-" }}</a></td>
+                  <td>
+                    <div class="fw-bold text-white mb-1">₹ {{ center.wallet_balance|floatformat:2 }}</div>
+                    <button class="btn btn-primary btn-sm px-3 py-0 btn-load-wallet"
+                            style="background-color: #2563eb; border-color: #2563eb;"
+                            data-pk="{{ center.pk }}"
+                            data-url="{% url 'center_load_wallet' center.pk %}"
+                            data-name="{{ center.name }}">
+                      <i class="bi bi-plus text-white"></i>
+                    </button>
+                  </td>
+                  <td class="pe-4 text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                      <a href="{% url 'center_profile' center.pk %}" class="btn btn-sm rounded-1 px-2 text-white text-decoration-none" style="background-color: #7c3aed; border-color: #7c3aed;" title="View"><i class="bi bi-eye"></i></a>
+                      <button type="button"
+                              class="btn btn-sm btn-action-edit btn-edit-center rounded-1 px-2"
+                              style="background-color: #2563eb; border-color: #2563eb; color: #fff;"
+                              data-pk="{{ center.pk }}"
+                              data-url="{% url 'center_edit' center.pk %}"
+                              title="Edit">
+                        <i class="bi bi-pencil-square"></i>
+                      </button>
+                      <a href="{% url 'center_delete' center.pk %}"
+                         class="btn btn-sm btn-action-delete btn-delete-center rounded-1 px-2 text-white text-decoration-none"
+                         style="background-color: #dc3545; border-color: #dc3545;"
+                         data-name="{{ center.name }}"
+                         title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="8" class="text-center py-4 text-muted">
+                      No data available in table
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center">
+          <div class="text-muted small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} entries
+          </div>
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Previous</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item"><a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a></li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Next</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for AJAX Editing -->
+<div class="modal fade" id="editCenterModal" tabindex="-1" aria-labelledby="editCenterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+    <div class="modal-content" style="background-color: #12141c; border: 1px solid #1c1f2c; border-radius: 12px; color: #fff;">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white" id="editCenterModalLabel"><i class="bi bi-pencil-square text-primary me-2"></i>Update Center</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editCenterForm" method="POST" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="modal-body" style="max-height: calc(100vh - 210px); overflow-y: auto;">
+          <div class="alert alert-danger d-none" id="modalError"></div>
+          
+          <!-- Section 1: General Information -->
+          <div class="mb-4">
+            <h6 class="fw-bold border-bottom border-secondary pb-2 mb-3 text-primary">General Information</h6>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label for="modal_owner_name" class="form-label text-white-50 small">Institute Owner Name <span class="text-danger">*</span></label>
+                <input type="text" name="owner_name" id="modal_owner_name" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_name" class="form-label text-white-50 small">Institute Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" id="modal_name" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_code" class="form-label text-white-50 small">Institute ID (Centre Code) <span class="text-danger">*</span></label>
+                <input type="text" name="code" id="modal_code" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_head_qualification" class="form-label text-white-50 small">Qualification of Head <span class="text-danger">*</span></label>
+                <input type="text" name="head_qualification" id="modal_head_qualification" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_owner_dob" class="form-label text-white-50 small">Date of Birth <span class="text-danger">*</span></label>
+                <input type="date" name="owner_dob" id="modal_owner_dob" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_pan_number" class="form-label text-white-50 small">PAN Number <span class="text-danger">*</span></label>
+                <input type="text" name="pan_number" id="modal_pan_number" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_aadhar_number" class="form-label text-white-50 small">Aadhaar Number <span class="text-danger">*</span></label>
+                <input type="text" name="aadhar_number" id="modal_aadhar_number" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_prefix_roll_no" class="form-label text-white-50 small">Prefix Roll No. <span class="text-danger">*</span></label>
+                <input type="text" name="prefix_roll_no" id="modal_prefix_roll_no" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Contact & Address Information -->
+          <div class="mb-4">
+            <h6 class="fw-bold border-bottom border-secondary pb-2 mb-3 text-primary">Contact & Address Details</h6>
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label for="modal_address" class="form-label text-white-50 small">Full Address <span class="text-danger">*</span></label>
+                <textarea name="address" id="modal_address" rows="2" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;"></textarea>
+              </div>
+              <div class="col-md-4">
+                <label for="modal_pincode" class="form-label text-white-50 small">Pincode <span class="text-danger">*</span></label>
+                <input type="text" name="pincode" id="modal_pincode" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_state" class="form-label text-white-50 small">State <span class="text-danger">*</span></label>
+                <select name="state" id="modal_state" class="form-select dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                  <option value="">Select State</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="modal_district" class="form-label text-white-50 small">District <span class="text-danger">*</span></label>
+                <select name="district" id="modal_district" class="form-select dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                  <option value="">Select City</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="modal_whatsapp_number" class="form-label text-white-50 small">WhatsApp Number <span class="text-danger">*</span></label>
+                <input type="text" name="whatsapp_number" id="modal_whatsapp_number" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_phone" class="form-label text-white-50 small">Contact Number <span class="text-danger">*</span></label>
+                <input type="text" name="phone" id="modal_phone" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_email" class="form-label text-white-50 small">Email Address <span class="text-danger">*</span></label>
+                <input type="email" name="email" id="modal_email" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_password" class="form-label text-white-50 small">Change Account Password</label>
+                <input type="password" name="password" id="modal_password" class="form-control dark-input text-white" placeholder="Leave blank to keep current" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Infrastructure Details -->
+          <div class="mb-4">
+            <h6 class="fw-bold border-bottom border-secondary pb-2 mb-3 text-primary">Infrastructure Details</h6>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label for="modal_staff_count" class="form-label text-white-50 small">Number of Staff <span class="text-danger">*</span></label>
+                <input type="number" name="staff_count" id="modal_staff_count" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_classrooms_count" class="form-label text-white-50 small">Number of Classrooms <span class="text-danger">*</span></label>
+                <input type="number" name="classrooms_count" id="modal_classrooms_count" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_computers_count" class="form-label text-white-50 small">Total Computers <span class="text-danger">*</span></label>
+                <input type="number" name="computers_count" id="modal_computers_count" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_space_sqft" class="form-label text-white-50 small">Computer Center Space (Sq. Ft.) <span class="text-danger">*</span></label>
+                <input type="number" name="space_sqft" id="modal_space_sqft" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-3">
+                <label for="modal_has_reception" class="form-label text-white-50 small">Reception <span class="text-danger">*</span></label>
+                <select name="has_reception" id="modal_has_reception" class="form-select dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                  <option value="True">Yes</option>
+                  <option value="False">No</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label for="modal_has_staff_room" class="form-label text-white-50 small">Staff Room <span class="text-danger">*</span></label>
+                <select name="has_staff_room" id="modal_has_staff_room" class="form-select dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                  <option value="True">Yes</option>
+                  <option value="False">No</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label for="modal_has_water_supply" class="form-label text-white-50 small">Water Supply <span class="text-danger">*</span></label>
+                <select name="has_water_supply" id="modal_has_water_supply" class="form-select dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                  <option value="True">Yes</option>
+                  <option value="False">No</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label for="modal_has_toilet" class="form-label text-white-50 small">Toilet <span class="text-danger">*</span></label>
+                <select name="has_toilet" id="modal_has_toilet" class="form-select dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                  <option value="True">Yes</option>
+                  <option value="False">No</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Document Uploads & Validity -->
+          <div class="mb-4">
+            <h6 class="fw-bold border-bottom border-secondary pb-2 mb-3 text-primary">Validity & Documents</h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="modal_valid_upto" class="form-label text-white-50 small">Valid Upto <span class="text-danger">*</span></label>
+                <input type="date" name="valid_upto" id="modal_valid_upto" class="form-control dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_is_deleted" class="form-label text-white-50 small">Profile Status <span class="text-danger">*</span></label>
+                <select name="is_deleted" id="modal_is_deleted" class="form-select dark-input text-white" required style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+                  <option value="false">Active</option>
+                  <option value="true">Inactive</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="row g-3 mt-2">
+              <div class="col-md-4">
+                <label for="modal_owner_image" class="form-label text-white-50 small">Owner Image (Leave blank to keep existing)</label>
+                <input type="file" name="owner_image" id="modal_owner_image" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_aadhar_doc" class="form-label text-white-50 small">Aadhaar Card (Leave blank to keep existing)</label>
+                <input type="file" name="aadhar_doc" id="modal_aadhar_doc" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_signature_doc" class="form-label text-white-50 small">Signature Doc (Leave blank to keep existing)</label>
+                <input type="file" name="signature_doc" id="modal_signature_doc" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_logo_doc" class="form-label text-white-50 small">Centre Logo (Leave blank to keep existing)</label>
+                <input type="file" name="logo_doc" id="modal_logo_doc" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_address_proof" class="form-label text-white-50 small">Address Proof (Leave blank to keep existing)</label>
+                <input type="file" name="address_proof" id="modal_address_proof" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+              <div class="col-md-4">
+                <label for="modal_agreement_doc" class="form-label text-white-50 small">Agreement (Leave blank to keep existing)</label>
+                <input type="file" name="agreement_doc" id="modal_agreement_doc" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-save-modal px-4 py-2" id="btnUpdateSubmit">
+            <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Load Wallet Modal -->
+<div class="modal fade" id="walletModal" tabindex="-1" aria-labelledby="walletModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: #12141c; border: 1px solid #1c1f2c; border-radius: 12px; color: #fff;">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white" id="walletModalLabel">
+          <i class="bi bi-wallet2 text-primary me-2"></i>Load Wallet
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger d-none" id="walletModalError"></div>
+        <div class="mb-3">
+          <label class="form-label text-muted small">Center</label>
+          <div class="fw-semibold text-white" id="walletCenterName">—</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label text-muted small">Current Balance</label>
+          <div class="fw-bold text-primary" id="walletCurrentBalance">₹ 0.00</div>
+        </div>
+        <!-- Preset Amount Buttons -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold text-white">Select Amount</label>
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="500">₹500</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="1000">₹1,000</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="2000">₹2,000</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="5000">₹5,000</button>
+            <button type="button" class="btn btn-outline-secondary text-white border-secondary btn-preset-amount" data-amount="10000">₹10,000</button>
+          </div>
+        </div>
+        <!-- Custom Amount -->
+        <div class="mb-3">
+          <label for="walletAmount" class="form-label fw-semibold text-white">
+            Custom Amount <span class="text-danger">*</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #aaa;">₹</span>
+            <input type="number" id="walletAmount" class="form-control dark-input text-white" placeholder="Enter amount" min="1" step="0.01"
+                   style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input);">
+          </div>
+          <div class="text-danger small mt-1 d-none" id="walletAmountError"></div>
+        </div>
+        <!-- Description -->
+        <div class="mb-3">
+          <label for="walletDescription" class="form-label fw-semibold text-white">Description</label>
+          <input type="text" id="walletDescription" class="form-control dark-input text-white" placeholder="Optional note"
+                 style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;">
+        </div>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-save-modal px-4 py-2" id="btnWalletSave">
+          <i class="bi bi-wallet-fill me-1"></i> Load Wallet
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // CSRF Utility
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const stateDistricts = {
+    'Andhra Pradesh': ['Alluri Sitharama Raju','Anakapalli','Ananthapuramu','Bapatla','Chittoor','East Godavari','Eluru','Guntur','Kakinada','Konaseema','Krishna','Kurnool','Manyam','Nandyal','Nellore','Ntr','Palnadu','Prakasam','Sri Balaji','Sri Sathya Sai','Srikakulam','Tirupati','Visakhapatnam','Vizianagaram','West Godavari','YSR Kadapa'],
+    'Arunachal Pradesh': ['Anjaw','Changlang','Dibang Valley','East Kameng','East Siang','Kamle','Kra Daadi','Kurung Kumey','Lepa Rada','Lohit','Longding','Lower Dibang Valley','Lower Siang','Lower Subansiri','Namsai','Pakke Kessang','Papum Pare','Shi Yomi','Siang','Tawang','Tirap','Upper Dibang Valley','Upper Siang','Upper Subansiri','West Kameng','West Siang'],
+    'Assam': ['Bajali','Baksa','Barpeta','Biswanath','Bongaigaon','Cachar','Charaideo','Chirang','Darrang','Dhemaji','Dhubri','Dibrugarh','Dima Hasao','Goalpara','Golaghat','Hailakandi','Hojai','Jorhat','Kamrup','Kamrup Metropolitan','Karbi Anglong','Karimganj','Kokrajhar','Lakhimpur','Majuli','Morigaon','Nagaon','Nalbari','Sivasagar','Sonitpur','South Salmara-Mankachar','Tamulpur','Tinsukia','Udalguri','West Karbi Anglong'],
+    'Bihar': ['Araria','Arwal','Aurangabad','Banka','Begusarai','Bhagalpur','Bhojpur','Buxar','Darbhanga','East Champaran','Gaya','Gopalganj','Jamui','Jehanabad','Kaimur','Katihar','Khagaria','Kishanganj','Lakhisarai','Madhepura','Madhubani','Munger','Muzaffarpur','Nalanda','Nawada','Patna','Purnia','Rohtas','Saharsa','Samastipur','Saran','Sheikhpura','Sheohar','Sitamarhi','Siwan','Supaul','Vaishali','West Champaran'],
+    'Chhattisgarh': ['Balod','Baloda Bazar','Balrampur','Bastar','Bemetara','Bijapur','Bilaspur','Dantewada','Dhamtari','Durg','Gariaband','Gaurela-Pendra-Marwahi','Janjgir-Champa','Jashpur','Kabirdham','Kanker','Khairagarh','Kondagaon','Korba','Koriya','Mahasamund','Manendragarh','Mohla-Manpur','Mungeli','Narayanpur','Raigarh','Raipur','Rajnandgaon','Sakti','Sarangarh-Bilaigarh','Sukma','Surajpur','Surguja'],
+    'Goa': ['North Goa','South Goa'],
+    'Gujarat': ['Ahmedabad','Amreli','Anand','Aravalli','Banaskantha','Bharuch','Bhavnagar','Botad','Chhota Udaipur','Dahod','Dang','Devbhumi Dwarka','Gandhinagar','Gir Somnath','Jamnagar','Junagadh','Kheda','Kutch','Mahisagar','Mehsana','Morbi','Narmada','Navsari','Panchmahal','Patan','Porbandar','Rajkot','Sabarkantha','Surat','Surendranagar','Tapi','Vadodara','Valsad'],
+    'Haryana': ['Ambala','Bhiwani','Charkhi Dadri','Faridabad','Fatehabad','Gurugram','Hisar','Jhajjar','Jind','Kaithal','Karnal','Kurukshetra','Mahendragarh','Nuh','Palwal','Panchkula','Panipat','Rewari','Rohtak','Sirsa','Sonipat','Yamunanagar'],
+    'Himachal Pradesh': ['Bilaspur','Chamba','Hamirpur','Kangra','Kinnaur','Kullu','Lahaul and Spiti','Mandi','Shimla','Sirmaur','Solan','Una'],
+    'Jharkhand': ['Bokaro','Chatra','Deoghar','Dhanbad','Dumka','East Singhbhum','Garhwa','Giridih','Godda','Gumla','Hazaribagh','Jamtara','Khunti','Koderma','Latehar','Lohardaga','Pakur','Palamu','Ramgarh','Ranchi','Sahebganj','Seraikela Kharsawan','Simdega','West Singhbhum'],
+    'Karnataka': ['Bagalkote','Ballari','Belagavi','Bengaluru Rural','Bengaluru Urban','Bidar','Chamarajanagar','Chikkaballapura','Chikkamagaluru','Chitradurga','Dakshina Kannada','Davangere','Dharwad','Gadag','Hassan','Haveri','Kalaburagi','Kodagu','Kolar','Koppal','Mandya','Mysuru','Raichur','Ramanagara','Shivamogga','Tumakuru','Udupi','Uttara Kannada','Vijayapura','Yadgir'],
+    'Kerala': ['Alappuzha','Ernakulam','Idukki','Kannur','Kasaragod','Kollam','Kottayam','Kozhikode','Malappuram','Palakkad','Pathanamthitta','Thiruvananthapuram','Thrissur','Wayanad'],
+    'Madhya Pradesh': ['Agar Malwa','Alirajpur','Anuppur','Ashoknagar','Balaghat','Barwani','Betul','Bhind','Bhopal','Burhanpur','Chachaura','Chhatarpur','Chhindwara','Damoh','Datia','Dewas','Dhar','Dindori','Guna','Gwalior','Harda','Hoshangabad','Indore','Jabalpur','Jhabua','Katni','Khandwa','Khargone','Maihar','Mandla','Mandsaur','Morena','Mauganj','Narsinghpur','Neemuch','Niwari','Panna','Raisen','Rajgarh','Ratlam','Rewa','Sagar','Satna','Sehore','Seoni','Shahdol','Shajapur','Sheopur','Shivpuri','Sidhi','Singrauli','Tikamgarh','Ujjain','Umaria','Vidisha'],
+    'Maharashtra': ['Ahmednagar','Akola','Amravati','Aurangabad','Beed','Bhandara','Buldhana','Chandrapur','Dhule','Gadchiroli','Gondia','Hingoli','Jalgaon','Jalna','Kolhapur','Latur','Mumbai City','Mumbai Suburban','Nagpur','Nanded','Nandurbar','Nashik','Osmanabad','Palghar','Parbhani','Pune','Raigad','Ratnagiri','Sangli','Satara','Sindhudurg','Solapur','Thane','Wardha','Washim','Yavatmal'],
+    'Manipur': ['Bishnupur','Chandel','Churachandpur','Imphal East','Imphal West','Jiribam','Kakching','Kamjong','Kangpokpi','Noney','Pherzawl','Senapati','Tamenglong','Tengnoupal','Thoubal','Ukhrul'],
+    'Meghalaya': ['East Garo Hills','East Jaintia Hills','East Khasi Hills','Eastern West Khasi Hills','North Garo Hills','Ri Bhoi','South Garo Hills','South West Garo Hills','South West Khasi Hills','West Garo Hills','West Jaintia Hills','West Khasi Hills'],
+    'Mizoram': ['Aizawl','Champhai','Hnahthial','Khawzawl','Kolasib','Lawngtlai','Lunglei','Mamit','Saitual','Serchhip','Siaha'],
+    'Nagaland': ['Chumoukedima','Dimapur','Kiphire','Kohima','Longleng','Mokokchung','Mon','Niuland','Noklak','Peren','Phek','Shamator','Tseminyü','Tuensang','Wokha','Zunheboto'],
+    'Odisha': ['Angul','Balangir','Balasore','Bargarh','Bhadrak','Boudh','Cuttack','Deogarh','Dhenkanal','Gajapati','Ganjam','Jagatsinghpur','Jajpur','Jharsuguda','Kalahandi','Kandhamal','Kendrapara','Kendujhar','Khordha','Koraput','Malkangiri','Mayurbhanj','Nabarangpur','Nayagarh','Nuapada','Puri','Rayagada','Sambalpur','Sonepur','Sundargarh'],
+    'Punjab': ['Amritsar','Barnala','Bathinda','Faridkot','Fatehgarh Sahib','Fazilka','Ferozepur','Gurdaspur','Hoshiarpur','Jalandhar','Kapurthala','Ludhiana','Malerkotla','Mansa','Moga','Mohali','Muktsar','Pathankot','Patiala','Rupnagar','Sangrur','Shaheed Bhagat Singh Nagar','Tarn Taran'],
+    'Rajasthan': ['Ajmer','Alwar','Banswara','Baran','Barmer','Bharatpur','Bhilwara','Bikaner','Bundi','Chittorgarh','Churu','Dausa','Dholpur','Dungarpur','Ganganagar','Hanumangarh','Jaipur','Jaisalmer','Jalore','Jhalawar','Jhunjhunu','Jodhpur','Karauli','Kota','Nagaur','Pali','Pratapgarh','Rajsamand','Sawai Modhopur','Sikar','Sirohi','Tonk','Udaipur'],
+    'Sikkim': ['East Sikkim','North Sikkim','Pakyong','Soreng','South Sikkim','West Sikkim'],
+    'Tamil Nadu': ['Ariyalur','Chengalpattu','Chennai','Coimbatore','Cuddalore','Dharmapuri','Dindigul','Erode','Kallakurichi','Kanchipuram','Kanyakumari','Karur','Krishnagiri','Madurai','Mayiladuthurai','Nagapattinam','Namakkal','Nilgiris','Perambalur','Pudukkottai','Ramanathapuram','Ranipet','Salem','Sivaganga','Tenkasi','Thanjavur','Theni','Thoothukudi','Tiruchirappalli','Tirunelveli','Tirupathur','Tiruppur','Tiruvallur','Tiruvannamalai','Tiruvarur','Vellore','Viluppuram','Virudhunagar'],
+    'Telangana': ['Adilabad','Bhadradri Kothagudem','Hanumakonda','Hyderabad','Jagtial','Jangaon','Jayashankar Bhupalpally','Jogulamba Gadwal','Kamareddy','Karimnagar','Khammam','Komaram Bheem','Mahabubabad','Mahabubnagar','Mancherial','Medak','Medchal Malkajgiri','Mulugu','Nagarkurnool','Nalgonda','Narayanpet','Nirmal','Nizamabad','Peddapalli','Rajanna Sircilla','Rangareddy','Sangareddy','Siddipet','Suryapet','Vikarabad','Wanaparthy','Warangal','Yadadri Bhuvanagiri'],
+    'Tripura': ['Dhalai','Gomati','Khowai','North Tripura','Sepahijala','Sipahijala','South Tripura','Unakoti','West Tripura'],
+    'Uttar Pradesh': ['Agra','Aligarh','Ambedkar Nagar','Amethi','Amroha','Auraiya','Ayodhya','Azamgarh','Baghpat','Bahraich','Ballia','Balrampur','Banda','Barabanki','Bareilly','Basti','Bhadohi','Bijnor','Budaun','Bulandshahr','Chandauli','Chitrakoot','Deoria','Etah','Etawah','Farrukhabad','Fatehpur','Firozabad','Gautam Buddha Nagar','Ghaziabad','Ghazipur','Gonda','Gorakhpur','Hamirpur','Hapur','Hardoi','Hathras','Jalaun','Jaunpur','Jhansi','Kannauj','Kanpur Dehat','Kanpur Nagar','Kasganj','Kaushambi','Kheri','Kushinagar','Lalitpur','Lucknow','Maharajganj','Mahoba','Mainpuri','Mathura','Mau','Meerut','Mirzapur','Moradabad','Muzaffarnagar','Pilibhit','Pratapgarh','Prayagraj','Raebareli','Rampur','Saharanpur','Sambhal','Sant Kabir Nagar','Shahjahanpur','Shamli','Shravasti','Siddharthnagar','Sitapur','Sonbhadra','Sultanpur','Unnao','Varanasi'],
+    'Uttarakhand': ['Almora','Bageshwar','Chamoli','Champawat','Dehradun','Haridwar','Nainital','Pauri Garhwal','Pithoragarh','Rudraprayag','Tehri Garhwal','Udham Singh Nagar','Uttarkashi'],
+    'West Bengal': ['Alipurduar','Bankura','Birbhum','Cooch Behar','Dakshin Dinajpur','Darjeeling','Hooghly','Howrah','Jalpaiguri','Jhargram','Kalimpong','Kolkata','Malda','Murshidabad','Nadia','North 24 Parganas','Paschim Bardhaman','Paschim Medinipur','Purba Bardhaman','Purba Medinipur','Purulia','South 24 Parganas','Uttar Dinajpur'],
+    'Andaman and Nicobar Islands': ['Nicobar','North and Middle Andaman','South Andaman'],
+    'Chandigarh': ['Chandigarh'],
+    'Dadra and Nagar Haveli and Daman and Diu': ['Dadra and Nagar Haveli','Daman','Diu'],
+    'Delhi': ['Central Delhi','East Delhi','New Delhi','North Delhi','North East Delhi','North West Delhi','Shahdara','South Delhi','South East Delhi','South West Delhi','West Delhi'],
+    'Jammu and Kashmir': ['Anantnag','Bandipora','Baramulla','Budgam','Doda','Ganderbal','Jammu','Kathua','Kishtwar','Kulgam','Kupwara','Poonch','Pulwama','Rajouri','Ramban','Reasi','Samba','Shopian','Srinagar','Udhampur'],
+    'Ladakh': ['Kargil','Leh'],
+    'Lakshadweep': ['Lakshadweep'],
+    'Puducherry': ['Karaikal','Mahe','Puducherry','Yanam'],
+  };
+
+  const editModal = document.getElementById('editCenterModal');
+  const bsModal = new bootstrap.Modal(editModal);
+  const editForm = document.getElementById('editCenterForm');
+  const modalError = document.getElementById('modalError');
+  const submitBtn = document.getElementById('btnUpdateSubmit');
+
+  // Input bindings
+  const owner_nameInput = document.getElementById('modal_owner_name');
+  const nameInput = document.getElementById('modal_name');
+  const codeInput = document.getElementById('modal_code');
+  const head_qualificationInput = document.getElementById('modal_head_qualification');
+  const owner_dobInput = document.getElementById('modal_owner_dob');
+  const pan_numberInput = document.getElementById('modal_pan_number');
+  const aadhar_numberInput = document.getElementById('modal_aadhar_number');
+  const prefix_roll_noInput = document.getElementById('modal_prefix_roll_no');
+  const addressInput = document.getElementById('modal_address');
+  const pincodeInput = document.getElementById('modal_pincode');
+  const stateInput = document.getElementById('modal_state');
+  const districtInput = document.getElementById('modal_district');
+  const whatsapp_numberInput = document.getElementById('modal_whatsapp_number');
+  const phoneInput = document.getElementById('modal_phone');
+  const emailInput = document.getElementById('modal_email');
+  const passwordInput = document.getElementById('modal_password');
+  const staff_countInput = document.getElementById('modal_staff_count');
+  const classrooms_countInput = document.getElementById('modal_classrooms_count');
+  const computers_countInput = document.getElementById('modal_computers_count');
+  const space_sqftInput = document.getElementById('modal_space_sqft');
+  const has_receptionInput = document.getElementById('modal_has_reception');
+  const has_staff_roomInput = document.getElementById('modal_has_staff_room');
+  const has_water_supplyInput = document.getElementById('modal_has_water_supply');
+  const has_toiletInput = document.getElementById('modal_has_toilet');
+  const valid_uptoInput = document.getElementById('modal_valid_upto');
+  const is_deletedInput = document.getElementById('modal_is_deleted');
+
+  // Initialize State choice options in Edit Modal
+  stateInput.innerHTML = '<option value="">Select State</option>';
+  Object.keys(stateDistricts).sort().forEach(function(state) {
+    const opt = document.createElement('option');
+    opt.value = state;
+    opt.textContent = state;
+    stateInput.appendChild(opt);
+  });
+
+  function populateDistricts(selectedState, selectedDistrict) {
+    districtInput.innerHTML = '<option value="">Select City</option>';
+    if (selectedState && stateDistricts[selectedState]) {
+      stateDistricts[selectedState].sort().forEach(function(dist) {
+        const opt = document.createElement('option');
+        opt.value = dist;
+        opt.textContent = dist;
+        if (dist === selectedDistrict) opt.selected = true;
+        districtInput.appendChild(opt);
+      });
+    }
+  }
+
+  stateInput.addEventListener('change', function() {
+    populateDistricts(this.value, '');
+  });
+
+  function showError(msg) {
+    modalError.textContent = msg;
+    modalError.classList.remove('d-none');
+  }
+
+  // Handle Edit Click
+  document.querySelectorAll('.btn-edit-center').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const url = btn.dataset.url;
+      modalError.classList.add('d-none');
+      editForm.action = url;
+      passwordInput.value = '';
+
+      // GET data via AJAX
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        owner_nameInput.value = data.owner_name || '';
+        nameInput.value = data.name || '';
+        codeInput.value = data.code || '';
+        head_qualificationInput.value = data.head_qualification || '';
+        owner_dobInput.value = data.owner_dob || '';
+        pan_numberInput.value = data.pan_number || '';
+        aadhar_numberInput.value = data.aadhar_number || '';
+        prefix_roll_noInput.value = data.prefix_roll_no || '';
+        addressInput.value = data.address || '';
+        pincodeInput.value = data.pincode || '';
+        
+        stateInput.value = data.state || '';
+        populateDistricts(data.state, data.district);
+
+        whatsapp_numberInput.value = data.whatsapp_number || '';
+        phoneInput.value = data.phone || '';
+        emailInput.value = data.email || '';
+        staff_countInput.value = data.staff_count || 0;
+        classrooms_countInput.value = data.classrooms_count || 0;
+        computers_countInput.value = data.computers_count || 0;
+        space_sqftInput.value = data.space_sqft || 0;
+        
+        has_receptionInput.value = data.has_reception;
+        has_staff_roomInput.value = data.has_staff_room;
+        has_water_supplyInput.value = data.has_water_supply;
+        has_toiletInput.value = data.has_toilet;
+        
+        valid_uptoInput.value = data.valid_upto || '';
+        is_deletedInput.value = data.is_deleted ? 'true' : 'false';
+
+        bsModal.show();
+      })
+      .catch(function () {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Unable to fetch Exam Centre data.',
+          customClass: { popup: 'dark-modal-swal' }
+        });
+      });
+    });
+  });
+
+  // Handle AJAX Update Submit
+  editForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    modalError.classList.add('d-none');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+    const formData = new FormData(editForm);
+
+    fetch(editForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.success) {
+        bsModal.hide();
+        window.location.reload();
+      } else {
+        const errs = data.errors || {};
+        const firstError = Object.values(errs)[0];
+        const msg = firstError ? firstError[0] : 'Validation error. Please check your input.';
+        showError(msg);
+      }
+    })
+    .catch(function () {
+      showError('An error occurred. Please try again.');
+    })
+    .finally(function () {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-bookmark-fill me-1"></i> Save Changes';
+    });
+  });
+
+  // Django messages via SweetAlert
+  {% if messages %}
+    {% for msg in messages %}
+      {% if "created successfully" in msg.message or "updated successfully" in msg.message or "deleted successfully" in msg.message %}
+        Swal.fire({
+          icon: 'success',
+          title: '{{ msg.message }}',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        });
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  // Delete Action via SweetAlert
+  document.querySelectorAll('.btn-delete-center').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = btn.getAttribute('href');
+      const name = btn.dataset.name;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure you want to delete ' + name + ' ?',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfToken = getCookie('csrftoken');
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+  // ── WALLET MODAL ─────────────────────────────────────────────────────────
+  const walletModalEl  = document.getElementById('walletModal');
+  const bsWalletModal  = new bootstrap.Modal(walletModalEl);
+  const walletCenterName    = document.getElementById('walletCenterName');
+  const walletCurrentBal    = document.getElementById('walletCurrentBalance');
+  const walletAmountInput   = document.getElementById('walletAmount');
+  const walletDescInput     = document.getElementById('walletDescription');
+  const walletModalError    = document.getElementById('walletModalError');
+  const walletAmountError   = document.getElementById('walletAmountError');
+  const btnWalletSave       = document.getElementById('btnWalletSave');
+  let   walletUrl           = '';
+
+  function showWalletError(msg) {
+    walletModalError.textContent = msg;
+    walletModalError.classList.remove('d-none');
+  }
+
+  function clearWalletErrors() {
+    walletModalError.classList.add('d-none');
+    walletAmountError.textContent = '';
+    walletAmountError.classList.add('d-none');
+  }
+
+  // Open wallet modal on + click
+  document.querySelectorAll('.btn-load-wallet').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      walletUrl = btn.dataset.url;
+      clearWalletErrors();
+      walletAmountInput.value = '';
+      walletDescInput.value = '';
+      walletCenterName.textContent = btn.dataset.name;
+      walletCurrentBal.textContent = '₹ …';
+      document.querySelectorAll('.btn-preset-amount').forEach(b => b.classList.remove('btn-primary', 'text-white'));
+
+      fetch(walletUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            walletCurrentBal.textContent = '₹ ' + parseFloat(data.wallet_balance).toFixed(2);
+          }
+          bsWalletModal.show();
+        })
+        .catch(() => bsWalletModal.show());
+    });
+  });
+
+  // Preset amount buttons
+  document.querySelectorAll('.btn-preset-amount').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      walletAmountInput.value = btn.dataset.amount;
+      document.querySelectorAll('.btn-preset-amount').forEach(b => {
+        b.classList.remove('btn-primary');
+        b.classList.add('btn-outline-secondary');
+      });
+      btn.classList.remove('btn-outline-secondary');
+      btn.classList.add('btn-primary');
+    });
+  });
+
+  // Save wallet
+  btnWalletSave.addEventListener('click', function () {
+    clearWalletErrors();
+    const amount = walletAmountInput.value.trim();
+    if (!amount || parseFloat(amount) <= 0) {
+      walletAmountError.textContent = 'Please enter a valid amount greater than zero.';
+      walletAmountError.classList.remove('d-none');
+      return;
+    }
+
+    btnWalletSave.disabled = true;
+    btnWalletSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    formData.append('amount', amount);
+    formData.append('description', walletDescInput.value.trim());
+
+    fetch(walletUrl, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        bsWalletModal.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Wallet Loaded!',
+          text: data.message,
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        }).then(() => window.location.reload());
+      } else {
+        const errs = data.errors || {};
+        const firstKey = Object.keys(errs)[0];
+        const msg = firstKey ? errs[firstKey][0] : 'Validation error.';
+        showWalletError(msg);
+      }
+    })
+    .catch(() => showWalletError('An error occurred. Please try again.'))
+    .finally(() => {
+      btnWalletSave.disabled = false;
+      btnWalletSave.innerHTML = '<i class="bi bi-wallet-fill me-1"></i> Load Wallet';
+    });
+  });
+  // ─────────────────────────────────────────────────────────────────────────
+
+})();
+</script>
+{% endblock %}

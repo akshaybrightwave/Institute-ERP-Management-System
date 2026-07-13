@@ -1,0 +1,182 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}View Admit Card | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-4">
+
+  <!-- Action Bar (Hidden on Print) -->
+  <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <a href="{% url 'admit_card_list' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to List
+    </a>
+    <button onclick="window.print();" class="btn btn-primary px-4">
+      <i class="bi bi-printer me-1"></i> Print Admit Card
+    </button>
+  </div>
+
+  <!-- Admit Card Container -->
+  <div class="card border-0 shadow-sm mx-auto" style="max-width: 800px; background-color: #fff; color: #333; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);">
+    
+    <!-- Header Banner -->
+    <div class="text-center text-white p-4" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-bottom: 5px solid #f39c12;">
+      <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
+        <div style="width: 50px; height: 50px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-mortarboard-fill text-primary" style="font-size: 1.8rem;"></i>
+        </div>
+        <div>
+          <h3 class="fw-bold mb-0 text-uppercase" style="letter-spacing: 1px; font-size: 1.6rem;">{{ admit_card.student.center.name|default:"INSTITUTE NAME" }}</h3>
+          <p class="mb-0 text-white-50 small">{{ admit_card.student.center.address|default:"Institute Address Details" }}</p>
+        </div>
+      </div>
+      <h5 class="fw-bold text-warning mt-3 mb-0 text-uppercase" style="letter-spacing: 2px;">EXAMINATION ADMIT CARD</h5>
+    </div>
+
+    <div class="card-body p-4">
+      <div class="row g-4">
+        <!-- Student Details -->
+        <div class="col-md-9 col-12">
+          <table class="table table-borderless align-middle mb-0 text-dark" style="font-size: 0.95rem;">
+            <tbody>
+              <tr>
+                <td class="fw-bold text-muted" style="width: 180px;">Student Name:</td>
+                <td class="fw-bold text-dark text-uppercase">{{ admit_card.student.student_name }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Enrollment Number:</td>
+                <td class="fw-bold text-dark">{{ admit_card.student.enrollment_no }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Roll Number:</td>
+                <td class="fw-bold text-danger">{{ admit_card.roll_number }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Course:</td>
+                <td class="text-dark">{{ admit_card.student.course.name }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Course Duration:</td>
+                <td class="text-dark">{{ admit_card.student.course.duration|default:"—" }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Academic Session:</td>
+                <td class="text-dark">{{ admit_card.session.session_name }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Date of Birth:</td>
+                <td class="text-dark">{{ admit_card.student.dob|date:"d-m-Y" }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Gender:</td>
+                <td class="text-dark">{{ admit_card.student.gender|title }}</td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-muted">Center:</td>
+                <td class="text-dark">{{ admit_card.student.center.name }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Student Photo -->
+        <div class="col-md-3 col-12 text-center d-flex flex-column align-items-center justify-content-start">
+          <div style="width: 135px; height: 165px; border: 2px solid #ddd; border-radius: 4px; overflow: hidden; background-color: #f8f9fa;" class="mb-2">
+            {% if admit_card.student.photo %}
+              <img src="{{ admit_card.student.photo.url }}" alt="{{ admit_card.student.student_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% else %}
+              <div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+                <i class="bi bi-person-fill" style="font-size: 3rem;"></i>
+                <span style="font-size: 0.75rem;">NO PHOTO</span>
+              </div>
+            {% endif %}
+          </div>
+          <span class="text-muted small fw-semibold text-uppercase">Student Photograph</span>
+        </div>
+      </div>
+
+      <!-- Exam Rules / Information Placeholder Section (Future Ready) -->
+      <div class="mt-4 pt-3 border-top">
+        <h6 class="fw-bold text-dark text-uppercase mb-2" style="font-size: 0.9rem;">Important Instructions for Candidates</h6>
+        <ol class="text-muted ps-3 mb-0" style="font-size: 0.8rem; line-height: 1.6;">
+          <li>Candidates must bring a printed copy of this Admit Card along with a valid ID proof to the exam center.</li>
+          <li>Report to the exam center at least 30 minutes before the scheduled time.</li>
+          <li>Possession of mobile phones, calculators, or any electronic gadgets is strictly prohibited in the exam hall.</li>
+          <li>Ensure the correctness of all details shown above. Discrepancies should be reported immediately.</li>
+        </ol>
+      </div>
+
+      <!-- Placeholders: QR, Barcode & Signatures -->
+      <div class="row g-4 mt-4 pt-3 border-top align-items-end text-center">
+        <!-- QR Code Placeholder -->
+        <div class="col-4">
+          <div class="mx-auto d-flex align-items-center justify-content-center border border-secondary" style="width: 90px; height: 90px; border-style: dashed !important; background-color: #fdfdfd;">
+            <div class="text-center text-muted">
+              <i class="bi bi-qr-code" style="font-size: 1.8rem; opacity: 0.4;"></i>
+              <div style="font-size: 0.65rem; font-weight: bold; opacity: 0.6;">QR PLACEHOLDER</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barcode Placeholder -->
+        <div class="col-4">
+          <div class="mx-auto d-flex align-items-center justify-content-center border border-secondary" style="width: 140px; height: 50px; border-style: dashed !important; background-color: #fdfdfd;">
+            <div class="text-center text-muted">
+              <i class="bi bi-barcode" style="font-size: 1.5rem; opacity: 0.4;"></i>
+              <div style="font-size: 0.65rem; font-weight: bold; opacity: 0.6;">BARCODE</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signature Placeholders -->
+        <div class="col-4 d-flex flex-column align-items-center">
+          <div class="w-75 border-bottom border-dark mb-2" style="height: 50px;"></div>
+          <span class="text-dark fw-semibold" style="font-size: 0.8rem;">Principal Signature</span>
+        </div>
+      </div>
+
+      <div class="row mt-4 pt-3 align-items-end text-center">
+        <div class="col-4 offset-8 d-flex flex-column align-items-center">
+          <div class="w-75 border-bottom border-dark mb-2" style="height: 50px;"></div>
+          <span class="text-dark fw-semibold" style="font-size: 0.8rem;">Candidate Signature</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Print Styles -->
+<style>
+@media print {
+  /* Hide the rest of the ERP system sidebar, header, buttons */
+  body * {
+    visibility: hidden;
+  }
+  .no-print, .no-print * {
+    display: none !important;
+  }
+  /* Show only the card content */
+  .card, .card * {
+    visibility: visible;
+  }
+  .card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  /* Force background colors on print */
+  .card-header, div[style*="linear-gradient"] {
+    background: #1e3c72 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .text-warning {
+    color: #f39c12 !important;
+  }
+}
+</style>
+{% endblock %}

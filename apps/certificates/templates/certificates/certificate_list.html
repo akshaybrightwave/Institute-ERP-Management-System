@@ -1,143 +1,230 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
 
-{% block title %}Certificates Management | Examly{% endblock %}
+{% block title %}Certificate Management | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
-    <div class="page-header">
-        <div>
-            <h2><i class="bi bi-award-fill text-primary me-2"></i>Certificates Management</h2>
-            <p>Generate, view, and revoke student course completion certificates.</p>
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-file-earmark-text text-primary me-2"></i>Get Certificate
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">
+          Get-certificate
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <!-- SECTION 2: List Certificates -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">List Certificate(s)</h5>
+          <i class="bi bi-chevron-up text-muted"></i>
         </div>
-        {% if is_admin %}
-        <div>
-            <a href="{% url 'certificate_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle-fill me-1"></i> Issue Certificate
-            </a>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+            <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+              <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+              <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+              <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form method="GET" action="{% url 'certificate_list' %}" class="d-flex align-items-center gap-2">
+              <input type="hidden" name="show" value="{{ show_entries }}">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+            </form>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem;">Enrollment No</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student Name</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Issue Date</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Institute</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.enrollment_no }}
+                </td>
+                <td class="fw-semibold text-white" style="font-size: 0.9rem;">
+                  {{ item.student.student_name }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.course.name|default:"—" }}
+                  {% if item.course_duration %}
+                  <span class="badge bg-primary text-white rounded-pill px-2 py-1 ms-1" style="font-size: 0.75rem; font-weight: 500;">{{ item.course_duration }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.issue_date|date:"d-m-Y" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.center.name|default:"—" }}
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'certificate_detail' item.pk %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #1d4ed8; border: none; border-radius: 4px; font-size: 0.85rem;" target="_blank">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    {% if is_admin or is_center %}
+                    <button type="button" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1 btn-delete-res" style="background-color: #db2777; border: none; border-radius: 4px; font-size: 0.85rem;" data-url="{% url 'certificate_delete' item.pk %}" data-name="{{ item.student.student_name }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  <i class="bi bi-file-earmark-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No certificates found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
         </div>
         {% endif %}
+      </div>
     </div>
-
-    <!-- Filters Card -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-4">
-            <form method="GET" action="{% url 'certificate_list' %}" class="row g-3 align-items-end">
-                <div class="col-md-9">
-                    <label for="searchInput" class="form-label fw-semibold small">Search Certificates</label>
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search by student, batch, course, certificate number..." value="{{ query }}">
-                    </div>
-                </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">
-                        <i class="bi bi-filter me-1"></i> Filter
-                    </button>
-                    <a href="{% url 'certificate_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle me-1"></i> Clear
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Certificates Table Card -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-examly table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">Certificate Number</th>
-                            <th>Student</th>
-                            <th>Batch</th>
-                            <th>Course</th>
-                            <th>Issue Date</th>
-                            <th>Status</th>
-                            <th class="pe-4 text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for cert in page_obj %}
-                        <tr>
-                            <td class="ps-4 fw-semibold"><code>{{ cert.certificate_number }}</code></td>
-                            <td class="fw-semibold">{{ cert.student.full_name }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ cert.batch.name }}</span></td>
-                            <td>{{ cert.course.name }}</td>
-                            <td>{{ cert.issue_date }}</td>
-                            <td>
-                                {% if cert.status == 'issued' %}
-                                <span class="badge-soft-success"><i class="bi bi-patch-check-fill me-1"></i>Issued</span>
-                                {% else %}
-                                <span class="badge-soft-danger"><i class="bi bi-x-octagon-fill me-1"></i>Revoked</span>
-                                {% endif %}
-                            </td>
-                            <td class="pe-4 text-end">
-                                <div class="d-flex gap-2 justify-content-end">
-                                    <a href="{% url 'certificate_detail' cert.id %}" class="btn btn-sm btn-outline-info" title="View Details">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
-                                    {% if is_admin %}
-                                        {% if cert.status == 'issued' %}
-                                        <form method="POST" action="{% url 'certificate_revoke' cert.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to revoke this certificate?');">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Revoke Certificate">
-                                                <i class="bi bi-x-octagon"></i> Revoke
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                        <a href="{% url 'certificate_delete' cert.id %}" class="btn btn-sm btn-outline-danger" title="Delete Log">
-                                            <i class="bi bi-trash"></i> Delete
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="p-0">
-                                <div class="empty-state py-5">
-                                    <i class="bi bi-award-fill"></i>
-                                    <p class="mb-0">No certificates recorded yet.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            {% if page_obj.has_other_pages %}
-            <div class="p-4 border-top">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center mb-0">
-                        {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}" aria-label="Previous">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        {% for num in page_obj.paginator.page_range %}
-                        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                            <a class="page-link" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
-                        </li>
-                        {% endfor %}
-
-                        {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}" aria-label="Next">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            </div>
-            {% endif %}
-        </div>
-    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .dark-modal-swal {
+    background-color: var(--erp-bg-card) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+</style>
+
+<script>
+$(function() {
+  // SweetAlert delete confirmation
+  $('.btn-delete-res').on('click', function() {
+    const url = $(this).data('url');
+    const name = $(this).data('name');
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to delete the Certificate for ${name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      customClass: {
+        popup: 'dark-modal-swal',
+        confirmButton: 'btn btn-danger px-4 me-2',
+        cancelButton: 'btn btn-secondary px-4'
+      },
+      buttonsStyling: false
+    }).then((certificate) => {
+      if (certificate.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+
+  // Entries pagination
+  $('#showEntriesSelect').on('change', function() {
+    const show = $(this).val();
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('show', show);
+    urlParams.set('page', '1');
+    window.location.search = urlParams.toString();
+  });
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,251 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Center Certificates | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-file-earmark-text text-primary me-2"></i>Center Certificates
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Center Area</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">
+          List-certificates
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <!-- SECTION: List Certificates -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">List Center Certificate(s)</h5>
+          <i class="bi bi-chevron-up text-muted"></i>
+        </div>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+              <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+                <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+                <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+                <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+              </select>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Copy</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">CSV</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Excel</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">PDF</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Print</button>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form method="GET" action="{% url 'center_certificate_list' %}" class="d-flex align-items-center gap-2">
+              <input type="hidden" name="show" value="{{ show_entries }}">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+            </form>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Institute Code</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Institute Name</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Owner Name</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Issue Date</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Valid Upto</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Certificate Status</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ forloop.counter0|add:page_obj.start_index }}
+                </td>
+                <td class="fw-semibold text-white" style="font-size: 0.9rem;">
+                  {{ item.center.code|default:"—" }}
+                </td>
+                <td class="fw-semibold text-white" style="font-size: 0.9rem;">
+                  {{ item.center.name|default:"—" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.center.owner_name|default:"—" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.issue_date|date:"d-m-Y" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.valid_upto|date:"d-m-Y"|default:"—" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {% if item.certificate_status == 'Active' %}
+                  <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1 ms-1" style="font-size: 0.75rem; font-weight: 500;">Active</span>
+                  {% elif item.certificate_status == 'Expired' %}
+                  <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-1 ms-1" style="font-size: 0.75rem; font-weight: 500;">Expired</span>
+                  {% else %}
+                  <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-1 ms-1" style="font-size: 0.75rem; font-weight: 500;">{{ item.certificate_status }}</span>
+                  {% endif %}
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'center_certificate_detail' item.pk %}" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1" style="background-color: #1d4ed8; border: none; border-radius: 4px; font-size: 0.85rem;" target="_blank">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    {% if is_admin or is_center %}
+                    <a href="{% url 'center_certificate_edit' item.pk %}" class="btn btn-sm rounded-pill px-3 text-white" style="background-color: #7952b3 !important; border-color: #7952b3 !important;">
+                      <i class="bi bi-pencil-square"></i> Edit
+                    </a>
+                    <button type="button" class="btn btn-sm text-white px-3 d-flex align-items-center gap-1 btn-delete-res" style="background-color: #db2777; border: none; border-radius: 4px; font-size: 0.85rem;" data-url="{% url 'center_certificate_delete' item.pk %}" data-name="{{ item.center.name }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center py-5 text-muted">
+                  <i class="bi bi-file-earmark-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No certificates found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .dark-modal-swal {
+    background-color: var(--erp-bg-card) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+</style>
+
+<script>
+$(function() {
+  $('.btn-delete-res').on('click', function() {
+    const url = $(this).data('url');
+    const name = $(this).data('name');
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to delete the Certificate for ${name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      customClass: {
+        popup: 'dark-modal-swal',
+        confirmButton: 'btn btn-danger px-4 me-2',
+        cancelButton: 'btn btn-secondary px-4'
+      },
+      buttonsStyling: false
+    }).then((certificate) => {
+      if (certificate.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+
+  $('#showEntriesSelect').on('change', function() {
+    const show = $(this).val();
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('show', show);
+    urlParams.set('page', '1');
+    window.location.search = urlParams.toString();
+  });
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,21 +1,23 @@
+import csv
+import uuid
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse, JsonResponse
+from django.contrib import messages
+from django.db.models import Q
+from django.db import transaction
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum
-from decimal import Decimal
 
-from apps.students.models import StudentProfile
-from apps.teachers.models import TeacherProfile
-from apps.attendance.models import Attendance
-from apps.fees.models import FeePayment
 from .models import Certificate
 from .forms import CertificateForm
+from decimal import Decimal
+from django.db.models import Sum
+from apps.attendance.models import Attendance
+from apps.fees.models import FeePayment
 
 
 def get_student_eligibility(student):
-    if not student.batch:
+    if not student or not student.batch:
         return {
             'eligible': False,
             'reason': "Student has no assigned batch.",
@@ -27,7 +29,15 @@ def get_student_eligibility(student):
         }
 
     # Attendance calculations
-    attendances = Attendance.objects.filter(student=student)
+    from apps.students.models import StudentAdmission
+    admission = StudentAdmission.objects.filter(user=student.user).first()
+    if not admission:
+        admission = StudentAdmission.objects.filter(Q(enrollment_no=student.user.username) | Q(email=student.email)).first()
+
+    if admission:
+        attendances = Attendance.objects.filter(student=admission)
+    else:
+        attendances = Attendance.objects.none()
     total_att = attendances.count()
     if total_att > 0:
         present_count = attendances.filter(status='present').count()
@@ -75,125 +85,163 @@ def get_student_eligibility(student):
     }
 
 
-@login_required
-def certificate_list(request):
-    is_admin = request.user.role == 'admin'
-    is_teacher = request.user.role == 'teacher'
-    
-    if not (is_admin or is_teacher):
-        return HttpResponseForbidden("Access Denied: Admins or Teachers only.")
-        
-    certificates = Certificate.objects.all().select_related('student', 'batch', 'course')
-    
-    if is_teacher:
-        teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
-        certificates = certificates.filter(batch__teacher=teacher_profile)
-        
+def _handle_list_and_csv(request, is_center):
+    qs = Certificate.objects.select_related('student', 'session', 'course', 'center').all()
+    if is_center:
+        qs = qs.filter(center=request.user.center)
+
     query = request.GET.get('q', '').strip()
     if query:
-        certificates = certificates.filter(
+        qs = qs.filter(
+            Q(student__student_name__icontains=query) |
+            Q(student__enrollment_no__icontains=query) |
             Q(certificate_number__icontains=query) |
-            Q(student__full_name__icontains=query) |
-            Q(batch__name__icontains=query) |
             Q(course__name__icontains=query)
         )
-        
-    certificates = certificates.order_by('-issue_date', '-id')
-    
-    paginator = Paginator(certificates, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    return render(request, 'certificates/certificate_list.html', {
-        'page_obj': page_obj,
-        'query': query,
-        'is_admin': is_admin
-    })
+    qs = qs.order_by('-id')
+
+    # Handle CSV Export
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="certificates.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Enrollment No', 'Student Name', 'Course', 'Course Duration', 'Issue Date', 'Institute'])
+        for cert in qs:
+            writer.writerow([
+                cert.student.enrollment_no,
+                cert.student.student_name,
+                cert.course.name if cert.course else '',
+                cert.course_duration,
+                cert.issue_date,
+                cert.center.name if cert.center else ''
+            ])
+        return response
+
+    return qs, query
 
 
 @login_required
 def certificate_create(request):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admins only.")
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
 
-    selected_student_id = request.GET.get('student')
-    eligibility_info = None
-    student_obj = None
-
-    if selected_student_id:
-        student_obj = get_object_or_404(StudentProfile, id=selected_student_id)
-        eligibility_info = get_student_eligibility(student_obj)
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied: Only Admin or Center can generate certificates.")
 
     if request.method == 'POST':
-        form = CertificateForm(request.POST)
-        student_id = request.POST.get('student')
-        if student_id:
-            student_obj = get_object_or_404(StudentProfile, id=student_id)
-            eligibility_info = get_student_eligibility(student_obj)
-            
-            if not eligibility_info['eligible']:
-                form.add_error('student', f"This student is not eligible: {eligibility_info['reason']}")
-            else:
-                if form.is_valid():
-                    cert = form.save(commit=False)
-                    cert.batch = student_obj.batch
-                    cert.course = student_obj.batch.course
-                    cert.save()
-                    messages.success(request, f"Certificate {cert.certificate_number} issued successfully.")
-                    return redirect('certificate_list')
+        form = CertificateForm(request.POST, user=request.user)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    cert_obj = form.save(commit=False)
+                    cert_obj.student = form.cleaned_data['student']
+                    cert_obj.center = cert_obj.student.center
+                    cert_obj.course = cert_obj.student.course
+                    cert_obj.created_by = request.user
+                    
+                    # Generate unique certificate number
+                    cert_obj.certificate_number = f"CERT-{uuid.uuid4().hex[:8].upper()}"
+                    
+                    cert_obj.save()
+                messages.success(request, f"Certificate for {cert_obj.student.student_name} generated successfully!")
+                return redirect('certificate_create')
+            except Exception as e:
+                messages.error(request, str(e))
+        else:
+            if not form.non_field_errors():
+                messages.error(request, 'Please correct the errors below.')
     else:
-        form = CertificateForm(initial={'student': selected_student_id})
+        form = CertificateForm(user=request.user)
 
-    return render(request, 'certificates/certificate_form.html', {
+    qs, query = _handle_list_and_csv(request, is_center)
+    if isinstance(qs, HttpResponse):
+        return qs
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'certificates/certificate_create.html', {
         'form': form,
-        'eligibility_info': eligibility_info,
-        'student_obj': student_obj
+        'page_obj': page_obj,
+        'query': query,
+        'is_admin': is_admin,
+        'is_center': is_center,
+    })
+
+
+@login_required
+def certificate_list(request):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    is_teacher = request.user.role == 'teacher'
+    is_student = request.user.role == 'student'
+
+    if not (is_admin or is_center or is_teacher or is_student):
+        return HttpResponseForbidden("Access Denied.")
+
+    if is_student:
+        qs = Certificate.objects.select_related('student', 'center', 'course', 'session').filter(
+            student__user=request.user
+        )
+        
+        paginator = Paginator(qs.order_by('-id'), 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        return render(request, 'certificates/certificate_list.html', {
+            'page_obj': page_obj,
+            'is_student': True,
+        })
+
+    qs, query = _handle_list_and_csv(request, is_center)
+    if isinstance(qs, HttpResponse):
+        return qs
+
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'certificates/certificate_list.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'is_admin': is_admin,
+        'is_center': is_center,
     })
 
 
 @login_required
 def certificate_detail(request, pk):
-    certificate = get_object_or_404(Certificate.objects.select_related('student', 'batch', 'course'), pk=pk)
+    cert = get_object_or_404(Certificate.objects.select_related('student', 'center', 'course', 'session'), pk=pk)
+
+    if request.user.role == 'center' and cert.center != request.user.center:
+        return HttpResponseForbidden("Access Denied: This certificate belongs to another center.")
     
-    is_admin = request.user.role == 'admin'
-    is_teacher = request.user.role == 'teacher'
-    is_student = request.user.role == 'student'
-    
-    if is_student:
-        if certificate.student.user != request.user:
+    if request.user.role == 'student':
+        if cert.student.user != request.user:
             return HttpResponseForbidden("Access Denied: You can only view your own certificates.")
-    elif is_teacher:
-        teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
-        if certificate.batch.teacher != teacher_profile:
-            return HttpResponseForbidden("Access Denied: You can only view certificates for your assigned batches.")
-            
+
     return render(request, 'certificates/certificate_detail.html', {
-        'certificate': certificate,
-        'is_admin': is_admin
+        'certificate': cert
     })
-
-
-@login_required
-def certificate_revoke(request, pk):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admins only.")
-    certificate = get_object_or_404(Certificate, pk=pk)
-    certificate.status = 'revoked'
-    certificate.save()
-    messages.success(request, f"Certificate {certificate.certificate_number} has been revoked successfully.")
-    return redirect('certificate_detail', pk=certificate.pk)
 
 
 @login_required
 def certificate_delete(request, pk):
-    if request.user.role != 'admin':
-        return HttpResponseForbidden("Access Denied: Admins only.")
-    certificate = get_object_or_404(Certificate, pk=pk)
+    cert = get_object_or_404(Certificate, pk=pk)
+
+    if request.user.role == 'center' and cert.center != request.user.center:
+        return HttpResponseForbidden("Access Denied.")
+    if request.user.role not in ['admin', 'center']:
+        return HttpResponseForbidden("Access Denied.")
+
     if request.method == 'POST':
-        certificate.delete()
-        messages.success(request, "Certificate deleted successfully.")
+        cert.delete()
+        messages.success(request, "Certificate deleted successfully!")
+        # If deleted from create page, redirect back there. Otherwise list page.
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'create' in referer:
+            return redirect('certificate_create')
         return redirect('certificate_list')
-        
-    return render(request, 'certificates/certificate_confirm_delete.html', {
-        'certificate': certificate
-    })
+
+    return HttpResponseForbidden("Invalid request.")

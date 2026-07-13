@@ -1,59 +1,420 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
 {% load widget_tweaks %}
+{% load static %}
 
-{% block title %}Create Exam | Examly{% endblock %}
+{% block title %}{% if is_center %}Request for Exam{% else %}Add Exam{% endif %} | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card border-0">
-                <div class="card-body p-4 p-md-5">
-                    <div class="text-center mb-4">
-                        <div class="feature-icon"><i class="bi bi-journal-plus"></i></div>
-                        <h3 class="fw-bold mb-1">Create New Exam</h3>
-                        <p class="text-muted">Set up the basic details for your exam.</p>
-                    </div>
 
-                    <form method="post">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">{{ field.label }}</label>
-                                {% if field.name == 'batches' %}
-                                    <div class="batches-checkbox-list border rounded p-3 bg-light" style="max-height: 220px; overflow-y: auto;">
-                                        {% for checkbox in field %}
-                                            <div class="form-check mb-2">
-                                                {{ checkbox.tag }}
-                                                <label class="form-check-label ms-1" for="{{ checkbox.id_for_label }}">
-                                                    {{ checkbox.choice_label }}
-                                                </label>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    {{ field|add_class:"form-control" }}
-                                {% endif %}
-                                {% if field.help_text %}
-                                    <small class="text-muted d-block mt-1">{{ field.help_text|safe }}</small>
-                                {% endif %}
-                                {% for error in field.errors %}
-                                    <p class="text-danger small mt-1 mb-0">{{ error }}</p>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                        <div class="d-flex gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary fw-bold flex-grow-1 py-2">
-                                <i class="bi bi-check-circle me-1"></i> Create Exam
-                            </button>
-                            <a href="{% url 'exam_list' %}" class="btn btn-outline-primary py-2">
-                                <i class="bi bi-x-circle me-1"></i> Cancel
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      {% if is_center %}
+      <i class="bi bi-file-earmark-plus text-primary me-2"></i>Request for Exam
+      {% else %}
+      <i class="bi bi-plus-circle text-primary me-2"></i>Add Exam
+      {% endif %}
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% if is_center %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Exam</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">{% if is_center %}Request{% else %}Add{% endif %}</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">{% if is_center %}Request New Exam{% else %}Add New Exam{% endif %}</h5>
         </div>
+
+        <form method="POST" id="createExamForm">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger border-0 rounded-3 mb-4" style="background: rgba(220,53,69,0.1); color: #ea868f;">
+            {% for error in form.non_field_errors %}
+              <div class="small"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if is_center %}
+            <!-- Course -->
+            <div class="mb-3">
+              <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Course <span class="text-danger">*</span>
+              </label>
+              {% render_field form.course class="form-select dark-input" %}
+              {% if form.course.errors %}
+                <span class="text-danger small">{{ form.course.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Message (description field) -->
+            <div class="mb-3">
+              <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Message <span class="text-danger">*</span>
+              </label>
+              {% render_field form.description class="form-control text-white dark-input" rows="4" placeholder="Enter Message" %}
+              {% if form.description.errors %}
+                <span class="text-danger small">{{ form.description.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Hidden center field -->
+            {% render_field form.center class="d-none" %}
+
+            <!-- Submit Button -->
+            <div class="mt-4 text-start">
+              <button type="submit" class="btn text-primary px-4 py-2" id="publishBtn" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-file-earmark-plus me-1"></i> Submit Request
+              </button>
+            </div>
+
+          {% else %}
+
+            <!-- Exam Title -->
+            <div class="mb-3">
+              <label for="id_title" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Exam Title <span class="text-danger">*</span>
+              </label>
+              {% render_field form.title class="form-control text-white dark-input" rows="2" placeholder="Enter Title" %}
+              {% if form.title.errors %}
+                <span class="text-danger small">{{ form.title.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Description
+              </label>
+              {% render_field form.description class="form-control text-white dark-input" rows="3" placeholder="Enter Description" %}
+              {% if form.description.errors %}
+                <span class="text-danger small">{{ form.description.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Row: Course | Select Duration | Max Questions -->
+            <div class="row g-3 mb-3">
+
+              <!-- Course -->
+              <div class="col-md-4 col-12">
+                <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course class="form-select dark-input" %}
+                {% if form.course.errors %}
+                  <span class="text-danger small">{{ form.course.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Duration -->
+              <div class="col-md-4 col-12">
+                <label for="id_course_duration" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Select Duration in Year / Month <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course_duration class="form-select dark-input" %}
+                {% if form.course_duration.errors %}
+                  <span class="text-danger small">{{ form.course_duration.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Max Questions -->
+              <div class="col-md-4 col-12">
+                <label for="id_total_questions" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Max Questions
+                </label>
+                {% render_field form.total_questions class="form-control text-white dark-input" min="0" placeholder="0" %}
+                {% if form.total_questions.errors %}
+                  <span class="text-danger small">{{ form.total_questions.errors.0 }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Row: Exam Schedule | Exam Timer -->
+            <div class="row g-3 mb-4">
+
+              <!-- Exam Schedule (toggle + date range) -->
+              <div class="col-md-6 col-12">
+                <label class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">Exam Schedule</label>
+                <div class="erp-toggle-box d-flex align-items-center gap-2">
+                  <!-- Toggle switch -->
+                  <div class="form-check form-switch mb-0 me-1">
+                    <input class="form-check-input" type="checkbox" id="scheduleToggle"
+                      {% if form.start_datetime.value %}checked{% endif %}
+                      style="cursor: pointer;">
+                  </div>
+                  <!-- Dual datetime inputs -->
+                  <div id="scheduleDates" class="d-flex align-items-center gap-1 flex-grow-1
+                    {% if not form.start_datetime.value %}erp-field-disabled{% endif %}">
+                    <input type="datetime-local" id="id_start_datetime" name="start_datetime"
+                      class="erp-inline-input flex-1"
+                      value="{{ form.start_datetime.value|default:'' }}">
+                    <span class="text-white-50 px-1" style="font-size:0.8rem;">—</span>
+                    <input type="datetime-local" id="id_end_datetime" name="end_datetime"
+                      class="erp-inline-input flex-1"
+                      value="{{ form.end_datetime.value|default:'' }}">
+                  </div>
+                </div>
+                {% if form.start_datetime.errors %}
+                  <span class="text-danger small">{{ form.start_datetime.errors.0 }}</span>
+                {% endif %}
+                {% if form.end_datetime.errors %}
+                  <span class="text-danger small">{{ form.end_datetime.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Exam Timer (toggle + time picker HH:MM) -->
+              <div class="col-md-6 col-12">
+                <label class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">Exam Timer</label>
+                <div class="erp-toggle-box d-flex align-items-center gap-2">
+                  <!-- Toggle switch -->
+                  <div class="form-check form-switch mb-0 me-1">
+                    <input class="form-check-input" type="checkbox" id="timerToggle"
+                      {% if form.duration_minutes.value %}checked{% endif %}
+                      style="cursor: pointer;">
+                  </div>
+                  <!-- Time picker HH:MM — converted to minutes on submit -->
+                  <div id="timerField" class="flex-grow-1
+                    {% if not form.duration_minutes.value %}erp-field-disabled{% endif %}">
+                    <input type="time" id="timerTimePicker"
+                      class="erp-inline-input w-100"
+                      value="">
+                  </div>
+                </div>
+                <!-- Hidden field for actual minutes value sent to Django -->
+                <input type="hidden" id="id_duration_minutes" name="duration_minutes"
+                  value="{{ form.duration_minutes.value|default:'' }}">
+                {% if form.duration_minutes.errors %}
+                  <span class="text-danger small">{{ form.duration_minutes.errors.0 }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Hidden center field for admin (so form validates) -->
+            <input type="hidden" id="id_center" name="center" value="">
+
+            <!-- Publish Button -->
+            <div class="mt-3 text-start d-flex align-items-center gap-2">
+              <button type="submit" class="btn text-primary px-4 py-2" id="publishBtn" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-cloud-arrow-up me-1"></i> Publish
+              </button>
+              <!-- Hidden is_published: submit sets it true always on this form -->
+              <input type="hidden" name="is_published" value="1">
+            </div>
+
+          {% endif %}
+
+        </form>
+      </div>
     </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  /* ── Toggle row container ── */
+  .erp-toggle-box {
+    background-color: var(--erp-bg-input);
+    border: 1px solid var(--erp-border-input);
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+
+  /* ── Clean inline datetime / time inputs ── */
+  .erp-inline-input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
+    font-size: 0.9rem;
+    padding: 0 !important;
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* Hide the browser × clear button (Chrome/Edge) */
+  .erp-inline-input::-webkit-clear-button,
+  .erp-inline-input::-webkit-inner-spin-button {
+    display: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  /* Hide the calendar / clock picker icon */
+  .erp-inline-input::-webkit-calendar-picker-indicator {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* ── Disabled state (toggle OFF) ── */
+  .erp-field-disabled {
+    opacity: 0.38;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+$(document).ready(function() {
+  const getCoursesUrl = "{% url 'ajax_get_courses' %}";
+  const getDurationsUrl = "{% url 'ajax_get_course_durations' %}";
+
+  // ─── Utility: minutes → "HH:MM" ─────────────────────────────────────────
+  function minsToHHMM(mins) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+  }
+
+  // ─── Utility: "HH:MM" → total minutes ───────────────────────────────────
+  function hhmmToMins(val) {
+    if (!val) return 0;
+    const parts = val.split(':');
+    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  }
+
+  // ─── Pre-populate time picker from stored minutes ─────────────────────────
+  const storedMins = parseInt('{{ form.duration_minutes.value|default:"0" }}') || 0;
+  if (storedMins > 0) {
+    $('#timerTimePicker').val(minsToHHMM(storedMins));
+  }
+
+  // ─── Schedule Toggle ─────────────────────────────────────────────────────
+  $('#scheduleToggle').on('change', function() {
+    const active = $(this).is(':checked');
+    const wrap = $('#scheduleDates');
+    if (active) {
+      wrap.removeClass('erp-field-disabled');
+      // Set defaults if empty
+      const pad = v => String(v).padStart(2, '0');
+      const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0);
+      const todayEnd   = new Date(); todayEnd.setHours(23, 59, 0);
+      if (!$('#id_start_datetime').val()) $('#id_start_datetime').val(fmt(todayStart));
+      if (!$('#id_end_datetime').val())   $('#id_end_datetime').val(fmt(todayEnd));
+    } else {
+      wrap.addClass('erp-field-disabled');
+      $('#id_start_datetime, #id_end_datetime').val('');
+    }
+  });
+
+  // ─── Timer Toggle ─────────────────────────────────────────────────────────
+  $('#timerToggle').on('change', function() {
+    const active = $(this).is(':checked');
+    const wrap = $('#timerField');
+    if (active) {
+      wrap.removeClass('erp-field-disabled');
+      if (!$('#timerTimePicker').val()) {
+        $('#timerTimePicker').val('00:20');
+        $('#id_duration_minutes').val('20');
+      }
+    } else {
+      wrap.addClass('erp-field-disabled');
+      $('#timerTimePicker').val('');
+      $('#id_duration_minutes').val('');
+    }
+  });
+
+  // ─── On time picker change → update hidden minutes field ─────────────────
+  $('#timerTimePicker').on('change input', function() {
+    const val = $(this).val();
+    if (val) {
+      $('#id_duration_minutes').val(hhmmToMins(val));
+    } else {
+      $('#id_duration_minutes').val('');
+    }
+  });
+
+  // ─── On submit: ensure hidden field is up to date ─────────────────────────
+  $('#createExamForm').on('submit', function() {
+    const val = $('#timerTimePicker').val();
+    if (val && $('#timerToggle').is(':checked')) {
+      $('#id_duration_minutes').val(hhmmToMins(val));
+    } else if (!$('#timerToggle').is(':checked')) {
+      $('#id_duration_minutes').val('');
+    }
+  });
+
+  // ─── AJAX: Load Courses on Center change ──────────────────────────────────
+  function loadCourses() {
+    const centerId = $('#id_center').val() || '';
+    const selectCourse = $('#id_course');
+    const selectDuration = $('#id_course_duration');
+
+    selectCourse.empty().append(new Option('Loading...', ''));
+    selectDuration.empty().append(new Option('Select duration', ''));
+
+    $.ajax({
+      url: getCoursesUrl,
+      data: { 'center_id': centerId },
+      success: function(data) {
+        selectCourse.empty().append(new Option('Select Course', ''));
+        if (data.courses && data.courses.length > 0) {
+          data.courses.forEach(function(course) {
+            selectCourse.append(new Option(course.name, course.id));
+          });
+        }
+        const initialCourse = "{{ form.course.value|default:'' }}";
+        if (initialCourse) {
+          selectCourse.val(initialCourse).trigger('change');
+        }
+      },
+      error: function() {
+        selectCourse.empty().append(new Option('Select Course', ''));
+      }
+    });
+  }
+
+  // ─── AJAX: Load Durations on Course change ────────────────────────────────
+  function loadDurations() {
+    const courseId = $('#id_course').val();
+    const selectDuration = $('#id_course_duration');
+
+    if (!courseId) {
+      selectDuration.empty().append(new Option('Select duration', ''));
+      return;
+    }
+
+    selectDuration.empty().append(new Option('Loading...', ''));
+
+    $.ajax({
+      url: getDurationsUrl,
+      data: { 'course_id': courseId },
+      success: function(data) {
+        selectDuration.empty().append(new Option('Select duration', ''));
+        if (data.choices && data.choices.length > 0) {
+          data.choices.forEach(function(choice) {
+            selectDuration.append(new Option(choice, choice));
+          });
+        }
+        const initialDuration = "{{ form.course_duration.value|default:'' }}";
+        if (initialDuration) {
+          selectDuration.val(initialDuration);
+        }
+      },
+      error: function() {
+        selectDuration.empty().append(new Option('Select duration', ''));
+      }
+    });
+  }
+
+  $('#id_center').on('change', loadCourses);
+  $('#id_course').on('change', loadDurations);
+
+  loadCourses();
+});
+</script>
 {% endblock %}

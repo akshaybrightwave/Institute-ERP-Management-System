@@ -1,0 +1,418 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Assign Courses | Examly{% endblock %}
+
+{% block style %}
+{{ block.super }}
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    /* Styling to match existing ERP Dashboard theme */
+    .dark-input {
+        background-color: var(--erp-bg-input) !important;
+        border: 1px solid var(--erp-border-input) !important;
+        color: #fff !important;
+    }
+    
+    .course-card-item {
+        background-color: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+    
+    .course-card-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+        transform: translateY(-2px);
+    }
+
+    /* Select2 Dark Theme Adjustments */
+    .select2-container--default .select2-selection--single {
+        background-color: var(--erp-bg-input) !important;
+        border: 1px solid var(--erp-border-input) !important;
+        border-radius: 8px !important;
+        height: 42px !important;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #fff !important;
+        line-height: 40px !important;
+    }
+    
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 40px !important;
+    }
+    
+    .select2-dropdown {
+        background-color: var(--erp-bg-card) !important;
+        border: 1px solid var(--erp-border-color) !important;
+        color: #fff !important;
+    }
+    
+    .select2-container--default .select2-results__option {
+        color: #f6f4ff !important;
+        background-color: transparent !important;
+    }
+    
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #4a6cf7 !important;
+        color: #fff !important;
+    }
+
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: rgba(74, 108, 247, 0.2) !important;
+    }
+
+    .select2-search__field {
+        background-color: var(--erp-bg-input) !important;
+        border: 1px solid var(--erp-border-input) !important;
+        color: #fff !important;
+    }
+</style>
+{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header & Breadcrumb (Matches Center List / Form Layout) -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-journal-plus text-primary me-2"></i>Assign Courses
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Center</li>
+        <li class="breadcrumb-item text-muted">Center Information</li>
+        <li class="breadcrumb-item text-white active" aria-current="page">Assign Courses</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+      
+    <!-- Left Column: Select Center & Information -->
+    <div class="col-lg-4 col-12">
+        
+        <!-- SECTION 1: Select Center -->
+        <div class="qa-card mb-4" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Select Center</h6>
+                <i class="bi bi-building text-primary"></i>
+            </div>
+            
+            <div class="mb-3">
+                <select class="form-select dark-input" id="centerSelect" style="width: 100%;">
+                    <option value="">Search and select a center...</option>
+                    {% for center in centers %}
+                    <option value="{{ center.id }}">{{ center.name }} ({{ center.code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Center Information -->
+        <div class="qa-card" id="centerInfoCard" style="display: none; background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Center Information</h6>
+                <i class="bi bi-info-circle text-info"></i>
+            </div>
+            
+            <div class="text-center py-2 mb-3">
+                <img id="centerLogo" src="{% static 'images/default_profile.png' %}" alt="Center Logo" class="rounded-circle mb-3 shadow" style="width: 90px; height: 90px; object-fit: cover; border: 3px solid rgba(255,255,255,0.1);">
+                <h5 class="fw-bold text-white mb-1" id="centerName">-</h5>
+                <p class="text-muted small mb-0"><span id="centerCode" class="badge bg-soft-primary text-primary px-2 py-1">-</span></p>
+            </div>
+            <div class="bg-dark rounded p-3 mb-2" style="border: 1px solid rgba(255,255,255,0.05);">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Owner</span>
+                    <span class="text-white small fw-bold" id="centerOwner">-</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Status</span>
+                    <span class="small fw-bold" id="centerStatus">-</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Total Assigned</span>
+                    <span class="text-white small fw-bold badge bg-primary" id="centerTotalAssigned">0</span>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Right Column: Courses Selection & Assigned Table -->
+    <div class="col-lg-8 col-12" id="rightPanel" style="display: none;">
+        
+        <!-- SECTION 3: Available Courses -->
+        <div class="qa-card mb-4" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Available Courses</h6>
+                <div class="input-group" style="width: 250px;">
+                    <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control dark-input border-secondary" id="courseSearch" placeholder="Search courses...">
+                </div>
+            </div>
+            
+            <div class="row g-3 pe-2" id="allCoursesList" style="max-height: 400px; overflow-y: auto; overflow-x: hidden;">
+                {% for course in courses %}
+                <div class="col-md-6 col-12">
+                    <div class="course-card-item p-3 d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="background: rgba(13, 202, 240, 0.1); color: #0dcaf0; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="bi bi-book-half fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 text-white fw-bold">{{ course.name }}</h6>
+                                <span class="text-muted small">{{ course.duration }}</span>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch ms-3">
+                            <input class="form-check-input course-toggle" type="checkbox" role="switch" data-course-id="{{ course.id }}" style="width: 2.5em; height: 1.25em; cursor: pointer;" disabled>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- SECTION 4: Assigned Courses -->
+        <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Assigned Courses</h6>
+                <i class="bi bi-list-check text-warning"></i>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-examly table-hover table-bordered align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course Name</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Duration</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Fees</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Assigned Date</th>
+                            <th class="pe-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="assignedCoursesTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">Please select a center to view assigned courses.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize Select2 (utilizes jQuery loaded by base.html, does not reload jQuery)
+    $('#centerSelect').select2({
+        placeholder: 'Search and select a center...',
+        allowClear: true
+    });
+    
+    const csrfToken = '{{ csrf_token }}';
+    let currentCenterId = null;
+    
+    // Default profile image path
+    const defaultAvatar = "{% static 'images/default_profile.png' %}";
+    
+    // When a Center is Selected
+    $('#centerSelect').on('change', function() {
+        const centerId = $(this).val();
+        currentCenterId = centerId;
+        
+        if (!centerId) {
+            // Hide Center Info & Reset
+            $('#centerInfoCard').slideUp();
+            $('#rightPanel').fadeOut();
+            $('.course-toggle').prop('checked', false).prop('disabled', true);
+            $('#assignedCoursesTableBody').html('<tr><td colspan="6" class="text-center py-4 text-muted">Please select a center to view assigned courses.</td></tr>');
+            return;
+        }
+        
+        // Fetch Center Details & Assigned Courses via AJAX
+        $.ajax({
+            url: `/centers/api/center-courses/${centerId}/`,
+            method: 'GET',
+            success: function(response) {
+                // Update Center Info Card
+                $('#centerName').text(response.center.name);
+                $('#centerCode').text(response.center.code);
+                $('#centerOwner').text(response.center.owner_name);
+                $('#centerLogo').attr('src', response.center.logo_url ? response.center.logo_url : defaultAvatar);
+                $('#centerTotalAssigned').text(response.center.total_assigned);
+                
+                if (response.center.status === 'Active') {
+                    $('#centerStatus').html('<span class="text-success">Active</span>');
+                } else {
+                    $('#centerStatus').html('<span class="text-danger">Inactive</span>');
+                }
+                
+                $('#centerInfoCard').slideDown();
+                $('#rightPanel').fadeIn();
+                
+                // Reset and Update Toggle States
+                $('.course-toggle').prop('checked', false).prop('disabled', false);
+                response.assigned_ids.forEach(function(courseId) {
+                    $(`.course-toggle[data-course-id="${courseId}"]`).prop('checked', true);
+                });
+                
+                // Update Table Content
+                updateAssignedTable(response.assigned_courses);
+            },
+            error: function(err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load center course assignments.',
+                    background: '#12141c',
+                    color: '#fff',
+                    customClass: {
+                        popup: 'dark-modal-swal'
+                    }
+                });
+            }
+        });
+    });
+    
+    // When a Course Toggle is Clicked
+    $('.course-toggle').on('change', function() {
+        if (!currentCenterId) return;
+        
+        const $toggle = $(this);
+        const courseId = $toggle.data('course-id');
+        const isChecked = $toggle.is(':checked');
+        const action = isChecked ? 'assign' : 'remove';
+        
+        // Disable switch temporarily to prevent duplicate requests
+        $toggle.prop('disabled', true);
+        
+        $.ajax({
+            url: "{% url 'api_assign_course_toggle' %}",
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({
+                center_id: currentCenterId,
+                course_id: courseId,
+                action: action
+            }),
+            success: function(response) {
+                $toggle.prop('disabled', false);
+                
+                if (response.success) {
+                    // Show Toast Notification
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true,
+                        background: '#12141c',
+                        color: '#fff'
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: response.message
+                    });
+                    
+                    // Re-fetch and update table quietly
+                    $.get(`/centers/api/center-courses/${currentCenterId}/`, function(res) {
+                        updateAssignedTable(res.assigned_courses);
+                    });
+                } else {
+                    $toggle.prop('checked', !isChecked); // Revert switch state
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'Unable to update assignment.',
+                        background: '#12141c',
+                        color: '#fff',
+                        customClass: {
+                            popup: 'dark-modal-swal'
+                        }
+                    });
+                }
+            },
+            error: function(err) {
+                $toggle.prop('checked', !isChecked); // Revert switch state
+                $toggle.prop('disabled', false);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Unable to process assignment update.',
+                    background: '#12141c',
+                    color: '#fff',
+                    customClass: {
+                        popup: 'dark-modal-swal'
+                    }
+                });
+            }
+        });
+    });
+    
+    // Render list of assigned courses inside table
+    function updateAssignedTable(coursesData) {
+        const $tbody = $('#assignedCoursesTableBody');
+        $tbody.empty();
+        
+        if (coursesData.length === 0) {
+            $tbody.html('<tr><td colspan="6" class="text-center py-4 text-muted">No courses assigned to this center yet.</td></tr>');
+            return;
+        }
+        
+        coursesData.forEach(function(course, index) {
+            const statusBadge = course.is_active 
+                ? '<span class="badge bg-soft-success rounded-pill px-3 py-1" style="background: rgba(22, 163, 74, 0.12); color: #16a34a;">Active</span>' 
+                : '<span class="badge bg-soft-danger rounded-pill px-3 py-1" style="background: rgba(220, 38, 38, 0.12); color: #dc2626;">Inactive</span>';
+                
+            const row = `
+                <tr>
+                    <td class="ps-4 fw-semibold text-muted">${index + 1}</td>
+                    <td class="fw-semibold text-white">${course.name}</td>
+                    <td><span class="badge bg-soft-info text-info rounded-pill px-2 py-1" style="background: rgba(13, 202, 240, 0.12);">${course.duration}</span></td>
+                    <td class="text-white-50">₹ ${course.fees}</td>
+                    <td class="text-muted small">${course.assigned_date}</td>
+                    <td class="pe-4">${statusBadge}</td>
+                </tr>
+            `;
+            $tbody.append(row);
+        });
+        
+        // Update Total Assigned Counter in Info Card
+        $('#centerTotalAssigned').text(coursesData.length);
+    }
+
+    // Course List Client-Side Filtering
+    $('#courseSearch').on('keyup', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        
+        $('#allCoursesList .col-md-6').each(function() {
+            const courseName = $(this).find('h6').text().toLowerCase();
+            if (courseName.includes(searchTerm)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

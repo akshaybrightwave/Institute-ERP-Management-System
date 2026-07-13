@@ -1,0 +1,281 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Admit Card Management | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-calendar-plus text-primary me-2"></i>List Admit Card
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">
+          List-admit-card
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <!-- SECTION 2: List Admit Card(s) -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">List Admit Card(s)</h5>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+            <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+              <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+              <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+              <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form method="GET" action="{% url 'admit_card_list' %}" class="d-flex align-items-center gap-2">
+              <input type="hidden" name="show" value="{{ show_entries }}">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+            </form>
+
+            <div class="d-flex gap-1 no-print">
+              <a href="?export=csv{% if query %}&q={{ query }}{% endif %}" class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">CSV</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Enrollment No</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student Name</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Duration</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Session</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Institute</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ forloop.counter0|add:page_obj.start_index }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.enrollment_no }}
+                </td>
+                <td class="fw-semibold text-white" style="font-size: 0.9rem;">
+                  {{ item.student.student_name }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.course.name|default:"—" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.course.duration|default:"—" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.session.session_name }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.center.name|default:"—" }}
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'admit_card_view' item.pk %}" class="btn btn-sm btn-action-edit rounded-pill px-3" target="_blank">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    {% if is_admin or is_center %}
+                    <button type="button" class="btn btn-sm btn-action-delete rounded-pill px-3 btn-delete-ac" data-url="{% url 'admit_card_delete' item.pk %}" data-name="{{ item.student.student_name }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center py-5 text-muted">
+                  <i class="bi bi-card-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No admit cards generated.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Select2 CSS & JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+.select2-container { width: 100% !important; }
+.select2-container--default .select2-selection--single {
+  background-color: var(--erp-bg-input) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  height: 44px !important;
+  border-radius: 6px !important;
+  display: flex;
+  align-items: center;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #fff !important;
+  padding-left: 12px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 42px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: rgba(255,255,255,0.3) !important;
+}
+.select2-dropdown {
+  background-color: var(--erp-bg-card) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+}
+.select2-container--default .select2-search--dropdown .select2-search__field {
+  background-color: var(--erp-bg-input) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  color: #fff !important;
+  border-radius: 4px !important;
+}
+.select2-container--default .select2-results__option {
+  padding: 8px 12px !important;
+  color: rgba(255,255,255,0.7) !important;
+}
+.select2-container--default .select2-results__option:last-child {
+  border-bottom: none !important;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+  background-color: #6366f1 !important;
+  color: #fff !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__clear {
+  color: #fff !important;
+  margin-right: 10px !important;
+}
+</style>
+
+<script>
+$(function () {
+  // SweetAlert delete confirmation
+  $('.btn-delete-ac').on('click', function() {
+    const url = $(this).data('url');
+    const name = $(this).data('name');
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to delete the Admit Card for ${name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      customClass: {
+        popup: 'dark-modal-swal',
+        confirmButton: 'btn btn-danger px-4 me-2',
+        cancelButton: 'btn btn-secondary px-4'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Submit delete action via POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+
+  // Show entries select redirection
+  $('#showEntriesSelect').on('change', function() {
+    const show = $(this).val();
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('show', show);
+    urlParams.set('page', '1');
+    window.location.search = urlParams.toString();
+  });
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -267,9 +267,14 @@ def admin_dashboard(request):
     from apps.courses.models import Course
     from apps.batches.models import Batch
     from apps.attendance.models import Attendance
-    from apps.students.models import StudentProfile
+    from apps.students.models import StudentProfile, StudentAdmission
     from apps.fees.models import FeePayment
-    from django.db.models import Sum, F
+    from apps.categories.models import Category
+    from apps.admit_card.models import AdmitCard
+    from apps.results.models import Result
+    from apps.exams.models import Exam
+    from apps.certificates.models import Certificate
+    from django.db.models import Sum, F, Count, Q
     from django.db.models.functions import Coalesce
     from decimal import Decimal
 
@@ -286,13 +291,11 @@ def admin_dashboard(request):
     ).count()
 
     # Certificate & Exam metrics
-    from apps.certificates.models import Certificate
     from apps.exams.models import StudentExamAttempt
-    from django.db.models import Count, Q
     
     total_certificates = Certificate.objects.count()
-    issued_certificates_count = Certificate.objects.filter(status='issued').count()
-    revoked_certificates_count = Certificate.objects.filter(status='revoked').count()
+    issued_certificates_count = total_certificates
+    revoked_certificates_count = 0
 
     # Calculate count of eligible students
     paid_map = {p['student_id']: p['total'] or Decimal('0.00') for p in FeePayment.objects.values('student_id').annotate(total=Sum('amount'))}
@@ -328,6 +331,27 @@ def admin_dashboard(request):
     passed_attempts = StudentExamAttempt.objects.filter(is_completed=True, score__gte=F('exam__pass_percentage')).count()
     exam_pass_rate = round((passed_attempts / total_attempts * 100), 1) if total_attempts > 0 else 0.0
 
+    # New Admin KPI metrics
+    total_course_categories = Category.objects.count()
+    
+    admission_counts = StudentAdmission.objects.aggregate(
+        total=Count('id'),
+        approved=Count('id', filter=Q(status='Approved')),
+        pending=Count('id', filter=Q(status='Pending')),
+        cancelled=Count('id', filter=Q(status='Cancelled')),
+    )
+    total_admissions = admission_counts['total'] or 0
+    approved_admissions = admission_counts['approved'] or 0
+    pending_admissions = admission_counts['pending'] or 0
+    cancelled_admissions = admission_counts['cancelled'] or 0
+
+    total_admit_cards = AdmitCard.objects.count()
+    total_results = Result.objects.count()
+    total_id_cards = approved_admissions
+
+    total_pending_centers = Center.objects.filter(center_user__is_active=False).count()
+    total_approved_centers = Center.objects.filter(center_user__is_active=True).count()
+
     context = {
         'total_students': User.objects.filter(role='student', is_deleted=False).count(),
         'total_teachers': User.objects.filter(role='teacher', is_deleted=False).count(),
@@ -353,6 +377,18 @@ def admin_dashboard(request):
         'fee_collection_rate': fee_collection_rate,
         'exam_pass_rate': exam_pass_rate,
         'certificate_issuance_count': issued_certificates_count,
+        
+        # New context variables
+        'total_course_categories': total_course_categories,
+        'total_admissions': total_admissions,
+        'approved_admissions': approved_admissions,
+        'pending_admissions': pending_admissions,
+        'cancelled_admissions': cancelled_admissions,
+        'total_admit_cards': total_admit_cards,
+        'total_results': total_results,
+        'total_id_cards': total_id_cards,
+        'total_pending_centers': total_pending_centers,
+        'total_approved_centers': total_approved_centers,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 
@@ -366,9 +402,9 @@ def user_list(request):
             users = User.objects.none()
         else:
             users = User.objects.filter(
-                Q(role='student', studentprofile__batch__course__center=request.user.center) |
+                Q(role='student', studentprofile__batch__center=request.user.center) |
                 Q(role='student', studentprofile__batch__isnull=True) |
-                Q(role='teacher', teacherprofile__batch__course__center=request.user.center) |
+                Q(role='teacher', teacherprofile__batch__center=request.user.center) |
                 Q(role='teacher', teacherprofile__batch__isnull=True)
             ).filter(is_deleted=False).distinct()
     else:
@@ -389,7 +425,7 @@ def user_list(request):
 
     from apps.batches.models import Batch
     if request.user.role == 'center':
-        batches = Batch.objects.filter(course__center=request.user.center) if request.user.center else Batch.objects.none()
+        batches = Batch.objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True) if request.user.center else Batch.objects.none()
     else:
         batches = Batch.objects.all()
 
@@ -425,14 +461,14 @@ def user_add(request):
             form = form_class(request.POST, is_admin=True)
             if request.user.role == 'center':
                 from apps.batches.models import Batch
-                form.fields['batch'].queryset = Batch.objects.filter(course__center=request.user.center) if request.user.center else Batch.objects.none()
+                form.fields['batch'].queryset = Batch.objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True) if request.user.center else Batch.objects.none()
         else:
             form = form_class(request.POST)
 
         if form.is_valid():
             if role == 'student' and request.user.role == 'center':
                 batch = form.cleaned_data.get('batch')
-                if batch and (not request.user.center or batch.course.center != request.user.center):
+                if batch and (not request.user.center or batch.center != request.user.center):
                     return HttpResponseForbidden("Access Denied: You cannot assign students to other center batches.")
             form.save()
             return redirect('user_list')
@@ -441,7 +477,7 @@ def user_add(request):
             form = form_class(is_admin=True)
             if request.user.role == 'center':
                 from apps.batches.models import Batch
-                form.fields['batch'].queryset = Batch.objects.filter(course__center=request.user.center) if request.user.center else Batch.objects.none()
+                form.fields['batch'].queryset = Batch.objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True) if request.user.center else Batch.objects.none()
         else:
             form = form_class()
 
@@ -462,14 +498,14 @@ def user_edit(request, user_id):
             from apps.students.models import StudentProfile
             try:
                 profile = user.studentprofile
-                if profile.batch and profile.batch.course.center != request.user.center:
+                if profile.batch and profile.batch.center != request.user.center:
                     return HttpResponseForbidden("Access Denied: This student is in a batch belonging to another center.")
             except StudentProfile.DoesNotExist:
                 pass
         elif user.role == 'teacher':
             try:
                 profile = user.teacherprofile
-                if profile.batch_set.exclude(course__center=request.user.center).exists():
+                if profile.batch_set.exclude(course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
                     return HttpResponseForbidden("Access Denied: This teacher is assigned to another center's batch.")
             except TeacherProfile.DoesNotExist:
                 pass
@@ -488,14 +524,14 @@ def user_edit(request, user_id):
             form = form_class(request.POST, instance=user, is_admin=True)
             if request.user.role == 'center':
                 from apps.batches.models import Batch
-                form.fields['batch'].queryset = Batch.objects.filter(course__center=request.user.center) if request.user.center else Batch.objects.none()
+                form.fields['batch'].queryset = Batch.objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True) if request.user.center else Batch.objects.none()
         else:
             form = form_class(request.POST, instance=user)
 
         if form.is_valid():
             if user.role == 'student' and request.user.role == 'center':
                 batch = form.cleaned_data.get('batch')
-                if batch and (not request.user.center or batch.course.center != request.user.center):
+                if batch and (not request.user.center or batch.center != request.user.center):
                     return HttpResponseForbidden("Access Denied: You cannot assign students to other center batches.")
             form.save()
             if user.role == 'student':
@@ -510,7 +546,7 @@ def user_edit(request, user_id):
             form = form_class(instance=user, is_admin=True)
             if request.user.role == 'center':
                 from apps.batches.models import Batch
-                form.fields['batch'].queryset = Batch.objects.filter(course__center=request.user.center) if request.user.center else Batch.objects.none()
+                form.fields['batch'].queryset = Batch.objects.filter(course__assignments__center=request.user.center, course__assignments__is_active=True) if request.user.center else Batch.objects.none()
         else:
             form = form_class(instance=user)
 
@@ -533,14 +569,14 @@ def user_delete(request, user_id):
             from apps.students.models import StudentProfile
             try:
                 profile = user.studentprofile
-                if profile.batch and profile.batch.course.center != request.user.center:
+                if profile.batch and profile.batch.center != request.user.center:
                     return HttpResponseForbidden("Access Denied: This student belongs to another center.")
             except StudentProfile.DoesNotExist:
                 pass
         elif user.role == 'teacher':
             try:
                 profile = user.teacherprofile
-                if profile.batch_set.exclude(course__center=request.user.center).exists():
+                if profile.batch_set.exclude(course__assignments__center=request.user.center, course__assignments__is_active=True).exists():
                     return HttpResponseForbidden("Access Denied: This teacher belongs to another center.")
             except TeacherProfile.DoesNotExist:
                 pass

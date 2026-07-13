@@ -1,8 +1,8 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
 
 {% block title %}Delete Certificate | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
     <div class="row justify-content-center">
         <div class="col-lg-6">
@@ -13,7 +13,7 @@
                     <p class="text-muted mb-4">
                         Are you sure you want to delete the certificate record 
                         <strong>{{ certificate.certificate_number }}</strong> for 
-                        <strong>{{ certificate.student.full_name }}</strong>? This action cannot be undone.
+                        <strong>{{ certificate.student.student_name }}</strong>? This action cannot be undone.
                     </p>
 
                     <form method="post">

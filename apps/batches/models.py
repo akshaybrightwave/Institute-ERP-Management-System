@@ -9,6 +9,13 @@ class Batch(SoftDeleteModel):
         Course,
         on_delete=models.CASCADE
     )
+    center = models.ForeignKey(
+        'centers.Center',
+        on_delete=models.CASCADE,
+        related_name='batches',
+        null=True,
+        blank=True
+    )
     teacher = models.ForeignKey(
         TeacherProfile,
         on_delete=models.SET_NULL,
@@ -21,3 +28,4 @@ class Batch(SoftDeleteModel):
 
     def __str__(self):
         return self.name
+

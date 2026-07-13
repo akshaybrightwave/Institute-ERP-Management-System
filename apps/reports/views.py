@@ -59,14 +59,14 @@ def reports_dashboard(request):
             total_certificates = 0
             total_attendance_records = 0
         else:
-            total_students = StudentProfile.objects.filter(batch__course__center=center).count()
-            total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__course__center=center).distinct().count()
-            total_batches = Batch.objects.filter(course__center=center).count()
+            total_students = StudentProfile.objects.filter(batch__center=center).count()
+            total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__center=center).distinct().count()
+            total_batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
             total_courses = Course.objects.filter(center=center).count()
             total_centers = 1
-            total_exams = Exam.objects.filter(batches__course__center=center).distinct().count()
-            total_certificates = Certificate.objects.filter(course__center=center).count()
-            total_attendance_records = Attendance.objects.filter(batch__course__center=center).count()
+            total_exams = Exam.objects.filter(batches__course__assignments__center=center, course__assignments__is_active=True).distinct().count()
+            total_certificates = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
+            total_attendance_records = Attendance.objects.filter(batch__center=center).count()
     else:
         total_students = User.objects.filter(role='student', is_deleted=False).count()
         total_teachers = User.objects.filter(role='teacher', is_deleted=False).count()
@@ -107,9 +107,9 @@ def student_report(request):
             courses = Course.objects.none()
             batches = Batch.objects.none()
         else:
-            students = StudentProfile.objects.filter(batch__course__center=center)
+            students = StudentProfile.objects.filter(batch__center=center)
             courses = Course.objects.filter(center=center)
-            batches = Batch.objects.filter(course__center=center)
+            batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
@@ -145,13 +145,13 @@ def student_report(request):
 
     # Prefetch/Aggregated maps to prevent N+1 queries
     if is_center and center:
-        att_stats = Attendance.objects.filter(batch__course__center=center).values('student_id').annotate(
+        att_stats = Attendance.objects.filter(batch__center=center).values('student_id').annotate(
             total=Count('id'), 
             present=Count('id', filter=Q(status='present'))
         )
-        fee_stats = FeePayment.objects.filter(student__batch__course__center=center).values('student_id').annotate(total=Sum('amount'))
-        attempt_stats = StudentExamAttempt.objects.filter(student__studentprofile__batch__course__center=center, is_completed=True).values('student_id').annotate(total=Count('id'))
-        cert_stats = Certificate.objects.filter(course__center=center).values('student_id').annotate(total=Count('id'))
+        fee_stats = FeePayment.objects.filter(student__batch__center=center).values('student_id').annotate(total=Sum('amount'))
+        attempt_stats = StudentExamAttempt.objects.filter(student__studentprofile__batch__center=center, is_completed=True).values('student_id').annotate(total=Count('id'))
+        cert_stats = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True).values('student_id').annotate(total=Count('id'))
     elif is_teacher and teacher_profile:
         att_stats = Attendance.objects.filter(batch__teacher=teacher_profile).values('student_id').annotate(
             total=Count('id'), 
@@ -246,7 +246,7 @@ def batch_report(request):
         if not center:
             batches = Batch.objects.none()
         else:
-            batches = Batch.objects.filter(course__center=center)
+            batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
@@ -270,7 +270,14 @@ def batch_report(request):
     )
     att_map = {a['student__batch_id']: (a['total'], a['present']) for a in att_stats if a['student__batch_id']}
 
-    cert_stats = Certificate.objects.filter(status='issued').values('batch_id').annotate(total=Count('id'))
+    from django.db.models import Subquery, OuterRef
+    student_profile_batch = StudentProfile.objects.filter(
+        user__username=OuterRef('student__enrollment_no')
+    ).values('batch_id')[:1]
+    
+    cert_stats = Certificate.objects.annotate(
+        batch_id=Subquery(student_profile_batch)
+    ).values('batch_id').annotate(total=Count('id'))
     cert_map = {c['batch_id']: c['total'] for c in cert_stats if c['batch_id']}
 
     batches_data = []
@@ -306,7 +313,7 @@ def teacher_report(request):
         if not center:
             teachers = TeacherProfile.objects.none()
         else:
-            teachers = TeacherProfile.objects.filter(batch__course__center=center).distinct()
+            teachers = TeacherProfile.objects.filter(batch__center=center).distinct()
     elif is_teacher:
         teachers = TeacherProfile.objects.filter(user=request.user)
     else:
@@ -361,93 +368,126 @@ def attendance_report(request):
     is_center = request.user.role == 'center'
 
     # Filter inputs
-    selected_course = request.GET.get('course')
-    selected_batch = request.GET.get('batch')
-    selected_student = request.GET.get('student')
-    selected_date = request.GET.get('date')
+    selected_batch = request.GET.get('batch', '')
+    selected_date_range = request.GET.get('date', '').strip()
 
+    # Determine Batches available for select
     if is_center:
         center = request.user.center
         if not center:
-            records = Attendance.objects.none()
             batches = Batch.objects.none()
-            students = StudentProfile.objects.none()
-            courses = Course.objects.none()
         else:
-            records = Attendance.objects.filter(batch__course__center=center)
-            batches = Batch.objects.filter(course__center=center)
-            students = StudentProfile.objects.filter(batch__course__center=center)
-            courses = Course.objects.filter(center=center)
-            
-            # Security validations to prevent cross-center access
-            if selected_course and not courses.filter(id=selected_course).exists():
-                return HttpResponseForbidden("Access Denied: Course does not belong to your center.")
-            if selected_batch and not batches.filter(id=selected_batch).exists():
-                return HttpResponseForbidden("Access Denied: Batch does not belong to your center.")
-            if selected_student and not students.filter(id=selected_student).exists():
-                return HttpResponseForbidden("Access Denied: Student does not belong to your center.")
+            batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
             return HttpResponseForbidden("Access Denied: Teacher profile missing.")
-        records = Attendance.objects.filter(batch__teacher=teacher_profile)
         batches = Batch.objects.filter(teacher=teacher_profile)
-        students = StudentProfile.objects.filter(batch__teacher=teacher_profile)
-        courses = Course.objects.filter(batch__teacher=teacher_profile).distinct()
     else:
-        records = Attendance.objects.all()
         batches = Batch.objects.all()
-        students = StudentProfile.objects.all()
-        courses = Course.objects.all()
 
-    # Apply filters
-    if selected_course:
-        records = records.filter(batch__course_id=selected_course)
+    # Process Date Range
+    start_date = None
+    end_date = None
+    dates = []
+    
+    if selected_date_range:
+        parts = selected_date_range.split('-')
+        if len(parts) == 2:
+            try:
+                start_date = datetime.date.fromisoformat(parts[0].strip())
+                end_date = datetime.date.fromisoformat(parts[1].strip())
+            except ValueError:
+                messages.error(request, "Invalid date range format. Use YYYY-MM-DD - YYYY-MM-DD.")
+        elif len(parts) == 3: # In case someone types a single date with dashes and it splits wrong, but fromisoformat handles YYYY-MM-DD. Oh wait, if the range is 'YYYY-MM-DD - YYYY-MM-DD', splitting by '-' yields 6 parts!
+            # Better parsing strategy for '2026-06-05 - 2026-07-04'
+            pass
+            
+    # Better date parsing
+    if selected_date_range:
+        if ' - ' in selected_date_range:
+            parts = selected_date_range.split(' - ')
+            if len(parts) == 2:
+                try:
+                    start_date = datetime.date.fromisoformat(parts[0].strip())
+                    end_date = datetime.date.fromisoformat(parts[1].strip())
+                except ValueError:
+                    messages.error(request, "Invalid date range format.")
+        else:
+            try:
+                start_date = datetime.date.fromisoformat(selected_date_range.strip())
+                end_date = start_date
+            except ValueError:
+                messages.error(request, "Invalid date format.")
+
+    if not start_date or not end_date:
+        end_date = datetime.date.today()
+        start_date = end_date - datetime.timedelta(days=6)
+        
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+
+    # Generate dates list
+    delta = end_date - start_date
+    for i in range(delta.days + 1):
+        dates.append(start_date + datetime.timedelta(days=i))
+
+    students = []
+    students_data = []
+    
     if selected_batch:
-        records = records.filter(batch_id=selected_batch)
-    if selected_student:
-        records = records.filter(student_id=selected_student)
-    if selected_date:
-        records = records.filter(date=selected_date)
-
-    records = records.select_related('student', 'batch', 'batch__course', 'marked_by').order_by('-date', 'student__full_name')
-
-    total_records = records.count()
-    present_count = records.filter(status='present').count()
-    absent_count = records.filter(status='absent').count()
-    overall_pct = round((present_count / total_records * 100), 1) if total_records > 0 else 0.0
-
-    # CSV Export (Feature 7)
-    if request.GET.get('export') == 'csv':
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="attendance_report.csv"'
-        writer = csv.writer(response)
-        writer.writerow(['Student Name', 'Batch', 'Course', 'Date', 'Status', 'Marked By'])
-        for record in records:
-            marked_by_name = record.marked_by.full_name if record.marked_by else 'Admin'
-            writer.writerow([
-                record.student.full_name,
-                record.batch.name,
-                record.batch.course.name,
-                record.date.strftime('%Y-%m-%d'),
-                record.status.capitalize(),
-                marked_by_name
-            ])
-        return response
+        try:
+            batch_obj = batches.get(id=selected_batch)
+            students_qs = StudentProfile.objects.filter(batch=batch_obj).order_by('full_name')
+            students = list(students_qs)
+            
+            # Fetch Attendance
+            attendances = Attendance.objects.filter(
+                batch=batch_obj,
+                date__gte=start_date,
+                date__lte=end_date
+            )
+            
+            # Initialize matrix
+            matrix = {}
+            for student in students:
+                matrix[student.id] = {d: '-' for d in dates}
+                
+            for att in attendances:
+                if att.student_id in matrix and att.date in matrix[att.student_id]:
+                    # Map status to code
+                    if att.status == 'present':
+                        code = 'P'
+                    elif att.status == 'late':
+                        code = 'L'
+                    elif att.status == 'absent':
+                        code = 'A'
+                    elif att.status == 'holiday':
+                        code = 'H'
+                    elif att.status == 'half_day':
+                        code = 'F'
+                    else:
+                        code = 'O' # Other
+                    matrix[att.student_id][att.date] = code
+                    
+            for student in students:
+                statuses = []
+                for d in dates:
+                    statuses.append(matrix[student.id][d])
+                students_data.append({
+                    'name': student.full_name,
+                    'statuses': statuses
+                })
+                    
+        except Batch.DoesNotExist:
+            messages.error(request, "Selected timetable not found or access denied.")
 
     return render(request, 'reports/attendance_report.html', {
-        'records': records,
         'batches': batches,
-        'students': students,
-        'courses': courses,
-        'total_records': total_records,
-        'present_count': present_count,
-        'absent_count': absent_count,
-        'overall_pct': overall_pct,
-        'selected_course': selected_course,
         'selected_batch': selected_batch,
-        'selected_student': selected_student,
-        'selected_date': selected_date,
+        'selected_date_range': selected_date_range if selected_date_range else f"{start_date.isoformat()} - {end_date.isoformat()}",
+        'dates': dates,
+        'students_data': students_data,
     })
 
 
@@ -466,8 +506,8 @@ def fee_report(request):
             batches = Batch.objects.none()
             courses = Course.objects.none()
         else:
-            students = StudentProfile.objects.filter(batch__course__center=center)
-            batches = Batch.objects.filter(course__center=center)
+            students = StudentProfile.objects.filter(batch__center=center)
+            batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
             courses = Course.objects.filter(center=center)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
@@ -528,7 +568,7 @@ def fee_report(request):
 
     # Available student options for filtering
     if is_center and center:
-        filter_students = StudentProfile.objects.filter(batch__course__center=center)
+        filter_students = StudentProfile.objects.filter(batch__center=center)
     elif is_teacher and teacher_profile:
         filter_students = StudentProfile.objects.filter(batch__teacher=teacher_profile)
     else:
@@ -583,8 +623,8 @@ def exam_report(request):
             exams = Exam.objects.none()
             batches = Batch.objects.none()
         else:
-            exams = Exam.objects.filter(batches__course__center=center).distinct()
-            batches = Batch.objects.filter(course__center=center)
+            exams = Exam.objects.filter(batches__course__assignments__center=center, course__assignments__is_active=True).distinct()
+            batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
@@ -614,7 +654,7 @@ def exam_report(request):
 
     attempts_qs = StudentExamAttempt.objects.filter(exam__in=exams)
     if is_center and center:
-        attempts_qs = attempts_qs.filter(student__studentprofile__batch__course__center=center)
+        attempts_qs = attempts_qs.filter(student__studentprofile__batch__center=center)
     elif is_teacher and teacher_profile:
         attempts_qs = attempts_qs.filter(student__studentprofile__batch__teacher=teacher_profile)
 
@@ -712,15 +752,19 @@ def certificate_report(request):
             courses = Course.objects.none()
             student_qs = StudentProfile.objects.none()
         else:
-            certs = Certificate.objects.filter(course__center=center)
-            batches = Batch.objects.filter(course__center=center)
+            certs = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
+            batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
             courses = Course.objects.filter(center=center)
-            student_qs = StudentProfile.objects.filter(batch__course__center=center)
+            student_qs = StudentProfile.objects.filter(batch__center=center)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
             return HttpResponseForbidden("Access Denied: Teacher profile missing.")
-        certs = Certificate.objects.filter(batch__teacher=teacher_profile)
+        # Filter certificates by students belonging to this teacher's batches
+        teacher_student_usernames = StudentProfile.objects.filter(
+            batch__teacher=teacher_profile
+        ).values_list('user__username', flat=True)
+        certs = Certificate.objects.filter(student__enrollment_no__in=teacher_student_usernames)
         batches = Batch.objects.filter(teacher=teacher_profile)
         courses = Course.objects.filter(batch__teacher=teacher_profile).distinct()
         student_qs = StudentProfile.objects.filter(batch__teacher=teacher_profile)
@@ -735,17 +779,23 @@ def certificate_report(request):
     selected_status = request.GET.get('status')
 
     if selected_batch:
-        certs = certs.filter(batch_id=selected_batch)
+        enrolled_usernames = StudentProfile.objects.filter(batch_id=selected_batch).values_list('user__username', flat=True)
+        certs = certs.filter(student__enrollment_no__in=enrolled_usernames)
         student_qs = student_qs.filter(batch_id=selected_batch)
     if selected_course:
         certs = certs.filter(course_id=selected_course)
         student_qs = student_qs.filter(batch__course_id=selected_course)
     if selected_status:
-        certs = certs.filter(status=selected_status)
+        if selected_status == 'issued':
+            pass
+        elif selected_status == 'revoked':
+            certs = certs.none()
+        else:
+            certs = certs.none()
 
     total_certs = certs.count()
-    certs_issued_count = certs.filter(status='issued').count()
-    certs_revoked_count = certs.filter(status='revoked').count()
+    certs_issued_count = total_certs
+    certs_revoked_count = 0
 
     # Eligible Students Calculation
     students_stats = student_qs.annotate(
@@ -753,7 +803,7 @@ def certificate_report(request):
     ).select_related('batch', 'batch__course')
 
     if is_center and center:
-        att_map = {a['student_id']: (a['total'], a['present']) for a in Attendance.objects.filter(batch__course__center=center).values('student_id').annotate(total=Count('id'), present=Count('id', filter=Q(status='present')))}
+        att_map = {a['student_id']: (a['total'], a['present']) for a in Attendance.objects.filter(batch__center=center).values('student_id').annotate(total=Count('id'), present=Count('id', filter=Q(status='present')))}
     elif is_teacher and teacher_profile:
         att_map = {a['student_id']: (a['total'], a['present']) for a in Attendance.objects.filter(batch__teacher=teacher_profile).values('student_id').annotate(total=Count('id'), present=Count('id', filter=Q(status='present')))}
     else:
@@ -771,7 +821,14 @@ def certificate_report(request):
         if fee_eligible and attendance_eligible:
             eligible_students_count += 1
 
-    certs = certs.select_related('student', 'batch', 'course').order_by('-issue_date', 'student__full_name')
+    from django.db.models import Subquery, OuterRef
+    student_profile_batch_name = StudentProfile.objects.filter(
+        user__username=OuterRef('student__enrollment_no')
+    ).values('batch__name')[:1]
+
+    certs = certs.select_related('student', 'course').annotate(
+        student_batch_name=Subquery(student_profile_batch_name)
+    ).order_by('-issue_date', 'student__student_name')
 
     # CSV Export (Feature 7)
     if request.GET.get('export') == 'csv':
@@ -782,11 +839,11 @@ def certificate_report(request):
         for cert in certs:
             writer.writerow([
                 cert.certificate_number,
-                cert.student.full_name,
+                cert.student.student_name,
                 cert.course.name,
-                cert.batch.name,
+                cert.student_batch_name or '-',
                 cert.issue_date.strftime('%Y-%m-%d'),
-                cert.get_status_display()
+                'Active'
             ])
         return response
 

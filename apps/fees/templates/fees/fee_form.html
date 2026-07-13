@@ -1,179 +1,427 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
 {% load widget_tweaks %}
 
-{% block title %}{{ action }} Fee Payment | Examly{% endblock %}
+{% block title %}Custom Student Fees | Examly{% endblock %}
 
-{% block content %}
-<div class="container py-3">
-    <div class="row g-4">
-        <!-- Left Column: Student Fee Summary Card -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4 d-flex flex-column">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="feature-icon bg-soft-primary me-3 mb-0">
-                            <i class="bi bi-wallet2 text-primary"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold mb-0 text-dark">Fee Account Summary</h5>
-                            <p class="text-muted small mb-0">Ledger totals & outstanding balances</p>
-                        </div>
-                    </div>
+{% block erp_content %}
+<div class="container py-2">
 
-                    {% if fee_summary %}
-                    <div class="mb-4">
-                        <span class="text-muted small d-block mb-1">Student Name</span>
-                        <h5 class="fw-bold text-dark mb-0">{{ fee_summary.student_name }}</h5>
-                    </div>
+  <!-- Page Header -->
+  <div class="mb-3">
+    <h2 class="fw-bold mb-1 d-flex align-items-center gap-2" style="color:#fff;">
+      <i class="bi bi-patch-check-fill" style="color:#4a6cf7; font-size:1.6rem;"></i>
+      Custom Student Fees
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size:0.82rem;">
+        <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none" style="color:#888;">Home</a></li>
+        <li class="breadcrumb-item" style="color:#888;">→ Student</li>
+        <li class="breadcrumb-item active" style="color:#888;">→ Custom-student-fees</li>
+      </ol>
+    </nav>
+  </div>
 
-                    <div class="mb-3">
-                        <span class="text-muted small d-block mb-1">Course</span>
-                        <span class="fw-semibold text-dark text-nowrap d-block text-truncate border rounded bg-light p-2" title="{{ fee_summary.course_name }}">
-                            <i class="bi bi-book me-1 text-primary"></i>{{ fee_summary.course_name }}
-                        </span>
-                    </div>
+  <!-- ═══════════════════════════════
+       Main Card (blue border)
+  ═══════════════════════════════ -->
+  <div style="background:#0d0f1a; border:1.5px solid #0ea5e9; border-radius:12px; padding:1.6rem 1.8rem;">
 
-                    <div class="mb-4">
-                        <span class="text-muted small d-block mb-1">Batch</span>
-                        <span class="fw-semibold text-dark text-nowrap d-block text-truncate border rounded bg-light p-2" title="{{ fee_summary.batch_name }}">
-                            <i class="bi bi-people me-1 text-primary"></i>{{ fee_summary.batch_name }}
-                        </span>
-                    </div>
+    <!-- Card Title -->
+    <h5 class="fw-bold mb-4" style="color:#fff; font-size:1rem;">Collect Fees</h5>
 
-                    <div class="mt-auto border-top pt-4">
-                        <!-- Total Fees -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted small fw-semibold">Course Fee</span>
-                            <span class="fw-bold text-dark fs-5">₹{{ fee_summary.total_fees }}</span>
-                        </div>
-                        <!-- Amount Paid -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted small fw-semibold">Amount Paid</span>
-                            <span class="fw-bold text-success fs-5">₹{{ fee_summary.amount_paid }}</span>
-                        </div>
-                        <!-- Pending Amount -->
-                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                            <span class="text-dark fw-bold">Pending Balance</span>
-                            <span class="fw-bold text-danger fs-4">₹{{ fee_summary.pending_balance }}</span>
-                        </div>
-                    </div>
-                    {% else %}
-                    <div class="my-auto text-center py-5">
-                        <i class="bi bi-person-check text-muted mb-3" style="font-size: 3rem;"></i>
-                        <h6 class="fw-bold text-dark">No Student Selected</h6>
-                        <p class="text-muted small px-3">Please choose a student from the form dropdown to display their course fee summary.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Column: Payment Form -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="feature-icon bg-soft-primary me-3 mb-0">
-                            <i class="bi bi-receipt text-primary"></i>
-                        </div>
-                        <div>
-                            <h4 class="fw-bold mb-0 text-dark">{{ action }} Fee Payment</h4>
-                            <p class="text-muted small mb-0">Record or edit a student course fee payment.</p>
-                        </div>
-                    </div>
-
-                    <form method="POST">
-                        {% csrf_token %}
-
-                        <div class="row g-3">
-                            <!-- Student field -->
-                            <div class="col-md-12 mb-2">
-                                <label for="{{ form.student.id_for_label }}" class="form-label fw-semibold small mb-1">Select Student</label>
-                                {% render_field form.student class="form-select" id="id_student" %}
-                                {% if form.student.errors %}
-                                    <div class="text-danger small mt-1">{{ form.student.errors|join:", " }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Amount field -->
-                            <div class="col-md-6 mb-2">
-                                <label for="{{ form.amount.id_for_label }}" class="form-label fw-semibold small mb-1">Payment Amount (₹)</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light fw-bold text-muted">₹</span>
-                                    {% render_field form.amount class="form-control" placeholder="0.00" %}
-                                </div>
-                                {% if form.amount.errors %}
-                                    <div class="text-danger small mt-1">{{ form.amount.errors|join:", " }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Date field -->
-                            <div class="col-md-6 mb-2">
-                                <label for="{{ form.payment_date.id_for_label }}" class="form-label fw-semibold small mb-1">Payment Date</label>
-                                {% render_field form.payment_date class="form-control" %}
-                                {% if form.payment_date.errors %}
-                                    <div class="text-danger small mt-1">{{ form.payment_date.errors|join:", " }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Payment Method field -->
-                            <div class="col-md-6 mb-2">
-                                <label for="{{ form.payment_method.id_for_label }}" class="form-label fw-semibold small mb-1">Payment Method</label>
-                                {% render_field form.payment_method class="form-select" %}
-                                {% if form.payment_method.errors %}
-                                    <div class="text-danger small mt-1">{{ form.payment_method.errors|join:", " }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Reference Number field -->
-                            <div class="col-md-6 mb-2">
-                                <label for="{{ form.reference_number.id_for_label }}" class="form-label fw-semibold small mb-1">Reference / Transaction Number</label>
-                                {% render_field form.reference_number class="form-control" placeholder="UPI ID, bank ref, cheque no." %}
-                                {% if form.reference_number.errors %}
-                                    <div class="text-danger small mt-1">{{ form.reference_number.errors|join:", " }}</div>
-                                {% endif %}
-                            </div>
-
-                            <!-- Remarks field -->
-                            <div class="col-md-12 mb-3">
-                                <label for="{{ form.remarks.id_for_label }}" class="form-label fw-semibold small mb-1">Remarks</label>
-                                {% render_field form.remarks class="form-control" placeholder="Optional notes..." rows="3" %}
-                                {% if form.remarks.errors %}
-                                    <div class="text-danger small mt-1">{{ form.remarks.errors|join:", " }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2 pt-2">
-                            <button type="submit" class="btn btn-primary px-4 py-2.5 flex-grow-1">
-                                <i class="bi bi-check-circle me-1"></i> Save Payment Details
-                            </button>
-                            <a href="{% url 'fees_list' %}" class="btn btn-outline-secondary px-4 py-2.5">
-                                Cancel
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <!-- Select Student label -->
+    <div class="mb-2">
+      <label style="font-size:0.82rem; color:#aaa; font-weight:500;">
+        Select Student <span class="text-danger">*</span>
+      </label>
     </div>
+
+    <!-- ── Main row: student select | fee summary ── -->
+    <div class="row g-0 align-items-stretch mb-3">
+
+      <!-- Left: Student select box -->
+      <div class="col-lg-6 col-md-7 pe-3">
+        <!-- Select2 container -->
+        <select id="feeStudentSelect" class="w-100"></select>
+      </div>
+
+      <!-- Right: Fee summary values -->
+      <div class="col-lg-6 col-md-5 ps-3" id="feeSummaryArea">
+        <!-- Empty when no student selected -->
+        <div id="feeSummaryEmpty" style="display:flex; align-items:center; height:100%; color:#555; font-size:0.82rem;">
+          <!-- placeholder nothing -->
+        </div>
+
+        <!-- Loaded fee summary -->
+        <div id="feeSummaryData" style="display:none;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="font-size:0.85rem; color:#ccc; font-weight:500;">Total Fee</span>
+            <span id="summTotalFee" style="font-size:0.95rem; font-weight:700; color:#4a6cf7;"></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="font-size:0.85rem; color:#ccc; font-weight:500;">Total Submitted Fee</span>
+            <span id="summPaidAmount" style="font-size:0.95rem; font-weight:700; color:#10b981;"></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size:0.88rem; color:#fff; font-weight:700;">Remaining Fee</span>
+            <span id="summRemaining" style="font-size:1.05rem; font-weight:800; color:#f87171;"></span>
+          </div>
+        </div>
+
+        <!-- Spinner -->
+        <div id="feeSummarySpinner" style="display:none; padding:1rem 0;">
+          <div class="spinner-border spinner-border-sm" style="color:#4a6cf7;" role="status"></div>
+          <span style="font-size:0.8rem; color:#777; margin-left:8px;">Loading…</span>
+        </div>
+      </div>
+
+    </div><!-- /main row -->
+
+    <!-- ── Status area (full width below) ── -->
+
+    <!-- No Due Fee -->
+    <div id="noDueBox" style="display:none;">
+      <div style="border:1.5px solid #10b981; border-radius:8px; padding:0.75rem 1.2rem; color:#10b981; font-size:0.9rem; font-weight:600;">
+        No Due Fee Found.
+      </div>
+    </div>
+
+    <!-- Fee Collection Form -->
+    <div id="feeCollectFormWrap" style="display:none;">
+      <div style="border-top:1px solid rgba(255,255,255,0.08); margin-top:0.5rem; padding-top:1.2rem;">
+        <form method="POST" id="collectFeeForm" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="student" id="hiddenStudentId">
+
+          {% if form.non_field_errors %}
+          <div class="mb-3 p-3 rounded-2" style="background:rgba(220,53,69,.12); border:1px solid rgba(220,53,69,.35); font-size:0.84rem; color:#f8d7da;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            {{ form.non_field_errors|join:", " }}
+          </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <!-- Amount -->
+            <div class="col-md-6">
+              <label class="fw-semibold mb-1 d-block" style="font-size:0.84rem; color:#ccc;">
+                Amount <span class="text-danger">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text fw-bold" style="background:#161827; border-color:#2d3147; color:#aaa;">₹</span>
+                {% render_field form.amount class="form-control" placeholder="0.00" id="id_amount" style="background:#161827;border-color:#2d3147;color:#fff;" %}
+              </div>
+              <div id="amountHint" style="font-size:0.76rem; color:#666; margin-top:4px;"></div>
+              {% if form.amount.errors %}<div class="text-danger" style="font-size:0.82rem; margin-top:4px;">{{ form.amount.errors|join:", " }}</div>{% endif %}
+            </div>
+
+            <!-- Payment Date -->
+            <div class="col-md-6">
+              <label class="fw-semibold mb-1 d-block" style="font-size:0.84rem; color:#ccc;">
+                Payment Date <span class="text-danger">*</span>
+              </label>
+              {% render_field form.payment_date class="form-control" style="background:#161827;border-color:#2d3147;color:#fff;" %}
+              {% if form.payment_date.errors %}<div class="text-danger" style="font-size:0.82rem; margin-top:4px;">{{ form.payment_date.errors|join:", " }}</div>{% endif %}
+            </div>
+
+            <!-- Payment Mode -->
+            <div class="col-md-6">
+              <label class="fw-semibold mb-1 d-block" style="font-size:0.84rem; color:#ccc;">
+                Payment Mode <span class="text-danger">*</span>
+              </label>
+              {% render_field form.payment_method class="form-select" style="background:#161827;border-color:#2d3147;color:#fff;" %}
+              {% if form.payment_method.errors %}<div class="text-danger" style="font-size:0.82rem; margin-top:4px;">{{ form.payment_method.errors|join:", " }}</div>{% endif %}
+            </div>
+
+            <!-- Receipt Number -->
+            <div class="col-md-6">
+              <label class="fw-semibold mb-1 d-block" style="font-size:0.84rem; color:#ccc;">
+                Receipt Number <span style="font-size:0.74rem; color:#666;">(optional)</span>
+              </label>
+              {% render_field form.reference_number class="form-control" placeholder="UPI ID, cheque no., etc." style="background:#161827;border-color:#2d3147;color:#fff;" %}
+              {% if form.reference_number.errors %}<div class="text-danger" style="font-size:0.82rem; margin-top:4px;">{{ form.reference_number.errors|join:", " }}</div>{% endif %}
+            </div>
+
+            <!-- Remarks -->
+            <div class="col-12">
+              <label class="fw-semibold mb-1 d-block" style="font-size:0.84rem; color:#ccc;">
+                Remarks <span style="font-size:0.74rem; color:#666;">(optional)</span>
+              </label>
+              {% render_field form.remarks class="form-control" placeholder="Optional notes..." rows="2" style="background:#161827;border-color:#2d3147;color:#fff;" %}
+              {% if form.remarks.errors %}<div class="text-danger" style="font-size:0.82rem; margin-top:4px;">{{ form.remarks.errors|join:", " }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div class="mt-3 d-flex gap-2">
+            <button type="submit" id="collectFeeBtn"
+                    class="btn px-4 py-2 fw-semibold"
+                    style="background:#4a6cf7; border:none; color:#fff; border-radius:7px; font-size:0.88rem;">
+              <i class="bi bi-check2-circle me-2"></i>Collect Fee
+            </button>
+            <a href="{% url 'fees_list' %}" class="btn btn-outline-secondary px-4 py-2" style="font-size:0.88rem;">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div><!-- /feeCollectFormWrap -->
+
+  </div><!-- /main card -->
+
 </div>
+{% endblock %}
+
+
+{% block scripts %}
+<!-- Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+/* ── Select2 dark overrides ── */
+.select2-container { width: 100% !important; }
+
+.select2-container--default .select2-selection--single {
+  background-color: #0d0f1a !important;
+  border: 1px solid #2d3147 !important;
+  border-radius: 8px !important;
+  height: auto !important;
+  min-height: 70px !important;
+  padding: 6px 40px 6px 8px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: #fff !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  white-space: normal !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 70px !important;
+  right: 8px;
+}
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: #555 !important;
+  line-height: 58px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__clear {
+  margin-top: 6px;
+  color: #888;
+  font-size: 1.1rem;
+}
+.select2-dropdown {
+  background-color: #12141c !important;
+  border: 1px solid #2d3147 !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+.select2-container--default .select2-search--dropdown .select2-search__field {
+  background: #1a1e2c !important;
+  border: 1px solid #2d3147 !important;
+  border-radius: 6px;
+  color: #fff !important;
+  padding: 7px 10px;
+  outline: none;
+}
+.select2-container--default .select2-results__option {
+  color: #c8c6d8;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.select2-container--default .select2-results__option:last-child { border-bottom: none; }
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+  background-color: rgba(74,108,247,.22) !important;
+  color: #fff !important;
+}
+
+/* Rich student card inside select box */
+.s2-sel {
+  display: flex; align-items: center; gap: 10px;
+}
+.s2-sel-avatar {
+  width: 46px; height: 46px; border-radius: 50%; object-fit: cover;
+  border: 1.5px solid rgba(74,108,247,.5); flex-shrink: 0;
+}
+.s2-sel-no-photo {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(74,108,247,.15);
+  border: 1.5px solid rgba(74,108,247,.4);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.s2-sel-info .s2-sel-name  { font-size: 0.9rem; color: #fff; font-weight: 700; line-height: 1.3; }
+.s2-sel-info .s2-sel-sub   { font-size: 0.76rem; color: #999; line-height: 1.5; }
+
+/* Result row */
+.s2-row { display: flex; align-items: center; gap: 10px; }
+.s2-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(74,108,247,.5); flex-shrink: 0; }
+.s2-no-photo { width: 36px; height: 36px; border-radius: 50%; background: rgba(74,108,247,.15); border: 1.5px solid rgba(74,108,247,.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.s2-info .s2-name { font-size: 0.855rem; color: #f6f4ff; font-weight: 600; }
+.s2-info .s2-sub  { font-size: 0.74rem; color: #888; margin-top: 1px; }
+</style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var studentSelect = document.getElementById('id_student');
-    if (studentSelect) {
-        studentSelect.addEventListener('change', function() {
-            var selectedId = this.value;
-            var currentUrl = new URL(window.location.href);
-            if (selectedId) {
-                currentUrl.searchParams.set('student', selectedId);
-            } else {
-                currentUrl.searchParams.delete('student');
-            }
-            window.location.href = currentUrl.toString();
+$(function () {
+  const AUTOCOMPLETE_URL = '{% url "fee_student_autocomplete" %}';
+  const SUMMARY_URL      = '{% url "fee_student_summary" %}';
+
+  /* ── Renderer for dropdown list results ── */
+  function renderResult(item) {
+    if (!item.id) return $('<span style="color:#666;">' + item.text + '</span>');
+    const photo = item.photo
+      ? `<img src="${item.photo}" class="s2-avatar" alt="">`
+      : `<div class="s2-no-photo"><i class="bi bi-person-fill" style="color:#4a6cf7;font-size:0.95rem;"></i></div>`;
+    return $(
+      `<div class="s2-row">
+        ${photo}
+        <div class="s2-info">
+          <div class="s2-name">${item.name || item.text}</div>
+          <div class="s2-sub">${item.enrollment || ''}${item.phone ? '  ' + item.phone : ''}</div>
+        </div>
+      </div>`
+    );
+  }
+
+  /* ── Renderer for selected item inside the box ── */
+  function renderSelection(item) {
+    if (!item.id || !item.name) return $('<span style="color:#fff;">' + item.text + '</span>');
+    const photo = item.photo
+      ? `<img src="${item.photo}" class="s2-sel-avatar" alt="">`
+      : `<div class="s2-sel-no-photo"><i class="bi bi-person-fill" style="color:#4a6cf7;font-size:1.1rem;"></i></div>`;
+    return $(
+      `<div class="s2-sel">
+        ${photo}
+        <div class="s2-sel-info">
+          <div class="s2-sel-name">${item.name}</div>
+          <div class="s2-sel-sub">${item.enrollment || ''}</div>
+          <div class="s2-sel-sub">${item.phone || ''}</div>
+        </div>
+      </div>`
+    );
+  }
+
+  /* ── Init Select2 ── */
+  $('#feeStudentSelect').select2({
+    placeholder: 'Search by Name, Phone or Email…',
+    allowClear: true,
+    minimumInputLength: 1,
+    ajax: {
+      url: AUTOCOMPLETE_URL,
+      dataType: 'json',
+      delay: 250,
+      data: function(p) { return { q: p.term }; },
+      processResults: function(d) { return { results: d.results }; },
+      cache: true,
+    },
+    templateResult: renderResult,
+    templateSelection: renderSelection,
+  });
+
+  /* ── On select: load fee summary via AJAX ── */
+  $('#feeStudentSelect').on('select2:select', function(e) {
+    loadFeeSummary(e.params.data.id);
+  });
+
+  /* ── On clear ── */
+  $('#feeStudentSelect').on('select2:unselect select2:clear', resetUI);
+
+  function resetUI() {
+    $('#feeSummaryData').hide();
+    $('#feeSummarySpinner').hide();
+    $('#feeSummaryEmpty').show();
+    $('#noDueBox').hide();
+    $('#feeCollectFormWrap').hide();
+    $('#hiddenStudentId').val('');
+    $('#amountHint').text('');
+  }
+
+  function loadFeeSummary(studentPk) {
+    $('#feeSummaryEmpty').hide();
+    $('#feeSummaryData').hide();
+    $('#noDueBox').hide();
+    $('#feeCollectFormWrap').hide();
+    $('#feeSummarySpinner').show();
+
+    $.ajax({
+      url: SUMMARY_URL,
+      data: { student_id: studentPk },
+      dataType: 'json',
+      success: function(data) {
+        $('#feeSummarySpinner').hide();
+
+        // Populate summary
+        $('#summTotalFee').text('₹' + parseFloat(data.total_fee).toFixed(2));
+        $('#summPaidAmount').text('₹' + parseFloat(data.paid_amount).toFixed(2));
+        $('#summRemaining').text('₹' + parseFloat(data.remaining_fee).toFixed(0));
+        $('#feeSummaryData').fadeIn(180);
+
+        // Set hidden student
+        $('#hiddenStudentId').val(data.student_id);
+
+        if (data.has_due) {
+          const maxAmt = parseFloat(data.remaining_fee).toFixed(2);
+          $('#id_amount').attr('max', maxAmt);
+          $('#amountHint').text('Max payable: ₹' + maxAmt);
+          $('#feeCollectFormWrap').fadeIn(180);
+        } else {
+          $('#noDueBox').fadeIn(180);
+        }
+      },
+      error: function() {
+        $('#feeSummarySpinner').hide();
+        $('#feeSummaryEmpty').show();
+        Swal.fire({
+          icon: 'error', title: 'Error',
+          text: 'Could not load fee summary. Please try again.',
+          customClass: { popup: 'dark-modal-swal', confirmButton: 'btn btn-primary px-4' },
+          buttonsStyling: false,
         });
+      }
+    });
+  }
+
+  /* ── Prevent double-submit ── */
+  let submitting = false;
+  $('#collectFeeForm').on('submit', function(e) {
+    if (!$('#hiddenStudentId').val()) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'warning', title: 'No Student Selected',
+        text: 'Please select a student before collecting fees.',
+        customClass: { popup: 'dark-modal-swal', confirmButton: 'btn btn-primary px-4' },
+        buttonsStyling: false,
+      });
+      return;
     }
+    if (submitting) { e.preventDefault(); return; }
+    submitting = true;
+    $('#collectFeeBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Processing…');
+  });
+
+  /* ── Re-init if POST returned form errors ── */
+  {% if form.errors %}
+  {% with sv=form.student.value %}{% if sv %}
+  (function(){
+    const pk = '{{ sv }}';
+    const opt = new Option('Loading…', pk, true, true);
+    $('#feeStudentSelect').append(opt).trigger('change');
+    loadFeeSummary(pk);
+  })();
+  {% endif %}{% endwith %}
+  {% endif %}
+
 });
 </script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: { popup: 'dark-modal-swal', confirmButton: 'btn btn-primary px-4' },
+    buttonsStyling: false,
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
 {% endblock %}

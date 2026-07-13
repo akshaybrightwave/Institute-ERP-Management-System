@@ -1,0 +1,364 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Assign To Student | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-journal-text text-primary me-2"></i>Assign To Student
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Exam</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Assign-to-student</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LIST SECTION -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">Assign To Student(s)</h5>
+        </div>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+            <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+              <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+              <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+              <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form method="GET" action="{% url 'assign_exam_student' %}" class="d-flex align-items-center gap-2">
+              <input type="hidden" name="show" value="{{ show_entries }}">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+            </form>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0" id="exam-table">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 50px;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Title</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Schedule</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Timer</th>
+                <th class="pe-4 text-center text-uppercase text-muted" style="font-size: 0.8rem;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <!-- # -->
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ forloop.counter0|add:page_obj.start_index }}.
+                </td>
+
+                <!-- Title -->
+                <td class="text-white" style="font-size: 0.9rem; font-weight: 500;">
+                  {{ item.title }}
+                </td>
+
+                <!-- Course -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  <div class="text-white text-uppercase" style="font-size: 0.85rem;">{{ item.course.name|default:"—" }}</div>
+                  {% if item.course_duration %}
+                    <span class="badge" style="background-color: #7c3aed; color: white;">{{ item.course_duration }}</span>
+                  {% endif %}
+                </td>
+
+                <!-- Schedule -->
+                <td class="text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
+                  {% if item.start_datetime %}
+                    <span class="badge bg-light text-dark mb-1">Form : {{ item.start_datetime|date:"d-m-Y h:i A" }}</span><br>
+                    <span class="badge bg-light text-dark">To : {{ item.end_datetime|date:"d-m-Y h:i A" }}</span>
+                  {% else %}
+                    <span class="badge bg-danger">No Schedule</span>
+                  {% endif %}
+                </td>
+
+                <!-- Timer -->
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {% if item.duration_minutes %}
+                    {% if item.duration_minutes >= 60 %}
+                        {% widthratio item.duration_minutes 60 1 %} hour{% if item.duration_minutes >= 120 %}s{% endif %}
+                    {% else %}
+                        {{ item.duration_minutes }} Min
+                    {% endif %}
+                  {% else %}
+                    <span class="badge bg-danger">No Timer</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td class="pe-4 text-center">
+                    <button type="button" class="btn btn-sm text-white px-3 py-2 btn-assign-student w-100" style="background-color: #7c3aed; border: none; border-radius: 4px; font-size: 0.85rem; max-width: 150px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 5px;" data-exam-id="{{ item.id }}" data-exam-title="{{ item.title }}" data-course-id="{{ item.course.id|default:'' }}">
+                      <i class="bi bi-person-check-fill" style="font-size: 1rem;"></i> Assign To<br>Student
+                    </button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  <i class="bi bi-journal-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No exams found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link border-primary bg-primary text-white">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Student Modal -->
+  <div class="modal fade" id="assignStudentModal" tabindex="-1" aria-labelledby="assignStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content" style="background-color: var(--erp-bg-card); color: #fff; border: 1px solid var(--erp-border-color);">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold" id="assignStudentModalLabel">Assign Exam: <span id="modalExamTitle" class="text-primary"></span></h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="assignStudentForm">
+              <input type="hidden" id="modalExamId" name="exam_id">
+              <input type="hidden" id="modalCourseId" name="course_id">
+              
+              <div class="row g-3 mb-4">
+                  {% if is_admin %}
+                  <div class="col-md-4">
+                      <label class="form-label text-white-50">Select Center</label>
+                      <select id="modalCenterId" class="form-select dark-input">
+                          <option value="">-- All Centers --</option>
+                      </select>
+                  </div>
+                  {% endif %}
+                  <div class="col-md-4 d-flex align-items-end">
+                      <button type="button" id="btnLoadStudents" class="btn btn-primary px-4"><i class="bi bi-search me-1"></i> Load Students</button>
+                  </div>
+              </div>
+
+              <div class="table-responsive">
+                  <table class="table table-examly table-hover align-middle mb-0" id="modal-student-table">
+                      <thead>
+                          <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                              <th style="width: 40px;"><input type="checkbox" class="form-check-input" id="selectAllStudents"></th>
+                              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student Name</th>
+                              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Reg No</th>
+                              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Center</th>
+                              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Status</th>
+                          </tr>
+                      </thead>
+                      <tbody id="modalStudentTbody">
+                          <tr>
+                              <td colspan="6" class="text-center py-4 text-muted">Click 'Load Students' to view eligible students.</td>
+                          </tr>
+                      </tbody>
+                  </table>
+              </div>
+          </form>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success px-4" id="btnSaveAssignments"><i class="bi bi-check2-circle me-1"></i> Save Assignments</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /erp-content -->
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    // Show entries change
+    $('#showEntriesSelect').change(function() {
+        var url = new URL(window.location.href);
+        url.searchParams.set('show', $(this).val());
+        url.searchParams.set('page', '1'); // Reset to first page when changing limit
+        window.location.href = url.href;
+    });
+
+    // Open Modal
+    $('.btn-assign-student').click(function() {
+        var examId = $(this).data('exam-id');
+        var examTitle = $(this).data('exam-title');
+        var courseId = $(this).data('course-id');
+        
+        $('#modalExamId').val(examId);
+        $('#modalExamTitle').text(examTitle);
+        $('#modalCourseId').val(courseId);
+        
+        $('#modalStudentTbody').html('<tr><td colspan="6" class="text-center py-4 text-muted">Click \'Load Students\' to view eligible students.</td></tr>');
+        $('#selectAllStudents').prop('checked', false);
+        
+        var modal = new bootstrap.Modal(document.getElementById('assignStudentModal'));
+        modal.show();
+    });
+
+    // Load Students
+    $('#btnLoadStudents').click(function() {
+        var examId = $('#modalExamId').val();
+        var courseId = $('#modalCourseId').val();
+        var centerId = $('#modalCenterId').length ? $('#modalCenterId').val() : '';
+        
+        if (!courseId) {
+            Swal.fire({icon: 'warning', title: 'Oops...', text: 'This exam is not linked to a specific course.', background: '#1e1e2f', color: '#fff'});
+            return;
+        }
+
+        $('#btnLoadStudents').html('<span class="spinner-border spinner-border-sm me-1"></span> Loading...');
+        $('#btnLoadStudents').prop('disabled', true);
+
+        $.ajax({
+            url: "{% url 'ajax_get_eligible_students' %}",
+            type: "GET",
+            data: {
+                'exam_id': examId,
+                'course_id': courseId,
+                'center_id': centerId
+            },
+            success: function(res) {
+                if (res.success) {
+                    var tbody = $('#modalStudentTbody');
+                    tbody.empty();
+                    
+                    if (res.students.length === 0) {
+                        tbody.html('<tr><td colspan="6" class="text-center py-4 text-muted">No eligible students found for this course/center.</td></tr>');
+                    } else {
+                        res.students.forEach(function(st) {
+                            var row = `<tr>
+                                <td><input type="checkbox" class="form-check-input student-checkbox" value="${st.id}"></td>
+                                <td class="text-white fw-bold">${st.name}</td>
+                                <td class="text-white-50">${st.reg_no}</td>
+                                <td class="text-white-50">${st.course}</td>
+                                <td class="text-white-50">${st.center}</td>
+                                <td><span class="badge bg-success">${st.status}</span></td>
+                            </tr>`;
+                            tbody.append(row);
+                        });
+                    }
+                } else {
+                    Swal.fire({icon: 'error', title: 'Error', text: res.message, background: '#1e1e2f', color: '#fff'});
+                }
+            },
+            error: function() {
+                Swal.fire({icon: 'error', title: 'Error', text: 'Failed to load students.', background: '#1e1e2f', color: '#fff'});
+            },
+            complete: function() {
+                $('#btnLoadStudents').html('<i class="bi bi-search me-1"></i> Load Students');
+                $('#btnLoadStudents').prop('disabled', false);
+            }
+        });
+    });
+
+    // Select All
+    $('#selectAllStudents').change(function() {
+        $('.student-checkbox').prop('checked', $(this).prop('checked'));
+    });
+
+    // Save Assignments
+    $('#btnSaveAssignments').click(function() {
+        var examId = $('#modalExamId').val();
+        var selectedStudents = [];
+        $('.student-checkbox:checked').each(function() {
+            selectedStudents.push($(this).val());
+        });
+
+        if (selectedStudents.length === 0) {
+            Swal.fire({icon: 'warning', title: 'Select Student', text: 'Please select at least one student.', background: '#1e1e2f', color: '#fff'});
+            return;
+        }
+
+        var btn = $(this);
+        btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Saving...').prop('disabled', true);
+
+        $.ajax({
+            url: "{% url 'ajax_save_student_assignments' %}",
+            type: "POST",
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            contentType: "application/json",
+            data: JSON.stringify({
+                'exam_id': examId,
+                'student_ids': selectedStudents
+            }),
+            success: function(res) {
+                if (res.success) {
+                    Swal.fire({icon: 'success', title: 'Success', text: res.message, background: '#1e1e2f', color: '#fff'}).then(() => {
+                        var modal = bootstrap.Modal.getInstance(document.getElementById('assignStudentModal'));
+                        modal.hide();
+                    });
+                } else {
+                    Swal.fire({icon: 'error', title: 'Error', text: res.message, background: '#1e1e2f', color: '#fff'});
+                }
+            },
+            error: function() {
+                Swal.fire({icon: 'error', title: 'Error', text: 'Failed to save assignments.', background: '#1e1e2f', color: '#fff'});
+            },
+            complete: function() {
+                btn.html('<i class="bi bi-check2-circle me-1"></i> Save Assignments').prop('disabled', false);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

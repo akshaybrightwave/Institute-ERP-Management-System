@@ -1,0 +1,365 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Student Exam(s) | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-person-check text-primary me-2"></i>List Student Exam(s)
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Exam</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Student Exam(s)</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LIST SECTION -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">Student Exam Attempts</h5>
+        </div>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+            <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+              <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+              <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+              <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <!-- DataTables export buttons will be inserted here by JS if needed, or we can use custom ones -->
+            <button class="btn btn-sm text-white-50" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Copy</button>
+            <button class="btn btn-sm text-white-50" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">CSV</button>
+            <button class="btn btn-sm text-white-50" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Excel</button>
+            <button class="btn btn-sm text-white-50" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">PDF</button>
+            <button class="btn btn-sm text-white-50" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">Print</button>
+            
+            <form method="GET" action="{% url 'admin_student_exam_list' %}" class="d-flex align-items-center gap-2 ms-2">
+              <input type="hidden" name="show" value="{{ show_entries }}">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+            </form>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0" id="exam-table">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 50px;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Roll No</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Exam</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Attempt Time</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Result</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ forloop.counter0|add:page_obj.start_index }}.
+                </td>
+
+                <td class="text-white" style="font-size: 0.9rem; font-weight: 500;">
+                  {{ item.student.username }}
+                </td>
+
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.student_admission.student_name|default:item.student.studentprofile.full_name|default:item.student.username|title }}
+                </td>
+                
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.exam.title }}
+                </td>
+
+                <td class="text-white-50" style="font-size: 0.85rem;">
+                  {% if item.is_completed %}
+                    {{ item.submitted_at|date:"d-m-Y h:i A" }}
+                  {% else %}
+                    {{ item.start_time|date:"d-m-Y h:i A" }}
+                  {% endif %}
+                </td>
+
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {% if item.is_completed %}
+                    {% if item.score >= item.exam.pass_percentage %}
+                      <span class="badge bg-success">PASS with {{ item.score|floatformat:0 }}%</span>
+                    {% else %}
+                      <span class="badge bg-danger">FAIL with {{ item.score|floatformat:0 }}%</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge bg-secondary text-dark">Exam Not Done</span>
+                  {% endif %}
+                </td>
+
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end flex-wrap">
+                    <a href="{% url 'student_exam_result' item.id %}" class="btn btn-sm text-white px-2 py-1" style="background-color: #3b82f6; border: none; border-radius: 4px; font-size: 0.8rem;" title="View Result">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    
+                    {% if request.user.role == 'admin' or request.user.role == 'center' or request.user == item.exam.created_by %}
+                    <button class="btn btn-sm btn-edit-attempt text-white px-2 py-1" 
+                            style="background-color: #f59e0b; border: none; border-radius: 4px; font-size: 0.8rem;" 
+                            data-attempt-id="{{ item.id }}" 
+                            data-attempt-time="{% if item.is_completed %}{{ item.submitted_at|date:'Y-m-d\TH:i' }}{% else %}{{ item.start_time|date:'Y-m-d\TH:i' }}{% endif %}"
+                            data-score="{{ item.score|floatformat:1 }}"
+                            title="Edit">
+                      <i class="bi bi-pencil-square"></i> Edit
+                    </button>
+                    {% endif %}
+                    
+                    {% if request.user.role == 'admin' or request.user.role == 'center' %}
+                    <button class="btn btn-sm text-white px-2 py-1 btn-delete-attempt" data-attempt-id="{{ item.id }}" style="background-color: #ef4444; border: none; border-radius: 4px; font-size: 0.8rem;" title="Delete">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <i class="bi bi-journal-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No student exam attempts found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link border-primary bg-primary text-white">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+<!-- Modal for AJAX Editing -->
+<div class="modal fade" id="editAttemptModal" tabindex="-1" aria-labelledby="editAttemptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: #12141c; border: 1px solid #1c1f2c; border-radius: 12px; color: #fff;">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white" id="editAttemptModalLabel">Edit Student Exam Attempt</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editAttemptForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-danger d-none" id="modalError"></div>
+          
+          <div class="mb-3">
+            <label for="modal_attempt_time" class="form-label fw-semibold text-white">
+              Attempt Time <span class="text-danger">*</span>
+            </label>
+            <input type="datetime-local" name="attempt_time" id="modal_attempt_time" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="modal_score" class="form-label fw-semibold text-white">
+              Percentage / Score (%) <span class="text-danger">*</span>
+            </label>
+            <input type="number" step="0.1" name="score" id="modal_score" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;" min="0" max="100" required>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-save-modal px-4 py-2" id="btnUpdateSubmit">
+            <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+</div><!-- /erp-content -->
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+    $('#showEntriesSelect').change(function() {
+        var url = new URL(window.location.href);
+        url.searchParams.set('show', $(this).val());
+        url.searchParams.set('page', '1');
+        window.location.href = url.href;
+    });
+
+    // Setup Edit Attempt Modal
+    var editModal = new bootstrap.Modal(document.getElementById('editAttemptModal'));
+    var editForm = document.getElementById('editAttemptForm');
+    var modalError = document.getElementById('modalError');
+
+    $(document).on('click', '.btn-edit-attempt', function() {
+        var attemptId = $(this).data('attempt-id');
+        var attemptTime = $(this).data('attempt-time');
+        var score = $(this).data('score');
+
+        $('#modal_attempt_time').val(attemptTime);
+        $('#modal_score').val(score);
+        $(modalError).addClass('d-none').text('');
+
+        $(editForm).data('attempt-id', attemptId);
+        editModal.show();
+    });
+
+    $(editForm).submit(function(e) {
+        e.preventDefault();
+        var attemptId = $(this).data('attempt-id');
+        var formData = $(this).serialize();
+
+        $.ajax({
+            url: "{% url 'edit_student_exam_attempt_ajax' 0 %}".replace('0', attemptId),
+            type: "POST",
+            data: formData,
+            success: function(res) {
+                if (res.success) {
+                    editModal.hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated!',
+                        text: res.message,
+                        customClass: {
+                            popup: 'dark-modal-swal',
+                            confirmButton: 'btn btn-primary px-4'
+                        },
+                        buttonsStyling: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    $(modalError).removeClass('d-none').text(res.message);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Failed to save changes.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                $(modalError).removeClass('d-none').text(errorMsg);
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-delete-attempt', function(e) {
+        e.preventDefault();
+        var attemptId = $(this).data('attempt-id');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Are you sure you want to delete this student exam record?',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete!',
+            cancelButtonText: 'No, cancel',
+            customClass: {
+                popup: 'dark-modal-swal',
+                confirmButton: 'btn btn-danger px-4 py-2 me-2',
+                cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{% url 'delete_student_exam_attempt_ajax' 0 %}".replace('0', attemptId),
+                    type: "POST",
+                    headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                    success: function(res) {
+                        if (res.success) {
+                            Swal.fire({
+                                icon: 'success', 
+                                title: 'Deleted!', 
+                                text: res.message, 
+                                customClass: {
+                                    popup: 'dark-modal-swal',
+                                    confirmButton: 'btn btn-primary px-4'
+                                },
+                                buttonsStyling: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: res.message,
+                                customClass: {
+                                    popup: 'dark-modal-swal',
+                                    confirmButton: 'btn btn-primary px-4'
+                                },
+                                buttonsStyling: false
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to delete record.',
+                            customClass: {
+                                popup: 'dark-modal-swal',
+                                confirmButton: 'btn btn-primary px-4'
+                            },
+                            buttonsStyling: false
+                        });
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Attendance Report | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Title & Breadcrumb -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-calendar-range text-primary me-2"></i>Attendance Report
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Attendance-report</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- SECTION 1: Select Criteria -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4" style="background-color: var(--erp-bg-card); border: 1px solid rgba(99,102,241,0.4) !important; box-shadow: 0 0 0 1px rgba(99,102,241,0.3);">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Select Criteria</h5>
+      <i class="bi bi-chevron-up text-muted"></i>
+    </div>
+    <div class="card-body px-4 pt-4 pb-4">
+      <form method="GET" action="" id="reportForm">
+        <div class="row g-4 align-items-end">
+
+          <!-- Select Timetable -->
+          <div class="col-md-4">
+            <label class="form-label text-white fw-semibold" style="font-size: 0.9rem;">
+              Select Timetable <span class="text-danger">*</span>
+            </label>
+            <select name="timetable" id="timetableSelect" class="form-select"
+                    style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 44px;">
+              <option value="">-- Select Timetable --</option>
+              {% for tt in timetables %}
+              <option value="{{ tt.id }}" {% if selected_tt_id == tt.id|stringformat:"s" %}selected{% endif %}>
+                {{ tt.timetable_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Date Range -->
+          <div class="col-md-5">
+            <label class="form-label text-white fw-semibold" style="font-size: 0.9rem;">
+              Attendance Date <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="date_range" id="dateRangePicker"
+                   class="form-control"
+                   style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 44px;"
+                   placeholder="YYYY-MM-DD - YYYY-MM-DD"
+                   value="{{ date_range_str }}" autocomplete="off">
+          </div>
+
+          <!-- Search Button -->
+          <div class="col-md-3">
+            <button type="submit" class="btn px-4 py-2 d-inline-flex align-items-center justify-content-center"
+                    style="border: 1.5px dashed #10b981; color: #10b981; background-color: rgba(16, 185, 129, 0.1); font-size: 0.9rem; border-radius: 6px; min-width: 120px;">
+              <i class="bi bi-calendar-event me-2"></i>Search
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  {% if searched %}
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(16,185,129,0.15); color: #10b981; border: 1px solid #10b981; font-size: 0.82rem;">P : Present</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid #f59e0b; font-size: 0.82rem;">E : Late With Excuse</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid #f59e0b; font-size: 0.82rem;">L : Late</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; font-size: 0.82rem;">A : Absent</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(129,140,248,0.15); color: #818cf8; border: 1px solid #818cf8; font-size: 0.82rem;">H : Holiday</span>
+    <span class="badge px-3 py-2 fw-semibold" style="background-color: rgba(6,182,212,0.15); color: #06b6d4; border: 1px solid #06b6d4; font-size: 0.82rem;">F : Half Day</span>
+  </div>
+  {% endif %}
+
+  <!-- SECTION 2: Pivot Matrix Table -->
+  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle mb-0" style="border-color: rgba(255,255,255,0.08) !important; min-width: max-content;">
+          <thead>
+            <tr style="background-color: rgba(255,255,255,0.04);">
+              <th class="ps-4 fw-bold text-white" style="font-size: 0.85rem; min-width: 180px; border-color: rgba(255,255,255,0.08) !important; position: sticky; left: 0; background-color: #1a1a2e; z-index: 2;">
+                Student Name
+              </th>
+              {% for d in date_columns %}
+              <th class="text-center fw-semibold text-muted" style="font-size: 0.78rem; min-width: 95px; border-color: rgba(255,255,255,0.08) !important;">
+                {{ d|date:"Y-m-d" }}
+              </th>
+              {% endfor %}
+              {% if not searched %}
+              <th class="text-center text-muted" style="font-size: 0.8rem;">No data</th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% if student_rows %}
+              {% for row in student_rows %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 fw-semibold text-white" style="font-size: 0.88rem; border-color: rgba(255,255,255,0.08) !important; position: sticky; left: 0; background-color: var(--erp-bg-card); z-index: 1;">
+                  {{ row.name }}
+                </td>
+                {% for day in row.days %}
+                <td class="text-center fw-bold" style="font-size: 0.88rem; color: {{ day.color }}; border-color: rgba(255,255,255,0.05) !important;">
+                  {{ day.status }}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="20" class="text-center py-5 text-muted" style="background: transparent; border: none;">
+                  <div class="d-flex flex-column align-items-center justify-content-center">
+                    <i class="bi bi-calendar-x" style="font-size: 2.5rem; color: #6366f1; opacity: 0.5;"></i>
+                    <p class="text-white-50 mt-3 fw-semibold mb-0" style="font-size: 0.95rem;">
+                      {% if searched %}No attendance records found for this period.{% else %}Select a Timetable and Date Range to view report.{% endif %}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Flatpickr date range picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<script>
+$(function () {
+  // Init flatpickr date range
+  flatpickr("#dateRangePicker", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    defaultDate: "{{ date_range_str }}".split(' - ').filter(Boolean),
+    onChange: function(selectedDates, dateStr, instance) {
+      // automatically format as "YYYY-MM-DD - YYYY-MM-DD"
+    },
+    onClose: function(selectedDates, dateStr, instance) {
+      if (selectedDates.length === 2) {
+        const fmt = d => d.toISOString().slice(0, 10);
+        instance.element.value = fmt(selectedDates[0]) + ' - ' + fmt(selectedDates[1]);
+      }
+    }
+  });
+
+  // Timetable select2
+  if ($.fn.select2) {
+    $('#timetableSelect').select2({
+      theme: 'bootstrap-5',
+      placeholder: '-- Select Timetable --',
+      allowClear: true,
+      width: '100%'
+    });
+  }
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+{% endblock %}

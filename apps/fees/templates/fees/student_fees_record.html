@@ -1,0 +1,153 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}My Fee Record | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-credit-card text-primary me-2"></i>My Fee Record
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Fee Record</li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- Fees Summary Cards -->
+  <div class="row g-3 mb-4 row-cols-1 row-cols-md-4">
+    <div class="col">
+      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+        <span class="d-block text-white-50 small mb-1">Total Course Fee</span>
+        <span class="fs-5 fw-bold text-white">₹{{ course_fee|floatformat:2 }}</span>
+      </div>
+    </div>
+    <div class="col">
+      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+        <span class="d-block text-white-50 small mb-1">Paid Amount</span>
+        <span class="fs-5 fw-bold text-success">₹{{ paid_amount|floatformat:2 }}</span>
+      </div>
+    </div>
+    <div class="col">
+      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+        <span class="d-block text-white-50 small mb-1">Remaining Fee</span>
+        <span class="fs-5 fw-bold text-danger">₹{{ pending_amount|floatformat:2 }}</span>
+      </div>
+    </div>
+    <div class="col">
+      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+        <span class="d-block text-white-50 small mb-1">Fee Status</span>
+        {% if fee_status == 'PAID' %}
+          <span class="badge bg-success mt-1 px-3 py-1">PAID</span>
+        {% elif fee_status == 'PARTIAL' %}
+          <span class="badge bg-warning text-dark mt-1 px-3 py-1">PARTIAL</span>
+        {% else %}
+          <span class="badge bg-danger mt-1 px-3 py-1">PENDING</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Fees Table Card -->
+  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important;">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">My Fee Ledger</h5>
+    </div>
+    <div class="card-body p-4">
+      <div class="table-responsive">
+        <table class="table table-examly table-hover align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+              <th class="ps-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Date</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Payment Method</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Reference Number</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Remarks</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Amount</th>
+              <th class="pe-3 text-end text-uppercase text-muted" style="font-size: 0.75rem;">Receipt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in page_obj %}
+            <tr style="border-color: rgba(255,255,255,0.05) !important;">
+              <td class="ps-3 text-white-50" style="font-size: 0.9rem;">
+                {{ payment.payment_date|date:"d-m-Y" }}
+              </td>
+              <td class="text-white-50 text-uppercase" style="font-size: 0.9rem;">
+                {{ payment.payment_method }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ payment.reference_number|default:"—" }}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {{ payment.remarks|default:"—" }}
+              </td>
+              <td class="fw-bold text-success" style="font-size: 0.9rem;">
+                ₹{{ payment.amount }}
+              </td>
+              <td class="pe-3 text-end">
+                <a href="{% url 'payment_receipt' payment.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3" target="_blank">
+                  <i class="bi bi-file-earmark-pdf"></i> Receipt
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center py-5 text-muted">
+                <i class="bi bi-wallet2 text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                No fee payments recorded.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+      <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <span class="text-muted" style="font-size: 0.85rem;">
+          Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+        </span>
+        <nav aria-label="Page navigation">
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}">&lt;</a>
+              </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active">
+                  <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}">&gt;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

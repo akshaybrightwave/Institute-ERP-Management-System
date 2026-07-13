@@ -1,0 +1,403 @@
+<div class="row g-4">
+  <!-- SECTION 1: Account Header Profile Overview Card -->
+  <div class="col-12">
+    <div class="profile-header-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; position: relative; overflow: hidden;">
+      
+      <!-- Top right decorative accent -->
+      <div style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: linear-gradient(135deg, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0)); transform: rotate(45deg); pointer-events: none;"></div>
+
+      <div class="row align-items-center g-4">
+        <!-- Photo and Primary Details -->
+        <div class="col-lg-7 col-12">
+          <div class="d-flex align-items-center flex-wrap gap-4 text-center text-sm-start">
+            <div class="position-relative mx-auto mx-sm-0">
+              {% if admission.photo %}
+                <img src="{{ admission.photo.url }}" alt="{{ admission.student_name }}" class="rounded-3 border border-secondary" style="width: 110px; height: 110px; object-fit: cover;">
+              {% elif profile.profile_picture %}
+                <img src="{{ profile.profile_picture.url }}" alt="{{ admission.student_name }}" class="rounded-3 border border-secondary" style="width: 110px; height: 110px; object-fit: cover;">
+              {% else %}
+                <div class="rounded-3 bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 110px; height: 110px; font-size: 2.5rem;">
+                  <i class="bi bi-person"></i>
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="flex-grow-1">
+              <h3 class="fw-bold text-white mb-2 d-flex align-items-center justify-content-center justify-content-sm-start gap-2">
+                {{ admission.student_name }}
+                <span class="text-primary" style="font-size: 1.1rem;"><i class="bi bi-patch-check-fill"></i></span>
+                <span class="text-success" style="font-size: 1.1rem;"><i class="bi bi-check-circle-fill"></i></span>
+              </h3>
+
+              <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 text-white-50" style="font-size: 0.88rem;">
+                <span><i class="bi bi-person text-muted me-1"></i> Student</span>
+                <span><i class="bi bi-geo-alt text-muted me-1"></i> {{ admission.address|truncatechars:20 }}</span>
+                <span><i class="bi bi-envelope text-muted me-1"></i> {{ admission.email }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pill/Overview Cards -->
+        <div class="col-lg-5 col-12">
+          <div class="d-flex flex-wrap gap-2 justify-content-lg-end justify-content-center">
+            <!-- Enrollment Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
+              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">ENROLLMENT NO</span>
+              <span class="fw-bold text-white small">{{ admission.enrollment_no }}</span>
+            </div>
+
+            <!-- DOB Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
+              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">DATE OF BIRTH</span>
+              <span class="fw-bold text-white small">{{ admission.dob|date:"d-m-Y"|default:"—" }}</span>
+            </div>
+
+            <!-- Gender Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 90px;">
+              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">GENDER</span>
+              <span class="fw-bold text-white small">{{ admission.gender|default:"—" }}</span>
+            </div>
+
+            <!-- Remaining Course Fee Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); min-width: 120px;">
+              <span class="d-block text-danger-emphasis fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #f87171 !important;">REMAINING FEE</span>
+              <span class="fw-bold text-white small">₹{{ pending_amount|floatformat:0 }}</span>
+            </div>
+
+            <!-- Total Course Fee Box -->
+            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); min-width: 120px;">
+              <span class="d-block text-success-emphasis fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #34d399 !important;">TOTAL FEE</span>
+              <span class="fw-bold text-white small">₹{{ course_fee|floatformat:0 }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabbed Menu -->
+      <div class="mt-5 border-top border-secondary pt-3">
+        <ul class="nav nav-pills gap-1 flex-wrap" id="studentProfileTab" role="tablist" style="border: none;">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active px-4 py-2 text-white bg-primary rounded" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-grid-fill me-1"></i> Overview</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="fees-tab" data-bs-toggle="pill" data-bs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-wallet2 me-1"></i> Fees Record</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="emi-tab" data-bs-toggle="pill" data-bs-target="#emi" type="button" role="tab" aria-controls="emi" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-file-earmark-pdf me-1"></i> Fee EMI Record</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="password-tab" data-bs-toggle="pill" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-key-fill me-1"></i> Change Password</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="notifications-tab" data-bs-toggle="pill" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-bell-fill me-1"></i> Notifications</button>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 2: Tab Content -->
+  <div class="col-12">
+    <div class="tab-content" id="studentProfileTabContent">
+      
+      <!-- Overview Tab -->
+      <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+        
+        <!-- Quick Stats Row -->
+        {% if total_exams is not None %}
+        <div class="row g-3 mb-4 row-cols-1 row-cols-md-3">
+          <div class="col">
+            <div class="p-3 rounded d-flex align-items-center gap-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+              <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary" style="font-size: 1.5rem;"><i class="bi bi-journal-text"></i></div>
+              <div>
+                <span class="d-block text-white-50 small">Available Exams</span>
+                <span class="fs-4 fw-bold text-white">{{ total_exams }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-3 rounded d-flex align-items-center gap-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+              <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success" style="font-size: 1.5rem;"><i class="bi bi-check2-circle"></i></div>
+              <div>
+                <span class="d-block text-white-50 small">Exams Attempted</span>
+                <span class="fs-4 fw-bold text-white">{{ total_attempts }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="p-3 rounded d-flex align-items-center gap-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+              <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning" style="font-size: 1.5rem;"><i class="bi bi-graph-up-arrow"></i></div>
+              <div>
+                <span class="d-block text-white-50 small">Average Score</span>
+                <span class="fs-4 fw-bold text-white">{{ average_score }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+          <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Account Overview</h5>
+
+          <div class="table-responsive">
+            <table class="table table-dark table-borderless align-middle mb-0 text-white-50" style="font-size: 0.92rem; background: transparent;">
+              <tbody>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td class="py-3 fw-bold text-white" style="width: 20%;">Center Name</td>
+                  <td class="py-3 text-white" style="width: 30%;">{{ admission.center.name|default:"—" }}</td>
+                  <td class="py-3 fw-bold text-white" style="width: 20%;">Duration</td>
+                  <td class="py-3 text-white" style="width: 30%;">{{ admission.course.duration|default:"—" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td class="py-3 fw-bold text-white">Course Name</td>
+                  <td class="py-3 text-white">{{ admission.course.name|default:"—" }}</td>
+                  <td class="py-3 fw-bold text-white">Email</td>
+                  <td class="py-3 text-white">{{ admission.email|default:"—" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td class="py-3 fw-bold text-white">Mobile</td>
+                  <td class="py-3 text-white">
+                    {{ admission.whatsapp_no }}
+                    <span class="badge bg-primary ms-2" style="font-size: 0.75rem;">Self</span>
+                  </td>
+                  <td class="py-3 fw-bold text-white">Mother Name</td>
+                  <td class="py-3 text-white">{{ admission.mother_name|default:"—" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td class="py-3 fw-bold text-white">Father Name</td>
+                  <td class="py-3 text-white">{{ admission.father_name|default:"—" }}</td>
+                  <td class="py-3 fw-bold text-white">City Name</td>
+                  <td class="py-3 text-white">{{ admission.district|default:"—" }}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <td class="py-3 fw-bold text-white">State Name</td>
+                  <td class="py-3 text-white">{{ admission.state|default:"—" }}</td>
+                  <td class="py-3 fw-bold text-white">Pincode</td>
+                  <td class="py-3 text-white">{{ admission.pincode|default:"—" }}</td>
+                </tr>
+                <tr>
+                  <td class="py-3 fw-bold text-white">Address</td>
+                  <td class="py-3 text-white" colspan="3">{{ admission.address|default:"—" }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fees Record Tab -->
+      <div class="tab-pane fade" id="fees" role="tabpanel" aria-labelledby="fees-tab">
+        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+          <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Fee Record</h5>
+          
+          <!-- DataTable controls -->
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-2">
+              <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+              <select name="show" class="form-select form-select-sm text-white" 
+                      style="width: 70px; background-color: var(--erp-bg-input, #161922); border: 1px solid var(--erp-border-input, #252a3c); border-radius: 4px;">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+            
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <div class="d-flex align-items-center gap-2">
+                <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+                <input type="text" class="form-control form-control-sm text-white" 
+                       style="width: 180px; background-color: var(--erp-bg-input, #161922); border: 1px solid var(--erp-border-input, #252a3c); border-radius: 4px;">
+              </div>
+              
+              <div class="d-flex gap-1 no-print">
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Copy</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">CSV</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Excel</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">PDF</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Print</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-examly table-bordered table-hover align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+              <thead>
+                <!-- Centered Student Name header -->
+                <tr>
+                  <th colspan="6" class="text-center text-white py-3 fs-5" style="background-color: rgba(255,255,255,0.02); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    {{ admission.student_name }}
+                  </th>
+                </tr>
+                <tr style="border-bottom: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.01);">
+                  <th class="ps-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 50px;">#</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Date</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Transaction ID</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Fee Amount</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Fee Type</th>
+                  <th class="pe-3 text-center text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 140px;">Receipt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for payment in fee_payments %}
+                <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                  <td class="ps-3 text-white-50 fw-bold" style="font-size: 0.9rem;">{{ forloop.counter }}</td>
+                  <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.payment_date|date:"d-m-Y" }}</td>
+                  <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.reference_number|default:"—" }}</td>
+                  <td class="fw-bold text-white" style="font-size: 0.9rem;">₹ {{ payment.amount|floatformat:0 }}</td>
+                  <td class="text-white-50 text-uppercase" style="font-size: 0.9rem;">{{ payment.payment_method }}</td>
+                  <td class="pe-3 text-center">
+                    <a href="{% url 'payment_receipt' payment.pk %}" class="btn btn-sm btn-outline-success px-3 py-1" target="_blank" 
+                       style="border: 1px dashed #198754; color: #198754; background: transparent; border-radius: 4px; font-weight: 500;">
+                      <i class="bi bi-file-earmark-pdf me-1 text-success"></i> Receipt
+                    </a>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="bi bi-wallet2 text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                    No fee payments recorded.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <!-- Footer Row for total -->
+              {% if fee_payments %}
+              <tfoot>
+                <tr style="border-top: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.01); font-weight: bold;">
+                  <td colspan="3" class="text-end text-white py-3">Total</td>
+                  <td colspan="3" class="text-start text-success py-3" style="font-size: 0.95rem;">
+                    ₹ {{ paid_amount|floatformat:0 }} ( ₹ {{ paid_amount|floatformat:0 }} Total )
+                  </td>
+                </tr>
+              </tfoot>
+              {% endif %}
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fee EMI Record Tab -->
+      <div class="tab-pane fade" id="emi" role="tabpanel" aria-labelledby="emi-tab">
+        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+          <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Fee EMI Record</h5>
+          
+          <div class="table-responsive">
+            <table class="table table-examly table-hover align-middle mb-0">
+              <thead>
+                <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                  <th class="ps-3 text-uppercase text-muted" style="font-size: 0.8rem;">Installment No</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Due Timeline</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Installment Amount</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Paid Amount</th>
+                  <th class="pe-3 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for emi in emis %}
+                <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                  <td class="ps-3 text-white-50" style="font-size: 0.9rem;">Installment #{{ emi.installment_no }}</td>
+                  <td class="text-white-50" style="font-size: 0.9rem;">{{ emi.due_date }}</td>
+                  <td class="text-white-50" style="font-size: 0.9rem;">₹{{ emi.amount }}</td>
+                  <td class="text-white-50" style="font-size: 0.9rem;">₹{{ emi.paid_amount }}</td>
+                  <td class="pe-3 text-end">
+                    {% if emi.status == 'Paid' %}
+                      <span class="badge bg-success">PAID</span>
+                    {% elif emi.status == 'Partially Paid' %}
+                      <span class="badge bg-warning text-dark">PARTIAL</span>
+                    {% else %}
+                      <span class="badge bg-danger">PENDING</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5" class="text-center py-5 text-muted">
+                    <i class="bi bi-calendar-event text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                    No EMI record available.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password Tab -->
+      <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+          <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Change Password</h5>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <form method="POST" action="">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="change_password">
+                {% for field in password_form %}
+                  <div class="mb-3">
+                    <label class="form-label text-white-50 small">{{ field.label }}</label>
+                    <input type="password" 
+                           name="{{ field.html_name }}" 
+                           class="form-control text-white" 
+                           style="background-color: var(--erp-bg-input, #1f2230); border: 1px solid rgba(255,255,255,0.1);" 
+                           required>
+                    {% if field.help_text %}
+                      <div class="form-text text-muted" style="font-size: 0.8rem;">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                    {% for error in field.errors %}
+                      <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary mt-2 px-4">Update Password</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
+        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+          <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Notification(s)</h5>
+          
+          <div class="d-flex flex-column gap-3">
+            {% for note in notifications %}
+            <div class="p-3 rounded d-flex gap-3 align-items-start" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+              <div class="fs-4 {{ note.icon }}"><i class="bi bi-bell"></i></div>
+              <div class="flex-grow-1">
+                <h6 class="fw-bold text-white mb-1">{{ note.title }}</h6>
+                <p class="text-white-50 small mb-0">{{ note.message }}</p>
+                <small class="text-muted d-block mt-2">{{ note.date }}</small>
+              </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-bell-slash text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+              No new notifications.
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .hover-nav-pill {
+    transition: all 0.2s ease-in-out;
+  }
+  .hover-nav-pill:hover {
+    background-color: rgba(255,255,255,0.05) !important;
+    color: #fff !important;
+  }
+  .hover-nav-pill.active {
+    background-color: var(--color-primary, #0d6efd) !important;
+    color: #fff !important;
+  }
+</style>

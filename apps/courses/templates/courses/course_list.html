@@ -1,66 +1,597 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
 
 {% block title %}Course Management | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
-    <div class="page-header">
-        <div>
-            <h2><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>Course Management</h2>
-            <p>Manage courses offered by your institute across different centers.</p>
+
+  <!-- Breadcrumbs & Header -->
+  <div class="d-flex align-items-center mb-3">
+    <div class="dash-breadcrumb">
+      <a href="{% url 'admin_dashboard' %}">Home</a> <span class="mx-1">-</span> <a href="{% url 'course_list' %}">Course</a> <span class="mx-1">-</span> <span class="current">Manage</span>
+    </div>
+  </div>
+
+  <div class="page-header mb-4">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: #f6f4ff;"><i class="bi bi-journal-bookmark text-primary me-2"></i>Manage</h2>
+    </div>
+  </div>
+
+
+
+  <!-- Stacked Layout -->
+  <div class="row g-4">
+
+    <!-- ══════════════════════════════════
+         TOP — Add Course Form Card
+    ══════════════════════════════════ -->
+    <div class="col-12">
+      <div class="qa-card">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Add Course</h6>
+          <i class="bi bi-chevron-up text-muted fs-5"></i>
         </div>
-        <div>
-            <a href="{% url 'course_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle-fill me-1"></i> Add New Course
-            </a>
-        </div>
+
+        <form method="POST" action="{% url 'course_list' %}" id="addCourseForm" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <!-- Select Category -->
+            <div class="col-md-3">
+              <label for="id_category" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Select Category <span class="text-danger">*</span>
+              </label>
+              {{ form.category }}
+              {% if form.category.errors %}
+                {% for error in form.category.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <!-- Enter Course Name -->
+            <div class="col-md-3">
+              <label for="id_name" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Enter Course Name <span class="text-danger">*</span>
+              </label>
+              {{ form.name }}
+              {% if form.name.errors %}
+                {% for error in form.name.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <!-- Course Duration -->
+            <div class="col-md-3">
+              <label for="id_duration_value" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Course duration <span class="text-danger">*</span>
+              </label>
+              <div class="input-group">
+                {{ form.duration_value }}
+                {{ form.duration_unit }}
+              </div>
+              {% if form.duration_value.errors %}
+                {% for error in form.duration_value.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+
+            <!-- Enter Course Fee -->
+            <div class="col-md-3">
+              <label for="id_fees" class="form-label fw-semibold" style="color: #f6f4ff; font-size: 0.9rem;">
+                Enter Course Fee
+              </label>
+              {{ form.fees }}
+              {% if form.fees.errors %}
+                {% for error in form.fees.errors %}
+                  <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-4" style="width: 150px;">
+            <button type="submit" class="btn btn-publish w-100 py-2 rounded-3">
+              <i class="bi bi-file-earmark-plus me-1"></i> Publish
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <div class="card border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-examly table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">ID</th>
-                            <th>Name</th>
-                            <th>Center</th>
-                            <th>Duration</th>
-                            <th>Fees</th>
-                            <th class="pe-4 text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for course in courses %}
-                        <tr>
-                            <td class="ps-4">{{ course.id }}</td>
-                            <td class="fw-semibold">{{ course.name }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ course.center.name }}</span></td>
-                            <td>{{ course.duration }}</td>
-                            <td class="fw-bold text-success">₹{{ course.fees }}</td>
-                            <td class="pe-4 text-end">
-                                <a class="btn btn-sm btn-outline-primary" href="{% url 'course_edit' course.id %}">
-                                    <i class="bi bi-pencil-square"></i> Edit
-                                </a>
-                                <a class="btn btn-sm btn-outline-danger" href="{% url 'course_delete' course.id %}">
-                                    <i class="bi bi-trash"></i> Delete
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="p-0">
-                                <div class="empty-state">
-                                    <i class="bi bi-journal-bookmark"></i>
-                                    <p class="mb-0">No courses found yet.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- ══════════════════════════════════
+         MIDDLE — Active Course Listing
+    ══════════════════════════════════ -->
+    <div class="col-12">
+      <div class="qa-card">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">List Course(s)</h6>
+          <i class="bi bi-chevron-up text-muted fs-5"></i>
         </div>
+        
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+            <select class="form-select form-select-sm dark-input" style="width: 70px;">
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select>
+          </div>
+          
+          <form method="GET" action="{% url 'course_list' %}" class="d-flex align-items-center gap-2">
+            <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+            <input type="text" name="q" id="courseSearch" class="form-control form-control-sm dark-input" value="{{ query }}" style="width: 200px;">
+          </form>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">COURSE NAME</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">COURSE CATEGORY</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">DURATION</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">FEE</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for course in page_obj %}
+              <tr>
+                <!-- Course Name (All Caps) -->
+                <td class="ps-4 fw-bold text-white text-uppercase" style="font-size: 0.9rem;">
+                  {{ course.name }}
+                </td>
+                
+                <!-- Category Badge (White bg, black text) -->
+                <td>
+                  <span class="badge bg-white text-dark rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                    {{ course.category.name|default:"Uncategorized" }}
+                  </span>
+                </td>
+
+                <!-- Duration Badge (Yellow bg, black text) -->
+                <td>
+                  <span class="badge rounded-pill px-3 py-2 fw-bold text-dark" style="background-color: #ffc107; font-size: 0.75rem;">
+                    {{ course.duration }}
+                  </span>
+                </td>
+
+                <!-- Fee (suffix Rs) -->
+                <td class="text-white fw-bold">
+                  {{ course.fees|floatformat:0 }} <span class="text-muted small fw-normal ms-1">Rs</span>
+                </td>
+
+                <!-- Actions (Edit Modal, Settings, Delete) -->
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <button class="btn btn-sm btn-edit-course rounded-pill px-3" data-url="{% url 'course_edit' course.id %}" style="background-color: #3b82f6 !important; border: none !important; color: #fff !important; font-size: 0.8rem; font-weight: 600;">
+                      <i class="bi bi-pencil-fill me-1"></i> Edit
+                    </button>
+                    
+                    <a href="#" class="btn btn-sm rounded-3 d-flex align-items-center justify-content-center" style="background-color: #6366f1 !important; border: none !important; color: #fff !important; width: 34px; height: 34px;" title="Settings">
+                      <i class="bi bi-gear-fill"></i>
+                    </a>
+                    
+                    <a href="{% url 'course_delete' course.id %}" class="btn btn-sm btn-delete-course rounded-pill px-3" style="background-color: #f03e65 !important; border: none !important; color: #fff !important; font-size: 0.8rem; font-weight: 600;" data-name="{{ course.name }}" title="Delete">
+                      <i class="bi bi-trash-fill me-1"></i> Delete
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="p-0">
+                  <div class="empty-state py-5 text-center">
+                    <i class="bi bi-journal-bookmark fs-1 text-muted d-block mb-2"></i>
+                    <p class="mb-0 text-muted">
+                      {% if query %}No courses found for "{{ query }}".{% else %}No courses yet. Add one above.{% endif %}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="text-muted small">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </div>
+          <nav aria-label="Courses pagination">
+            <ul class="pagination mb-0">
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+                   aria-label="Previous">
+                  <span aria-hidden="true">&lt;</span>
+                </a>
+              </li>
+              {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">&lt;</span>
+              </li>
+              {% endif %}
+              
+              {% for num in page_obj.paginator.page_range %}
+              <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link"
+                   href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+              </li>
+              {% endfor %}
+              
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+                   aria-label="Next">
+                  <span aria-hidden="true">&gt;</span>
+                </a>
+              </li>
+              {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">&gt;</span>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+
+      </div>
     </div>
+
+    <!-- ══════════════════════════════════
+         BOTTOM — Deleted Course Listing
+    ══════════════════════════════════ -->
+    <div class="col-12">
+      <div class="qa-card">
+        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">Deleted List Course(s)</h6>
+          <i class="bi bi-chevron-up text-muted fs-5"></i>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">COURSE NAME</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">COURSE CATEGORY</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">DURATION</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">FEE</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem; letter-spacing: 0.5px;">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for course in deleted_courses %}
+              <tr>
+                <!-- Course Name (All Caps) -->
+                <td class="ps-4 fw-bold text-white text-uppercase" style="font-size: 0.9rem;">
+                  {{ course.name }}
+                </td>
+                
+                <!-- Category Badge (White bg, black text) -->
+                <td>
+                  <span class="badge bg-white text-dark rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                    {{ course.category.name|default:"Uncategorized" }}
+                  </span>
+                </td>
+
+                <!-- Duration Badge (Blue bg, white text) -->
+                <td>
+                  <span class="badge bg-primary rounded-pill px-3 py-2 fw-bold text-white" style="font-size: 0.75rem;">
+                    {{ course.duration }}
+                  </span>
+                </td>
+
+                <!-- Fee (suffix Rs) -->
+                <td class="text-white fw-bold">
+                  {{ course.fees|floatformat:0 }} <span class="text-muted small fw-normal ms-1">Rs</span>
+                </td>
+
+                <!-- Actions (Move to list, Hard Delete) -->
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end align-items-center">
+                    <a href="{% url 'course_restore' course.id %}" class="btn btn-sm px-3" style="background-color: #1e3a8a !important; border: none !important; color: #60a5fa !important; font-size: 0.8rem; font-weight: 600; border-radius: 6px;">
+                      <i class="bi bi-arrow-left me-1"></i> Move to list
+                    </a>
+                    
+                    <a href="{% url 'course_permanent_delete' course.id %}" class="btn btn-sm btn-permanent-delete px-3" data-name="{{ course.name }}" style="background-color: #f03e65 !important; border: none !important; color: #fff !important; font-size: 0.8rem; font-weight: 600; border-radius: 6px;">
+                      <i class="bi bi-trash-fill me-1"></i> Delete
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="p-0">
+                  <div class="empty-state py-5 text-center">
+                    <i class="bi bi-trash fs-1 text-muted d-block mb-2"></i>
+                    <p class="mb-0 text-muted">No deleted courses found.</p>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
+
+<!-- ══════════════════════════════════
+     EDIT COURSE MODAL (Image 1 Style)
+══════════════════════════════════ -->
+<div class="modal fade" id="editCourseModal" tabindex="-1" aria-labelledby="editCourseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold" id="editCourseModalLabel" style="color: #f6f4ff;">Edit Course</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editCourseForm" method="POST" novalidate>
+        {% csrf_token %}
+        <div class="modal-body">
+          <!-- Error alert -->
+          <div class="alert alert-danger" id="editCourseNameError" style="display: none;"></div>
+
+          <!-- Course Name -->
+          <div class="mb-4">
+            <label for="editCourseName" class="form-label fw-semibold" style="color: #f6f4ff;">Enter Course Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="editCourseName" class="form-control dark-input" placeholder="Enter Course name">
+          </div>
+
+          <!-- Course Fee -->
+          <div class="mb-3">
+            <label for="editCourseFees" class="form-label fw-semibold" style="color: #f6f4ff;">Enter Course Fee</label>
+            <input type="number" step="0.01" name="fees" id="editCourseFees" class="form-control dark-input" placeholder="Enter Course Fee">
+          </div>
+        </div>
+        <div class="modal-footer border-secondary justify-content-end">
+          <button type="button" class="btn btn-close-modal px-4 py-2 me-2" data-bs-dismiss="modal">Close</button>
+          <button type="submit" id="editCourseSubmitBtn" class="btn btn-save-modal px-4 py-2">
+            <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  'use strict';
+
+  const editModal      = document.getElementById('editCourseModal');
+  const editForm       = document.getElementById('editCourseForm');
+  const nameInput      = document.getElementById('editCourseName');
+  const feesInput      = document.getElementById('editCourseFees');
+  const nameError      = document.getElementById('editCourseNameError');
+  const submitBtn      = document.getElementById('editCourseSubmitBtn');
+  const bsModal        = new bootstrap.Modal(editModal);
+
+  // Helper: get CSRF token from cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      document.cookie.split(';').forEach(function (cookie) {
+        const c = cookie.trim();
+        if (c.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(c.substring(name.length + 1));
+        }
+      });
+    }
+    return cookieValue;
+  }
+
+  function clearErrors() {
+    nameError.style.display = 'none';
+    nameError.textContent   = '';
+    nameInput.classList.remove('is-invalid');
+  }
+
+  function showError(msg) {
+    nameError.textContent   = msg;
+    nameError.style.display = 'block';
+    nameInput.classList.add('is-invalid');
+  }
+
+  // Click Edit button — load data via AJAX GET
+  document.querySelectorAll('.btn-edit-course').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const url = btn.dataset.url;
+      clearErrors();
+      nameInput.value = '';
+      feesInput.value = '';
+
+      fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        nameInput.value          = data.name;
+        feesInput.value          = data.fees;
+        editForm.action          = url;
+        bsModal.show();
+        nameInput.focus();
+      })
+      .catch(function () {
+        alert('Unable to load course data. Please try again.');
+      });
+    });
+  });
+
+  // Submit Edit form via AJAX POST
+  editForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    const name = nameInput.value.trim();
+    if (!name) {
+      showError('Course name is required.');
+      nameInput.focus();
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+    const formData = new FormData(editForm);
+
+    fetch(editForm.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.success) {
+        bsModal.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Course Updated Successfully..',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        }).then(function () {
+          window.location.reload();
+        });
+      } else {
+        const errs = data.errors || {};
+        const msg  = errs.name
+                       ? errs.name[0]
+                       : (errs.fees ? errs.fees[0] : 'Validation error. Please check your input.');
+        showError(msg);
+      }
+    })
+    .catch(function () {
+      showError('An error occurred. Please try again.');
+    })
+    .finally(function () {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-bookmark-fill me-1"></i> Save Changes';
+    });
+  });
+
+  // Reset modal errors on close
+  editModal.addEventListener('hidden.bs.modal', function () {
+    clearErrors();
+    nameInput.value = '';
+    feesInput.value = '';
+  });
+
+  // SweetAlert2 for successful Course publication
+  {% if messages %}
+    {% for msg in messages %}
+      {% if "created successfully" in msg.message or "Course created successfully" in msg.message %}
+        Swal.fire({
+          icon: 'success',
+          title: 'Course Added Successfully..',
+          confirmButtonText: 'Ok, got it!',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-primary px-4'
+          },
+          buttonsStyling: false
+        });
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  // Handle Delete Confirmation via SweetAlert2
+  document.querySelectorAll('.btn-delete-course').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = btn.getAttribute('href');
+      const name = btn.dataset.name;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure you want to delete ' + name + ' ?',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfToken = getCookie('csrftoken');
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+
+  // Handle Permanent Delete Confirmation via SweetAlert2
+  document.querySelectorAll('.btn-permanent-delete').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = btn.getAttribute('href');
+      const name = btn.dataset.name;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Are you sure you want to permanently delete ' + name + ' ?',
+        text: 'This action cannot be undone.',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfToken = getCookie('csrftoken');
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+}());
+</script>
 {% endblock %}

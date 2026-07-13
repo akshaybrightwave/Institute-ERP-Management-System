@@ -1,697 +1,314 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
 
-{% block title %}Branch Management Dashboard | Examly{% endblock %}
+{% block title %}Center Dashboard | Examly{% endblock %}
 
 {% block style %}
+{{ block.super }}
 <style>
-    /* Premium style overrides for Center dashboard */
-    .bg-soft-primary { background: var(--color-primary-light) !important; color: var(--color-primary) !important; }
-    .bg-soft-success { background: rgba(22, 163, 74, 0.12) !important; color: var(--color-success) !important; }
-    .bg-soft-info { background: rgba(13, 202, 240, 0.12) !important; color: #0dcaf0 !important; }
-    .bg-soft-warning { background: rgba(245, 158, 11, 0.12) !important; color: var(--color-warning) !important; }
-    .bg-soft-danger { background: rgba(220, 38, 38, 0.12) !important; color: var(--color-danger) !important; }
+  .center-hero {
+    background: linear-gradient(145deg, #111522 0%, #171a27 100%);
+    border: 1px solid var(--erp-border-color);
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  }
 
-    .progress {
-        height: 8px;
-        background-color: var(--color-border);
-        border-radius: var(--radius-pill);
-        overflow: hidden;
-    }
-    .progress-bar-primary { background-color: var(--color-primary); }
-    .progress-bar-success { background-color: var(--color-success); }
-    .progress-bar-warning { background-color: var(--color-warning); }
-    .progress-bar-danger { background-color: var(--color-danger); }
+  .center-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 12px;
+    object-fit: cover;
+    background: #1e2231;
+    border: 1px solid #2a3042;
+  }
 
-    .action-shortcut-btn {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        font-weight: 500;
+  .center-logo-fallback {
+    width: 72px;
+    height: 72px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #1e2231;
+    color: #8d8dff;
+    border: 1px solid #2a3042;
+    font-size: 2rem;
+  }
+
+  .center-meta {
+    color: var(--erp-text-muted);
+    font-size: 0.84rem;
+  }
+
+  .center-badge {
+    border-radius: 999px;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+
+  .center-badge-active {
+    background: rgba(25, 135, 84, 0.16);
+    color: #38d982;
+    border: 1px solid rgba(56, 217, 130, 0.3);
+  }
+
+  .center-badge-inactive {
+    background: rgba(240, 62, 101, 0.16);
+    color: #ff718f;
+    border: 1px solid rgba(255, 113, 143, 0.3);
+  }
+
+  .center-wallet {
+    background: #12141c;
+    border: 1px solid var(--erp-border-color);
+    border-radius: 10px;
+    padding: 0.7rem 0.85rem;
+    min-width: 180px;
+  }
+
+  .center-wallet-label {
+    color: var(--erp-text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .center-wallet-value {
+    color: var(--erp-text-primary);
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+
+  .center-icon-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    text-decoration: none;
+  }
+
+  .center-section-card {
+    background: var(--erp-bg-card);
+    border: 1px solid var(--erp-border-color);
+    border-radius: 14px;
+    padding: 1rem;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  }
+
+  @media (max-width: 768px) {
+    .center-hero {
+      padding: 1rem;
     }
-    .action-shortcut-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-sm);
+
+    .center-wallet {
+      width: 100%;
     }
+  }
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="container py-2">
+{% block erp_content %}
+<div class="mb-4">
+  <div class="dash-breadcrumb mb-1">
+    <a href="{% url 'home' %}">Home</a>
+    <span style="margin:0 6px;">/</span>
+    <span class="current">Center Dashboard</span>
+  </div>
+  <h1 class="dash-title">Center Dashboard</h1>
+</div>
 
-    <!-- Page Header -->
-    <div class="page-header mb-4">
-        <div>
-            <h2><i class="bi bi-speedometer text-primary me-2"></i>Branch Management</h2>
-            <p class="text-muted mb-0">Welcome back, {{ user.username }}. Monitor and manage your center's operations.</p>
+<div class="center-hero mb-4">
+  {% if center %}
+  <div class="d-flex flex-column flex-xl-row justify-content-between gap-3">
+    <div class="d-flex align-items-center gap-3">
+      {% if center.logo_doc %}
+      <img src="{{ center.logo_doc.url }}" alt="{{ center.name }}" class="center-logo">
+      {% else %}
+      <div class="center-logo-fallback"><i class="bi bi-building"></i></div>
+      {% endif %}
+      <div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <h2 class="h4 fw-bold mb-0">{{ center.name }}</h2>
+          <span class="center-badge {% if center_status == 'Active' %}center-badge-active{% else %}center-badge-inactive{% endif %}">
+            {{ center_status }}
+          </span>
         </div>
-        <div class="d-flex flex-column align-items-end gap-1">
-            <span class="role-badge"><i class="bi bi-award-fill"></i> Branch Manager</span>
-            <span class="badge bg-light border text-dark py-2 px-3 mt-1">
-                <i class="bi bi-geo-alt-fill text-primary me-1"></i>
-                {% if user.center %}
-                    {{ user.center.name }}
-                {% else %}
-                    No Center Assigned
-                {% endif %}
-            </span>
+        <div class="center-meta d-flex flex-wrap gap-3">
+          <span><i class="bi bi-upc-scan me-1"></i>{{ center.code|default:"-" }}</span>
+          <span><i class="bi bi-calendar-check me-1"></i>Valid Upto: {{ center.valid_upto|date:"d M Y"|default:"-" }}</span>
+          {% if center_certificate %}
+          <span><i class="bi bi-award me-1"></i>{{ center_certificate.certificate_number }}</span>
+          {% endif %}
         </div>
+      </div>
     </div>
 
-    <!-- Feature 1: Overview Metrics Row -->
-    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6">
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-primary"><i class="bi bi-mortarboard-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_students }}</div>
-                    <div class="stat-label">Students</div>
-                </div>
-            </div>
+    <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+      <div class="center-wallet">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+          <div>
+            <div class="center-wallet-label">Wallet Balance</div>
+            <div class="center-wallet-value">₹ {{ wallet_balance|floatformat:2 }}</div>
+          </div>
+          <a href="{% url 'center_profile' center.pk %}#fees" class="btn btn-primary center-icon-btn" title="Load Wallet">
+            <i class="bi bi-plus-lg"></i>
+          </a>
         </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-info"><i class="bi bi-person-workspace"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_teachers }}</div>
-                    <div class="stat-label">Teachers</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-primary"><i class="bi bi-journal-bookmark-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_courses }}</div>
-                    <div class="stat-label">Courses</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-success"><i class="bi bi-calendar-event"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_batches }}</div>
-                    <div class="stat-label">Batches</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-danger"><i class="bi bi-journal-text"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_exams }}</div>
-                    <div class="stat-label">Exams</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card">
-                <div class="stat-icon bg-soft-warning"><i class="bi bi-award-fill"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_certificates }}</div>
-                    <div class="stat-label">Certificates</div>
-                </div>
-            </div>
-        </div>
+      </div>
+      {% if center_certificate %}
+      <a href="{% url 'center_certificate_detail' center_certificate.pk %}" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" target="_blank">
+        <i class="bi bi-award"></i> View Certificate
+      </a>
+      {% endif %}
+      <a href="{% url 'center_profile' center.pk %}" class="btn btn-outline-secondary center-icon-btn" title="Profile">
+        <i class="bi bi-person-circle"></i>
+      </a>
+      <a href="{% url 'logout' %}" class="btn btn-outline-secondary center-icon-btn" title="Logout">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
     </div>
-
-    <!-- Summary Panels (Features 2, 3, 4, 5) -->
-    <div class="row g-3 mb-4">
-        <!-- Feature 2: Attendance Summary Card -->
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-clock-history text-primary me-2"></i>Attendance Summary</h6>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Present Records</span>
-                        <span class="fw-semibold text-success">{{ attendance_present }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Absent Records</span>
-                        <span class="fw-semibold text-danger">{{ attendance_absent }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Total Logs</span>
-                        <span class="fw-semibold text-dark">{{ attendance_total }}</span>
-                    </div>
-                    <hr class="my-2">
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span class="text-muted small fw-semibold">Attendance Rate</span>
-                        <span class="badge-soft-success">{{ attendance_pct }}%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Feature 3: Fees Summary Card -->
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-cash-stack text-success me-2"></i>Fees Summary</h6>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Total Collected</span>
-                        <span class="fw-semibold text-success">₹{{ total_fees_collected }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Total Outstanding</span>
-                        <span class="fw-semibold text-danger">₹{{ total_pending_fees }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Paid / Pending Students</span>
-                        <span class="fw-semibold text-dark">{{ paid_students_count }} / {{ pending_students_count }}</span>
-                    </div>
-                    <hr class="my-2">
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span class="text-muted small fw-semibold">Collection Rate</span>
-                        <span class="badge-soft-primary">{{ performance_fee_collection_rate }}%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Feature 4: Certificate Summary Card -->
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-award-fill text-warning me-2"></i>Certificate Summary</h6>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Issued Logs</span>
-                        <span class="fw-semibold text-success">{{ certs_issued_count }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Revoked Logs</span>
-                        <span class="fw-semibold text-danger">{{ certs_revoked_count }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Eligible Students</span>
-                        <span class="fw-semibold text-primary">{{ eligible_students_count }}</span>
-                    </div>
-                    <hr class="my-2">
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span class="text-muted small fw-semibold">Eligibility Rate</span>
-                        <span class="badge-soft-warning">{{ performance_cert_eligibility_rate }}%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Feature 5: Exam Summary Card -->
-        <div class="col-lg-3 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-journal-text text-danger me-2"></i>Exam Summary</h6>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Active / Published</span>
-                        <span class="fw-semibold text-success">{{ active_exams_count }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Completed Exams</span>
-                        <span class="fw-semibold text-dark">{{ completed_exams_count }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Total Attempts</span>
-                        <span class="fw-semibold text-primary">{{ total_attempts }}</span>
-                    </div>
-                    <hr class="my-2">
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span class="text-muted small fw-semibold">Participation Rate</span>
-                        <span class="badge-soft-danger">{{ performance_exam_participation_rate }}%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+  </div>
+  {% else %}
+  <div class="d-flex align-items-center gap-3">
+    <div class="center-logo-fallback"><i class="bi bi-building-exclamation"></i></div>
+    <div>
+      <h2 class="h4 fw-bold mb-1">No Center Assigned</h2>
+      <div class="center-meta">Your login is not linked with a center record.</div>
     </div>
+  </div>
+  {% endif %}
+</div>
 
-    <!-- Center Attendance Monitoring Section (Phase 10.10) -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-4">
-            <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Center Attendance Monitoring</h4>
-            
-            <!-- Attendance metrics row -->
-            <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Total Students</div>
-                            <div class="fs-3 fw-bold text-dark mt-1">{{ total_students }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Present Today</div>
-                            <div class="fs-3 fw-bold text-success mt-1">{{ att_present_today }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Absent Today</div>
-                            <div class="fs-3 fw-bold text-danger mt-1">{{ att_absent_today }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Monthly Attendance %</div>
-                            <div class="fs-3 fw-bold text-info mt-1">{{ att_monthly_pct }}%</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Students Below 75%</div>
-                            <div class="fs-3 fw-bold text-warning mt-1">{{ att_students_below_75 }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+  {% for card in dashboard_cards %}
+  <div class="col">
+    <div class="erp-card {{ card.class }}">
+      <div class="erp-card-body">
+        <div class="erp-card-title">{{ card.label }}</div>
+        <div class="erp-card-number{% if card.small %} sm{% endif %}">
+          {% if card.is_currency %}&#8377;{% endif %}{{ card.value }}
         </div>
+        <div class="erp-card-bg-icon"><i class="bi {{ card.icon }}"></i></div>
+      </div>
+      <a href="{{ card.url }}" class="erp-card-footer">
+        <i class="bi bi-arrow-right-circle"></i> {{ card.action }}
+      </a>
     </div>
+  </div>
+  {% empty %}
+  <div class="col-12">
+    <div class="center-section-card text-center text-muted py-4">No dashboard data available.</div>
+  </div>
+  {% endfor %}
+</div>
 
-    <!-- Center Exam Monitoring Section (Phase 10.9) -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-4">
-            <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-shield-check text-primary me-2"></i>Center Exam Monitoring</h4>
-            
-            <!-- Exam metrics row -->
-            <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-6">
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Total Exams</div>
-                            <div class="fs-3 fw-bold text-dark mt-1">{{ mon_total_exams }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Published Exams</div>
-                            <div class="fs-3 fw-bold text-success mt-1">{{ mon_published_exams }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Active Exams</div>
-                            <div class="fs-3 fw-bold text-primary mt-1">{{ mon_active_exams }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Total Attempts</div>
-                            <div class="fs-3 fw-bold text-info mt-1">{{ mon_total_attempts }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Students Appeared</div>
-                            <div class="fs-3 fw-bold text-warning mt-1">{{ mon_students_appeared }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col">
-                    <div class="card border bg-light h-100">
-                        <div class="card-body p-3 text-center">
-                            <div class="text-muted small fw-semibold">Average Score</div>
-                            <div class="fs-3 fw-bold text-danger mt-1">{{ mon_avg_score }}%</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pass / Fail and Top/Low Performers row -->
-            <div class="row g-4 mb-4">
-                <!-- Pass/Fail Summary -->
-                <div class="col-lg-4">
-                    <div class="card border h-100">
-                        <div class="card-body p-4">
-                            <h6 class="fw-bold mb-4"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Pass/Fail Summary</h6>
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small fw-semibold text-muted">Pass Rate</span>
-                                    <span class="small fw-bold text-success">{{ mon_pass_pct }}%</span>
-                                </div>
-                                <div class="progress">
-                                    <div class="progress-bar progress-bar-success" role="progressbar" style="width: {{ mon_pass_pct }}%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span class="small fw-semibold text-muted">Fail Rate</span>
-                                    <span class="small fw-bold text-danger">{{ mon_fail_pct }}%</span>
-                                </div>
-                                <div class="progress">
-                                    <div class="progress-bar progress-bar-danger" role="progressbar" style="width: {{ mon_fail_pct }}%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Top Performers -->
-                <div class="col-lg-4">
-                    <div class="card border h-100">
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold mb-3 ps-2"><i class="bi bi-trophy text-success me-2"></i>Top Performers</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Student</th>
-                                            <th>Batch</th>
-                                            <th class="text-end">Avg %</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for s in mon_top_performers %}
-                                        <tr>
-                                            <td class="fw-semibold small">{{ s.name }}</td>
-                                            <td class="small">{{ s.batch }}</td>
-                                            <td class="text-end fw-bold text-success small">{{ s.avg_pct }}%</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="3" class="text-center py-3 text-muted small">No performers yet.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Low Performers -->
-                <div class="col-lg-4">
-                    <div class="card border h-100">
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold mb-3 ps-2"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Low Performers</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm table-hover align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Student</th>
-                                            <th>Batch</th>
-                                            <th class="text-end">Avg %</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for s in mon_low_performers %}
-                                        <tr>
-                                            <td class="fw-semibold small">{{ s.name }}</td>
-                                            <td class="small">{{ s.batch }}</td>
-                                            <td class="text-end fw-bold text-danger small">{{ s.avg_pct }}%</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="3" class="text-center py-3 text-muted small">No performers yet.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Batch Performance Table -->
-            <div class="card border">
-                <div class="card-body p-3">
-                    <h6 class="fw-bold mb-3 ps-2"><i class="bi bi-calendar-event text-primary me-2"></i>Batch Performance Analytics</h6>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Batch Name</th>
-                                    <th>Students</th>
-                                    <th>Exams</th>
-                                    <th>Attempts</th>
-                                    <th>Average Score</th>
-                                    <th>Pass %</th>
-                                    <th>Fail %</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for b in mon_batch_perf %}
-                                <tr>
-                                    <td class="fw-semibold">{{ b.name }}</td>
-                                    <td>{{ b.students_count }}</td>
-                                    <td>{{ b.exam_count }}</td>
-                                    <td>{{ b.attempt_count }}</td>
-                                    <td><span class="badge bg-light text-dark border">{{ b.avg_score }}%</span></td>
-                                    <td><span class="badge-soft-success">{{ b.pass_pct }}%</span></td>
-                                    <td><span class="badge-soft-danger">{{ b.fail_pct }}%</span></td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="7" class="text-center py-3 text-muted">No batch performance records.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+<div class="row g-3 mb-4">
+  <div class="col-lg-4">
+    <div class="center-section-card h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-check2-all text-primary me-2"></i>Attendance</h5>
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">Present Records</span>
+        <strong>{{ attendance_present }}</strong>
+      </div>
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">Absent Records</span>
+        <strong>{{ attendance_absent }}</strong>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span class="text-muted">Attendance Rate</span>
+        <strong>{{ attendance_pct }}%</strong>
+      </div>
     </div>
-
-    <!-- Main Grid Section -->
-    <div class="row g-4 mb-4">
-        <!-- Feature 6: Recent Students -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i>Recent Students</h5>
-                    <div class="table-responsive">
-                        <table class="table table-examly table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3">Student Name</th>
-                                    <th>Batch</th>
-                                    <th>Admission Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in recent_students %}
-                                <tr>
-                                    <td class="ps-3 fw-semibold">{{ s.full_name }}</td>
-                                    <td>
-                                        {% if s.batch %}
-                                            <span class="badge bg-light text-dark border">{{ s.batch.name }}</span>
-                                        {% else %}
-                                            <span class="text-muted small italic">Not Assigned</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ s.user.date_joined|date:"Y-m-d" }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="3" class="text-center py-4 text-muted">No students registered yet.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Feature 7: Recent Batches -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-calendar-event text-primary me-2"></i>Recent Batches</h5>
-                    <div class="table-responsive">
-                        <table class="table table-examly table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3">Batch Name</th>
-                                    <th>Course</th>
-                                    <th>Teacher</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for b in recent_batches %}
-                                <tr>
-                                    <td class="ps-3 fw-semibold">{{ b.name }}</td>
-                                    <td><span class="badge-soft-primary">{{ b.course.name }}</span></td>
-                                    <td>
-                                        {% if b.teacher %}
-                                            {{ b.teacher.full_name }}
-                                        {% else %}
-                                            <span class="text-muted small italic">Not Assigned</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="3" class="text-center py-4 text-muted">No batches created yet.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="center-section-card h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-journal-text text-primary me-2"></i>Exam Activity</h5>
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">Assigned Exams</span>
+        <strong>{{ total_exams }}</strong>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span class="text-muted">Student Attempts</span>
+        <strong>{{ total_attempts }}</strong>
+      </div>
     </div>
-
-    <div class="row g-4 mb-4">
-        <!-- Feature 8: Upcoming Exams -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-journal-text text-primary me-2"></i>Upcoming Exams</h5>
-                    <div class="table-responsive">
-                        <table class="table table-examly table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3">Exam Name</th>
-                                    <th>Batch(es)</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for exam in upcoming_exams %}
-                                <tr>
-                                    <td class="ps-3 fw-semibold">{{ exam.title }}</td>
-                                    <td>
-                                        {% for b in exam.batches.all %}
-                                            <span class="badge bg-light text-dark border small">{{ b.name }}</span>
-                                        {% empty %}
-                                            <span class="text-muted small italic">None</span>
-                                        {% endfor %}
-                                    </td>
-                                    <td>{{ exam.date }}</td>
-                                    <td>
-                                        {% if exam.is_published %}
-                                            <span class="badge-soft-success py-1 px-2.5 small">Published</span>
-                                        {% else %}
-                                            <span class="badge-soft-warning py-1 px-2.5 small">Draft</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">No upcoming exams assigned.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Feature 9 & 10: Performance & Quick Actions -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                    <!-- Feature 10: Performance Snapshot -->
-                    <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart-line text-primary me-2"></i>Performance Snapshot</h5>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small fw-semibold text-muted">Attendance Rate</span>
-                            <span class="small fw-bold text-success">{{ performance_attendance_rate }}%</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-success" role="progressbar" style="width: {{ performance_attendance_rate }}%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small fw-semibold text-muted">Fee Collection Rate</span>
-                            <span class="small fw-bold text-primary">{{ performance_fee_collection_rate }}%</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-primary" role="progressbar" style="width: {{ performance_fee_collection_rate }}%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small fw-semibold text-muted">Exam Participation Rate</span>
-                            <span class="small fw-bold text-danger">{{ performance_exam_participation_rate }}%</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-danger" role="progressbar" style="width: {{ performance_exam_participation_rate }}%"></div>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="small fw-semibold text-muted">Certificate Eligibility Rate</span>
-                            <span class="small fw-bold text-warning">{{ performance_cert_eligibility_rate }}%</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar progress-bar-warning" role="progressbar" style="width: {{ performance_cert_eligibility_rate }}%"></div>
-                        </div>
-                    </div>
-
-                    <!-- Feature 9: Quick Actions -->
-                    <hr class="my-4">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-lightning-charge text-primary me-2"></i>Quick Actions</h5>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <a href="{% url 'user_add' %}?role=student" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-person-plus me-1 text-primary"></i> Add Student
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'user_add' %}?role=teacher" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-person-badge me-1 text-primary"></i> Add Teacher
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'batch_create' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-calendar-plus me-1 text-success"></i> Add Batch
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'attendance_list' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-clock-history me-1 text-info"></i> Attendance Management
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'attendance_report' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-file-earmark-bar-graph me-1 text-warning"></i> Attendance Reports
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'fees_list' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-cash me-1 text-warning"></i> Manage Fees
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'course_list' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-journal-bookmark me-1 text-danger"></i> Manage Courses
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'exam_list' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-file-earmark-text me-1 text-primary"></i> View Exams
-                            </a>
-                        </div>
-                        <div class="col-6">
-                            <a href="{% url 'center_attempts_list' %}" class="btn btn-outline-primary w-100 py-2.5 action-shortcut-btn text-start">
-                                <i class="bi bi-file-earmark-check me-1 text-success"></i> Monitor Attempts
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="center-section-card h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-briefcase text-primary me-2"></i>Center Summary</h5>
+      <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">Assigned Courses</span>
+        <strong>{{ total_assigned_courses }}</strong>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span class="text-muted">Student Certificates</span>
+        <strong>{{ total_certificates }}</strong>
+      </div>
     </div>
+  </div>
+</div>
 
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="center-section-card h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i>Recent Students</h5>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Batch</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in recent_students %}
+            <tr>
+              <td>{{ student.full_name }}</td>
+              <td>{{ student.batch.name|default:"-" }}</td>
+              <td>{{ student.user.date_joined|date:"d M Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center text-muted py-3">No students found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="center-section-card h-100">
+      <h5 class="fw-bold mb-3"><i class="bi bi-calendar-event text-primary me-2"></i>Recent Batches</h5>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Batch</th>
+              <th>Course</th>
+              <th>Teacher</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for batch in recent_batches %}
+            <tr>
+              <td>{{ batch.name }}</td>
+              <td>{{ batch.course.name|default:"-" }}</td>
+              <td>{{ batch.teacher.full_name|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center text-muted py-3">No batches found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

@@ -26,10 +26,10 @@ class AttendanceForm(forms.ModelForm):
         if self.user and self.user.role == 'center':
             center = self.user.center
             self.fields['student'].queryset = StudentProfile.objects.filter(
-                batch__course__center=center
+                batch__center=center
             ).order_by('full_name')
             self.fields['batch'].queryset = Batch.objects.filter(
-                course__center=center
+                course__assignments__center=center, course__assignments__is_active=True
             ).order_by('name')
         else:
             self.fields['student'].queryset = StudentProfile.objects.all().order_by('full_name')
@@ -50,9 +50,9 @@ class AttendanceForm(forms.ModelForm):
             # Check center isolation
             if self.user and self.user.role == 'center':
                 center = self.user.center
-                if not batch.course or batch.course.center != center:
+                if not batch.course or batch.center != center:
                     raise forms.ValidationError("Batch does not belong to your assigned center.")
-                if not student.batch or student.batch.course.center != center:
+                if not student.batch or student.batch.center != center:
                     raise forms.ValidationError("Student does not belong to your assigned center.")
 
         if student and date:

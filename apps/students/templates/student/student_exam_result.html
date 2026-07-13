@@ -1,71 +1,158 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
 
 {% block title %}Exam Result | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
 
-            <div class="hero-section p-4 p-md-5 mb-4 text-center text-white">
-                <span class="hero-badge mb-2"><i class="bi bi-file-earmark-text"></i> Exam Result</span>
-                <h2 class="fw-bold mb-1 text-white">{{ attempt.exam.title }}</h2>
-                <p class="mb-3" style="opacity:0.9;">{{ attempt.student.username }}</p>
-                <div class="display-4 fw-bold text-white">{{ marks_earned }} / {{ total_marks }}</div>
-                <p class="mb-2" style="opacity:0.9;">{{ rounded_score }}%</p>
-                {% if passed %}
-                    <span class="badge bg-light text-success fw-bold px-3 py-2"><i class="bi bi-check-lg me-1"></i> Passed</span>
-                {% else %}
-                    <span class="badge bg-light text-danger fw-bold px-3 py-2"><i class="bi bi-x-lg me-1"></i> Failed</span>
-                {% endif %}
-            </div>
-
-            <div class="card border-0 mb-4">
-                <div class="card-body">
-                    <p class="text-muted mb-0"><i class="bi bi-calendar-check me-1"></i> Submitted at: {{ attempt.submitted_at }}</p>
-                </div>
-            </div>
-
-            <h5 class="fw-bold mb-3"><i class="bi bi-question-circle text-primary me-2"></i>Answer Review</h5>
-
-            {% for ans in answers %}
-            <div class="card border-0 mb-3">
-                <div class="card-body">
-                    <p class="fw-bold mb-1">Q{{ forloop.counter }}. {{ ans.question.question_text }}</p>
-                    <p class="text-muted small mb-2">Marks: {{ ans.question.marks }}</p>
-
-                    <p class="mb-1">
-                        <strong>Your answer:</strong>
-                        {% if ans.selected_option %}
-                            {% if ans.selected_option.is_correct %}
-                                <span class="badge-soft-success">{{ ans.selected_option.text }}</span>
-                            {% else %}
-                                <span class="badge-soft-danger">{{ ans.selected_option.text }}</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="badge-soft-danger">No answer provided</span>
-                        {% endif %}
-                    </p>
-
-                    {% if not ans.selected_option.is_correct %}
-                    <p class="mb-0">
-                        <strong>Correct answer:</strong>
-                        {% for opt in ans.question.options.all %}
-                            {% if opt.is_correct %}
-                                <span class="badge-soft-success">{{ opt.text }}</span>
-                            {% endif %}
-                        {% endfor %}
-                    </p>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-
-            <a href="{% url 'student_exam_list' %}" class="btn btn-primary w-100 fw-bold py-2 mt-2">
-                <i class="bi bi-arrow-left-circle me-1"></i> Back to Exams
-            </a>
-
-        </div>
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold text-white mb-1">
+        <i class="bi bi-award-fill text-primary me-2"></i>Exam Result
+      </h2>
+      <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+        <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+          <li class="breadcrumb-item">
+            <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{% url 'student_exam_list' %}" class="text-decoration-none text-muted">Available Exams</a>
+          </li>
+          <li class="breadcrumb-item active text-white-50" aria-current="page">Exam Result</li>
+        </ol>
+      </nav>
     </div>
+    <div>
+      <a href="{% url 'student_exam_list' %}" class="btn btn-outline-secondary px-3 py-2 rounded">
+        <i class="bi bi-arrow-left-circle me-1"></i> Back to Exams
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Performance Summary Card & Student Details -->
+    <div class="col-lg-4 col-12">
+      <!-- Main Status Card -->
+      <div class="card border-0 shadow-sm rounded-3 text-center mb-4" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important; padding: 28px;">
+        <span class="hero-badge mb-2 d-inline-block px-3 py-1 rounded" style="background-color: rgba(255,255,255,0.03); color: var(--color-primary, #0d6efd); font-size: 0.8rem; font-weight: 500;"><i class="bi bi-award me-1"></i> Performance</span>
+        <h4 class="fw-bold text-white mt-3 mb-1">{{ attempt.exam.title }}</h4>
+        <p class="text-muted small mb-4">Submitted on {{ attempt.submitted_at|date:"d M Y, h:i A" }}</p>
+
+        <div class="my-4">
+          <div class="display-4 fw-bold {% if passed %}text-success{% else %}text-danger{% endif %}">{{ marks_earned }} / {{ total_marks }}</div>
+          <span class="d-block text-white-50 mt-1" style="font-size: 1.1rem; font-weight: 600;">Score: {{ rounded_score }}%</span>
+        </div>
+
+        <div class="progress mb-4" style="height: 8px; background-color: rgba(255,255,255,0.05); border-radius: 4px;">
+          <div class="progress-bar {% if passed %}bg-success{% else %}bg-danger{% endif %}" role="progressbar" style="{{ progress_width }}" aria-valuenow="{{ rounded_score }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+
+        {% if passed %}
+          <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-4 py-2.5 fs-6" style="border-radius: 8px; display: block;"><i class="bi bi-check-circle-fill me-1"></i> PASSED</span>
+        {% else %}
+          <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-4 py-2.5 fs-6" style="border-radius: 8px; display: block;"><i class="bi bi-x-circle-fill me-1"></i> FAILED</span>
+        {% endif %}
+      </div>
+
+      <!-- General Details Card -->
+      <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important; padding: 24px;">
+        <h5 class="fw-bold mb-3 text-white" style="font-size: 1.05rem;">Student Info</h5>
+        <div class="d-flex flex-column gap-3 text-white-50" style="font-size: 0.9rem;">
+          <div class="d-flex justify-content-between border-bottom border-secondary border-opacity-25 pb-2">
+            <span>Student Name</span>
+            <span class="text-white fw-semibold">{{ admission.student_name|default:attempt.student.username }}</span>
+          </div>
+          <div class="d-flex justify-content-between border-bottom border-secondary border-opacity-25 pb-2">
+            <span>Course</span>
+            <span class="text-white fw-semibold">{{ admission.course.name|default:"—" }}</span>
+          </div>
+          <div class="d-flex justify-content-between pb-1">
+            <span>Batch</span>
+            <span class="text-white fw-semibold">{{ batch.name|default:"—" }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Performance Stats & Answer Sheet Review -->
+    <div class="col-lg-8 col-12">
+      <!-- Metrics Counters Grid -->
+      <div class="row g-3 mb-4 row-cols-2 row-cols-sm-4">
+        <div class="col">
+          <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+            <span class="d-block text-white-50 small mb-1" style="font-size: 0.8rem;">Total Questions</span>
+            <span class="fs-4 fw-bold text-white">{{ total_questions }}</span>
+          </div>
+        </div>
+        <div class="col">
+          <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+            <span class="d-block text-white-50 small mb-1" style="font-size: 0.8rem;">Attempted</span>
+            <span class="fs-4 fw-bold text-info">{{ attempted_questions }}</span>
+          </div>
+        </div>
+        <div class="col">
+          <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+            <span class="d-block text-white-50 small mb-1" style="font-size: 0.8rem;">Correct</span>
+            <span class="fs-4 fw-bold text-success">{{ correct_answers }}</span>
+          </div>
+        </div>
+        <div class="col">
+          <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+            <span class="d-block text-white-50 small mb-1" style="font-size: 0.8rem;">Incorrect</span>
+            <span class="fs-4 fw-bold text-danger">{{ wrong_answers }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question List -->
+      <h5 class="fw-bold mb-3 text-white"><i class="bi bi-question-circle text-primary me-2"></i>Answer Review</h5>
+      
+      {% for ans in answers %}
+      <div class="card border-0 shadow-sm rounded-3 mb-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important; padding: 20px;">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+          <h6 class="fw-bold text-white mb-0" style="font-size: 0.95rem; line-height: 1.5; font-weight: 600;">
+            Q{{ forloop.counter }}. {{ ans.question.question_text }}
+          </h6>
+          <span class="badge bg-secondary" style="font-size: 0.75rem; white-space: nowrap;">Marks: {{ ans.question.marks }}</span>
+        </div>
+
+        <div class="mt-3 p-3 rounded" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+          <div class="mb-2">
+            <span class="text-white-50">Your Answer:</span>
+            {% if ans.selected_option %}
+              {% if ans.selected_option.is_correct %}
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 ms-2 px-3 py-1"><i class="bi bi-check-circle-fill me-1"></i> {{ ans.selected_option.text }}</span>
+              {% else %}
+                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 ms-2 px-3 py-1"><i class="bi bi-x-circle-fill me-1"></i> {{ ans.selected_option.text }}</span>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 ms-2 px-3 py-1"><i class="bi bi-exclamation-circle-fill me-1"></i> No answer provided</span>
+            {% endif %}
+          </div>
+
+          {% if not ans.selected_option.is_correct %}
+          <div class="mt-2 pt-2 border-top border-secondary border-opacity-25">
+            <span class="text-white-50">Correct Answer:</span>
+            {% for opt in ans.question.options.all %}
+              {% if opt.is_correct %}
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 ms-2 px-3 py-1"><i class="bi bi-check-circle-fill me-1"></i> {{ opt.text }}</span>
+              {% endif %}
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+      
+      <div class="mt-4">
+        <a href="{% url 'student_exam_list' %}" class="btn btn-primary w-100 fw-bold py-2.5">
+          <i class="bi bi-arrow-left-circle me-1"></i> Back to Exams
+        </a>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

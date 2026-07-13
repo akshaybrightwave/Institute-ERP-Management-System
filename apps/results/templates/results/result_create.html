@@ -1,0 +1,612 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Create Result | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-file-earmark-plus text-primary me-2"></i>Create Result
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">
+          Create-result
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <!-- SECTION 1: Create Result Form -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Create Result</h5>
+
+        <form method="POST" action="{% url 'result_create' %}" id="resultForm" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {% for error in form.non_field_errors %}
+                <p class="mb-0">{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <!-- Center Select -->
+            <div class="col-md-4 col-sm-6 col-12">
+              <label for="id_center" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Center <span class="text-danger">*</span>
+              </label>
+              {{ form.center }}
+              {% if form.center.errors %}
+                <div class="text-danger small mt-1">{{ form.center.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Student Select (Select2) -->
+            <div class="col-md-4 col-sm-6 col-12">
+              <label for="id_student" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Select Student <span class="text-danger">*</span>
+              </label>
+              <select name="student" id="id_student" class="form-select" required>
+                {% if selected_student_obj %}
+                  <option value="{{ selected_student_obj.id }}" selected>{{ selected_student_obj.student_name }} ({{ selected_student_obj.enrollment_no }})</option>
+                {% else %}
+                  <option value="">Select Student</option>
+                {% endif %}
+              </select>
+              {% if form.student.errors %}
+                <div class="text-danger small mt-1">{{ form.student.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Course Duration (Dynamic Dropdown) -->
+            <div class="col-md-4 col-sm-6 col-12">
+              <label for="id_course_duration" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Select Course Duration <span class="text-danger">*</span>
+              </label>
+              {{ form.course_duration }}
+              {% if form.course_duration.errors %}
+                <div class="text-danger small mt-1">{{ form.course_duration.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Issue Date -->
+            <div class="col-md-4 col-sm-6 col-12">
+              <label for="id_issue_date" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Issue Date <span class="text-danger">*</span>
+              </label>
+              {{ form.issue_date }}
+              {% if form.issue_date.errors %}
+                <div class="text-danger small mt-1">{{ form.issue_date.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Subject Marks Entry (Loaded Dynamically) -->
+          <div id="subjects-table-container" class="mt-4" style="display: none;">
+            <h6 class="fw-bold text-white mb-3">Enter Subject Marks</h6>
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover align-middle text-center mb-0" style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                <thead class="table-dark" style="border-bottom: 2px solid rgba(255,255,255,0.25);">
+                  <tr>
+                    <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Subject Code</th>
+                    <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Subject Name</th>
+                    <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Subject Type</th>
+                    <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Min Marks</th>
+                    <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px;">Max Marks</th>
+                    <th class="text-uppercase text-muted" style="font-size: 0.85rem; padding: 12px 16px; width: 180px;">Obtain</th>
+                  </tr>
+                </thead>
+                <tbody id="subjects-tbody">
+                  <!-- Dynamically populated via AJAX -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="mt-4 text-start">
+            <button type="submit" class="btn btn-publish px-4 py-2 rounded-3">
+              <i class="bi bi-file-earmark-plus me-1"></i> Publish
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- SECTION 2: List Results -->
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">List Result(s)</h5>
+
+        <!-- Table Filters & Search -->
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+            <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+              <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+              <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+              <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <form method="GET" action="{% url 'result_create' %}" class="d-flex align-items-center gap-2">
+              <input type="hidden" name="show" value="{{ show_entries }}">
+              <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+              <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+            </form>
+
+            <div class="d-flex gap-1 no-print">
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Copy</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">CSV</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Excel</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">PDF</button>
+              <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Print</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Enrollment No</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Student Name</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course Duration</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Institute</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Result Type</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ forloop.counter0|add:page_obj.start_index }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.enrollment_no }}
+                </td>
+                <td class="fw-semibold text-white" style="font-size: 0.9rem;">
+                  {{ item.student.student_name }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.course.name|default:"—" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.course_duration }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.student.center.name|default:"—" }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  {{ item.result_type }}
+                </td>
+                <td class="pe-4 text-end">
+                  <div class="d-flex gap-2 justify-content-end">
+                    {% if is_admin or is_center %}
+                    <a href="{% url 'result_edit' item.pk %}" class="btn btn-sm rounded-pill px-3 text-white" style="background-color: #7952b3 !important; border-color: #7952b3 !important;">
+                      <i class="bi bi-pencil-square"></i> Edit
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'result_view' item.pk %}" class="btn btn-sm btn-action-edit rounded-pill px-3" target="_blank">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                    {% if is_admin or is_center %}
+                    <button type="button" class="btn btn-sm btn-action-delete rounded-pill px-3 btn-delete-res" data-url="{% url 'result_delete' item.pk %}" data-name="{{ item.student.student_name }}">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center py-5 text-muted">
+                  <i class="bi bi-file-earmark-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No results found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Select2 CSS & JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Select2 Dark Mode Styles -->
+<style>
+  .select2-container { width: 100% !important; }
+  .select2-container--default .select2-selection--single {
+    background-color: var(--erp-bg-input) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    height: 44px !important;
+    border-radius: 6px !important;
+    display: flex;
+    align-items: center;
+    color: #fff !important;
+  }
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: #fff !important;
+    padding-left: 12px !important;
+  }
+  .select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 42px !important;
+  }
+  .select2-dropdown {
+    background-color: var(--erp-bg-card) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+  .select2-container--default .select2-search--dropdown .select2-search__field {
+    background-color: var(--erp-bg-input) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+    border-radius: 4px !important;
+  }
+  .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--erp-color-primary) !important;
+    color: #fff !important;
+  }
+  .select2-container--default .select2-results__option[aria-selected="true"] {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+  }
+  .select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: rgba(255,255,255,0.4) !important;
+  }
+  .dark-modal-swal {
+    background-color: var(--erp-bg-card) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+  .btn-publish {
+    background-color: #0d6efd !important;
+    border: none;
+    color: #fff;
+    transition: all 0.2s ease-in-out;
+  }
+  .btn-publish:hover {
+    background-color: #0b5ed7 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+  }
+</style>
+
+{{ validation_errors|default:"{}"|json_script:"backend-errors-data" }}
+
+<script>
+$(function() {
+  const AUTOCOMPLETE_URL = '{% url "student_results_autocomplete" %}';
+  const DETAILS_URL = '{% url "get_student_duration_choices" %}';
+
+  function renderResult(item) {
+    if (item.loading) return item.text;
+    return $(
+      `<div class="d-flex align-items-center py-1">
+        <div class="ms-2">
+          <div class="fw-bold text-white">${item.name}</div>
+          <div class="text-white-50" style="font-size:0.75rem;">Enrollment: ${item.enrollment} | Mobile: ${item.mobile}</div>
+        </div>
+       </div>`
+    );
+  }
+
+  const backendErrors = getBackendErrors();
+
+  function getBackendErrors() {
+    try {
+      return JSON.parse(document.getElementById('backend-errors-data').textContent) || {};
+    } catch(e) {
+      return {};
+    }
+  }
+
+  const errorsMap = getBackendErrors();
+
+  function loadSubjects(studentId, duration) {
+    if (!studentId || !duration) {
+      $('#subjects-table-container').hide();
+      $('#subjects-tbody').empty();
+      $('.btn-publish').prop('disabled', true);
+      return;
+    }
+
+    $.ajax({
+      url: '{% url "get_subjects_for_duration" %}',
+      data: {
+        'student_id': studentId,
+        'duration': duration
+      },
+      success: function(res) {
+        const tbody = $('#subjects-tbody');
+        tbody.empty();
+
+        if (res.subjects && res.subjects.length > 0) {
+          let totalMax = 0;
+          res.subjects.forEach(function(sub) {
+            const errText = errorsMap[sub.input_name] || '';
+            const errHtml = errText ? `<div class="text-danger small mt-1">${errText}</div>` : '';
+            const borderStyle = errText ? 'border-color: #dc3545;' : '';
+            const oldVal = $('[name="' + sub.input_name + '"]').val() || '';
+
+            tbody.append(
+              `<tr style="border-color: rgba(255,255,255,0.1) !important;">
+                <td class="text-white fw-semibold" style="padding: 14px 16px;">${sub.code}</td>
+                <td class="text-start text-white-50" style="padding: 14px 16px;">${sub.name}</td>
+                <td class="text-white-50" style="padding: 14px 16px;">${sub.type}</td>
+                <td class="text-white-50" style="padding: 14px 16px;">${sub.min}</td>
+                <td class="text-white-50" style="padding: 14px 16px;">${sub.max}</td>
+                <td style="padding: 10px 16px;">
+                  <input type="number" name="${sub.input_name}" class="form-control form-control-sm text-center text-white marks-input" data-max="${sub.max}" value="${oldVal}" placeholder="Enter Marks" style="background-color: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; ${borderStyle}" min="0" max="${sub.max}">
+                  ${errHtml}
+                </td>
+              </tr>`
+            );
+            totalMax += parseInt(sub.max) || 0;
+          });
+
+          // Grand Total Row
+          tbody.append(
+            `<tr class="fw-bold" style="background-color: rgba(255,255,255,0.05); border-top: 2px solid rgba(255,255,255,0.25);">
+              <td colspan="3" class="text-start text-uppercase ps-4 text-white">Total Marks</td>
+              <td class="text-white-50">—</td>
+              <td id="grand-max" class="text-white">${totalMax}</td>
+              <td id="grand-obtained" class="text-success">0</td>
+            </tr>`
+          );
+
+          $('#subjects-table-container').show();
+          $('.btn-publish').prop('disabled', false);
+          calculateTotal();
+        } else {
+          $('#subjects-tbody').empty();
+          $('#subjects-tbody').append(
+            `<tr>
+              <td colspan="6" class="text-center text-warning fw-semibold" style="padding: 24px;">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> No subjects are configured for this course and duration. Please add subjects first.
+              </td>
+             </tr>`
+          );
+          $('#subjects-table-container').show();
+          $('.btn-publish').prop('disabled', true);
+        }
+      }
+    });
+  }
+
+  // Initialize Select2 with Autocomplete
+  const studentSelect = $('#id_student').select2({
+    placeholder: 'Select Student',
+    allowClear: true,
+    minimumInputLength: 1,
+    ajax: {
+      url: AUTOCOMPLETE_URL,
+      dataType: 'json',
+      delay: 250,
+      data: function(p) { 
+        return { 
+          q: p.term,
+          center_id: $('#id_center').val() 
+        }; 
+      },
+      processResults: function(d) { return { results: d.results }; },
+      cache: true,
+    },
+    templateResult: renderResult,
+    templateSelection: function(item) { return item.name ? `${item.name} (${item.enrollment})` : item.text; },
+  });
+
+  // Handle student selection change
+  studentSelect.on('select2:select', function(e) {
+    const data = e.params.data;
+    if (data.db_id) {
+      $.ajax({
+        url: DETAILS_URL,
+        data: { 'student_id': data.db_id },
+        success: function(res) {
+          const selectDuration = $('#id_course_duration');
+          selectDuration.empty();
+          selectDuration.append(new Option('Select Course Duration', ''));
+          if (res.choices && res.choices.length > 0) {
+            res.choices.forEach(function(c) {
+              selectDuration.append(new Option(c, c));
+            });
+          } else {
+            selectDuration.append(new Option('No durations available', ''));
+          }
+          $('#subjects-table-container').hide();
+          $('#subjects-tbody').empty();
+        }
+      });
+    }
+  });
+
+  // Handle course duration change
+  $('#id_course_duration').on('change', function() {
+    const studentId = $('#id_student').val();
+    const duration = $(this).val();
+    loadSubjects(studentId, duration);
+  });
+
+  // Handle center change
+  $('#id_center').on('change', function() {
+    studentSelect.val(null).trigger('change');
+    $('#id_course_duration').empty().append(new Option('Select Student First', ''));
+    $('#subjects-table-container').hide();
+    $('#subjects-tbody').empty();
+  });
+
+  // Clear details
+  studentSelect.on('select2:clear', function() {
+    $('#id_course_duration').empty().append(new Option('Select Student First', ''));
+    $('#subjects-table-container').hide();
+    $('#subjects-tbody').empty();
+  });
+
+  // Trigger load if student and duration are preselected/re-rendered on validation error
+  const initialStudent = $('#id_student').val();
+  const initialDuration = $('#id_course_duration').val();
+  if (initialStudent && initialDuration) {
+    loadSubjects(initialStudent, initialDuration);
+  }
+
+  // Live calculation of grand total
+  function calculateTotal() {
+    let grandObtained = 0;
+    let anyInput = false;
+    $('.marks-input').each(function() {
+      const valStr = $(this).val();
+      if (valStr.trim() !== '') {
+        const val = parseInt(valStr);
+        if (!isNaN(val)) {
+          grandObtained += val;
+          anyInput = true;
+        }
+      }
+    });
+    $('#grand-obtained').text(anyInput ? grandObtained : '0');
+  }
+
+  $(document).on('inputChange input', '.marks-input', function() {
+    // Validate bounds
+    const maxVal = parseInt($(this).data('max')) || 100;
+    const currentVal = parseInt($(this).val());
+    if (currentVal > maxVal) {
+      $(this).val(maxVal);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Validation Alert',
+        text: `Obtained marks cannot exceed Maximum Marks (${maxVal}).`,
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-primary px-4'
+        },
+        buttonsStyling: false
+      });
+    }
+    calculateTotal();
+  });
+
+  // SweetAlert delete confirmation
+  $('.btn-delete-res').on('click', function() {
+    const url = $(this).data('url');
+    const name = $(this).data('name');
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `Do you want to delete the Result for ${name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel',
+      customClass: {
+        popup: 'dark-modal-swal',
+        confirmButton: 'btn btn-danger px-4 me-2',
+        cancelButton: 'btn btn-secondary px-4'
+      },
+      buttonsStyling: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
+  });
+
+  // Entries pagination
+  $('#showEntriesSelect').on('change', function() {
+    const show = $(this).val();
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('show', show);
+    urlParams.set('page', '1');
+    window.location.search = urlParams.toString();
+  });
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+{% endblock %}

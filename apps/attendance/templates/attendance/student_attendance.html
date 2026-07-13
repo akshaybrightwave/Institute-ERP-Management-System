@@ -1,0 +1,196 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Attendance | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-check2-all text-primary me-2"></i>Attendance
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">
+          Attendance
+        </li>
+      </ol>
+    </nav>
+  </div>
+
+  <!-- SECTION 1: Select Criteria -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Select Criteria</h5>
+      <i class="bi bi-chevron-up text-muted"></i>
+    </div>
+    <div class="card-body px-4 pt-4 pb-4">
+      <form method="GET" action="{% url 'student_attendance' %}" id="searchCriteriaForm">
+        <div class="row g-4 align-items-end">
+          <!-- Select Timetable (Batch) -->
+          <div class="col-md-5">
+            <label class="form-label text-white fw-semibold" style="font-size: 0.9rem;">
+              Select Timetable <span class="text-danger">*</span>
+            </label>
+            <select name="batch" id="batchSelect" class="form-select"
+                    style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 44px;" required>
+              <option value="">Select Time Table</option>
+              {% for b in batches %}
+              <option value="{{ b.id }}" {% if selected_batch_id == b.id|stringformat:"s" %}selected{% endif %}>
+                {{ b.timetable_name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Attendance Date -->
+          <div class="col-md-4">
+            <label class="form-label text-white fw-semibold" style="font-size: 0.9rem;">
+              Attendance Date <span class="text-danger">*</span>
+            </label>
+            <input type="date" name="date" id="dateSelect" class="form-control"
+                   style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); color: #fff; height: 44px;"
+                   value="{{ selected_date }}" required>
+          </div>
+
+          <!-- Search Button -->
+          <div class="col-md-3 text-end">
+            <button type="submit" class="btn px-4 py-2 d-inline-flex align-items-center justify-content-center"
+                    style="border: 1.5px dashed #10b981; color: #10b981; background-color: rgba(16, 185, 129, 0.1); font-size: 0.9rem; border-radius: 6px; min-width: 120px;">
+              <i class="bi bi-calendar-event me-2"></i>Search
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Student Attendance Table -->
+  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1) !important;">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Student Attendance</h5>
+      {% if student_list %}
+      <button type="submit" form="attendanceForm" class="btn btn-sm text-white px-4 py-1 rounded"
+              style="background-color: rgba(6,78,59,0.3); border: 1px solid #10b981; font-size: 0.85rem;">
+        <i class="bi bi-save me-1"></i>Save
+      </button>
+      {% endif %}
+    </div>
+    <div class="card-body p-4">
+      <form method="POST" action="{% url 'student_attendance' %}" id="attendanceForm">
+        {% csrf_token %}
+        <input type="hidden" name="batch" value="{{ selected_batch.pk }}">
+        <input type="hidden" name="date" value="{{ selected_date }}">
+
+        <div class="table-responsive">
+          <table class="table table-examly table-hover table-bordered align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 50px;">#</th>
+                <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Enrollment No</th>
+                <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Student Name</th>
+                <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Attendance</th>
+                <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 250px;">Remark</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in student_list %}
+              <tr>
+                <td class="ps-3 text-white-50" style="font-size: 0.9rem;">{{ item.idx }}</td>
+                <td class="text-white-50" style="font-size: 0.9rem;">{{ item.enrollment_no }}</td>
+                <td class="fw-semibold text-white-50" style="font-size: 0.9rem;">{{ item.student.student_name }}</td>
+                <td>
+                  <div class="d-flex flex-wrap gap-2">
+                    {% with sid=item.student.id %}
+                    <div class="form-check form-check-inline mb-0">
+                      <input class="form-check-input" type="radio" name="status_{{ sid }}" id="present_{{ sid }}" value="present" {% if item.status == 'present' %}checked{% endif %}>
+                      <label class="form-check-label text-success" for="present_{{ sid }}" style="font-size: 0.82rem;">Present</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-0">
+                      <input class="form-check-input" type="radio" name="status_{{ sid }}" id="late_{{ sid }}" value="late" {% if item.status == 'late' %}checked{% endif %}>
+                      <label class="form-check-label text-warning" for="late_{{ sid }}" style="font-size: 0.82rem;">Late</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-0">
+                      <input class="form-check-input" type="radio" name="status_{{ sid }}" id="absent_{{ sid }}" value="absent" {% if item.status == 'absent' %}checked{% endif %}>
+                      <label class="form-check-label text-danger" for="absent_{{ sid }}" style="font-size: 0.82rem;">Absent</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-0">
+                      <input class="form-check-input" type="radio" name="status_{{ sid }}" id="holiday_{{ sid }}" value="holiday" {% if item.status == 'holiday' %}checked{% endif %}>
+                      <label class="form-check-label text-info" for="holiday_{{ sid }}" style="font-size: 0.82rem;">Holiday</label>
+                    </div>
+                    <div class="form-check form-check-inline mb-0">
+                      <input class="form-check-input" type="radio" name="status_{{ sid }}" id="halfday_{{ sid }}" value="half_day" {% if item.status == 'half_day' %}checked{% endif %}>
+                      <label class="form-check-label text-white-50" for="halfday_{{ sid }}" style="font-size: 0.82rem;">Half Day</label>
+                    </div>
+                    {% endwith %}
+                  </div>
+                </td>
+                <td>
+                  <input type="text" name="remark_{{ item.student.id }}" class="form-control form-control-sm text-white"
+                         value="{{ item.remark }}" placeholder=""
+                         style="background-color: var(--erp-bg-input); border: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem;">
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-5" style="background-color: transparent; border-bottom: none;">
+                  <div class="d-flex flex-column align-items-center justify-content-center">
+                    <i class="bi bi-people" style="font-size: 2.5rem; color: #6366f1;"></i>
+                    <p class="text-white mt-3 fw-semibold mb-0" style="font-size: 0.95rem;">No students found in this batch.</p>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function () {
+  // Init Select2 on the batch dropdown
+  if ($.fn.select2) {
+    $('#batchSelect').select2({
+      theme: 'bootstrap-5',
+      placeholder: 'Select Time Table',
+      allowClear: true,
+      width: '100%'
+    });
+  }
+});
+</script>
+
+{% if messages %}
+<script>
+(function(){
+  {% for msg in messages %}
+  Swal.fire({
+    icon: '{{ msg.tags }}' === 'error' ? 'error' : 'success',
+    title: '{{ msg.message }}',
+    confirmButtonText: 'Ok, got it!',
+    customClass: {
+      popup: 'dark-modal-swal',
+      confirmButton: 'btn btn-primary px-4'
+    },
+    buttonsStyling: false
+  });
+  {% endfor %}
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}View Center Certificate | {{ cert.certificate_number }}{% endblock %}
+
+{% block content %}
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #printable-certificate, #printable-certificate * {
+      visibility: visible;
+    }
+    #printable-certificate {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .no-print {
+      display: none !important;
+    }
+  }
+
+  .cert-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    color: #000;
+    padding: 40px;
+    border: 15px solid #0d6efd;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    font-family: 'Times New Roman', Times, serif;
+  }
+
+  .cert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #0d6efd;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+
+  .cert-title {
+    text-align: center;
+    flex-grow: 1;
+  }
+
+  .cert-title h1 {
+    font-weight: bold;
+    color: #0d6efd;
+    text-transform: uppercase;
+    font-size: 2.5rem;
+    margin: 0;
+  }
+
+  .cert-title h4 {
+    font-size: 1.2rem;
+    color: #333;
+    margin-top: 5px;
+  }
+
+  .cert-body {
+    text-align: center;
+    line-height: 1.8;
+    font-size: 1.3rem;
+  }
+
+  .highlight-text {
+    font-weight: bold;
+    font-size: 1.5rem;
+    color: #0d6efd;
+    border-bottom: 1px dotted #000;
+    padding: 0 10px;
+  }
+
+  .cert-footer {
+    margin-top: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .signature-box {
+    text-align: center;
+  }
+
+  .signature-line {
+    width: 200px;
+    border-top: 2px solid #000;
+    margin-top: 40px;
+    padding-top: 5px;
+    font-weight: bold;
+  }
+</style>
+
+<div class="container py-4">
+  <div class="mb-4 d-flex justify-content-between align-items-center no-print">
+    <div>
+      <a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left"></i> Back
+      </a>
+      <button onclick="window.print()" class="btn btn-primary">
+        <i class="bi bi-printer"></i> Print Certificate
+      </button>
+    </div>
+  </div>
+
+  <div class="cert-container" id="printable-certificate">
+    <div class="cert-header">
+      <div class="cert-title">
+        <h1>EXAMLY INSTITUTE</h1>
+        <h4>Certificate of Authorization</h4>
+      </div>
+    </div>
+    
+    <div class="cert-body mt-4">
+      <p>This is to certify that</p>
+      <div class="mb-4">
+        <span class="highlight-text">{{ cert.center.name }}</span>
+      </div>
+      <p>located at <br><strong>{{ cert.center.address }}, {{ cert.center.district }}, {{ cert.center.state }} - {{ cert.center.pincode }}</strong></p>
+      <p>owned by <strong>{{ cert.center.owner_name }}</strong></p>
+      <p class="mt-4">
+        has been granted the status of an Authorized Training Center.<br>
+        This certificate is valid from <strong>{{ cert.issue_date|date:"F d, Y" }}</strong> 
+        {% if cert.valid_upto %} to <strong>{{ cert.valid_upto|date:"F d, Y" }}</strong>{% endif %}.
+      </p>
+      
+      <div class="mt-5 text-start ps-5">
+        <p class="mb-1"><strong>Institute Code:</strong> {{ cert.center.code }}</p>
+        <p class="mb-1"><strong>Certificate No:</strong> {{ cert.certificate_number }}</p>
+        <p class="mb-1"><strong>Status:</strong> {{ cert.certificate_status }}</p>
+      </div>
+    </div>
+
+    <div class="cert-footer">
+      <div class="signature-box">
+        <div class="signature-line">Authorized Signatory</div>
+      </div>
+      <div class="signature-box">
+        <div class="signature-line">Director</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

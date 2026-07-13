@@ -1,0 +1,185 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Update Study Material | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+
+  <!-- Page Header -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-pencil-square text-primary me-2"></i>Update Study Material
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'study_material_list' %}" class="text-decoration-none text-muted">Study Material</a>
+        </li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Update Study Material</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Update Study Material Details</h5>
+
+        <form method="POST" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger border-0 rounded-3 mb-4" style="background: rgba(220,53,69,0.1); color: #ea868f;">
+            {% for error in form.non_field_errors %}
+              <div class="small"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <!-- Center selection -->
+            <div class="col-md-6 col-12 mb-3">
+              <label for="id_center" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Center <span class="text-danger">*</span>
+              </label>
+              {% render_field form.center class="form-select dark-input" %}
+              {% if form.center.errors %}
+                <span class="text-danger small">{{ form.center.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Course selection -->
+            <div class="col-md-6 col-12 mb-3">
+              <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Course <span class="text-danger">*</span>
+              </label>
+              {% render_field form.course class="form-select dark-input" %}
+              {% if form.course.errors %}
+                <span class="text-danger small">{{ form.course.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Title -->
+            <div class="col-md-6 col-12 mb-3">
+              <label for="id_title" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Title <span class="text-danger">*</span>
+              </label>
+              {% render_field form.title class="form-control text-white dark-input" %}
+              {% if form.title.errors %}
+                <span class="text-danger small">{{ form.title.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- File Type -->
+            <div class="col-md-6 col-12 mb-3">
+              <label for="id_file_type" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                File Type <span class="text-danger">*</span>
+              </label>
+              {% render_field form.file_type class="form-select dark-input" %}
+              {% if form.file_type.errors %}
+                <span class="text-danger small">{{ form.file_type.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- File Upload -->
+            <div class="col-12 mb-3" id="div_upload_file">
+              <label for="id_upload_file" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                File
+              </label>
+              {% render_field form.upload_file class="form-control text-white dark-input" %}
+              {% if material.upload_file %}
+                <span class="text-muted small d-block mt-1">Current file: <a href="{{ material.upload_file.url }}" target="_blank">{{ material.upload_file.name }}</a></span>
+              {% endif %}
+              {% if form.upload_file.errors %}
+                <span class="text-danger small">{{ form.upload_file.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- External URL -->
+            <div class="col-12 mb-3" id="div_external_url" style="display:none;">
+              <label for="id_external_url" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                External URL <span class="text-danger">*</span>
+              </label>
+              {% render_field form.external_url class="form-control text-white dark-input" %}
+              {% if form.external_url.errors %}
+                <span class="text-danger small">{{ form.external_url.errors.0 }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="col-12 mb-3">
+              <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                Description
+              </label>
+              {% render_field form.description class="form-control text-white dark-input" %}
+              {% if form.description.errors %}
+                <span class="text-danger small">{{ form.description.errors.0 }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-4 text-start d-flex gap-2">
+            <button type="submit" class="btn text-white px-4 py-2 rounded-3" style="background-color: #2563eb; border: none; font-weight: 500;">
+              <i class="bi bi-check-circle me-1"></i> Save Changes
+            </button>
+            <a href="{% url 'study_material_list' %}" class="btn btn-outline-secondary px-4 py-2 rounded-3 text-white-50 border-secondary">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(function() {
+  const centerSelect = $('#id_center');
+  const courseSelect = $('#id_course');
+  const fileTypeSelect = $('#id_file_type');
+  const divUploadFile = $('#div_upload_file');
+  const divExternalUrl = $('#div_external_url');
+
+  function toggleFileTypeInputs() {
+    const val = fileTypeSelect.val();
+    if (val === 'Video Link') {
+      divUploadFile.hide();
+      divExternalUrl.show();
+    } else {
+      divUploadFile.show();
+      divExternalUrl.hide();
+    }
+  }
+
+  fileTypeSelect.on('change', toggleFileTypeInputs);
+  toggleFileTypeInputs();
+
+  // Cascade Center -> Course
+  centerSelect.on('change', function() {
+    const centerId = $(this).val();
+    courseSelect.empty().append(new Option('Select a Course', ''));
+
+    if (centerId) {
+      $.ajax({
+        url: "{% url 'ajax_get_courses' %}",
+        data: { 'center_id': centerId },
+        success: function(res) {
+          if (res.courses) {
+            res.courses.forEach(function(c) {
+              courseSelect.append(new Option(c.name, c.id));
+            });
+          }
+        }
+      });
+    }
+  });
+});
+</script>
+{% endblock %}

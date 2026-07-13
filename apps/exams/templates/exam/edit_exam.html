@@ -1,59 +1,301 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
 {% load widget_tweaks %}
 
-{% block title %}Edit Exam | Examly{% endblock %}
+{% block title %}{% if is_center %}Edit Request{% else %}Edit Exam{% endif %} | Examly{% endblock %}
 
-{% block content %}
-<div class="container py-2">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card border-0">
-                <div class="card-body p-4 p-md-5">
-                    <div class="text-center mb-4">
-                        <div class="feature-icon"><i class="bi bi-pencil-square"></i></div>
-                        <h3 class="fw-bold mb-1">Edit Exam</h3>
-                        <p class="text-muted">{{ exam.title }}</p>
-                    </div>
+{% block erp_content %}
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-xl-9 col-lg-10 col-12">
+      <!-- Breadcrumb -->
+      <div class="dash-breadcrumb mb-4">
+        <a href="{% if is_center %}{% url 'center_dashboard' %}{% else %}{% url 'home' %}{% endif %}">Home</a>
+        <span style="margin: 0 6px;">&mdash;</span>
+        <a href="{% url 'exam_list' %}">{% if is_center %}Requests{% else %}Exams{% endif %}</a>
+        <span style="margin: 0 6px;">&mdash;</span>
+        <span class="current">{% if is_center %}Edit Request{% else %}Edit Exam{% endif %}</span>
+      </div>
 
-                    <form method="post">
-                        {% csrf_token %}
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">{{ field.label }}</label>
-                                {% if field.name == 'batches' %}
-                                    <div class="batches-checkbox-list border rounded p-3 bg-light" style="max-height: 220px; overflow-y: auto;">
-                                        {% for checkbox in field %}
-                                            <div class="form-check mb-2">
-                                                {{ checkbox.tag }}
-                                                <label class="form-check-label ms-1" for="{{ checkbox.id_for_label }}">
-                                                    {{ checkbox.choice_label }}
-                                                </label>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    {{ field|add_class:"form-control" }}
-                                {% endif %}
-                                {% if field.help_text %}
-                                    <small class="text-muted d-block mt-1">{{ field.help_text|safe }}</small>
-                                {% endif %}
-                                {% for error in field.errors %}
-                                    <p class="text-danger small mt-1 mb-0">{{ error }}</p>
-                                {% endfor %}
-                            </div>
-                        {% endfor %}
-                        <div class="d-flex gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary fw-bold flex-grow-1 py-2">
-                                <i class="bi bi-save me-1"></i> Update Exam
-                            </button>
-                            <a href="{% url 'exam_list' %}" class="btn btn-outline-primary py-2">
-                                <i class="bi bi-x-circle me-1"></i> Cancel
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
+      <!-- Card -->
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 28px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">
+            {% if is_center %}
+              <i class="bi bi-pencil-square me-2 text-primary"></i>Edit Request: {{ exam.course.name }}
+            {% else %}
+              <i class="bi bi-pencil-square me-2 text-primary"></i>Edit Exam: {{ exam.title }}
+            {% endif %}
+          </h5>
+          <a href="{% url 'exam_list' %}" class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">
+            <i class="bi bi-arrow-left"></i> Back to List
+          </a>
         </div>
+
+        <form method="POST" id="editExamForm">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger border-0 rounded-3 mb-4" style="background: rgba(220,53,69,0.1); color: #ea868f;">
+            {% for error in form.non_field_errors %}
+              <div class="small"><i class="bi bi-exclamation-triangle me-2"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if is_center %}
+            <div class="row g-3">
+              <!-- Course -->
+              <div class="col-12 mb-3">
+                <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course class="form-select dark-input" %}
+                {% if form.course.errors %}
+                  <span class="text-danger small">{{ form.course.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Message (description field) -->
+              <div class="col-12 mb-3">
+                <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Message <span class="text-danger">*</span>
+                </label>
+                {% render_field form.description class="form-control text-white dark-input" rows="4" placeholder="Enter Message" %}
+                {% if form.description.errors %}
+                  <span class="text-danger small">{{ form.description.errors.0 }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Hidden fields -->
+            {% render_field form.center class="d-none" %}
+
+            <div class="mt-4 text-start">
+              <button type="submit" class="btn text-primary px-4 py-2" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-save me-1"></i> Update Request
+              </button>
+              <a href="{% url 'exam_list' %}" class="btn btn-link text-white-50 ms-3 text-decoration-none" style="font-size: 0.95rem;">
+                Cancel
+              </a>
+            </div>
+
+          {% else %}
+
+            <div class="row g-3">
+              <!-- Title -->
+              <div class="col-12 mb-3">
+                <label for="id_title" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Exam Title <span class="text-danger">*</span>
+                </label>
+                {% render_field form.title class="form-control text-white dark-input" %}
+                {% if form.title.errors %}
+                  <span class="text-danger small">{{ form.title.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Description -->
+              <div class="col-12 mb-3">
+                <label for="id_description" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Description <span class="text-danger">*</span>
+                </label>
+                {% render_field form.description class="form-control text-white dark-input" %}
+                {% if form.description.errors %}
+                  <span class="text-danger small">{{ form.description.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Center -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_center" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Center <span class="text-muted">(Optional for Global)</span>
+                </label>
+                {% render_field form.center class="form-select dark-input" %}
+                {% if form.center.errors %}
+                  <span class="text-danger small">{{ form.center.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Course -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_course" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course class="form-select dark-input" %}
+                {% if form.course.errors %}
+                  <span class="text-danger small">{{ form.course.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Course Duration -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_course_duration" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Course Duration <span class="text-danger">*</span>
+                </label>
+                {% render_field form.course_duration class="form-select dark-input" %}
+                {% if form.course_duration.errors %}
+                  <span class="text-danger small">{{ form.course_duration.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Maximum Questions -->
+              <div class="col-md-6 col-12 mb-3">
+                <label for="id_total_questions" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Maximum Questions <span class="text-danger">*</span>
+                </label>
+                {% render_field form.total_questions class="form-control text-white dark-input" %}
+                {% if form.total_questions.errors %}
+                  <span class="text-danger small">{{ form.total_questions.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Exam Timer -->
+              <div class="col-md-4 col-12 mb-3">
+                <label for="id_duration_minutes" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Exam Timer (Minutes) <span class="text-danger">*</span>
+                </label>
+                {% render_field form.duration_minutes class="form-control text-white dark-input" %}
+                {% if form.duration_minutes.errors %}
+                  <span class="text-danger small">{{ form.duration_minutes.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Start DateTime -->
+              <div class="col-md-4 col-12 mb-3">
+                <label for="id_start_datetime" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  Start Date/Time <span class="text-danger">*</span>
+                </label>
+                {% render_field form.start_datetime class="form-control text-white dark-input" %}
+                {% if form.start_datetime.errors %}
+                  <span class="text-danger small">{{ form.start_datetime.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- End DateTime -->
+              <div class="col-md-4 col-12 mb-3">
+                <label for="id_end_datetime" class="form-label fw-semibold text-white-50" style="font-size: 0.9rem;">
+                  End Date/Time <span class="text-danger">*</span>
+                </label>
+                {% render_field form.end_datetime class="form-control text-white dark-input" %}
+                {% if form.end_datetime.errors %}
+                  <span class="text-danger small">{{ form.end_datetime.errors.0 }}</span>
+                {% endif %}
+              </div>
+
+              <!-- Publish Button / Checkbox -->
+              <div class="col-12 mb-3 d-flex align-items-center">
+                <label for="id_is_published" class="form-check-label fw-semibold text-white-50 me-2" style="font-size: 0.9rem;">
+                  Publish Exam Now
+                </label>
+                {% render_field form.is_published class="form-check-input ms-2" %}
+                {% if form.is_published.errors %}
+                  <span class="text-danger small ms-3">{{ form.is_published.errors.0 }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mt-4 text-start">
+              <button type="submit" class="btn text-primary px-4 py-2" style="background-color: transparent; border: 1.5px dashed #2563eb; font-weight: 500;">
+                <i class="bi bi-save me-1"></i> Update Exam
+              </button>
+              <a href="{% url 'exam_list' %}" class="btn btn-link text-white-50 ms-3 text-decoration-none" style="font-size: 0.95rem;">
+                Cancel
+              </a>
+            </div>
+
+          {% endif %}
+        </form>
+      </div>
     </div>
+  </div>
 </div>
+
+{% if not is_center %}
+<!-- AJAX cascading script -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+  const getCoursesUrl = "{% url 'ajax_get_courses' %}";
+  const getDurationsUrl = "{% url 'ajax_get_course_durations' %}";
+
+  // Retain initial values on load for edit mode
+  const initialCourse = "{{ form.course.value|default:'' }}";
+  const initialDuration = "{{ form.course_duration.value|default:'' }}";
+
+  function loadCourses(callback) {
+    const centerId = $('#id_center').val() || '';
+    const selectCourse = $('#id_course');
+    const selectDuration = $('#id_course_duration');
+
+    selectCourse.empty().append(new Option('Loading...', ''));
+    selectDuration.empty().append(new Option('Select Course Duration', ''));
+
+    $.ajax({
+      url: getCoursesUrl,
+      data: { 'center_id': centerId },
+      success: function(data) {
+        selectCourse.empty().append(new Option('Select a Course', ''));
+        if (data.courses && data.courses.length > 0) {
+          data.courses.forEach(function(course) {
+            selectCourse.append(new Option(course.name, course.id));
+          });
+        }
+        if (initialCourse) {
+          selectCourse.val(initialCourse);
+        }
+        if (callback) callback();
+      },
+      error: function() {
+        selectCourse.empty().append(new Option('Select a Course', ''));
+      }
+    });
+  }
+
+  function loadDurations() {
+    const courseId = $('#id_course').val();
+    const selectDuration = $('#id_course_duration');
+
+    if (!courseId) {
+      selectDuration.empty().append(new Option('Select Course Duration', ''));
+      return;
+    }
+
+    selectDuration.empty().append(new Option('Loading...', ''));
+
+    $.ajax({
+      url: getDurationsUrl,
+      data: { 'course_id': courseId },
+      success: function(data) {
+        selectDuration.empty().append(new Option('Select Course Duration', ''));
+        if (data.choices && data.choices.length > 0) {
+          data.choices.forEach(function(choice) {
+            selectDuration.append(new Option(choice, choice));
+          });
+        }
+        if (initialDuration) {
+          selectDuration.val(initialDuration);
+        }
+      },
+      error: function() {
+        selectDuration.empty().append(new Option('Select Course Duration', ''));
+      }
+    });
+  }
+
+  // Trigger cascade on center change
+  $('#id_center').on('change', function() {
+    loadCourses(loadDurations);
+  });
+
+  // Trigger cascade on course change
+  $('#id_course').on('change', loadDurations);
+
+  // Initialize
+  if ($('#id_center').length) {
+    loadCourses(loadDurations);
+  } else {
+    loadDurations();
+  }
+});
+</script>
+{% endif %}
 {% endblock %}

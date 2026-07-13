@@ -6,13 +6,55 @@
 
 {% block style %}
 <style>
-  /* ── Global dark override ── */
-  body {
-    background-color: #0d0d1a !important;
-    color: #fff;
+  /* ── Global ERP Theme Variables ── */
+  body.erp-shell {
+    --erp-bg-body: #0a0b10;
+    --erp-bg-sidebar: #0d0e12;
+    --erp-bg-content: #0a0b10;
+
+    --erp-bg-card: #12141c;
+    --erp-border-color: #1c1f2c;
+    --erp-border-glow: #2563eb;
+
+    --erp-bg-input: #161922;
+    --erp-border-input: #252a3c;
+
+    --erp-text-primary: #ffffff;
+    --erp-text-muted: #8e9aa8;
+    --erp-text-sidebar: #8a94a6;
+
+    background-color: var(--erp-bg-body) !important;
+    color: var(--erp-text-primary);
   }
+
+  /* Enforce clean Inter typography across all ERP elements */
+  .erp-shell,
+  .erp-shell body,
+  .erp-shell h1,
+  .erp-shell h2,
+  .erp-shell h3,
+  .erp-shell h4,
+  .erp-shell h5,
+  .erp-shell h6,
+  .erp-shell .navbar-brand,
+  .erp-shell .card-title,
+  .erp-shell .dash-title,
+  .erp-shell .sidebar-dash-item,
+  .erp-shell .sidebar-item,
+  .erp-shell .sidebar-sub a,
+  .erp-shell .table th,
+  .erp-shell .table td,
+  .erp-shell input,
+  .erp-shell select,
+  .erp-shell textarea,
+  .erp-shell button,
+  .erp-shell .btn,
+  .erp-shell .badge {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  }
+
   /* Remove Bootstrap container constraints so sidebar can be fixed-full-height */
-  main.container {
+  .erp-shell main.container {
     max-width: 100% !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
@@ -21,21 +63,22 @@
     width: 100% !important;
     margin: 0 !important;
   }
-  main.container > div:first-child {
+
+  .erp-shell main.container>div:first-child {
     padding: 0 !important;
   }
 
   /* ══════════════════════════════════════
      SIDEBAR
   ══════════════════════════════════════ */
-  .erp-sidebar {
+  .erp-shell .erp-sidebar {
     position: fixed;
     top: var(--app-navbar-height, 68px);
     left: 0;
     bottom: 0;
     width: 230px;
-    background: #111120;
-    border-right: 1px solid #1e1e35;
+    background: var(--erp-bg-sidebar);
+    border-right: 1px solid var(--erp-border-color);
     overflow-y: auto;
     overflow-x: hidden;
     z-index: 600;
@@ -44,27 +87,42 @@
     scrollbar-width: thin;
     scrollbar-color: #2a2a4a transparent;
   }
-  .erp-sidebar::-webkit-scrollbar { width: 4px; }
-  .erp-sidebar::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 4px; }
+
+  .erp-shell .erp-sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .erp-shell .erp-sidebar::-webkit-scrollbar-thumb {
+    background: #2a2a4a;
+    border-radius: 4px;
+  }
 
   /* Dashboard top item */
-  .sidebar-dash-item {
+  .erp-shell .sidebar-dash-item {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 0.85rem 1.2rem;
-    color: #fff;
+    color: var(--erp-text-primary);
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 700;
     background: #1a1a32;
     border-left: 3px solid #4a6cf7;
   }
-  .sidebar-dash-item i { font-size: 1.1rem; color: #4a6cf7; }
-  .sidebar-dash-item:hover { color: #fff; background: #1e1e3a; }
+
+  .erp-shell .sidebar-dash-item i {
+    font-size: 1.1rem;
+    color: #4a6cf7;
+  }
+
+  .erp-shell .sidebar-dash-item:hover {
+    color: var(--erp-text-primary);
+    background: #1e1e3a;
+  }
 
   /* Section label */
-  .sidebar-section {
+  .erp-shell .sidebar-section {
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.1em;
@@ -74,12 +132,12 @@
   }
 
   /* Nav item (link or toggle) */
-  .sidebar-item {
+  .erp-shell .sidebar-item {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 0.65rem 1.2rem;
-    color: #9090b8;
+    color: var(--erp-text-sidebar);
     text-decoration: none;
     font-size: 0.88rem;
     font-weight: 500;
@@ -90,56 +148,77 @@
     text-align: left;
     transition: background 0.15s, color 0.15s;
   }
-  .sidebar-item:hover {
-    color: #fff;
-    background: #1a1a30;
+
+  .erp-shell .sidebar-item:hover {
+    color: var(--erp-text-primary);
+    background: rgba(74, 108, 247, 0.12);
     text-decoration: none;
   }
-  .sidebar-item i.si-icon { font-size: 1rem; flex-shrink: 0; }
-  .sidebar-item .si-label { flex: 1; }
-  .sidebar-item .si-arrow {
+
+  .erp-shell .sidebar-item i.si-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .erp-shell .sidebar-item .si-label {
+    flex: 1;
+  }
+
+  .erp-shell .sidebar-item .si-arrow {
     font-size: 0.72rem;
     transition: transform 0.22s ease;
     margin-left: auto;
     flex-shrink: 0;
   }
-  .sidebar-item[aria-expanded="true"] .si-arrow { transform: rotate(180deg); }
-  .sidebar-item[aria-expanded="true"] { color: #fff; }
+
+  .erp-shell .sidebar-item[aria-expanded="true"] .si-arrow {
+    transform: rotate(180deg);
+  }
+
+  .erp-shell .sidebar-item[aria-expanded="true"] {
+    color: var(--erp-text-primary);
+  }
 
   /* Sub-item */
-  .sidebar-sub {
+  .erp-shell .sidebar-sub {
     padding-left: 0;
     margin: 0;
   }
-  .sidebar-sub a {
+
+  .erp-shell .sidebar-sub a {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 0.5rem 1.2rem 0.5rem 2.8rem;
-    color: #7070a0;
-    font-size: 0.82rem;
+    gap: 10px;
+    padding: 0.6rem 1.2rem 0.6rem 2.5rem;
+    color: #a0aec0;
+    font-size: 0.88rem;
     text-decoration: none;
     transition: color 0.15s, background 0.15s;
   }
-  .sidebar-sub a:hover { color: #d0d0ff; background: #15152a; }
-  .sidebar-sub a::before {
-    content: '';
-    display: inline-block;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #3a3a5a;
-    flex-shrink: 0;
+
+  .erp-shell .sidebar-sub a:hover {
+    color: #ffffff;
+    background: rgba(74, 108, 247, 0.10);
   }
-  .sidebar-sub a:hover::before { background: #4a6cf7; }
+
+  .erp-shell .sidebar-sub a.active {
+    color: #ffffff !important;
+    background: rgba(74, 108, 247, 0.15) !important;
+    font-weight: 500;
+  }
+
+  .erp-shell .sidebar-sub a::before {
+    display: none;
+  }
 
   /* Sidebar footer */
-  .sidebar-footer {
+  .erp-shell .sidebar-footer {
     margin-top: auto;
     padding: 1rem 1.2rem;
-    border-top: 1px solid #1e1e35;
+    border-top: 1px solid var(--erp-border-color);
   }
-  .btn-login-centre {
+
+  .erp-shell .btn-login-centre {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -155,30 +234,46 @@
     background: transparent;
     transition: background 0.2s, color 0.2s;
   }
-  .btn-login-centre:hover { background: #1a1a3a; color: #a0a0ff; }
+
+  .erp-shell .btn-login-centre:hover {
+    background: #1a1a3a;
+    color: #a0a0ff;
+  }
 
   /* ══════════════════════════════════════
      MAIN CONTENT WRAPPER
   ══════════════════════════════════════ */
-  .erp-content {
+  .erp-shell .erp-content {
     margin-left: 230px;
-    padding: 1.4rem 1.8rem;
+    padding: 1.8rem 2.2rem;
     min-height: calc(100vh - var(--app-navbar-height, 68px));
-    background: #0d0d1a;
+    background: var(--erp-bg-content);
   }
 
   /* ── Breadcrumb & Header ── */
-  .dash-breadcrumb {
+  .erp-shell .dash-breadcrumb {
     font-size: 0.82rem;
-    color: #5a5a8a;
+    color: var(--erp-text-muted);
   }
-  .dash-breadcrumb a { color: #5a5a8a; text-decoration: none; }
-  .dash-breadcrumb a:hover { color: #fff; }
-  .dash-breadcrumb .current { color: #c0c0e0; font-weight: 600; }
-  .dash-title {
+
+  .erp-shell .dash-breadcrumb a {
+    color: var(--erp-text-muted);
+    text-decoration: none;
+  }
+
+  .erp-shell .dash-breadcrumb a:hover {
+    color: var(--erp-text-primary);
+  }
+
+  .erp-shell .dash-breadcrumb .current {
+    color: #c0c0e0;
+    font-weight: 600;
+  }
+
+  .erp-shell .dash-title {
     font-size: 1.9rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--erp-text-primary);
     margin: 0.2rem 0 0;
     line-height: 1.15;
   }
@@ -186,43 +281,51 @@
   /* ══════════════════════════════════════
      ERP STAT CARDS
   ══════════════════════════════════════ */
-  .erp-card {
+  .erp-shell .erp-card {
     border-radius: 14px;
     overflow: hidden;
-    color: #fff;
+    color: var(--erp-text-primary);
     height: 100%;
     display: flex;
     flex-direction: column;
-    border: 1px solid rgba(135, 135, 220, 0.18);
-    box-shadow: 0 12px 28px rgba(0,0,0,0.28);
+    border: 1px solid var(--erp-border-color);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
     transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
   }
-  .erp-card:hover {
+
+  .erp-shell .erp-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(140, 140, 255, 0.38);
-    box-shadow: 0 18px 36px rgba(0,0,0,0.34);
+    border-color: var(--erp-border-glow);
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.34);
   }
-  .erp-card-body {
+
+  .erp-shell .erp-card-body {
     padding: 1.15rem 1.25rem 1rem;
     position: relative;
     flex: 1;
   }
-  .erp-card-title {
+
+  .erp-shell .erp-card-title {
     font-size: 0.85rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: rgba(255,255,255,0.9);
+    color: rgba(255, 255, 255, 0.9);
     margin-bottom: 0.5rem;
   }
-  .erp-card-number {
+
+  .erp-shell .erp-card-number {
     font-size: 2.3rem;
     font-weight: 800;
     line-height: 1;
-    text-shadow: 0 3px 10px rgba(0,0,0,0.38);
+    text-shadow: 0 3px 10px rgba(0, 0, 0, 0.38);
   }
-  .erp-card-number.sm { font-size: 1.65rem; }
-  .erp-card-bg-icon {
+
+  .erp-shell .erp-card-number.sm {
+    font-size: 1.65rem;
+  }
+
+  .erp-shell .erp-card-bg-icon {
     position: absolute;
     right: 1rem;
     top: 50%;
@@ -232,119 +335,546 @@
     pointer-events: none;
     line-height: 1;
   }
-  .erp-card-footer {
+
+  .erp-shell .erp-card-footer {
     display: flex;
     align-items: center;
     padding: 0.52rem 1.2rem;
-    background: rgba(5,5,18,0.34);
+    background: rgba(5, 5, 18, 0.34);
     text-decoration: none;
-    color: rgba(255,255,255,0.88);
+    color: rgba(255, 255, 255, 0.88);
     font-size: 0.8rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     transition: background 0.2s, color 0.2s;
     gap: 6px;
   }
-  .erp-card-footer:hover { background: rgba(5,5,18,0.52); color: #fff; }
+
+  .erp-shell .erp-card-footer:hover {
+    background: rgba(5, 5, 18, 0.52);
+    color: var(--erp-text-primary);
+  }
 
   /* ── Gradients ── */
-  .bg-g-purple  { background: linear-gradient(145deg, #27185f 0%, #4a32a1 100%); }
-  .bg-g-teal    { background: linear-gradient(145deg, #075766 0%, #1592a4 100%); }
-  .bg-g-green   { background: linear-gradient(145deg, #0d5a33 0%, #1b8f53 100%); }
-  .bg-g-pink    { background: linear-gradient(145deg, #89105d 0%, #c31782 100%); }
-  .bg-g-blue    { background: linear-gradient(145deg, #123a82 0%, #2459bd 100%); }
-  .bg-g-orange  { background: linear-gradient(145deg, #7b3f00 0%, #b86708 100%); }
-  .bg-g-red     { background: linear-gradient(145deg, #7a0e1d 0%, #b0152e 100%); }
-  .bg-g-violet  { background: linear-gradient(145deg, #54106a 0%, #80209a 100%); }
-  .bg-g-crimson { background: linear-gradient(145deg, #880b23 0%, #b71634 100%); }
-  .bg-g-amber   { background: linear-gradient(145deg, #623000 0%, #884300 100%); }
-  .bg-g-olive   { background: linear-gradient(145deg, #364d00 0%, #537200 100%); }
-  .bg-g-slate   { background: linear-gradient(145deg, #171729 0%, #252640 100%); }
-  .bg-g-dteal   { background: linear-gradient(145deg, #003c3d 0%, #006465 100%); }
-  .bg-g-dgreen  { background: linear-gradient(145deg, #163b19 0%, #245b27 100%); }
-  .bg-g-dred    { background: linear-gradient(145deg, #6b0000 0%, #9a0505 100%); }
-  .bg-g-navy    { background: linear-gradient(145deg, #071348 0%, #11277f 100%); }
+  .erp-shell .bg-g-purple {
+    background: linear-gradient(145deg, #27185f 0%, #4a32a1 100%);
+  }
+
+  .erp-shell .bg-g-teal {
+    background: linear-gradient(145deg, #075766 0%, #1592a4 100%);
+  }
+
+  .erp-shell .bg-g-green {
+    background: linear-gradient(145deg, #0d5a33 0%, #1b8f53 100%);
+  }
+
+  .erp-shell .bg-g-pink {
+    background: linear-gradient(145deg, #89105d 0%, #c31782 100%);
+  }
+
+  .erp-shell .bg-g-blue {
+    background: linear-gradient(145deg, #123a82 0%, #2459bd 100%);
+  }
+
+  .erp-shell .bg-g-orange {
+    background: linear-gradient(145deg, #7b3f00 0%, #b86708 100%);
+  }
+
+  .erp-shell .bg-g-red {
+    background: linear-gradient(145deg, #7a0e1d 0%, #b0152e 100%);
+  }
+
+  .erp-shell .bg-g-violet {
+    background: linear-gradient(145deg, #54106a 0%, #80209a 100%);
+  }
+
+  .erp-shell .bg-g-crimson {
+    background: linear-gradient(145deg, #880b23 0%, #b71634 100%);
+  }
+
+  .erp-shell .bg-g-amber {
+    background: linear-gradient(145deg, #623000 0%, #884300 100%);
+  }
+
+  .erp-shell .bg-g-olive {
+    background: linear-gradient(145deg, #364d00 0%, #537200 100%);
+  }
+
+  .erp-shell .bg-g-slate {
+    background: linear-gradient(145deg, #171729 0%, #252640 100%);
+  }
+
+  .erp-shell .bg-g-dteal {
+    background: linear-gradient(145deg, #003c3d 0%, #006465 100%);
+  }
+
+  .erp-shell .bg-g-dgreen {
+    background: linear-gradient(145deg, #163b19 0%, #245b27 100%);
+  }
+
+  .erp-shell .bg-g-dred {
+    background: linear-gradient(145deg, #6b0000 0%, #9a0505 100%);
+  }
+
+  .erp-shell .bg-g-navy {
+    background: linear-gradient(145deg, #071348 0%, #11277f 100%);
+  }
 
   /* ── Section divider ── */
-  .section-label {
+  .erp-shell .section-label {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #5a5a8a;
+    color: var(--erp-text-muted);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     padding-bottom: 0.45rem;
-    border-bottom: 1px solid #1e1e35;
+    border-bottom: 1px solid var(--erp-border-color);
     margin: 1.4rem 0 1rem;
   }
 
   /* ── Analytics rate cards ── */
-  .rate-card {
+  .erp-shell .rate-card {
     background: linear-gradient(145deg, #111120 0%, #17172b 100%);
-    border: 1px solid #252550;
+    border: 1px solid var(--erp-border-color);
     border-radius: 12px;
     padding: 0.9rem 1rem;
     height: 100%;
-    box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
   }
-  .rate-card .rate-label {
+
+  .erp-shell .rate-card .rate-label {
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #6868a0;
     margin-bottom: 0.35rem;
   }
-  .rate-card .rate-value {
+
+  .erp-shell .rate-card .rate-value {
     font-size: 1.6rem;
     font-weight: 800;
-    color: #fff;
+    color: var(--erp-text-primary);
     line-height: 1;
   }
-  .rate-card .rate-icon { font-size: 1.8rem; opacity: 0.38; }
+
+  .erp-shell .rate-card .rate-icon {
+    font-size: 1.8rem;
+    opacity: 0.38;
+  }
 
   /* ── Quick action / ERP cards ── */
-  .qa-card {
-    background:
-      linear-gradient(145deg, rgba(30,30,54,0.96) 0%, rgba(17,17,32,0.98) 100%),
-      radial-gradient(circle at top right, rgba(74,70,243,0.2), transparent 40%);
-    border: 1px solid #282854;
+  .erp-shell .qa-card {
+    background: var(--erp-bg-card) !important;
+    border: 1px solid var(--erp-border-color) !important;
     border-radius: 14px;
     padding: 1.3rem;
     height: 100%;
-    box-shadow: 0 10px 26px rgba(0,0,0,0.22);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
     transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
   }
-  .qa-card:hover {
-    border-color: #5b5cff;
+
+  .erp-shell .qa-card:hover {
+    border-color: var(--erp-border-glow) !important;
     transform: translateY(-3px);
-    box-shadow: 0 16px 34px rgba(0,0,0,0.3);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4);
   }
-  .qa-card .qa-icon {
-    width: 44px; height: 44px;
+
+  .erp-shell .qa-card .qa-icon {
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.3rem;
     margin-bottom: 0.8rem;
     background: #24243e;
     color: #8d8dff;
   }
-  .qa-card h6 { font-weight: 700; color: #f6f4ff; margin-bottom: 0.35rem; font-size: 0.92rem; }
-  .qa-card p  { color: #8f8fd2; font-size: 0.8rem; margin-bottom: 0.9rem; line-height: 1.45; }
-  .btn-qa {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 0.78rem; font-weight: 600;
-    padding: 0.4rem 0.9rem; border-radius: 8px;
-    text-decoration: none; transition: filter 0.2s;
+
+  .erp-shell .qa-card h6 {
+    font-weight: 700;
+    color: var(--erp-text-primary);
+    margin-bottom: 0.35rem;
+    font-size: 0.92rem;
   }
-  .btn-qa:hover { filter: brightness(1.12); }
-  .btn-qa-primary {
+
+  .erp-shell .qa-card p {
+    color: var(--erp-text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .erp-shell .btn-qa {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: filter 0.2s;
+  }
+
+  .erp-shell .btn-qa:hover {
+    filter: brightness(1.12);
+  }
+
+  .erp-shell .btn-qa-primary {
     background: linear-gradient(135deg, #315bd6 0%, #4a46f3 100%);
-    color: #fff;
+    color: var(--erp-text-primary);
     border: none;
-    box-shadow: 0 8px 18px rgba(49,91,214,0.24);
+    box-shadow: 0 8px 18px rgba(49, 91, 214, 0.24);
   }
-  .btn-qa-outline { background: transparent; color: #b6b6ff; border: 1px solid #363676; }
-  .btn-qa-outline:hover { background: rgba(91,92,255,0.12); color: #fff; border-color: #5b5cff; }
+
+  .erp-shell .btn-qa-outline {
+    background: transparent;
+    color: #b6b6ff;
+    border: 1px solid #363676;
+  }
+
+  .erp-shell .btn-qa-outline:hover {
+    background: rgba(91, 92, 255, 0.12);
+    color: var(--erp-text-primary);
+    border-color: #5b5cff;
+  }
+
+  /* ── Global ERP Theme Overrides for All Pages ── */
+  .erp-shell .card {
+    background: var(--erp-bg-card) !important;
+    border: 1px solid var(--erp-border-color) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3) !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .card-body {
+    background-color: transparent !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .card-header {
+    background-color: transparent !important;
+    border-bottom: 1px solid var(--erp-border-color) !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .card-footer {
+    background-color: transparent !important;
+    border-top: 1px solid var(--erp-border-color) !important;
+    color: var(--erp-text-muted) !important;
+  }
+
+  .erp-shell h1,
+  .erp-shell h2,
+  .erp-shell h3,
+  .erp-shell h4,
+  .erp-shell h5,
+  .erp-shell h6 {
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell p,
+  .erp-shell label,
+  .erp-shell .text-muted,
+  .erp-shell .small {
+    color: var(--erp-text-muted) !important;
+  }
+
+  .erp-shell strong {
+    color: #ffffff !important;
+  }
+
+  /* Form control dark styling */
+  .erp-shell input.form-control,
+  .erp-shell select.form-select,
+  .erp-shell textarea.form-control,
+  .erp-shell select,
+  .erp-shell .dark-input {
+    background-color: var(--erp-bg-input) !important;
+    border: 1px solid var(--erp-border-input) !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell input.form-control:focus,
+  .erp-shell select.form-select:focus,
+  .erp-shell textarea.form-control:focus,
+  .erp-shell select:focus,
+  .erp-shell .dark-input:focus {
+    background-color: var(--erp-bg-input) !important;
+    border-color: #4a46f3 !important;
+    color: var(--erp-text-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(74, 70, 243, 0.25) !important;
+  }
+
+  .erp-shell input.form-control::placeholder,
+  .erp-shell textarea.form-control::placeholder,
+  .erp-shell .dark-input::placeholder {
+    color: #6c757d !important;
+  }
+
+  /* Buttons styling */
+  .erp-shell .btn-primary {
+    background: linear-gradient(135deg, #315bd6 0%, #4a46f3 100%) !important;
+    color: var(--erp-text-primary) !important;
+    border: none !important;
+    box-shadow: 0 8px 18px rgba(49, 91, 214, 0.24) !important;
+  }
+
+  .erp-shell .btn-primary:hover {
+    filter: brightness(1.12) !important;
+  }
+
+  .erp-shell .btn-outline-secondary {
+    background: transparent !important;
+    color: #b6b6ff !important;
+    border: 1px solid #363676 !important;
+  }
+
+  .erp-shell .btn-outline-secondary:hover {
+    background: rgba(91, 92, 255, 0.12) !important;
+    color: var(--erp-text-primary) !important;
+    border-color: #5b5cff !important;
+  }
+
+  .erp-shell .btn-publish {
+    background-color: transparent !important;
+    border: 1px dashed #4a46f3 !important;
+    color: #8d8dff !important;
+    font-weight: 600 !important;
+  }
+
+  .erp-shell .btn-publish:hover {
+    background-color: rgba(74, 70, 243, 0.1) !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .btn-action-edit {
+    background-color: #3b82f6 !important;
+    border: none !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .btn-action-delete {
+    background-color: #f03e65 !important;
+    border: none !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  /* Modals dark theme */
+  .erp-shell .modal-content,
+  .erp-shell .dark-modal {
+    background-color: var(--erp-bg-input) !important;
+    border: 1px solid var(--erp-border-color) !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .modal-header,
+  .erp-shell .dark-modal .modal-header {
+    border-bottom: 1px solid var(--erp-border-color) !important;
+  }
+
+  .erp-shell .modal-footer,
+  .erp-shell .dark-modal .modal-footer {
+    border-top: 1px solid var(--erp-border-color) !important;
+  }
+
+  .erp-shell .modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%) !important;
+  }
+
+  .erp-shell .btn-close-modal {
+    background-color: transparent !important;
+    border: 1px dashed #f03e65 !important;
+    color: #f03e65 !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    border-radius: 8px !important;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .erp-shell .btn-close-modal:hover {
+    background-color: rgba(240, 62, 101, 0.1) !important;
+    color: #ff5f85 !important;
+  }
+
+  .erp-shell .btn-save-modal {
+    background-color: transparent !important;
+    border: 1px dashed #198754 !important;
+    color: #198754 !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    border-radius: 8px !important;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .erp-shell .btn-save-modal:hover {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+    color: #2bba74 !important;
+  }
+
+  /* Tables inside cards */
+  .erp-shell .table {
+    --bs-table-bg: transparent !important;
+    --bs-table-color: var(--erp-text-primary) !important;
+    --bs-table-hover-bg: #151821 !important;
+    --bs-table-hover-color: #ffffff !important;
+    border-color: var(--erp-border-color) !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .table th {
+    color: var(--erp-text-muted) !important;
+    border-bottom: 1px solid var(--erp-border-color) !important;
+    background-color: transparent !important;
+  }
+
+  .erp-shell .table td {
+    border-bottom: 1px solid var(--erp-border-color) !important;
+    background-color: transparent !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .table.table-hover>tbody>tr:hover>* {
+    --bs-table-accent-bg: transparent !important;
+    background-color: #151821 !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 9999px #151821 !important;
+  }
+
+  .erp-shell .table tbody tr:hover {
+    background-color: #151821 !important;
+  }
+
+  /* Pagination dark styling */
+  .erp-shell .pagination .page-link {
+    background-color: var(--erp-bg-input) !important;
+    border: 1px solid var(--erp-border-input) !important;
+    color: #b6b6ff !important;
+  }
+
+  .erp-shell .pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #315bd6 0%, #4a46f3 100%) !important;
+    border-color: #4a46f3 !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  .erp-shell .pagination .page-link:hover {
+    background-color: rgba(91, 92, 255, 0.12) !important;
+    color: var(--erp-text-primary) !important;
+  }
+
+  /* ── SweetAlert2 Dark Theme Styling ── */
+  .swal2-popup.dark-modal-swal {
+    background-color: var(--erp-bg-input) !important;
+    border: 1px solid var(--erp-border-color) !important;
+    color: var(--erp-text-primary) !important;
+    border-radius: 14px !important;
+    padding: 2.5rem 1.5rem !important;
+  }
+
+  .swal2-popup.dark-modal-swal .swal2-title {
+    color: var(--erp-text-primary) !important;
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .swal2-popup.dark-modal-swal .swal2-confirm {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.6rem 1.8rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  .swal2-popup.dark-modal-swal .swal2-confirm.btn-primary {
+    background: #0096ff !important;
+    border: none !important;
+    color: var(--erp-text-primary) !important;
+    box-shadow: 0 4px 12px rgba(0, 150, 255, 0.24) !important;
+  }
+
+  .swal2-popup.dark-modal-swal .swal2-confirm.btn-danger {
+    background: #f03e65 !important;
+    border: none !important;
+    color: var(--erp-text-primary) !important;
+    box-shadow: 0 4px 12px rgba(240, 62, 101, 0.24) !important;
+  }
+
+  .swal2-popup.dark-modal-swal .swal2-cancel {
+    background: transparent !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    text-decoration: none !important;
+    margin-left: 1.5rem !important;
+  }
+
+  .swal2-popup.dark-modal-swal .swal2-cancel:hover {
+    color: #b6b6ff !important;
+  }
+
+  .swal2-popup.dark-modal-swal .swal2-icon {
+    margin-top: 0.5rem !important;
+  }
+
+  /* Empty state theme overrides */
+  .erp-shell .empty-state {
+    background-color: var(--erp-bg-card) !important;
+    border: 1px solid var(--erp-border-color) !important;
+    border-radius: 12px !important;
+    padding: 3rem 1.5rem !important;
+  }
+
+  .erp-shell .empty-state p,
+  .erp-shell .empty-state i {
+    color: var(--erp-text-muted) !important;
+  }
+
+  /* Explicitly hide auto-generated DataTables buttons container to prevent duplicate toolbars */
+  .dt-buttons {
+    display: none !important;
+  }
+
+  /* DataTables Copy to Clipboard Info Modal Dark Theme Override */
+  div.dt-button-info {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 400px !important;
+    margin-top: -80px !important;
+    margin-left: -200px !important;
+    background-color: #23233c !important;
+    /* Dark purple/blue background matching theme */
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+    border-radius: 12px !important;
+    text-align: center !important;
+    padding: 1.8rem !important;
+    z-index: 2005 !important;
+    color: #ffffff !important;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  }
+
+  div.dt-button-info h2 {
+    padding: 0 0 0.8rem 0 !important;
+    margin: 0 0 0.8rem 0 !important;
+    font-weight: 600 !important;
+    font-size: 1.4rem !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+  }
+
+  div.dt-button-info>div {
+    font-size: 0.95rem !important;
+    color: var(--erp-text-sidebar, #8a94a6) !important;
+  }
 </style>
 {% endblock %}
 
@@ -357,40 +887,110 @@
 ════════════════════════════════════════════ -->
 <aside class="erp-sidebar">
 
+  {% if request.user.role == 'student' %}
+  <!-- Student Dashboard -->
+  <a href="{% url 'student_dashboard' %}" class="sidebar-dash-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
+    <i class="bi bi-grid-1x2-fill"></i>
+    <span>Dashboard</span>
+  </a>
+
+  <div class="sidebar-section">Student Portal</div>
+
+  <!-- Profile -->
+  <a href="{% url 'student_profile' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}">
+    <i class="bi bi-person-fill si-icon"></i>
+    <span class="si-label">Profile</span>
+  </a>
+
+  <!-- ID Card -->
+  <a href="{% url 'student_id_card' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}">
+    <i class="bi bi-person-badge si-icon"></i>
+    <span class="si-label">ID Card</span>
+  </a>
+
+  <!-- Attendance -->
+  <a href="{% url 'student_my_attendance' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_my_attendance' %}active{% endif %}">
+    <i class="bi bi-calendar-check si-icon"></i>
+    <span class="si-label">Attendance</span>
+  </a>
+
+  <!-- Admit Card -->
+  <a href="{% url 'admit_card_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' %}active{% endif %}">
+    <i class="bi bi-file-earmark-spreadsheet si-icon"></i>
+    <span class="si-label">Admit Card</span>
+  </a>
+
+  <!-- Marksheet -->
+  <a href="{% url 'result_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'result_list' %}active{% endif %}">
+    <i class="bi bi-file-earmark-bar-graph si-icon"></i>
+    <span class="si-label">Marksheet</span>
+  </a>
+
+  <!-- Certificate -->
+  <a href="{% url 'certificate_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'certificate_list' %}active{% endif %}">
+    <i class="bi bi-award si-icon"></i>
+    <span class="si-label">Certificate</span>
+  </a>
+
+  <!-- Fee Record -->
+  <a href="{% url 'fees_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'fees_list' %}active{% endif %}">
+    <i class="bi bi-credit-card si-icon"></i>
+    <span class="si-label">Fee Record</span>
+  </a>
+
+  <!-- Study Material -->
+  <a href="{% url 'study_material_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' %}active{% endif %}">
+    <i class="bi bi-book si-icon"></i>
+    <span class="si-label">Study Material</span>
+  </a>
+
+  <!-- Exam Area -->
+  <a href="{% url 'student_exam_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_exam_list' %}active{% endif %}">
+    <i class="bi bi-journal-text si-icon"></i>
+    <span class="si-label">Exam Area</span>
+  </a>
+  {% else %}
+
   <!-- Dashboard -->
-  <a href="{% url 'admin_dashboard' %}" class="sidebar-dash-item">
+  <a href="{% if request.user.role == 'center' %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="sidebar-dash-item">
     <i class="bi bi-grid-1x2-fill"></i>
     <span>Dashboard</span>
   </a>
 
   <!-- ── ACADEMICS ── -->
+  {% if request.user.role != 'center' %}
   <div class="sidebar-section">Academics</div>
 
   <!-- Course Area -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbCourseArea"
-          aria-expanded="false">
+  <button class="sidebar-item" type="button" data-bs-toggle="collapse" data-bs-target="#sbCourseArea"
+    aria-expanded="false">
     <i class="bi bi-journal-bookmark si-icon"></i>
     <span class="si-label">Course Area</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div class="collapse sidebar-sub" id="sbCourseArea">
-    <a href="{% url 'course_list' %}">Course List</a>
-    <a href="{% url 'batch_list' %}">Batch List</a>
+    <a href="{% url 'category_list' %}" {% if request.resolver_match.url_name == 'category_list' %} class="active" {% endif %}><i class="bi bi-tags me-2"></i>Category</a>
+    <a href="{% url 'course_list' %}" {% if request.resolver_match.url_name == 'course_list' %} class="active" {% endif %}><i class="bi bi-journal-bookmark me-2"></i>Manage Course</a>
+    <a href="{% url 'subject_list' %}" {% if request.resolver_match.url_name == 'subject_list' %} class="active" {% endif %}><i class="bi bi-book me-2"></i>Manage Subject(s)</a>
+    <a href="{% url 'arrange_subjects' %}" {% if request.resolver_match.url_name == 'arrange_subjects' %} class="active"
+      {% endif %}><i class="bi bi-journal-check me-2"></i>Arrange Subjects</a>
   </div>
 
   <!-- Academics -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbAcademics"
-          aria-expanded="false">
+  <button
+    class="sidebar-item{% if request.resolver_match.url_name not in 'timetable_list session_list occupation_list' %} collapsed{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbAcademics"
+    aria-expanded="{% if request.resolver_match.url_name in 'timetable_list session_list occupation_list' %}true{% else %}false{% endif %}">
     <i class="bi bi-mortarboard si-icon"></i>
     <span class="si-label">Academics</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbAcademics">
-    <a href="{% url 'exam_dashboard' %}">Exam Dashboard</a>
-    <a href="{% url 'exam_list' %}">Exam List</a>
-    <a href="{% url 'add_exam' %}">Add Exam</a>
+  <div
+    class="collapse sidebar-sub{% if request.resolver_match.url_name in 'timetable_list session_list occupation_list' %} show{% endif %}"
+    id="sbAcademics">
+    <a href="{% url 'timetable_list' %}" {% if request.resolver_match.url_name == 'timetable_list' %} class="active" {% endif %}><i class="bi bi-clock me-2"></i>Time table</a>
+    <a href="{% url 'session_list' %}" {% if request.resolver_match.url_name == 'session_list' %} class="active" {% endif %}><i class="bi bi-calendar3 me-2"></i>Session</a>
+    <a href="{% url 'occupation_list' %}" {% if request.resolver_match.url_name == 'occupation_list' %} class="active" {% endif %}><i class="bi bi-briefcase me-2"></i>Occupation</a>
   </div>
 
   <!-- ── EXAM SLOT ── -->
@@ -401,93 +1001,305 @@
     <span class="si-label">Exam Centre</span>
   </a>
 
-  <a href="{% url 'batch_list' %}" class="sidebar-item">
+  <a href="{% url 'exam_schedule_list' %}"
+    class="sidebar-item{% if request.resolver_match.url_name == 'exam_schedule_list' %} active{% endif %}">
     <i class="bi bi-clock si-icon"></i>
     <span class="si-label">Exam Schedule</span>
   </a>
 
   <!-- ── STUDENT AREA ── -->
+  {% endif %}
   <div class="sidebar-section">Student Area</div>
 
-  <!-- Student Information -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbStudentInfo"
-          aria-expanded="false">
+  <button
+    class="sidebar-item{% if request.resolver_match.url_name not in 'student_admission,student_details,student_id_card,student_pending_list,student_approved_list,student_cancelled_list,passout_student_list' %} collapsed{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbStudentInfo"
+    aria-expanded="{% if request.resolver_match.url_name in 'student_admission,student_details,student_id_card,student_pending_list,student_approved_list,student_cancelled_list,student_list_by_center,passout_student_list' %}true{% else %}false{% endif %}">
     <i class="bi bi-person-vcard si-icon"></i>
     <span class="si-label">Student Information</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbStudentInfo">
-    <a href="{% url 'user_list' %}">All Students</a>
-    <a href="{% url 'user_add' %}">Add Student</a>
+  <div
+    class="collapse sidebar-sub{% if request.resolver_match.url_name in 'student_admission,student_details,student_id_card,student_pending_list,student_approved_list,student_cancelled_list,student_list_by_center,passout_student_list' %} show{% endif %}"
+    id="sbStudentInfo">
+    <a href="{% url 'student_id_card' %}" {% if request.resolver_match.url_name == 'student_id_card' %} class="active" {% endif %}><i class="bi bi-person-badge me-2"></i>Student ID Card</a>
+    <a href="{% url 'student_details' %}" {% if request.resolver_match.url_name == 'student_details' %} class="active" {% endif %}><i class="bi bi-search me-2"></i>Student Details</a>
+    <a href="{% url 'student_admission' %}" {% if request.resolver_match.url_name == 'student_admission' %} class="active"
+      {% endif %}><i class="bi bi-plus me-2"></i>Student Admission</a>
+    <a href="{% url 'passout_student_list' %}" {% if request.resolver_match.url_name == 'passout_student_list' %}
+      class="active" {% endif %}><i class="bi bi-journal-bookmark me-2"></i>Passout Student</a>
+    {% if request.user.role != 'center' %}
+    <a href="{% url 'student_list_by_center' %}" {% if request.resolver_match.url_name == 'student_list_by_center' %}
+      class="active" {% endif %}><i class="bi bi-people me-2"></i>List By Center</a>
+    {% endif %}
+
+    <!-- Collapsible List Student(s) -->
+    <a href="#sbListStudents" data-bs-toggle="collapse"
+      class="d-flex justify-content-between align-items-center {% if request.resolver_match.url_name in 'student_pending_list,student_approved_list,student_cancelled_list' %}active{% endif %}"
+      aria-expanded="{% if request.resolver_match.url_name in 'student_pending_list,student_approved_list,student_cancelled_list' %}true{% else %}false{% endif %}">
+      <span><i class="bi bi-people me-2"></i>List Student(s)</span>
+      <i class="bi bi-chevron-down" style="font-size: 0.8rem;"></i>
+    </a>
+    <div
+      class="collapse{% if request.resolver_match.url_name in 'student_pending_list,student_approved_list,student_cancelled_list' %} show{% endif %}"
+      id="sbListStudents" style="background: rgba(0,0,0,0.15);">
+      <a href="{% url 'student_pending_list' %}"
+        class="ps-5 {% if request.resolver_match.url_name == 'student_pending_list' %}active{% endif %}"
+        style="font-size: 0.85rem; padding-top: 0.4rem; padding-bottom: 0.4rem;">
+        <i class="bi bi-arrow-repeat me-2 text-warning" style="font-size: 0.95rem; vertical-align: middle;"></i>Pending
+        List
+      </a>
+      <a href="{% url 'student_approved_list' %}"
+        class="ps-5 {% if request.resolver_match.url_name == 'student_approved_list' %}active{% endif %}"
+        style="font-size: 0.85rem; padding-top: 0.4rem; padding-bottom: 0.4rem;">
+        <i class="bi bi-person-check me-2 text-success" style="font-size: 0.95rem; vertical-align: middle;"></i>Approved
+        List
+      </a>
+      <a href="{% url 'student_cancelled_list' %}"
+        class="ps-5 {% if request.resolver_match.url_name == 'student_cancelled_list' %}active{% endif %}"
+        style="font-size: 0.85rem; padding-top: 0.4rem; padding-bottom: 0.4rem;">
+        <i class="bi bi-x-circle me-2 text-danger" style="font-size: 0.95rem; vertical-align: middle;"></i>Cancel List
+      </a>
+    </div>
   </div>
 
   <!-- Fees Collection -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbFees"
-          aria-expanded="false">
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name in 'payment_create,search_fees_payment,fees_list' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbFees"
+    aria-expanded="{% if request.resolver_match.url_name in 'payment_create,search_fees_payment,fees_list' %}true{% else %}false{% endif %}">
     <i class="bi bi-cash-coin si-icon"></i>
     <span class="si-label">Fees Collection</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbFees">
-    <a href="{% url 'fees_list' %}">Fee List</a>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'payment_create,search_fees_payment,fees_list' %}show{% endif %}"
+    id="sbFees">
+    <a href="{% url 'payment_create' %}"
+      class="{% if request.resolver_match.url_name == 'payment_create' %}active{% endif %}">Collect Fee</a>
+    <a href="{% url 'search_fees_payment' %}"
+      class="{% if request.resolver_match.url_name == 'search_fees_payment' %}active{% endif %}">Search Fee Payment</a>
   </div>
 
   <!-- Attendance -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbAttendance"
-          aria-expanded="false">
+  <button class="sidebar-item {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}" type="button"
+    data-bs-toggle="collapse" data-bs-target="#sbAttendance"
+    aria-expanded="{% if 'attendance' in request.resolver_match.url_name %}true{% else %}false{% endif %}">
     <i class="bi bi-check2-all si-icon"></i>
     <span class="si-label">Attendance</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbAttendance">
-    <a href="{% url 'attendance_list' %}">Attendance List</a>
+  <div class="collapse sidebar-sub {% if 'attendance' in request.resolver_match.url_name %}show{% endif %}"
+    id="sbAttendance">
+    <a href="{% url 'student_attendance' %}"
+      class="{% if request.resolver_match.url_name == 'student_attendance' %}active{% endif %}">
+      <i class="bi bi-check2-circle me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Student Attendance
+    </a>
+    <a href="{% url 'attendance_by_date' %}"
+      class="{% if request.resolver_match.url_name == 'attendance_by_date' %}active{% endif %}">
+      <i class="bi bi-calendar-check me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Attendance By Date
+    </a>
   </div>
 
   <!-- Admit Card -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbAdmitCard"
-          aria-expanded="false">
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbAdmitCard"
+    aria-expanded="{% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}true{% else %}false{% endif %}">
     <i class="bi bi-card-text si-icon"></i>
     <span class="si-label">Admit Card</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbAdmitCard">
-    <a href="{% url 'exam_list' %}">View Exams</a>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}show{% endif %}"
+    id="sbAdmitCard">
+    <a href="{% url 'admit_card_create' %}"
+      class="{% if request.resolver_match.url_name == 'admit_card_create' %}active{% endif %}">
+      <i class="bi bi-plus-circle me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Generate Admit Card
+    </a>
+    <a href="{% url 'admit_card_list' %}"
+      class="{% if request.resolver_match.url_name == 'admit_card_list' %}active{% endif %}">
+      <i class="bi bi-card-text me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Admit Card(s)
+    </a>
   </div>
 
   <!-- Result -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbResult"
-          aria-expanded="false">
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbResult"
+    aria-expanded="{% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' %}true{% else %}false{% endif %}">
     <i class="bi bi-file-earmark-bar-graph si-icon"></i>
     <span class="si-label">Result</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbResult">
-    <a href="{% url 'exam_list' %}">Exam Results</a>
-    <a href="{% url 'reports_dashboard' %}">Reports</a>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' %}show{% endif %}"
+    id="sbResult">
+    <a href="{% url 'result_create' %}"
+      class="{% if request.resolver_match.url_name == 'result_create' %}active{% endif %}">
+      <i class="bi bi-plus-circle me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Create Result
+    </a>
+    <a href="{% url 'result_list' %}"
+      class="{% if request.resolver_match.url_name == 'result_list' %}active{% endif %}">
+      <i class="bi bi-card-text me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Result
+    </a>
   </div>
 
   <!-- Student Certificate -->
-  <button class="sidebar-item" type="button"
-          data-bs-toggle="collapse" data-bs-target="#sbCertificate"
-          aria-expanded="false">
+  <button class="sidebar-item" type="button" data-bs-toggle="collapse" data-bs-target="#sbCertificate"
+    aria-expanded="false">
     <i class="bi bi-patch-check si-icon"></i>
     <span class="si-label">Student Certificate</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div class="collapse sidebar-sub" id="sbCertificate">
-    <a href="{% url 'certificate_list' %}">Certificate List</a>
+    <a href="{% url 'certificate_create' %}"
+      class="{% if request.resolver_match.url_name == 'certificate_create' %}active{% endif %}">
+      <i class="bi bi-calendar-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Generate Certificate
+    </a>
+    <a href="{% url 'certificate_list' %}"
+      class="{% if request.resolver_match.url_name == 'certificate_list' %}active{% endif %}">
+      <i class="bi bi-clipboard me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Get Certificate
+    </a>
   </div>
 
   <!-- Study Material -->
-  <a href="{% url 'exam_list' %}" class="sidebar-item">
+  <a href="{% url 'study_material_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' %}active{% endif %}">
     <i class="bi bi-book si-icon"></i>
     <span class="si-label">Study Material</span>
   </a>
+
+  <!-- ── ONLINE EXAM SECTION ── -->
+  <div class="sidebar-section">Online Exam Section</div>
+
+  <!-- Exam(s) -->
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbOnlineExam"
+    aria-expanded="{% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam' %}true{% else %}false{% endif %}">
+    <i class="bi bi-journal-text si-icon"></i>
+    <span class="si-label">Exam(S)</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam' %}show{% endif %}"
+    id="sbOnlineExam">
+    {% if request.user.role == 'center' %}
+    <a href="{% url 'add_exam' %}"
+      class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
+      <i class="bi bi-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Request
+    </a>
+    {% else %}
+    <a href="{% url 'add_exam' %}"
+      class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
+      <i class="bi bi-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Create
+    </a>
+    {% endif %}
+    <a href="{% url 'exam_list' %}"
+      class="{% if request.resolver_match.url_name == 'exam_list' %}active{% endif %}">
+      <i class="bi bi-list-ul me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List
+    </a>
+  </div>
+
+  {% if request.user.role != 'center' %}
+  <!-- Assign Exam -->
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbAssignExam"
+    aria-expanded="{% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}true{% else %}false{% endif %}">
+    <i class="bi bi-plus-circle si-icon"></i>
+    <span class="si-label">Assign Exam</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}show{% endif %}"
+    id="sbAssignExam">
+    <a href="#"
+      class="{% if request.resolver_match.url_name == 'assign_exam_center' %}active{% endif %}">
+      <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Center
+    </a>
+    <a href="{% url 'assign_exam_student' %}"
+      class="{% if request.resolver_match.url_name == 'assign_exam_student' %}active{% endif %}">
+      <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Student
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Student Exam(s) -->
+  <a href="{% url 'admin_student_exam_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'admin_student_exam_list' %}active{% endif %}">
+    <i class="bi bi-person-check si-icon"></i>
+    <span class="si-label">Student Exam(S)</span>
+  </a>
+
+  <!-- ── CENTER AREA ── -->
+  {% if request.user.role != 'center' %}
+  <div class="sidebar-section">Center Area</div>
+
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers,deleted_centers' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbCenterInfo"
+    aria-expanded="{% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers,deleted_centers' %}true{% else %}false{% endif %}">
+    <i class="bi bi-people si-icon"></i>
+    <span class="si-label">Center Information</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'center_list,center_info_list,center_create,center_edit,assign_courses,pending_centers,deleted_centers' %}show{% endif %}"
+    id="sbCenterInfo">
+    <a href="{% url 'center_create' %}"
+      class="{% if request.resolver_match.url_name == 'center_create' %}active{% endif %}">
+      <i class="bi bi-plus-square text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Add Center
+    </a>
+    <a href="{% url 'assign_courses' %}"
+      class="{% if request.resolver_match.url_name == 'assign_courses' %}active{% endif %}">
+      <i class="bi bi-journal-plus text-info me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Assign Courses
+    </a>
+    <a href="{% url 'pending_centers' %}"
+      class="{% if request.resolver_match.url_name == 'pending_centers' %}active{% endif %}">
+      <i class="bi bi-clipboard-minus text-warning me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Pending Centers
+    </a>
+    <a href="{% url 'center_info_list' %}"
+      class="{% if request.resolver_match.url_name == 'center_info_list' %}active{% endif %}">
+      <i class="bi bi-clipboard-check text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Center
+    </a>
+    <a href="{% url 'deleted_centers' %}"
+      class="{% if request.resolver_match.url_name == 'deleted_centers' %}active{% endif %}">
+      <i class="bi bi-clipboard-x text-danger me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Deleted Center List
+    </a>
+  </div>
+
+  <!-- Center Certificate -->
+  <a href="{% url 'center_certificate_create' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'center_certificate_create' or request.resolver_match.url_name == 'center_certificate_list' %}active{% endif %}">
+    <i class="bi bi-award si-icon"></i>
+    <span class="si-label">Center Certificate</span>
+  </a>
+
+  <!-- Payment Area -->
+  <div class="sidebar-section">Payment Area</div>
+
+  <button
+    class="sidebar-item {% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}active{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbPaymentSetting"
+    aria-expanded="{% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}true{% else %}false{% endif %}">
+    <i class="bi bi-bank si-icon"></i>
+    <span class="si-label">Payment Setting</span>
+    <i class="bi bi-chevron-down si-arrow"></i>
+  </button>
+  <div
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}show{% endif %}"
+    id="sbPaymentSetting">
+    <a href="{% url 'student_payment_setting' %}"
+      class="{% if request.resolver_match.url_name == 'student_payment_setting' %}active{% endif %}">
+      <i class="bi bi-bank text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Student
+    </a>
+    <a href="{% url 'center_payment_setting' %}"
+      class="{% if request.resolver_match.url_name == 'center_payment_setting' %}active{% endif %}">
+      <i class="bi bi-bank text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Center
+    </a>
+  </div>
 
   <!-- Footer: Login as centre -->
   <div class="sidebar-footer">
@@ -495,6 +1307,8 @@
       <i class="bi bi-box-arrow-in-right"></i> Login as centre
     </a>
   </div>
+  {% endif %}
+  {% endif %}
 
 </aside>
 
@@ -502,7 +1316,7 @@
      MAIN CONTENT
 ════════════════════════════════════════════ -->
 <div class="erp-content">
-
+  {% block erp_content %}
   <!-- Header -->
   <div class="mb-4">
     <div class="dash-breadcrumb mb-1">
@@ -515,9 +1329,10 @@
     <h1 class="dash-title">Dashboard</h1>
   </div>
 
-  <!-- ══ ROW 1: Students · Courses · Centers ══ -->
+  <!-- ══ ROW 1: Students & Courses ══ -->
   <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
 
+    <!-- Card 1: Active Student(s) -->
     <div class="col">
       <div class="erp-card bg-g-purple">
         <div class="erp-card-body">
@@ -525,27 +1340,43 @@
           <div class="erp-card-number">{{ active_students }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-mortarboard-fill"></i></div>
         </div>
-        <a href="{% url 'user_list' %}" class="erp-card-footer">
+        <a href="{% url 'user_list' %}?role=student" class="erp-card-footer">
           <i class="bi bi-list-ul"></i> View List
         </a>
       </div>
     </div>
 
+    <!-- Card 2: Passout Student(s) -->
     <div class="col">
       <div class="erp-card bg-g-teal">
         <div class="erp-card-body">
-          <div class="erp-card-title">Total Student(s)</div>
-          <div class="erp-card-number">{{ total_students }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-people-fill"></i></div>
+          <div class="erp-card-title">Passout Student(s)</div>
+          <div class="erp-card-number">{{ total_certificates }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-award-fill"></i></div>
         </div>
-        <a href="{% url 'user_list' %}" class="erp-card-footer">
+        <a href="{% url 'passout_student_list' %}" class="erp-card-footer">
           <i class="bi bi-list-ul"></i> View List
         </a>
       </div>
     </div>
 
+    <!-- Card 3: Course Category -->
     <div class="col">
       <div class="erp-card bg-g-green">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Course Category</div>
+          <div class="erp-card-number">{{ total_course_categories }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-tags-fill"></i></div>
+        </div>
+        <a href="{% url 'category_list' %}" class="erp-card-footer">
+          <i class="bi bi-gear-fill"></i> Manage Category
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 4: Course(s) -->
+    <div class="col">
+      <div class="erp-card bg-g-pink">
         <div class="erp-card-body">
           <div class="erp-card-title">Course(s)</div>
           <div class="erp-card-number">{{ total_courses }}</div>
@@ -557,14 +1388,123 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- ══ ROW 2: Admissions ══ -->
+  <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <!-- Card 5: Admission(s) -->
     <div class="col">
-      <div class="erp-card bg-g-pink">
+      <div class="erp-card bg-g-blue">
         <div class="erp-card-body">
-          <div class="erp-card-title">Total Centre(s)</div>
+          <div class="erp-card-title">Admission(s)</div>
+          <div class="erp-card-number">{{ total_admissions }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-plus-fill"></i></div>
+        </div>
+        <a href="{% url 'student_admission' %}" class="erp-card-footer">
+          <i class="bi bi-person-plus-fill"></i> Admission Student
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 6: Approved Admission(s) -->
+    <div class="col">
+      <div class="erp-card bg-g-orange">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Approved Admission(s)</div>
+          <div class="erp-card-number">{{ approved_admissions }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
+        </div>
+        <a href="{% url 'student_approved_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 7: Pending Admission(s) -->
+    <div class="col">
+      <div class="erp-card bg-g-red">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Pending Admission(s)</div>
+          <div class="erp-card-number">{{ pending_admissions }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-hourglass-split"></i></div>
+        </div>
+        <a href="{% url 'student_pending_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 8: Cancelled Admission(s) -->
+    <div class="col">
+      <div class="erp-card bg-g-violet">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Cancelled Admission(s)</div>
+          <div class="erp-card-number">{{ cancelled_admissions }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-x-fill"></i></div>
+        </div>
+        <a href="{% url 'student_cancelled_list' %}" class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View List
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ROW 3: Student Documents & Center Overview ══ -->
+  <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+
+    <!-- Card 9: Admit Card Generate -->
+    <div class="col">
+      <div class="erp-card bg-g-crimson">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Admit Card Generate</div>
+          <div class="erp-card-number">{{ total_admit_cards }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-card-text"></i></div>
+        </div>
+        <a href="{% url 'admit_card_create' %}" class="erp-card-footer">
+          <i class="bi bi-plus-circle"></i> Generate Admit Card
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 10: Result Generate -->
+    <div class="col">
+      <div class="erp-card bg-g-amber">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Result Generate</div>
+          <div class="erp-card-number">{{ total_results }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-file-earmark-bar-graph-fill"></i></div>
+        </div>
+        <a href="{% url 'result_create' %}" class="erp-card-footer">
+          <i class="bi bi-plus-circle"></i> Create Marksheet
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 11: ID Card Generate -->
+    <div class="col">
+      <div class="erp-card bg-g-olive">
+        <div class="erp-card-body">
+          <div class="erp-card-title">ID Card Generate</div>
+          <div class="erp-card-number">{{ total_id_cards }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-person-badge-fill"></i></div>
+        </div>
+        <a href="{% url 'student_id_card' %}" class="erp-card-footer">
+          <i class="bi bi-person-badge-fill"></i> Get ID Card
+        </a>
+      </div>
+    </div>
+
+    <!-- Card 12: Total Center(s) -->
+    <div class="col">
+      <div class="erp-card bg-g-slate">
+        <div class="erp-card-body">
+          <div class="erp-card-title">Total Center(s)</div>
           <div class="erp-card-number">{{ total_centers }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-building"></i></div>
         </div>
-        <a href="{% url 'center_list' %}" class="erp-card-footer">
+        <a href="{% url 'center_info_list' %}" class="erp-card-footer">
           <i class="bi bi-eye-fill"></i> View
         </a>
       </div>
@@ -572,171 +1512,61 @@
 
   </div>
 
-  <!-- ══ ROW 2: Teachers · Batches ══ -->
+  <!-- ══ ROW 4: Pending/Approved Centers, Exams & Fees ══ -->
   <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
 
+    <!-- Card 13: Total Pending Center(s) -->
     <div class="col">
-      <div class="erp-card bg-g-blue">
+      <div class="erp-card bg-g-dred">
         <div class="erp-card-body">
-          <div class="erp-card-title">Total Teacher(s)</div>
-          <div class="erp-card-number">{{ total_teachers }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-person-workspace"></i></div>
+          <div class="erp-card-title">Total Pending Center(s)</div>
+          <div class="erp-card-number">{{ total_pending_centers }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-clipboard-minus"></i></div>
         </div>
-        <a href="{% url 'user_list' %}" class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View List
+        <a href="{% url 'pending_centers' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View
         </a>
       </div>
     </div>
 
+    <!-- Card 14: Total Approved Center(s) -->
     <div class="col">
-      <div class="erp-card bg-g-orange">
+      <div class="erp-card bg-g-dgreen">
         <div class="erp-card-body">
-          <div class="erp-card-title">Active Teacher(s)</div>
-          <div class="erp-card-number">{{ active_teachers }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-person-check-fill"></i></div>
+          <div class="erp-card-title">Total Approved Center(s)</div>
+          <div class="erp-card-number">{{ total_approved_centers }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-clipboard-check"></i></div>
         </div>
-        <a href="{% url 'user_list' %}" class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View List
+        <a href="{% url 'center_info_list' %}" class="erp-card-footer">
+          <i class="bi bi-eye-fill"></i> View
         </a>
       </div>
     </div>
 
+    <!-- Card 15: Total Exam(s) -->
     <div class="col">
-      <div class="erp-card bg-g-red">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Total Batch(es)</div>
-          <div class="erp-card-number">{{ total_batches }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-calendar-event"></i></div>
-        </div>
-        <a href="{% url 'batch_list' %}" class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View List
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="erp-card bg-g-violet">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Active Batch(es)</div>
-          <div class="erp-card-number">{{ active_batches }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-calendar-check"></i></div>
-        </div>
-        <a href="{% url 'batch_list' %}" class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View List
-        </a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══ ROW 3: Exams · Attendance ══ -->
-  <div class="row g-3 mb-3 row-cols-1 row-cols-sm-2 row-cols-lg-4">
-
-    <div class="col">
-      <div class="erp-card bg-g-crimson">
+      <div class="erp-card bg-g-dteal">
         <div class="erp-card-body">
           <div class="erp-card-title">Total Exam(s)</div>
           <div class="erp-card-number">{{ total_exams }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-journal-text"></i></div>
         </div>
-        <a href="{% url 'exam_list' %}" class="erp-card-footer">
+        <a href="{% url 'add_exam' %}" class="erp-card-footer">
           <i class="bi bi-plus-circle"></i> Create Exam
         </a>
       </div>
     </div>
 
-    <div class="col">
-      <div class="erp-card bg-g-amber">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Active Exam(s)</div>
-          <div class="erp-card-number">{{ active_exams }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-journal-check"></i></div>
-        </div>
-        <a href="{% url 'exam_list' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View List
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="erp-card bg-g-olive">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Batch Assigned Exams</div>
-          <div class="erp-card-number">{{ batch_assigned_exams }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-journal-album"></i></div>
-        </div>
-        <a href="{% url 'exam_list' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View List
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="erp-card bg-g-slate">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Attendance Records</div>
-          <div class="erp-card-number">{{ total_attendance_records }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-clock-history"></i></div>
-        </div>
-        <a href="{% url 'attendance_list' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View Records
-        </a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══ ROW 4: Fees · Certificates ══ -->
-  <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
-
+    <!-- Card 16: Fee Collection(s) -->
     <div class="col">
       <div class="erp-card bg-g-navy">
         <div class="erp-card-body">
           <div class="erp-card-title">Fee Collection(s)</div>
-          <div class="erp-card-number sm">&#8377;{{ total_fee_collection }}</div>
+          <div class="erp-card-number sm">₹{{ total_fee_collection|floatformat:2 }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-bank"></i></div>
         </div>
         <a href="{% url 'fees_list' %}" class="erp-card-footer">
           <i class="bi bi-cash-stack"></i> Collect Fee
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="erp-card bg-g-dred">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Pending Fees</div>
-          <div class="erp-card-number sm">&#8377;{{ total_pending_fees }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-hourglass-split"></i></div>
-        </div>
-        <a href="{% url 'fees_list' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="erp-card bg-g-dteal">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Total Certificates</div>
-          <div class="erp-card-number">{{ total_certificates }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-award"></i></div>
-        </div>
-        <a href="{% url 'certificate_list' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="erp-card bg-g-dgreen">
-        <div class="erp-card-body">
-          <div class="erp-card-title">Issued Certificates</div>
-          <div class="erp-card-number">{{ issued_certificates_count }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-patch-check-fill"></i></div>
-        </div>
-        <a href="{% url 'certificate_list' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View List
         </a>
       </div>
     </div>
@@ -952,5 +1782,6 @@
 
   </div>
 
+  {% endblock %}
 </div><!-- /erp-content -->
 {% endblock %}

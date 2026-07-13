@@ -1,342 +1,48 @@
-{% extends 'accounts/base.html' %}
+{% extends base_template|default:'accounts/admin_dashboard.html' %}
 {% load static %}
 
-{% block title %}Student Profile Dashboard | Examly{% endblock %}
+{% block title %}Account Overview | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-person-fill text-primary me-2"></i>Account Overview
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item text-white-50 active" aria-current="page">Profile</li>
+      </ol>
+    </nav>
+  </div>
+
+  {% include 'student/student_profile_detail.html' %}
+</div>
+{% endblock %}
 
 {% block content %}
 <div class="container py-2">
-    
-    <!-- SECTION 1: Student Header Card -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body p-4">
-            <div class="row align-items-center g-4">
-                <!-- Profile Picture -->
-                <div class="col-12 col-md-auto text-center">
-                    {% if student.studentprofile.profile_picture %}
-                        <img src="{{ student.studentprofile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle img-thumbnail" style="width:120px; height:120px; object-fit:cover; border: 3px solid var(--color-primary-light);">
-                    {% else %}
-                        <img src="{% static 'images/default_profile.png' %}" alt="Default Profile" class="rounded-circle img-thumbnail" style="width:120px; height:120px; object-fit:cover; border: 3px solid var(--color-primary-light);">
-                    {% endif %}
-                </div>
-                
-                <!-- Student Identity & Contact Info -->
-                <div class="col-12 col-md">
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2 justify-content-center justify-content-md-start">
-                        <h3 class="fw-bold mb-0 text-dark">{{ student.studentprofile.full_name|default:student.username }}</h3>
-                        <span class="badge bg-primary rounded-pill px-3 py-1"><i class="bi bi-mortarboard-fill me-1"></i> Student</span>
-                        <span class="badge bg-light text-muted border px-3 py-1">@{{ student.username }}</span>
-                    </div>
-                    
-                    <p class="text-muted text-center text-md-start mb-3 small italic">{{ student.studentprofile.bio|default:"No student bio added yet." }}</p>
-                    
-                    <div class="row g-3 text-start">
-                        <div class="col-sm-6 col-lg-3">
-                            <span class="text-muted small d-block">Batch Enrollment</span>
-                            <span class="fw-semibold text-dark"><i class="bi bi-calendar-event me-1 text-primary"></i>{{ student.studentprofile.batch.name|default:"Not Enrolled" }}</span>
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <span class="text-muted small d-block">Course Name</span>
-                            <span class="fw-semibold text-dark"><i class="bi bi-journal-bookmark me-1 text-primary"></i>{{ student.studentprofile.batch.course.name|default:"-" }}</span>
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <span class="text-muted small d-block">Email Address</span>
-                            <span class="fw-semibold text-dark"><i class="bi bi-envelope me-1 text-primary"></i>{{ student.studentprofile.email|default:student.email }}</span>
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <span class="text-muted small d-block">Phone Number</span>
-                            <span class="fw-semibold text-dark"><i class="bi bi-telephone me-1 text-primary"></i>{{ student.studentprofile.phone|default:"-" }}</span>
-                        </div>
-                    </div>
-                </div>
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-dark mb-1">
+      <i class="bi bi-person-fill text-primary me-2"></i>Account Overview
+    </h2>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item text-dark active" aria-current="page">Profile</li>
+      </ol>
+    </nav>
+  </div>
 
-                <!-- Action Button -->
-                <div class="col-12 col-md-auto text-center text-md-end">
-                    <a href="{% url 'edit_student_profile' %}" class="btn btn-outline-primary px-4">
-                        <i class="bi bi-pencil-square me-1"></i> Edit Profile
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECTION 2: Academic Overview KPIs -->
-    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
-        <div class="col">
-            <div class="stat-card h-100">
-                <div class="stat-icon bg-light text-primary"><i class="bi bi-clipboard-check"></i></div>
-                <div>
-                    <div class="stat-value">{{ total_attempts }}</div>
-                    <div class="stat-label">Exam Attempts</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card h-100">
-                <div class="stat-icon bg-light text-success"><i class="bi bi-graph-up-arrow"></i></div>
-                <div>
-                    <div class="stat-value">{{ average_score }}%</div>
-                    <div class="stat-label">Average Score</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card h-100">
-                <div class="stat-icon bg-light text-info"><i class="bi bi-percent"></i></div>
-                <div>
-                    <div class="stat-value">{{ attendance_percentage }}%</div>
-                    <div class="stat-label">Attendance Rate</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card h-100">
-                <div class="stat-icon bg-light text-success"><i class="bi bi-calendar-check"></i></div>
-                <div>
-                    <div class="stat-value">{{ present_days }}</div>
-                    <div class="stat-label">Days Present</div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="stat-card h-100">
-                <div class="stat-icon bg-light text-danger"><i class="bi bi-calendar-x"></i></div>
-                <div>
-                    <div class="stat-value">{{ absent_days }}</div>
-                    <div class="stat-label">Days Absent</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAIN DASHBOARD CONTENT GRID -->
-    <div class="row g-4">
-        
-        <!-- Left Side: Exams & Attendance History -->
-        <div class="col-lg-8">
-            
-            <!-- SECTION 5: Recent Exam Attempts -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-award text-primary me-2"></i>Recent Exam Attempts</h5>
-                    <div class="table-responsive">
-                        <table class="table table-examly table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3">Exam Name</th>
-                                    <th>Percentage</th>
-                                    <th>Result</th>
-                                    <th class="pe-3">Attempt Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for attempt in attempts|slice:":5" %}
-                                <tr>
-                                    <td class="ps-3 fw-semibold">{{ attempt.exam.title }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="fw-bold">{{ attempt.score|floatformat:1 }}%</span>
-                                            <div class="progress flex-grow-1" style="height: 6px; width: 60px; max-width: 60px;">
-                                                <div class="progress-bar {% if attempt.score >= attempt.exam.pass_percentage %}bg-success{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ attempt.score }}%"></div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        {% if attempt.score >= attempt.exam.pass_percentage %}
-                                            <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Pass</span>
-                                        {% else %}
-                                            <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Fail</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="pe-3 text-muted small">{{ attempt.submitted_at|date:"Y-m-d H:i" }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="4" class="p-0">
-                                        <div class="empty-state py-4">
-                                            <i class="bi bi-inbox text-muted"></i>
-                                            <p class="mb-0">No exam attempts recorded yet.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION 4: Attendance History -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Recent Attendance Log</h5>
-                    <div class="table-responsive">
-                        <table class="table table-examly table-hover align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th class="ps-3">Date</th>
-                                    <th>Status</th>
-                                    <th class="pe-3">Marked By</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for att in recent_attendances %}
-                                <tr>
-                                    <td class="ps-3 fw-semibold">{{ att.date }}</td>
-                                    <td>
-                                        {% if att.status == 'present' %}
-                                            <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>Present</span>
-                                        {% else %}
-                                            <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>Absent</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="pe-3">
-                                        {% if att.marked_by %}
-                                            <span class="text-primary fw-semibold">{{ att.marked_by.full_name }}</span>
-                                        {% else %}
-                                            <span class="text-muted small"><i class="bi bi-shield-lock me-1"></i>Admin</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="3" class="p-0">
-                                        <div class="empty-state py-4">
-                                            <i class="bi bi-calendar-x text-muted"></i>
-                                            <p class="mb-0">No attendance history logged yet.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Right Side: Fee & Certificate Summary Section -->
-        <div class="col-lg-4">
-            
-            <!-- SECTION 3: Fee Summary Card -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-wallet2 text-primary me-2"></i>Fee Summary</h5>
-                    
-                    <div class="mb-4 text-center">
-                        <span class="text-muted small d-block">Fee Payment Progress</span>
-                        <h3 class="fw-bold text-dark mb-2 mt-1">
-                            {% if course_fee > 0 %}
-                                {% widthratio paid_amount course_fee 100 %}%
-                            {% else %}
-                                0%
-                            {% endif %}
-                        </h3>
-                        <div class="progress rounded-pill mb-2" style="height: 12px;">
-                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" 
-                                 style="width: {% if course_fee > 0 %}{% widthratio paid_amount course_fee 100 %}{% else %}0{% endif %}%"></div>
-                        </div>
-                    </div>
-
-                    <hr class="text-muted">
-
-                    <div class="d-flex justify-content-between align-items-center py-2 mb-2">
-                        <span class="text-muted"><i class="bi bi-card-list me-2"></i>Course Fee</span>
-                        <span class="fw-bold fs-5 text-dark">₹{{ course_fee }}</span>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center py-2 mb-2">
-                        <span class="text-muted"><i class="bi bi-cash-stack me-2 text-success"></i>Paid Amount</span>
-                        <span class="fw-bold fs-5 text-success">₹{{ paid_amount }}</span>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center py-2 mb-3">
-                        <span class="text-muted"><i class="bi bi-hourglass-split me-2 text-danger"></i>Pending Balance</span>
-                        <span class="fw-bold fs-5 text-danger">₹{{ pending_amount }}</span>
-                    </div>
-
-                    <div class="d-grid gap-2 pt-3 border-top">
-                        <div class="text-center py-2 rounded" style="{% if fee_status == 'PAID' %}background-color: rgba(22, 163, 74, 0.12);{% elif fee_status == 'PARTIAL' %}background-color: rgba(245, 158, 11, 0.12);{% else %}background-color: rgba(220, 38, 38, 0.12);{% endif %}">
-                            <span class="text-muted small d-block mb-1">Financial Status</span>
-                            {% if fee_status == 'PAID' %}
-                                <span class="badge bg-success fs-6 px-3 py-1">PAID</span>
-                            {% elif fee_status == 'PARTIAL' %}
-                                <span class="badge bg-warning text-dark fs-6 px-3 py-1">PARTIAL</span>
-                            {% else %}
-                                <span class="badge bg-danger fs-6 px-3 py-1">PENDING</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                </div>
-            </div>
-
-            <!-- SECTION 6: Certificates Card -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-award text-primary me-2"></i>Certificates</h5>
-                    
-                    <div class="d-flex justify-content-between align-items-center py-2 mb-2">
-                        <span class="text-muted"><i class="bi bi-patch-check-fill me-2 text-success"></i>Issued Certificates</span>
-                        <span class="fw-bold fs-5 text-dark">{{ issued_certificates_count }}</span>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center py-2 mb-3">
-                        <span class="text-muted"><i class="bi bi-shield-check me-2 text-primary"></i>Eligibility Status</span>
-                        {% if eligibility.eligible %}
-                            <span class="badge bg-success fs-6 px-3 py-1">ELIGIBLE</span>
-                        {% else %}
-                            <span class="badge bg-secondary fs-6 px-3 py-1">INELIGIBLE</span>
-                        {% endif %}
-                    </div>
-
-                    <div class="border-top pt-3">
-                        {% if certificates %}
-                            <span class="text-muted small d-block mb-2 fw-bold">Earned Certificates:</span>
-                            <div class="list-group list-group-flush">
-                                {% for cert in certificates %}
-                                    <div class="list-group-item px-0 py-2 bg-transparent border-0 d-flex justify-content-between align-items-center border-bottom">
-                                        <div>
-                                            <span class="d-block fw-semibold text-dark"><code>{{ cert.certificate_number }}</code></span>
-                                            <small class="text-muted">Issued: {{ cert.issue_date }}</small>
-                                        </div>
-                                        <div>
-                                            {% if cert.status == 'issued' %}
-                                                <span class="badge bg-success me-2">Active</span>
-                                            {% else %}
-                                                <span class="badge bg-danger me-2">Revoked</span>
-                                            {% endif %}
-                                            <a href="{% url 'certificate_detail' cert.id %}" class="btn btn-sm btn-outline-primary py-0 px-2" title="View Certificate">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {% if eligibility.eligible %}
-                                <div class="alert alert-success d-flex align-items-center mb-0 mt-2 py-2" role="alert">
-                                    <i class="bi bi-check-circle-fill me-2 small"></i>
-                                    <div class="small">
-                                        All requirements met. Waiting for administrator issuance.
-                                    </div>
-                                </div>
-                            {% else %}
-                                <div class="alert alert-light border d-flex align-items-start mb-0 mt-2 py-2" role="alert">
-                                    <i class="bi bi-info-circle-fill me-2 text-muted mt-1 small"></i>
-                                    <div class="small text-muted">
-                                        Requirements not met: {{ eligibility.reason }}
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-    </div>
-
+  {% include 'student/student_profile_detail.html' %}
 </div>
 {% endblock %}

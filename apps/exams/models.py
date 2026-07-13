@@ -6,9 +6,16 @@ from apps.soft_delete import SoftDeleteModel
 class Exam(SoftDeleteModel):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    date = models.DateField()
-    total_marks = models.IntegerField()
+    date = models.DateField(null=True, blank=True)
+    total_marks = models.IntegerField(default=0)
     duration_minutes = models.PositiveIntegerField(default=20)
+
+    center = models.ForeignKey('centers.Center', on_delete=models.SET_NULL, null=True, blank=True, related_name='exams_list')
+    course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='exams_list')
+    course_duration = models.CharField(max_length=100, null=True, blank=True)
+    total_questions = models.PositiveIntegerField(default=0)
+    start_datetime = models.DateTimeField(null=True, blank=True)
+    end_datetime = models.DateTimeField(null=True, blank=True)
 
     is_published = models.BooleanField(default=False)
 
@@ -82,6 +89,37 @@ class StudentAnswer(models.Model):
     def __str__(self):
         return f"Answer to {self.question.id} by {self.attempt.student.username}"
 
+
+class ExamSchedule(SoftDeleteModel):
+    center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_center')
+    course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='exam_schedules')
+    duration = models.CharField(max_length=100)
+    exam_center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_exam_center')
+    session = models.ForeignKey('academics.AcademicSession', on_delete=models.CASCADE, related_name='exam_schedules')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-id']
+
+    def __str__(self):
+        return f"{self.course.name} - {self.session.session_name}"
+
     # NOTE: StudentProfile and TeacherProfile have been moved to:
     #   apps/students/models.py  →  StudentProfile
     #   apps/teachers/models.py  →  TeacherProfile
+
+
+class ExamStudentAssignment(SoftDeleteModel):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='student_assignments')
+    student = models.ForeignKey('students.StudentAdmission', on_delete=models.CASCADE, related_name='exam_assignments')
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('exam', 'student')
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.student.student_name}"

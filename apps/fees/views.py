@@ -3,14 +3,123 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Sum, Q, DecimalField
 from django.db.models.functions import Coalesce
+from apps.accounts.views import admin_required
 from apps.students.models import StudentProfile
 from apps.batches.models import Batch
 from apps.teachers.models import TeacherProfile
-from .models import FeePayment
-from .forms import FeePaymentForm
+from .models import CenterPaymentSetting, FeePayment, StudentPaymentSetting
+from .forms import CenterPaymentSettingForm, FeePaymentForm, StudentPaymentSettingForm
+from .services import sync_center_payment_settings, sync_student_payment_settings
 from decimal import Decimal
+
+
+@admin_required
+def student_payment_setting(request):
+    sync_student_payment_settings()
+
+    if request.method == 'POST':
+        if request.POST.get('action') == 'sync':
+            created_count = sync_student_payment_settings()
+            if created_count:
+                messages.success(request, f"{created_count} student payment setting(s) synced successfully.")
+            else:
+                messages.info(request, "Student payment settings are already synced.")
+            return redirect('student_payment_setting')
+
+        settings_qs = StudentPaymentSetting.objects.only(
+            'id', 'title', 'amount', 'is_visible', 'sort_order'
+        ).order_by('sort_order', 'title')
+        forms = []
+        is_valid = True
+        for setting in settings_qs:
+            form = StudentPaymentSettingForm(
+                {
+                    'amount': request.POST.get(f'amount_{setting.pk}', ''),
+                    'is_visible': request.POST.get(f'is_visible_{setting.pk}') == 'on',
+                },
+                instance=setting,
+            )
+            forms.append((setting, form))
+            if not form.is_valid():
+                is_valid = False
+
+        if is_valid:
+            with transaction.atomic():
+                StudentPaymentSetting.objects.bulk_update(
+                    [form.save(commit=False) for _, form in forms],
+                    ['amount', 'is_visible']
+                )
+            messages.success(request, "Student payment settings updated successfully.")
+            return redirect('student_payment_setting')
+
+        messages.error(request, "Please correct the errors below.")
+        rows = forms
+    else:
+        rows = [
+            (setting, StudentPaymentSettingForm(instance=setting))
+            for setting in StudentPaymentSetting.objects.only(
+                'id', 'title', 'amount', 'is_visible', 'sort_order'
+            ).order_by('sort_order', 'title')
+        ]
+
+    return render(request, 'fees/student_payment_setting.html', {
+        'rows': rows,
+    })
+
+
+@admin_required
+def center_payment_setting(request):
+    sync_center_payment_settings()
+
+    if request.method == 'POST':
+        if request.POST.get('action') == 'sync':
+            created_count = sync_center_payment_settings()
+            if created_count:
+                messages.success(request, f"{created_count} center payment setting(s) synced successfully.")
+            else:
+                messages.info(request, "Center payment settings are already synced.")
+            return redirect('center_payment_setting')
+
+        settings_qs = CenterPaymentSetting.objects.only(
+            'id', 'title', 'amount', 'is_visible', 'sort_order'
+        ).order_by('sort_order', 'title')
+        forms = []
+        is_valid = True
+        for setting in settings_qs:
+            form = CenterPaymentSettingForm(
+                {
+                    'amount': request.POST.get(f'amount_{setting.pk}', ''),
+                    'is_visible': request.POST.get(f'is_visible_{setting.pk}') == 'on',
+                },
+                instance=setting,
+            )
+            forms.append((setting, form))
+            if not form.is_valid():
+                is_valid = False
+
+        if is_valid:
+            with transaction.atomic():
+                for _, form in forms:
+                    form.save()
+            messages.success(request, "Center payment settings updated successfully.")
+            return redirect('center_payment_setting')
+
+        messages.error(request, "Please correct the errors below.")
+        rows = forms
+    else:
+        rows = [
+            (setting, CenterPaymentSettingForm(instance=setting))
+            for setting in CenterPaymentSetting.objects.only(
+                'id', 'title', 'amount', 'is_visible', 'sort_order'
+            ).order_by('sort_order', 'title')
+        ]
+
+    return render(request, 'fees/center_payment_setting.html', {
+        'rows': rows,
+    })
 
 
 @login_required
@@ -18,9 +127,50 @@ def fees_list(request):
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
     is_teacher = request.user.role == 'teacher'
+    is_student = request.user.role == 'student'
     
-    if not (is_admin or is_center or is_teacher):
+    if not (is_admin or is_center or is_teacher or is_student):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
+        
+    if is_student:
+        from apps.students.models import StudentAdmission
+        admission = StudentAdmission.objects.select_related('course').filter(user=request.user).first()
+        if not admission:
+            return HttpResponseForbidden("Access Denied: No student admission found.")
+            
+        profile = getattr(request.user, 'studentprofile', None)
+        if not profile:
+            payments = FeePayment.objects.none()
+            course_fee = admission.course.fees if admission.course else Decimal('0.00')
+            paid_amount = Decimal('0.00')
+            pending_amount = course_fee
+            fee_status = 'PENDING'
+        else:
+            payments = FeePayment.objects.filter(student=profile).select_related('student__batch__course').order_by('-payment_date', '-id')
+            course_fee = Decimal(str(admission.course.fees)) if admission.course else Decimal('0.00')
+            paid_amount = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            paid_amount = Decimal(str(paid_amount))
+            pending_amount = course_fee - paid_amount
+            
+            if paid_amount == 0:
+                fee_status = 'PENDING'
+            elif pending_amount <= 0:
+                fee_status = 'PAID'
+            else:
+                fee_status = 'PARTIAL'
+            
+        paginator = Paginator(payments, 10)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        
+        return render(request, 'fees/student_fees_record.html', {
+            'page_obj': page_obj,
+            'course_fee': course_fee,
+            'paid_amount': paid_amount,
+            'pending_amount': pending_amount,
+            'fee_status': fee_status,
+            'student_profile': profile,
+        })
         
     tab = request.GET.get('tab', 'students')
     query = request.GET.get('q', '').strip()
@@ -33,8 +183,8 @@ def fees_list(request):
     
     if is_center:
         center = request.user.center
-        students_qs = students_qs.filter(batch__course__center=center)
-        batches = Batch.objects.filter(course__center=center)
+        students_qs = students_qs.filter(batch__center=center)
+        batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         students_qs = students_qs.filter(batch__teacher=teacher_profile)
@@ -82,7 +232,7 @@ def fees_list(request):
     if is_admin or is_center:
         payments_qs = FeePayment.objects.select_related('student__batch__course').all().order_by('-payment_date', '-id')
         if is_center:
-            payments_qs = payments_qs.filter(student__batch__course__center=request.user.center)
+            payments_qs = payments_qs.filter(student__batch__center=request.user.center)
             
         # Search/Filter in payments
         if query:
@@ -102,8 +252,8 @@ def fees_list(request):
     
     if is_center:
         center = request.user.center
-        metrics_students = metrics_students.filter(batch__course__center=center)
-        metrics_payments = metrics_payments.filter(student__batch__course__center=center)
+        metrics_students = metrics_students.filter(batch__center=center)
+        metrics_payments = metrics_payments.filter(student__batch__center=center)
     elif is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         metrics_students = metrics_students.filter(batch__teacher=teacher_profile)
@@ -157,6 +307,59 @@ def fees_list(request):
 
 
 @login_required
+def search_fee_payment(request):
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    
+    if not (is_admin or is_center):
+        return HttpResponseForbidden("Access Denied: Admins or Centers only.")
+        
+    query = request.GET.get('q', '').strip()
+    show_entries = request.GET.get('show', '10')
+    
+    try:
+        show = int(show_entries)
+    except ValueError:
+        show = 10
+        
+    payments_qs = FeePayment.objects.select_related('student').all().order_by('-payment_date', '-id')
+    
+    if is_center:
+        payments_qs = payments_qs.filter(student__batch__center=request.user.center)
+        
+    if query:
+        q_filter = Q(id__icontains=query) | Q(reference_number__icontains=query) | Q(student__full_name__icontains=query) | Q(student__phone__icontains=query)
+        
+        # Search via enrollment number mapped by name
+        from apps.students.models import StudentAdmission
+        matching_admissions = StudentAdmission.objects.filter(enrollment_no__icontains=query).values_list('student_name', flat=True)
+        if matching_admissions:
+            q_filter |= Q(student__full_name__in=matching_admissions)
+            
+        payments_qs = payments_qs.filter(q_filter)
+        
+    paginator = Paginator(payments_qs, show)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Enrich the current page with Enrollment No
+    from apps.students.models import StudentAdmission
+    names_on_page = [p.student.full_name for p in page_obj]
+    adm_map = {
+        adm.student_name: adm.enrollment_no
+        for adm in StudentAdmission.objects.filter(student_name__in=names_on_page)
+    }
+    
+    for payment in page_obj:
+        payment.enrollment_no = adm_map.get(payment.student.full_name, "—")
+        
+    return render(request, 'fees/search_fee_payment.html', {
+        'page_obj': page_obj,
+        'query': query,
+        'show_entries': show_entries,
+    })
+
+@login_required
 def payment_create(request):
     is_admin = request.user.role == 'admin'
     is_center = request.user.role == 'center'
@@ -175,7 +378,7 @@ def payment_create(request):
     if selected_student_id:
         try:
             if is_center:
-                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__course__center=request.user.center)
+                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__center=request.user.center)
             else:
                 student_profile = StudentProfile.objects.get(pk=selected_student_id)
                 
@@ -222,7 +425,7 @@ def payment_update(request, pk):
     
     # Check center isolation
     if is_center:
-        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.course.center != request.user.center:
+        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.center != request.user.center:
             return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
             
     selected_student_id = None
@@ -236,7 +439,7 @@ def payment_update(request, pk):
     if selected_student_id:
         try:
             if is_center:
-                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__course__center=request.user.center)
+                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__center=request.user.center)
             else:
                 student_profile = StudentProfile.objects.get(pk=selected_student_id)
                 
@@ -284,7 +487,7 @@ def payment_delete(request, pk):
     
     # Check center isolation
     if is_center:
-        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.course.center != request.user.center:
+        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.center != request.user.center:
             return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
             
     if request.method == 'POST':
@@ -306,7 +509,7 @@ def payment_receipt(request, pk):
     if user.role == 'admin':
         is_authorized = True
     elif user.role == 'center':
-        if user.center and payment.student.batch and payment.student.batch.course and payment.student.batch.course.center == user.center:
+        if user.center and payment.student.batch and payment.student.batch.center == user.center:
             is_authorized = True
     elif user.role == 'student':
         if payment.student.user == user:
@@ -334,3 +537,102 @@ def payment_receipt(request, pk):
         'is_admin': user.role == 'admin',
         'is_center': user.role == 'center',
     })
+
+
+@login_required
+def student_fee_autocomplete(request):
+    """Return JSON list of StudentProfile records for Select2, enriched with StudentAdmission data when available."""
+    from django.http import JsonResponse
+    from django.db.models import Q
+    from apps.students.models import StudentAdmission
+
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    if not (is_admin or is_center):
+        return JsonResponse({'results': []})
+
+    q = request.GET.get('q', '').strip()
+    results = []
+    if q:
+        # Primary search: StudentProfile (this is what FeePayment FK points to)
+        qs = StudentProfile.objects.select_related('batch__course').filter(
+            Q(full_name__icontains=q) |
+            Q(phone__icontains=q) |
+            Q(email__icontains=q)
+        )
+        if is_center and request.user.center:
+            qs = qs.filter(batch__center=request.user.center)
+        qs = qs.order_by('full_name')[:20]
+
+        profiles = list(qs)
+
+        # Try to enrich with StudentAdmission data (enrollment_no, photo, whatsapp_no)
+        name_set = {p.full_name for p in profiles}
+        adm_map = {}
+        for adm in StudentAdmission.objects.filter(student_name__in=name_set):
+            adm_map[adm.student_name] = adm
+
+        for sp in profiles:
+            adm = adm_map.get(sp.full_name)
+            if adm:
+                photo_url = adm.photo.url if adm.photo else ''
+                enrollment = adm.enrollment_no
+                mobile = adm.whatsapp_no
+            else:
+                photo_url = sp.profile_picture.url if sp.profile_picture else ''
+                enrollment = ''
+                mobile = sp.phone or ''
+
+            results.append({
+                'id': sp.pk,
+                'text': f'{sp.full_name} ({enrollment or mobile or sp.email})',
+                'name': sp.full_name,
+                'enrollment': enrollment,
+                'phone': mobile,
+                'photo': photo_url,
+            })
+    return JsonResponse({'results': results})
+
+
+
+
+@login_required
+def student_fee_summary_ajax(request):
+    """Return fee summary JSON for a given StudentProfile pk — used by Collect Fee page AJAX."""
+    from django.http import JsonResponse
+
+    is_admin = request.user.role == 'admin'
+    is_center = request.user.role == 'center'
+    if not (is_admin or is_center):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    student_id = request.GET.get('student_id', '').strip()
+    if not student_id:
+        return JsonResponse({'error': 'No student_id provided'}, status=400)
+
+    try:
+        qs = StudentProfile.objects.select_related('batch__course')
+        if is_center and request.user.center:
+            student = qs.get(pk=student_id, batch__center=request.user.center)
+        else:
+            student = qs.get(pk=student_id)
+    except StudentProfile.DoesNotExist:
+        return JsonResponse({'error': 'Student not found'}, status=404)
+
+    total_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+    paid_amount = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    remaining = total_fee - paid_amount
+    if remaining < Decimal('0.00'):
+        remaining = Decimal('0.00')
+
+    return JsonResponse({
+        'student_id': student.pk,
+        'student_name': student.full_name,
+        'course_name': student.batch.course.name if (student.batch and student.batch.course) else 'N/A',
+        'batch_name': student.batch.name if student.batch else 'N/A',
+        'total_fee': str(total_fee),
+        'paid_amount': str(paid_amount),
+        'remaining_fee': str(remaining),
+        'has_due': remaining > Decimal('0.00'),
+    })
+
