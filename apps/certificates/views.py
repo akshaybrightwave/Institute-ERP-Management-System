@@ -29,7 +29,15 @@ def get_student_eligibility(student):
         }
 
     # Attendance calculations
-    attendances = Attendance.objects.filter(student=student)
+    from apps.students.models import StudentAdmission
+    admission = StudentAdmission.objects.filter(user=student.user).first()
+    if not admission:
+        admission = StudentAdmission.objects.filter(Q(enrollment_no=student.user.username) | Q(email=student.email)).first()
+
+    if admission:
+        attendances = Attendance.objects.filter(student=admission)
+    else:
+        attendances = Attendance.objects.none()
     total_att = attendances.count()
     if total_att > 0:
         present_count = attendances.filter(status='present').count()
@@ -173,12 +181,9 @@ def certificate_list(request):
         return HttpResponseForbidden("Access Denied.")
 
     if is_student:
-        profile = getattr(request.user, 'studentprofile', None)
-        qs = Certificate.objects.select_related('student', 'center', 'course', 'session').all()
-        if profile:
-            qs = qs.filter(Q(student__enrollment_no=request.user.username) | Q(student__email=profile.email))
-        else:
-            qs = qs.filter(student__enrollment_no=request.user.username)
+        qs = Certificate.objects.select_related('student', 'center', 'course', 'session').filter(
+            student__user=request.user
+        )
         
         paginator = Paginator(qs.order_by('-id'), 10)
         page_number = request.GET.get('page')
@@ -213,8 +218,7 @@ def certificate_detail(request, pk):
         return HttpResponseForbidden("Access Denied: This certificate belongs to another center.")
     
     if request.user.role == 'student':
-        profile = getattr(request.user, 'studentprofile', None)
-        if not (cert.student.enrollment_no == request.user.username or (profile and profile.email and cert.student.email == profile.email) or cert.student.email == request.user.email):
+        if cert.student.user != request.user:
             return HttpResponseForbidden("Access Denied: You can only view your own certificates.")
 
     return render(request, 'certificates/certificate_detail.html', {

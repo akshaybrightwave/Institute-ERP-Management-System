@@ -68,12 +68,9 @@ def admit_card_list(request):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
 
     if is_student:
-        profile = getattr(request.user, 'studentprofile', None)
-        qs = AdmitCard.objects.select_related('student', 'session', 'student__course', 'student__center').all()
-        if profile:
-            qs = qs.filter(Q(student__enrollment_no=request.user.username) | Q(student__email=profile.email))
-        else:
-            qs = qs.filter(student__enrollment_no=request.user.username)
+        qs = AdmitCard.objects.select_related('student', 'session', 'student__course', 'student__center').filter(
+            student__user=request.user
+        )
         
         paginator = Paginator(qs.order_by('-created_at', '-id'), 10)
         page_number = request.GET.get('page', 1)
@@ -159,8 +156,7 @@ def admit_card_view(request, pk):
     )
     
     if is_student:
-        profile = getattr(request.user, 'studentprofile', None)
-        if not (admit_card.student.enrollment_no == request.user.username or (profile and profile.email and admit_card.student.email == profile.email)):
+        if admit_card.student.user != request.user:
             return HttpResponseForbidden("Access Denied: You cannot view other students' admit cards.")
     elif is_center and admit_card.student.center != request.user.center:
         return HttpResponseForbidden("Access Denied: Student is not in your center.")

@@ -1016,14 +1016,20 @@ def admin_student_exam_list(request):
     except ValueError:
         per_page = 10
     
-    queryset = StudentExamAttempt.objects.select_related('student', 'exam', 'student__studentprofile', 'exam__created_by').all()
+    queryset = StudentExamAttempt.objects.select_related(
+        'student', 'exam', 'student__studentprofile', 'student__student_admission',
+        'student__student_admission__course', 'exam__created_by', 'exam__course'
+    ).prefetch_related('student__studentprofile__batch', 'exam__batches').all()
 
     # Role Based Access
     role = request.user.role
     if role == 'admin':
         pass
     elif role == 'center':
-        queryset = queryset.filter(student__studentprofile__batch__center=request.user.center)
+        queryset = queryset.filter(
+            Q(student__student_admission__center=request.user.center) |
+            Q(student__studentprofile__batch__center=request.user.center)
+        )
     elif role == 'teacher':
         queryset = queryset.filter(exam__created_by=request.user)
     elif role == 'student':
@@ -1033,6 +1039,7 @@ def admin_student_exam_list(request):
 
     if query:
         queryset = queryset.filter(
+            Q(student__student_admission__student_name__icontains=query) |
             Q(student__studentprofile__full_name__icontains=query) |
             Q(student__username__icontains=query) |
             Q(exam__title__icontains=query)
@@ -1063,7 +1070,14 @@ def delete_student_exam_attempt_ajax(request, pk):
         if role == 'admin':
             pass
         elif role == 'center':
-            if attempt.student.studentprofile.batch.center != request.user.center:
+            student_admission = getattr(attempt.student, 'student_admission', None)
+            student_profile = getattr(attempt.student, 'studentprofile', None)
+            is_owner = False
+            if student_admission and student_admission.center == request.user.center:
+                is_owner = True
+            elif student_profile and student_profile.batch and student_profile.batch.center == request.user.center:
+                is_owner = True
+            if not is_owner:
                 return JsonResponse({'success': False, 'message': 'Permission denied.'})
         elif role == 'teacher':
             if attempt.exam.created_by != request.user:
@@ -1077,4 +1091,65 @@ def delete_student_exam_attempt_ajax(request, pk):
         return JsonResponse({'success': False, 'message': 'Attempt not found.'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+@require_POST
+def edit_student_exam_attempt_ajax(request, pk):
+    from django.utils.dateparse import parse_datetime
+    try:
+        attempt = StudentExamAttempt.objects.get(pk=pk)
+        
+        # Check permissions
+        role = request.user.role
+        if role == 'admin':
+            pass
+        elif role == 'center':
+            student_admission = getattr(attempt.student, 'student_admission', None)
+            student_profile = getattr(attempt.student, 'studentprofile', None)
+            is_owner = False
+            if student_admission and student_admission.center == request.user.center:
+                is_owner = True
+            elif student_profile and student_profile.batch and student_profile.batch.center == request.user.center:
+                is_owner = True
+            if not is_owner:
+                return JsonResponse({'success': False, 'message': 'Permission denied.'})
+        elif role == 'teacher':
+            if attempt.exam.created_by != request.user:
+                return JsonResponse({'success': False, 'message': 'Permission denied.'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Permission denied.'})
+
+        # Load values from post
+        attempt_time_str = request.POST.get('attempt_time', '').strip()
+        score_str = request.POST.get('score', '').strip()
+
+        if not attempt_time_str or not score_str:
+            return JsonResponse({'success': False, 'message': 'Please fill all fields.'})
+
+        # Prepend or parse timezone aware / naive datetime
+        from django.utils import timezone
+        attempt_time = parse_datetime(attempt_time_str)
+        if not attempt_time:
+            return JsonResponse({'success': False, 'message': 'Invalid date/time format.'})
+        
+        if timezone.is_naive(attempt_time):
+            attempt_time = timezone.make_aware(attempt_time, timezone.get_current_timezone())
+
+        try:
+            score = float(score_str)
+        except ValueError:
+            return JsonResponse({'success': False, 'message': 'Invalid score percentage.'})
+
+        # Update in database using update() to bypass auto_now un-writeability
+        StudentExamAttempt.objects.filter(pk=pk).update(
+            start_time=attempt_time,
+            submitted_at=attempt_time,
+            score=score
+        )
+        return JsonResponse({'success': True, 'message': 'Student exam attempt updated successfully.'})
+    except StudentExamAttempt.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Attempt not found.'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
 

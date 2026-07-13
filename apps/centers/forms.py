@@ -15,8 +15,8 @@ class CenterForm(forms.ModelForm):
 
     password = forms.CharField(
         label="Password",
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter Password'}),
-        required=True
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Enter Password (defaults to center123)'}),
+        required=False
     )
     
     class Meta:

@@ -84,7 +84,7 @@
                 </td>
 
                 <td class="text-white-50" style="font-size: 0.9rem;">
-                  {{ item.student.studentprofile.full_name|default:item.student.username|title }}
+                  {{ item.student.student_admission.student_name|default:item.student.studentprofile.full_name|default:item.student.username|title }}
                 </td>
                 
                 <td class="text-white-50" style="font-size: 0.9rem;">
@@ -101,15 +101,10 @@
 
                 <td class="text-white-50" style="font-size: 0.9rem;">
                   {% if item.is_completed %}
-                    {% if item.exam.total_marks and item.exam.total_marks > 0 %}
-                        {% widthratio item.score item.exam.total_marks 100 as pct %}
-                        {% if pct|add:0 >= item.exam.passing_marks|add:0 %}
-                            <span class="badge bg-success">PASS with {{ pct }}%</span>
-                        {% else %}
-                            <span class="badge bg-danger">FAIL with {{ pct }}%</span>
-                        {% endif %}
+                    {% if item.score >= item.exam.pass_percentage %}
+                      <span class="badge bg-success">PASS with {{ item.score|floatformat:0 }}%</span>
                     {% else %}
-                        <span class="badge bg-success">PASS with {{ item.score }} pts</span>
+                      <span class="badge bg-danger">FAIL with {{ item.score|floatformat:0 }}%</span>
                     {% endif %}
                   {% else %}
                     <span class="badge bg-secondary text-dark">Exam Not Done</span>
@@ -122,10 +117,15 @@
                       <i class="bi bi-eye"></i> View
                     </a>
                     
-                    {% if request.user.role == 'admin' or request.user == item.exam.created_by %}
-                    <a href="#" class="btn btn-sm text-white px-2 py-1" style="background-color: #f59e0b; border: none; border-radius: 4px; font-size: 0.8rem;" title="Edit">
+                    {% if request.user.role == 'admin' or request.user.role == 'center' or request.user == item.exam.created_by %}
+                    <button class="btn btn-sm btn-edit-attempt text-white px-2 py-1" 
+                            style="background-color: #f59e0b; border: none; border-radius: 4px; font-size: 0.8rem;" 
+                            data-attempt-id="{{ item.id }}" 
+                            data-attempt-time="{% if item.is_completed %}{{ item.submitted_at|date:'Y-m-d\TH:i' }}{% else %}{{ item.start_time|date:'Y-m-d\TH:i' }}{% endif %}"
+                            data-score="{{ item.score|floatformat:1 }}"
+                            title="Edit">
                       <i class="bi bi-pencil-square"></i> Edit
-                    </a>
+                    </button>
                     {% endif %}
                     
                     {% if request.user.role == 'admin' or request.user.role == 'center' %}
@@ -188,6 +188,44 @@
     </div>
   </div>
 
+<!-- Modal for AJAX Editing -->
+<div class="modal fade" id="editAttemptModal" tabindex="-1" aria-labelledby="editAttemptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: #12141c; border: 1px solid #1c1f2c; border-radius: 12px; color: #fff;">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title fw-bold text-white" id="editAttemptModalLabel">Edit Student Exam Attempt</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editAttemptForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="alert alert-danger d-none" id="modalError"></div>
+          
+          <div class="mb-3">
+            <label for="modal_attempt_time" class="form-label fw-semibold text-white">
+              Attempt Time <span class="text-danger">*</span>
+            </label>
+            <input type="datetime-local" name="attempt_time" id="modal_attempt_time" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="modal_score" class="form-label fw-semibold text-white">
+              Percentage / Score (%) <span class="text-danger">*</span>
+            </label>
+            <input type="number" step="0.1" name="score" id="modal_score" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;" min="0" max="100" required>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+          <button type="submit" class="btn btn-save-modal px-4 py-2" id="btnUpdateSubmit">
+            <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 </div><!-- /erp-content -->
 {% endblock %}
 
@@ -202,22 +240,81 @@ $(document).ready(function() {
         window.location.href = url.href;
     });
 
-    $('.btn-delete-attempt').click(function() {
+    // Setup Edit Attempt Modal
+    var editModal = new bootstrap.Modal(document.getElementById('editAttemptModal'));
+    var editForm = document.getElementById('editAttemptForm');
+    var modalError = document.getElementById('modalError');
+
+    $(document).on('click', '.btn-edit-attempt', function() {
+        var attemptId = $(this).data('attempt-id');
+        var attemptTime = $(this).data('attempt-time');
+        var score = $(this).data('score');
+
+        $('#modal_attempt_time').val(attemptTime);
+        $('#modal_score').val(score);
+        $(modalError).addClass('d-none').text('');
+
+        $(editForm).data('attempt-id', attemptId);
+        editModal.show();
+    });
+
+    $(editForm).submit(function(e) {
+        e.preventDefault();
+        var attemptId = $(this).data('attempt-id');
+        var formData = $(this).serialize();
+
+        $.ajax({
+            url: "{% url 'edit_student_exam_attempt_ajax' 0 %}".replace('0', attemptId),
+            type: "POST",
+            data: formData,
+            success: function(res) {
+                if (res.success) {
+                    editModal.hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Updated!',
+                        text: res.message,
+                        customClass: {
+                            popup: 'dark-modal-swal',
+                            confirmButton: 'btn btn-primary px-4'
+                        },
+                        buttonsStyling: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    $(modalError).removeClass('d-none').text(res.message);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Failed to save changes.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                $(modalError).removeClass('d-none').text(errorMsg);
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-delete-attempt', function(e) {
+        e.preventDefault();
         var attemptId = $(this).data('attempt-id');
         Swal.fire({
-            title: 'Are you sure?',
-            text: "Are you sure you want to delete this student exam record?",
             icon: 'warning',
+            title: 'Are you sure you want to delete this student exam record?',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete it!',
-            background: '#1e1e2f',
-            color: '#fff'
+            confirmButtonText: 'Yes, delete!',
+            cancelButtonText: 'No, cancel',
+            customClass: {
+                popup: 'dark-modal-swal',
+                confirmButton: 'btn btn-danger px-4 py-2 me-2',
+                cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+            },
+            buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: "/exams/student-exams/" + attemptId + "/delete/",
+                    url: "{% url 'delete_student_exam_attempt_ajax' 0 %}".replace('0', attemptId),
                     type: "POST",
                     headers: {'X-CSRFToken': '{{ csrf_token }}'},
                     success: function(res) {
@@ -226,17 +323,38 @@ $(document).ready(function() {
                                 icon: 'success', 
                                 title: 'Deleted!', 
                                 text: res.message, 
-                                background: '#1e1e2f', 
-                                color: '#fff'
+                                customClass: {
+                                    popup: 'dark-modal-swal',
+                                    confirmButton: 'btn btn-primary px-4'
+                                },
+                                buttonsStyling: false
                             }).then(() => {
                                 location.reload();
                             });
                         } else {
-                            Swal.fire({icon: 'error', title: 'Error', text: res.message, background: '#1e1e2f', color: '#fff'});
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: res.message,
+                                customClass: {
+                                    popup: 'dark-modal-swal',
+                                    confirmButton: 'btn btn-primary px-4'
+                                },
+                                buttonsStyling: false
+                            });
                         }
                     },
                     error: function() {
-                        Swal.fire({icon: 'error', title: 'Error', text: 'Failed to delete record.', background: '#1e1e2f', color: '#fff'});
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to delete record.',
+                            customClass: {
+                                popup: 'dark-modal-swal',
+                                confirmButton: 'btn btn-primary px-4'
+                            },
+                            buttonsStyling: false
+                        });
                     }
                 });
             }

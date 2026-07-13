@@ -1,54 +1,86 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
 
 {% block title %}Available Exams | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
-    <div class="page-header">
-        <div>
-            <h2><i class="bi bi-journal-text text-primary me-2"></i>Available Exams</h2>
-            <p>Choose an exam below to view instructions and get started.</p>
-        </div>
-    </div>
 
-    {% if exams %}
-    <div class="card border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-examly table-hover align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th class="ps-4">Title</th>
-                            <th>Description</th>
-                            <th>Date</th>
-                            <th>Total Marks</th>
-                            <th class="pe-4 text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for exam in exams %}
-                        <tr>
-                            <td class="ps-4 fw-semibold">{{ exam.title }}</td>
-                            <td class="text-muted small">{{ exam.description|truncatewords:12 }}</td>
-                            <td>{{ exam.date|date:"M d, Y" }}</td>
-                            <td><span class="badge-soft-primary">{{ exam.total_marks }}</span></td>
-                            <td class="pe-4 text-end">
-                                <a href="{% url 'exam_instructions' exam.id %}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-arrow-right-circle me-1"></i> View &amp; Attempt
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-journal-text text-primary me-2"></i>Available Exams
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Student</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Available Exams</li>
+      </ol>
+    </nav>
+  </div>
+
+  {% if exams %}
+  <!-- Available Exams Card -->
+  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important;">
+    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Available Exam List</h5>
     </div>
-    {% else %}
-    <div class="empty-state">
-        <i class="bi bi-journal-x"></i>
-        <p class="mb-0">No exams available at the moment. Please check back later.</p>
+    <div class="card-body p-4">
+      <div class="table-responsive">
+        <table class="table table-examly table-hover align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+          <thead>
+            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+              <th class="ps-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Exam Name</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Course</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Batch</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Exam Date</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Start Time</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">End Time</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Duration</th>
+              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Status</th>
+              <th class="pe-3 text-end text-uppercase text-muted" style="font-size: 0.75rem; width: 140px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for exam in exams %}
+            <tr style="border-color: rgba(255,255,255,0.05) !important;">
+              <td class="ps-3 fw-semibold text-white" style="font-size: 0.9rem;">{{ exam.title }}</td>
+              <td class="text-white-50" style="font-size: 0.9rem;">{{ exam.course.name|default:"—" }}</td>
+              <td class="text-white-50" style="font-size: 0.9rem;">
+                {% for b in exam.batches.all %}
+                  <span class="badge bg-secondary" style="font-size: 0.75rem;">{{ b.name }}</span>
+                {% empty %}
+                  —
+                {% endfor %}
+              </td>
+              <td class="text-white-50" style="font-size: 0.9rem;">{{ exam.date|date:"d M Y"|default:"—" }}</td>
+              <td class="text-white-50" style="font-size: 0.9rem;">{{ exam.start_datetime|date:"h:i A"|default:"—" }}</td>
+              <td class="text-white-50" style="font-size: 0.9rem;">{{ exam.end_datetime|date:"h:i A"|default:"—" }}</td>
+              <td class="text-white-50" style="font-size: 0.9rem;">{{ exam.duration_minutes }} Mins</td>
+              <td>
+                <span class="badge bg-{{ exam.status_class }}">{{ exam.status_label }}</span>
+              </td>
+              <td class="pe-3 text-end">
+                <a href="{% url 'exam_instructions' exam.id %}" class="btn btn-sm btn-primary px-3 rounded">
+                  <i class="bi bi-arrow-right-circle me-1"></i> {{ exam.action_label|default:"View & Attempt" }}
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-    {% endif %}
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+    <i class="bi bi-journal-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+    <p class="mb-0">No exams available at the moment. Please check back later.</p>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

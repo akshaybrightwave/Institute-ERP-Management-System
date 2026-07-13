@@ -73,22 +73,14 @@ def student_dashboard(request):
     from django.contrib.auth import update_session_auth_hash
 
     # 1. Fetch Profile & Admission info
+    admission = StudentAdmission.objects.select_related('course', 'center').filter(user=request.user).first()
+
     try:
         profile = StudentProfile.objects.select_related('batch__course', 'batch__center').get(user=request.user)
         batch = profile.batch
     except StudentProfile.DoesNotExist:
         profile = None
         batch = None
-
-    admission = None
-    if profile:
-        admission = StudentAdmission.objects.select_related('course', 'center').filter(
-            Q(enrollment_no=request.user.username) | Q(email=profile.email)
-        ).first()
-    else:
-        admission = StudentAdmission.objects.select_related('course', 'center').filter(
-            enrollment_no=request.user.username
-        ).first()
 
     # 2. Exam calculations
     attempts = StudentExamAttempt.objects.filter(student=request.user)
@@ -107,9 +99,10 @@ def student_dashboard(request):
     fee_status = 'PENDING'
     fee_payments = []
 
+    if admission and admission.course:
+        course_fee = Decimal(str(admission.course.fees))
+
     if profile:
-        if batch and batch.course:
-            course_fee = Decimal(str(batch.course.fees))
         
         # Get all payments
         fee_payments = FeePayment.objects.filter(student=profile).select_related('student__batch__course').order_by('-payment_date', '-id')
@@ -191,22 +184,75 @@ def student_dashboard(request):
 # Exam browsing & instructions
 # ---------------------------------------------------------------------------
 
+def get_student_exam_queryset(user):
+    from django.db.models import Q
+    from apps.exams.models import Exam
+    from apps.students.models import StudentAdmission, StudentProfile
+
+    admission = StudentAdmission.objects.select_related('center', 'course').filter(user=user).first()
+    if not admission:
+        return Exam.objects.none()
+
+    try:
+        profile = user.studentprofile
+        batch = profile.batch
+    except StudentProfile.DoesNotExist:
+        batch = None
+
+    qs = Exam.objects.filter(is_published=True).select_related('course').prefetch_related('batches')
+
+    # Center security check
+    qs = qs.filter(Q(center=admission.center) | Q(center__isnull=True))
+
+    # Assignment condition: direct, batch, or course
+    assignment_q = Q(student_assignments__student=admission, student_assignments__status=True, student_assignments__is_deleted=False)
+    if batch:
+        assignment_q |= Q(batches=batch)
+    if admission.course:
+        assignment_q |= Q(course=admission.course)
+
+    return qs.filter(assignment_q).distinct()
+
+
 @login_required
 def student_exam_list(request):
     if request.user.role != 'student':
         return redirect('login')
 
-    try:
-        profile = request.user.studentprofile
-        batch = profile.batch
-    except StudentProfile.DoesNotExist:
-        batch = None
-
-    if batch:
-        exams = Exam.objects.filter(is_published=True, batches=batch)
-    else:
-        exams = Exam.objects.none()
-
+    exams = get_student_exam_queryset(request.user)
+    
+    from apps.exams.models import StudentExamAttempt
+    from django.utils.timezone import now
+    current_time = now()
+    
+    attempts = StudentExamAttempt.objects.filter(student=request.user)
+    completed_exam_ids = set(attempts.filter(is_completed=True).values_list('exam_id', flat=True))
+    in_progress_exam_ids = set(attempts.filter(is_completed=False).values_list('exam_id', flat=True))
+    
+    for exam in exams:
+        if exam.id in completed_exam_ids:
+            if exam.allow_retake:
+                exam.status_label = "Completed (Retake Available)"
+                exam.status_class = "success"
+                exam.action_label = "Reattempt"
+            else:
+                exam.status_label = "Completed"
+                exam.status_class = "secondary"
+                exam.action_label = "View"
+        elif exam.id in in_progress_exam_ids:
+            exam.status_label = "In Progress"
+            exam.status_class = "warning text-dark"
+            exam.action_label = "Resume"
+        else:
+            if exam.end_date and current_time > exam.end_date:
+                exam.status_label = "Expired"
+                exam.status_class = "danger"
+                exam.action_label = "View"
+            else:
+                exam.status_label = "Available"
+                exam.status_class = "primary"
+                exam.action_label = "Start Exam"
+                
     return render(request, 'student/student_exam_list.html', {'exams': exams})
 
 
@@ -215,16 +261,11 @@ def exam_instructions_view(request, exam_id):
     if request.user.role != 'student':
         return redirect('login')
 
-    try:
-        profile = request.user.studentprofile
-        batch = profile.batch
-    except StudentProfile.DoesNotExist:
-        batch = None
+    admission = StudentAdmission.objects.filter(user=request.user).first()
+    if not admission:
+        return HttpResponseForbidden("Access Denied: No student admission record found.")
 
-    if not batch:
-        return HttpResponseForbidden("You do not belong to any batch.")
-
-    exam = get_object_or_404(Exam, id=exam_id, batches=batch, is_published=True)
+    exam = get_object_or_404(get_student_exam_queryset(request.user), id=exam_id)
 
     attempts = StudentExamAttempt.objects.filter(student=request.user, exam=exam)
     latest_attempt = attempts.order_by('-submitted_at').first()
@@ -251,16 +292,11 @@ def attempt_exam(request, exam_id):
     if request.user.role != 'student':
         return redirect('login')
 
-    try:
-        profile = request.user.studentprofile
-        batch = profile.batch
-    except StudentProfile.DoesNotExist:
-        batch = None
+    admission = StudentAdmission.objects.filter(user=request.user).first()
+    if not admission:
+        return HttpResponseForbidden("Access Denied: No student admission record found.")
 
-    if not batch:
-        return HttpResponseForbidden("You do not belong to any batch.")
-
-    exam = get_object_or_404(Exam, id=exam_id, batches=batch, is_published=True)
+    exam = get_object_or_404(get_student_exam_queryset(request.user), id=exam_id)
 
     attempts = StudentExamAttempt.objects.filter(student=request.user, exam=exam)
     in_progress_attempt = attempts.filter(is_completed=False).order_by('-start_time').first()
@@ -307,16 +343,11 @@ def submit_exam(request, exam_id):
         if request.user.role != 'student':
             return redirect('login')
 
-        try:
-            profile = request.user.studentprofile
-            batch = profile.batch
-        except StudentProfile.DoesNotExist:
-            batch = None
+        admission = StudentAdmission.objects.filter(user=request.user).first()
+        if not admission:
+            return HttpResponseForbidden("Access Denied: No student admission record found.")
 
-        if not batch:
-            return HttpResponseForbidden("You do not belong to any batch.")
-
-        exam = get_object_or_404(Exam, id=exam_id, batches=batch, is_published=True)
+        exam = get_object_or_404(get_student_exam_queryset(request.user), id=exam_id)
         student = request.user
         attempt = StudentExamAttempt.objects.filter(
             student=student, exam=exam, is_completed=False
@@ -376,8 +407,38 @@ def submit_exam(request, exam_id):
 
 @login_required
 def student_exam_result(request, attempt_id):
-    attempt = get_object_or_404(StudentExamAttempt, id=attempt_id, student=request.user)
-    answers = attempt.answers.all()
+    from apps.students.models import StudentAdmission, StudentProfile
+    attempt = get_object_or_404(StudentExamAttempt, id=attempt_id)
+
+    # Role Based Access Validation
+    role = request.user.role
+    if role == 'student':
+        if attempt.student != request.user:
+            return HttpResponseForbidden("Access Denied: You cannot view other students' results.")
+    elif role == 'center':
+        student_admission = getattr(attempt.student, 'student_admission', None)
+        student_profile = getattr(attempt.student, 'studentprofile', None)
+        is_owner = False
+        if student_admission and student_admission.center == request.user.center:
+            is_owner = True
+        elif student_profile and student_profile.batch and student_profile.batch.center == request.user.center:
+            is_owner = True
+        if not is_owner:
+            return HttpResponseForbidden("Access Denied: You cannot view other centers' student results.")
+    elif role == 'admin':
+        pass
+    else:
+        return HttpResponseForbidden("Access Denied: Unauthorized role.")
+
+    answers = attempt.answers.select_related('question', 'selected_option').prefetch_related('question__options')
+
+    admission = StudentAdmission.objects.select_related('course', 'center').filter(user=attempt.student).first()
+    try:
+        profile = attempt.student.studentprofile
+        batch = profile.batch
+    except StudentProfile.DoesNotExist:
+        profile = None
+        batch = None
 
     total_marks = sum(question.marks for question in attempt.exam.questions.all())
 
@@ -394,14 +455,26 @@ def student_exam_result(request, attempt_id):
     progress_width = f"width: {rounded_score}%;"
     passed = attempt.score >= attempt.exam.pass_percentage
 
+    # Answer stats
+    attempted_questions = answers.filter(selected_option__isnull=False).count()
+    correct_answers = answers.filter(selected_option__is_correct=True).count()
+    wrong_answers = answers.filter(selected_option__is_correct=False).count()
+    total_questions = attempt.exam.questions.count()
+
     return render(request, 'student/student_exam_result.html', {
         'attempt': attempt,
         'answers': answers,
+        'admission': admission,
+        'batch': batch,
         'total_marks': total_marks,
         'marks_earned': marks_earned,
         'rounded_score': rounded_score,
         'progress_width': progress_width,
         'passed': passed,
+        'attempted_questions': attempted_questions,
+        'correct_answers': correct_answers,
+        'wrong_answers': wrong_answers,
+        'total_questions': total_questions,
     })
 
 
@@ -442,8 +515,11 @@ def student_profile(request):
 
     if is_admin_or_center and student_id:
         try:
-            admission = StudentAdmission.objects.select_related('course', 'center').get(id=student_id)
-            profile = StudentProfile.objects.filter(user__username=admission.enrollment_no).first()
+            admission = StudentAdmission.objects.select_related('course', 'center', 'user').get(id=student_id)
+            if admission.user:
+                profile = getattr(admission.user, 'studentprofile', None)
+            if not profile:
+                profile = StudentProfile.objects.filter(user__username=admission.enrollment_no).first()
             if not profile and admission.email:
                 profile = StudentProfile.objects.filter(email=admission.email).first()
         except StudentAdmission.DoesNotExist:
@@ -451,14 +527,11 @@ def student_profile(request):
 
     if not admission:
         student = request.user
+        admission = StudentAdmission.objects.select_related('course', 'center', 'user').filter(user=student).first()
         try:
             profile = student.studentprofile
-            admission = StudentAdmission.objects.select_related('course', 'center').filter(
-                Q(enrollment_no=student.username) | Q(email=profile.email)
-            ).first()
         except StudentProfile.DoesNotExist:
             profile = None
-            admission = StudentAdmission.objects.select_related('course', 'center').filter(enrollment_no=student.username).first()
 
     base_template = 'accounts/admin_dashboard.html' if is_admin_or_center else 'accounts/base.html'
 
@@ -507,6 +580,7 @@ def student_profile(request):
     elif profile and profile.batch and profile.batch.course:
         course_fee = profile.batch.course.fees
 
+    fee_payments = []
     target_profile = profile
     if admission and not target_profile:
         target_profile = StudentProfile.objects.filter(user__username=admission.enrollment_no).first()
@@ -514,7 +588,8 @@ def student_profile(request):
             target_profile = StudentProfile.objects.filter(email=admission.email).first()
 
     if target_profile:
-        paid_amount = FeePayment.objects.filter(student=target_profile).aggregate(total=Sum('amount'))['total'] or 0.00
+        fee_payments = FeePayment.objects.filter(student=target_profile).order_by('-payment_date', '-id')
+        paid_amount = fee_payments.aggregate(total=Sum('amount'))['total'] or 0.00
     else:
         paid_amount = 0.00
 
@@ -563,6 +638,7 @@ def student_profile(request):
         'paid_amount': paid_amount,
         'pending_amount': pending_amount,
         'fee_status': fee_status,
+        'fee_payments': fee_payments,
         'certificates': student_certificates,
         'issued_certificates_count': issued_count,
         'eligibility': eligibility,
@@ -592,19 +668,9 @@ def student_my_attendance(request):
         return HttpResponseForbidden("Access Denied: Students only.")
 
     from apps.attendance.models import Attendance
-    from django.db.models import Q
     from django.core.paginator import Paginator
 
-    try:
-        profile = request.user.studentprofile
-        admission = StudentAdmission.objects.select_related('course', 'center').filter(
-            Q(enrollment_no=request.user.username) | Q(email=profile.email)
-        ).first()
-    except StudentProfile.DoesNotExist:
-        profile = None
-        admission = StudentAdmission.objects.select_related('course', 'center').filter(
-            enrollment_no=request.user.username
-        ).first()
+    admission = StudentAdmission.objects.select_related('course', 'center').filter(user=request.user).first()
 
     if not admission:
         attendances = Attendance.objects.none()
@@ -621,6 +687,57 @@ def student_my_attendance(request):
         'admission': admission,
     })
 
+def sync_student_admission_user(admission):
+    """
+    Creates student user login and links it with StudentAdmission.
+    Also creates/updates the StudentProfile.
+    """
+    from apps.accounts.models import User
+    from apps.students.models import StudentProfile
+    from apps.batches.models import Batch
+
+    # Find or create Django User for this student admission
+    user = None
+    if admission.enrollment_no:
+        user = User.objects.filter(username=admission.enrollment_no).first()
+    if not user and admission.email:
+        user = User.objects.filter(email__iexact=admission.email, role='student').first()
+
+    if not user:
+        username = admission.enrollment_no if admission.enrollment_no else f"std_{admission.id}"
+        email = admission.email if admission.email else f"{username}@example.com"
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password='student123',
+            role='student',
+            first_name=admission.student_name
+        )
+    else:
+        if user.role != 'student':
+            user.role = 'student'
+            user.save()
+
+    # Link admission with the user
+    if admission.user != user:
+        admission.user = user
+        admission.save()
+
+    # Create/update StudentProfile
+    profile, created = StudentProfile.objects.get_or_create(user=user)
+    profile.full_name = admission.student_name
+    profile.email = admission.email if admission.email else f"{user.username}@example.com"
+    profile.phone = admission.whatsapp_no
+    
+    # Try to link to a batch if course and center match
+    if not profile.batch and admission.course:
+        batch = Batch.objects.filter(course=admission.course, center=admission.center).first()
+        if batch:
+            profile.batch = batch
+            
+    profile.save()
+    return user
+
 
 @login_required
 def student_admission_view(request):
@@ -633,6 +750,7 @@ def student_admission_view(request):
             if request.user.role == 'center':
                 admission.center = request.user.center
             admission.save()
+            sync_student_admission_user(admission)
             messages.success(request, 'Student Admission processed successfully.')
             return redirect('student_admission')
     else:
@@ -726,15 +844,7 @@ def student_id_card_view(request):
     error = None
 
     if request.user.role == 'student':
-        try:
-            profile = request.user.studentprofile
-            admission = StudentAdmission.objects.select_related('center', 'course').filter(
-                Q(enrollment_no=request.user.username) | Q(email=profile.email)
-            ).first()
-        except StudentProfile.DoesNotExist:
-            admission = StudentAdmission.objects.select_related('center', 'course').filter(
-                enrollment_no=request.user.username
-            ).first()
+        admission = StudentAdmission.objects.select_related('center', 'course').filter(user=request.user).first()
         if not admission:
             error = 'No admission record found for your user.'
     else:
@@ -833,6 +943,7 @@ def student_approve_action(request, pk):
             admission.cancelled_at = None
             admission.cancel_reason = None
             admission.save()
+            sync_student_admission_user(admission)
             messages.success(request, 'Student Admission Approved Successfully.')
             
         except StudentAdmission.DoesNotExist:

@@ -8,7 +8,64 @@ from django.core.paginator import Paginator
 from apps.accounts.views import admin_required
 from .models import Center
 from .forms import CenterCertificateUpdateForm, CenterForm
+from django.db import transaction
 from .services import create_center_certificate_for_center
+
+
+def sync_center_user(center, password=None):
+    """
+    Automatically creates or links a Django User account for the Center.
+    Reuses existing user matching by Center Email.
+    """
+    from apps.accounts.models import User
+
+    if not center.email:
+        return None
+
+    # Step 1: Search user by center email
+    user = User.objects.filter(email__iexact=center.email).first()
+
+    pw = password if password else 'center123'
+
+    # Step 2: If no User exists, create one
+    if not user:
+        # Determine username: Center Code (preferred)
+        username = center.code if center.code else center.email
+        
+        # Security validation: Prevent duplicate usernames
+        if User.objects.filter(username=username).exists():
+            username = center.email
+
+        # Final safety check in case the email is also taken as a username
+        if User.objects.filter(username=username).exists():
+            username = f"{username}_{uuid.uuid4().hex[:4]}"
+
+        first_name = center.name[:150]
+        
+        user = User.objects.create_user(
+            username=username,
+            email=center.email,
+            password=pw,
+            role='center',
+            center=center,
+            first_name=first_name
+        )
+    else:
+        # Update existing User role and link Center if required
+        user_updated = False
+        if user.role != 'center':
+            user.role = 'center'
+            user_updated = True
+        if user.center != center:
+            user.center = center
+            user_updated = True
+        if password:
+            user.set_password(password)
+            user_updated = True
+        if user_updated:
+            user.save()
+
+    return user
 
 
 @admin_required
@@ -27,6 +84,8 @@ def center_list(request):
                     center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
                 center.save()
                 create_center_certificate_for_center(center, created_by=request.user)
+                # Auto-create/link Center User
+                sync_center_user(center, password=form.cleaned_data.get('password'))
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
 
@@ -159,18 +218,9 @@ def center_create(request):
 
                 create_center_certificate_for_center(center, created_by=request.user)
                 
-                # Create user for the center
-                email = form.cleaned_data.get('email')
+                # Create/link user for the center
                 password = form.cleaned_data.get('password')
-                
-                # Use email as username if not provided
-                User.objects.create_user(
-                    username=email,
-                    email=email,
-                    password=password,
-                    role='center',
-                    center=center
-                )
+                sync_center_user(center, password=password)
             
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
@@ -205,6 +255,8 @@ def center_update(request, pk):
                     user_updated = True
                 if user_updated:
                     center.center_user.save()
+            else:
+                sync_center_user(center, password=password)
             
             # Update Profile Status
             status_val = request.POST.get('is_deleted')

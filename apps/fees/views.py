@@ -133,22 +133,31 @@ def fees_list(request):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
         
     if is_student:
+        from apps.students.models import StudentAdmission
+        admission = StudentAdmission.objects.select_related('course').filter(user=request.user).first()
+        if not admission:
+            return HttpResponseForbidden("Access Denied: No student admission found.")
+            
         profile = getattr(request.user, 'studentprofile', None)
         if not profile:
-            return HttpResponseForbidden("Access Denied: No student profile found.")
-            
-        payments = FeePayment.objects.filter(student=profile).select_related('student__batch__course').order_by('-payment_date', '-id')
-        
-        course_fee = profile.batch.course.fees if (profile.batch and profile.batch.course) else Decimal('0.00')
-        paid_amount = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        pending_amount = course_fee - paid_amount
-        
-        if paid_amount == 0:
+            payments = FeePayment.objects.none()
+            course_fee = admission.course.fees if admission.course else Decimal('0.00')
+            paid_amount = Decimal('0.00')
+            pending_amount = course_fee
             fee_status = 'PENDING'
-        elif pending_amount <= 0:
-            fee_status = 'PAID'
         else:
-            fee_status = 'PARTIAL'
+            payments = FeePayment.objects.filter(student=profile).select_related('student__batch__course').order_by('-payment_date', '-id')
+            course_fee = Decimal(str(admission.course.fees)) if admission.course else Decimal('0.00')
+            paid_amount = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            paid_amount = Decimal(str(paid_amount))
+            pending_amount = course_fee - paid_amount
+            
+            if paid_amount == 0:
+                fee_status = 'PENDING'
+            elif pending_amount <= 0:
+                fee_status = 'PAID'
+            else:
+                fee_status = 'PARTIAL'
             
         paginator = Paginator(payments, 10)
         page_number = request.GET.get('page', 1)

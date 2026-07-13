@@ -190,31 +190,67 @@
       <!-- Fees Record Tab -->
       <div class="tab-pane fade" id="fees" role="tabpanel" aria-labelledby="fees-tab">
         <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
-          <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Fees Record</h5>
+          <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Fee Record</h5>
           
+          <!-- DataTable controls -->
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-2">
+              <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
+              <select name="show" class="form-select form-select-sm text-white" 
+                      style="width: 70px; background-color: var(--erp-bg-input, #161922); border: 1px solid var(--erp-border-input, #252a3c); border-radius: 4px;">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+            
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <div class="d-flex align-items-center gap-2">
+                <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
+                <input type="text" class="form-control form-control-sm text-white" 
+                       style="width: 180px; background-color: var(--erp-bg-input, #161922); border: 1px solid var(--erp-border-input, #252a3c); border-radius: 4px;">
+              </div>
+              
+              <div class="d-flex gap-1 no-print">
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Copy</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">CSV</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Excel</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">PDF</button>
+                <button class="btn btn-sm btn-outline-secondary text-white-50 border-secondary px-3">Print</button>
+              </div>
+            </div>
+          </div>
+
           <div class="table-responsive">
-            <table class="table table-examly table-hover align-middle mb-0">
+            <table class="table table-examly table-bordered table-hover align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
               <thead>
-                <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
-                  <th class="ps-3 text-uppercase text-muted" style="font-size: 0.8rem;">Date</th>
-                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Payment Method</th>
-                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Reference Number</th>
-                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Remarks</th>
-                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Amount</th>
-                  <th class="pe-3 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Receipt</th>
+                <!-- Centered Student Name header -->
+                <tr>
+                  <th colspan="6" class="text-center text-white py-3 fs-5" style="background-color: rgba(255,255,255,0.02); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    {{ admission.student_name }}
+                  </th>
+                </tr>
+                <tr style="border-bottom: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.01);">
+                  <th class="ps-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 50px;">#</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Date</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Transaction ID</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Fee Amount</th>
+                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Fee Type</th>
+                  <th class="pe-3 text-center text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 140px;">Receipt</th>
                 </tr>
               </thead>
               <tbody>
                 {% for payment in fee_payments %}
                 <tr style="border-color: rgba(255,255,255,0.05) !important;">
-                  <td class="ps-3 text-white-50" style="font-size: 0.9rem;">{{ payment.payment_date|date:"d-m-Y" }}</td>
-                  <td class="text-white-50 text-uppercase" style="font-size: 0.9rem;">{{ payment.payment_method }}</td>
+                  <td class="ps-3 text-white-50 fw-bold" style="font-size: 0.9rem;">{{ forloop.counter }}</td>
+                  <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.payment_date|date:"d-m-Y" }}</td>
                   <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.reference_number|default:"—" }}</td>
-                  <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.remarks|default:"—" }}</td>
-                  <td class="fw-bold text-success" style="font-size: 0.9rem;">₹{{ payment.amount }}</td>
-                  <td class="pe-3 text-end">
-                    <a href="{% url 'payment_receipt' payment.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3" target="_blank">
-                      <i class="bi bi-file-earmark-pdf"></i> Receipt
+                  <td class="fw-bold text-white" style="font-size: 0.9rem;">₹ {{ payment.amount|floatformat:0 }}</td>
+                  <td class="text-white-50 text-uppercase" style="font-size: 0.9rem;">{{ payment.payment_method }}</td>
+                  <td class="pe-3 text-center">
+                    <a href="{% url 'payment_receipt' payment.pk %}" class="btn btn-sm btn-outline-success px-3 py-1" target="_blank" 
+                       style="border: 1px dashed #198754; color: #198754; background: transparent; border-radius: 4px; font-weight: 500;">
+                      <i class="bi bi-file-earmark-pdf me-1 text-success"></i> Receipt
                     </a>
                   </td>
                 </tr>
@@ -227,6 +263,17 @@
                 </tr>
                 {% endfor %}
               </tbody>
+              <!-- Footer Row for total -->
+              {% if fee_payments %}
+              <tfoot>
+                <tr style="border-top: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.01); font-weight: bold;">
+                  <td colspan="3" class="text-end text-white py-3">Total</td>
+                  <td colspan="3" class="text-start text-success py-3" style="font-size: 0.95rem;">
+                    ₹ {{ paid_amount|floatformat:0 }} ( ₹ {{ paid_amount|floatformat:0 }} Total )
+                  </td>
+                </tr>
+              </tfoot>
+              {% endif %}
             </table>
           </div>
         </div>

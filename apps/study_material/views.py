@@ -23,9 +23,8 @@ def study_material_list(request):
 
     if is_student:
         from apps.students.models import StudentAdmission
-        try:
-            admission = StudentAdmission.objects.select_related('center', 'course').get(enrollment_no=request.user.username)
-        except StudentAdmission.DoesNotExist:
+        admission = StudentAdmission.objects.select_related('center', 'course').filter(user=request.user).first()
+        if not admission:
             return HttpResponseForbidden("Access Denied: Student record not found.")
 
         qs = StudyMaterial.objects.filter(
@@ -192,12 +191,9 @@ def study_material_download(request, pk):
         return HttpResponseForbidden("Access Denied.")
     elif user.role == 'student':
         from apps.students.models import StudentAdmission
-        try:
-            admission = StudentAdmission.objects.get(enrollment_no=user.username)
-            if admission.center != material.center or admission.course != material.course:
-                return HttpResponseForbidden("Access Denied: This material is not assigned to your course.")
-        except StudentAdmission.DoesNotExist:
-            return HttpResponseForbidden("Access Denied.")
+        admission = StudentAdmission.objects.filter(user=user).first()
+        if not admission or admission.center != material.center or admission.course != material.course:
+            return HttpResponseForbidden("Access Denied: This material is not assigned to your course.")
 
     if not material.upload_file:
         raise Http404("No file uploaded for this study material.")

@@ -1,77 +1,155 @@
-{% extends 'accounts/base.html' %}
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
 
-{% block title %}{{ exam.title }} | Examly{% endblock %}
+{% block title %}{{ exam.title }} - Instructions | Examly{% endblock %}
 
-{% block content %}
+{% block erp_content %}
 <div class="container py-2">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
 
-            <div class="hero-section p-4 p-md-5 mb-4 text-center">
-                <span class="hero-badge mb-2"><i class="bi bi-journal-text"></i> Exam</span>
-                <h2 class="fw-bold mb-0 text-white">{{ exam.title }}</h2>
-            </div>
-
-            <div class="card border-0">
-                <div class="card-body p-4 p-md-5">
-                    <h5 class="fw-bold mb-3"><i class="bi bi-info-circle text-primary me-2"></i>Instructions</h5>
-                    <p class="text-muted" style="white-space: pre-line;">
-                        {{ exam.description|linebreaksbr }}
-                    </p>
-
-                    <hr class="my-4">
-
-                    <div class="row g-3 mb-2">
-                        <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="feature-icon" style="width:44px;height:44px;font-size:1.1rem;margin:0;"><i class="bi bi-clock-history"></i></span>
-                                <div>
-                                    <div class="text-muted small">Duration</div>
-                                    <div class="fw-bold">{{ exam.duration_minutes }} minutes</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="feature-icon" style="width:44px;height:44px;font-size:1.1rem;margin:0;"><i class="bi bi-calendar3"></i></span>
-                                <div>
-                                    <div class="text-muted small">Date</div>
-                                    <div class="fw-bold">{{ exam.date }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {% if is_closed %}
-                    <div class="alert alert-danger d-flex align-items-center gap-2 mb-0">
-                        <i class="bi bi-lock-fill"></i>
-                        <span>This exam closed on {{ exam.end_date }} and no longer accepts new attempts.</span>
-                    </div>
-                    {% endif %}
-
-                    <div class="mt-4 d-flex gap-2">
-                        {% if can_start %}
-                        <a href="{% url 'attempt_exam' exam.id %}" class="btn btn-primary flex-grow-1 fw-bold py-2">
-                            <i class="bi bi-play-circle me-1"></i> {% if latest_attempt %}Retake Exam{% else %}Start Exam{% endif %}
-                        </a>
-                        {% else %}
-                        <button class="btn btn-primary flex-grow-1 fw-bold py-2" disabled>
-                            <i class="bi bi-play-circle me-1"></i> Start Exam
-                        </button>
-                        {% endif %}
-                        {% if latest_attempt %}
-                            <a href="{% url 'student_exam_result' latest_attempt.id %}" class="btn btn-outline-primary flex-grow-1 fw-bold py-2">
-                                <i class="bi bi-bar-chart-line me-1"></i> View My Results
-                            </a>
-                        {% else %}
-                            <button class="btn btn-outline-primary flex-grow-1 fw-bold py-2" disabled>
-                                <i class="bi bi-bar-chart-line me-1"></i> View My Results
-                            </button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- Breadcrumbs & Title -->
+  <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold text-white mb-1">
+        <i class="bi bi-file-earmark-text text-primary me-2"></i>Exam Instructions
+      </h2>
+      <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+        <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+          <li class="breadcrumb-item">
+            <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{% url 'student_exam_list' %}" class="text-decoration-none text-muted">Available Exams</a>
+          </li>
+          <li class="breadcrumb-item active text-white-50" aria-current="page">Instructions</li>
+        </ol>
+      </nav>
     </div>
+    
+    <div>
+      <a href="{% url 'student_exam_list' %}" class="btn btn-outline-secondary px-3 py-2 rounded">
+        <i class="bi bi-arrow-left-circle me-1"></i> Back to Exams
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Main Instructions Panel -->
+    <div class="col-lg-8 col-12">
+      <div class="card border-0 shadow-sm rounded-3 mb-4" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important;">
+        <div class="card-body p-4 p-md-5">
+          
+          <div class="mb-4">
+            <h4 class="fw-bold text-white mb-2">{{ exam.title }}</h4>
+            <span class="badge bg-primary px-3 py-1" style="font-size: 0.85rem;">{{ exam.course.name|default:"General Course" }}</span>
+          </div>
+
+          <h5 class="fw-bold mb-3 text-white border-bottom border-secondary pb-2">
+            <i class="bi bi-info-circle text-primary me-2"></i>Instructions
+          </h5>
+          
+          <p class="text-white-50" style="white-space: pre-line; line-height: 1.6; font-size: 0.95rem;">
+            {{ exam.description|default:"No specific instructions provided for this exam." }}
+          </p>
+
+          <h5 class="fw-bold mt-5 mb-3 text-white border-bottom border-secondary pb-2">
+            <i class="bi bi-exclamation-triangle text-warning me-2"></i>Important Notes
+          </h5>
+          <ul class="text-white-50 lh-lg" style="font-size: 0.9rem; padding-left: 1.25rem;">
+            <li>Ensure you have a stable and secure internet connection before initiating the exam.</li>
+            <li>Once you click <strong>Start Exam</strong>, the timer will begin and cannot be paused or stopped.</li>
+            <li>Do not refresh the page, close the browser window, or navigate away from the test screen during the exam.</li>
+            <li>In case of technical issues, contact your exam center immediately.</li>
+          </ul>
+
+          {% if is_closed %}
+          <div class="alert alert-danger d-flex align-items-center gap-2 mt-4" style="background-color: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.2); color: #ea868f;">
+            <i class="bi bi-lock-fill"></i>
+            <span>This exam closed on {{ exam.end_date|date:"d M Y, h:i A" }} and no longer accepts new attempts.</span>
+          </div>
+          {% endif %}
+
+          <div class="mt-5 d-flex flex-wrap gap-3">
+            {% if can_start %}
+            <a href="{% url 'attempt_exam' exam.id %}" class="btn btn-primary px-4 py-2.5 fw-bold d-inline-flex align-items-center justify-content-center" style="min-width: 160px;">
+              <i class="bi bi-play-circle-fill me-2 fs-5"></i> {% if latest_attempt %}Retake Exam{% else %}Start Exam{% endif %}
+            </a>
+            {% else %}
+            <button class="btn btn-primary px-4 py-2.5 fw-bold d-inline-flex align-items-center justify-content-center" style="min-width: 160px;" disabled>
+              <i class="bi bi-play-circle-fill me-2 fs-5"></i> Start Exam
+            </button>
+            {% endif %}
+
+            {% if latest_attempt %}
+            <a href="{% url 'student_exam_result' latest_attempt.id %}" class="btn btn-outline-primary px-4 py-2.5 fw-bold d-inline-flex align-items-center justify-content-center" style="min-width: 160px;">
+              <i class="bi bi-bar-chart-line-fill me-2 fs-5"></i> View Results
+            </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Exam Parameters Sidebar -->
+    <div class="col-lg-4 col-12">
+      <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important;">
+        <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0">
+          <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">Exam Summary</h5>
+        </div>
+        <div class="card-body p-4">
+          <div class="d-flex flex-column gap-4">
+            
+            <!-- Duration -->
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-3 p-3 text-primary d-flex align-items-center justify-content-center" style="background-color: rgba(13, 110, 253, 0.08); width: 50px; height: 50px; font-size: 1.4rem;">
+                <i class="bi bi-clock-history"></i>
+              </div>
+              <div>
+                <span class="d-block text-white-50 small">Duration</span>
+                <span class="fw-bold text-white" style="font-size: 1.05rem;">{{ exam.duration_minutes }} minutes</span>
+              </div>
+            </div>
+
+            <!-- Total Questions -->
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-3 p-3 text-info d-flex align-items-center justify-content-center" style="background-color: rgba(13, 202, 240, 0.08); width: 50px; height: 50px; font-size: 1.4rem;">
+                <i class="bi bi-question-circle"></i>
+              </div>
+              <div>
+                <span class="d-block text-white-50 small">Total Questions</span>
+                <span class="fw-bold text-white" style="font-size: 1.05rem;">{{ exam.total_questions|default:"0" }}</span>
+              </div>
+            </div>
+
+            <!-- Total Marks -->
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-3 p-3 text-success d-flex align-items-center justify-content-center" style="background-color: rgba(25, 135, 84, 0.08); width: 50px; height: 50px; font-size: 1.4rem;">
+                <i class="bi bi-award"></i>
+              </div>
+              <div>
+                <span class="d-block text-white-50 small">Total Marks</span>
+                <span class="fw-bold text-white" style="font-size: 1.05rem;">{{ exam.total_marks }} Marks</span>
+              </div>
+            </div>
+
+            <!-- Passing Criteria -->
+            {% if exam.pass_percentage %}
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-3 p-3 text-warning d-flex align-items-center justify-content-center" style="background-color: rgba(255, 193, 7, 0.08); width: 50px; height: 50px; font-size: 1.4rem;">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <div>
+                <span class="d-block text-white-50 small">Passing Criteria</span>
+                <span class="fw-bold text-white" style="font-size: 1.05rem;">{{ exam.pass_percentage }}% Score</span>
+              </div>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

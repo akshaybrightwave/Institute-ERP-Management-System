@@ -1028,8 +1028,10 @@
       {% endif %}><i class="bi bi-plus me-2"></i>Student Admission</a>
     <a href="{% url 'passout_student_list' %}" {% if request.resolver_match.url_name == 'passout_student_list' %}
       class="active" {% endif %}><i class="bi bi-journal-bookmark me-2"></i>Passout Student</a>
+    {% if request.user.role != 'center' %}
     <a href="{% url 'student_list_by_center' %}" {% if request.resolver_match.url_name == 'student_list_by_center' %}
       class="active" {% endif %}><i class="bi bi-people me-2"></i>List By Center</a>
+    {% endif %}
 
     <!-- Collapsible List Student(s) -->
     <a href="#sbListStudents" data-bs-toggle="collapse"

@@ -41,4 +41,5 @@ urlpatterns = [
 
     path('student-exams/', views.admin_student_exam_list, name='admin_student_exam_list'),
     path('student-exams/<int:pk>/delete/', views.delete_student_exam_attempt_ajax, name='delete_student_exam_attempt_ajax'),
+    path('student-exams/<int:pk>/edit/', views.edit_student_exam_attempt_ajax, name='edit_student_exam_attempt_ajax'),
 ]
