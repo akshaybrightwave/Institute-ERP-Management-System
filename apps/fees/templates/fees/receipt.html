@@ -1,178 +1,368 @@
-{% extends 'accounts/admin_dashboard.html' %}
-
-{% block title %}Fee Receipt | {{ receipt_number }}{% endblock %}
-
-{% block style %}
-<style>
-.receipt-document {
-    background-color: #fff;
-    border: 6px double var(--color-primary);
-    border-radius: var(--radius-md);
-    padding: 2.5rem;
-    position: relative;
-    box-shadow: var(--shadow-lg);
-}
-.receipt-header {
-    border-bottom: 2px dashed #e5e7eb;
-    padding-bottom: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-.receipt-details-table th {
-    font-weight: 600;
-    color: #4b5563;
-    width: 35%;
-    padding: 0.75rem 0;
-}
-.receipt-details-table td {
-    color: #1f2937;
-    padding: 0.75rem 0;
-}
-.receipt-amount-box {
-    background-color: #f0fdf4;
-    border: 1px solid #bbf7d0;
-    border-radius: var(--radius-sm);
-    padding: 1rem;
-    margin-top: 1.5rem;
-    text-align: center;
-}
-@media print {
-    nav, footer, .btn, .page-header, .alert, #backToTop, header, main > *:not(.print-container) {
-        display: none !important;
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fee Receipt | {{ receipt_number }}</title>
+  <style>
+    :root {
+      --bg: #090a12;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #687086;
+      --primary: #4f46e5;
+      --green: #12a76b;
+      --red: #e73561;
+      --line: #dde2ee;
     }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-        background-color: #fff !important;
-        margin: 0 !important;
-        padding: 0 !important;
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
     }
-    .print-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-    }
-    .receipt-document {
-        border: 8px double #4F46E5 !important;
-        box-shadow: none !important;
-        padding: 3rem !important;
-    }
-}
-</style>
-{% endblock %}
 
-{% block erp_content %}
-<div class="container py-3 print-container">
-    <div class="page-header d-print-none mb-4">
-        <div>
-            <h2><i class="bi bi-receipt text-primary me-2"></i>Fee Receipt</h2>
-            <p>Payment confirmation receipt <strong>{{ receipt_number }}</strong></p>
-        </div>
-        <div>
-            {% if request.user.role == 'student' %}
-            <a href="{% url 'student_dashboard' %}" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
-            </a>
-            {% else %}
-            <a href="{% url 'fees_list' %}?tab=payments" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left me-1"></i> Back to Fees
-            </a>
-            {% endif %}
-        </div>
+    .receipt-page {
+      width: min(920px, calc(100% - 32px));
+      margin: 34px auto;
+    }
+
+    .receipt-toolbar {
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .receipt-toolbar a,
+    .receipt-toolbar button {
+      min-height: 42px;
+      padding: 0 18px;
+      border: 1px dashed var(--primary);
+      border-radius: 7px;
+      background: transparent;
+      color: #cfd4ff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .receipt-sheet {
+      background: var(--panel);
+      border: 7px double var(--primary);
+      border-radius: 13px;
+      padding: 38px 42px;
+      box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+    }
+
+    .receipt-head {
+      padding-bottom: 24px;
+      border-bottom: 2px dashed var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .receipt-head h1 {
+      margin: 0 0 7px;
+      color: var(--primary);
+      font-size: 29px;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+
+    .receipt-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .receipt-no {
+      text-align: right;
+    }
+
+    .receipt-no strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--primary);
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+
+    .receipt-no span {
+      color: var(--red);
+      font-family: Consolas, monospace;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .receipt-meta {
+      padding: 24px 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .value {
+      display: block;
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .success {
+      display: inline-flex;
+      margin-top: 8px;
+      padding: 3px 9px;
+      border-radius: 7px;
+      background: var(--green);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .detail-table {
+      width: 100%;
+      margin: 20px 0 0;
+      border-collapse: collapse;
+    }
+
+    .detail-table th,
+    .detail-table td {
+      padding: 13px 0;
+      border-bottom: 1px solid #edf0f6;
+      text-align: left;
+      vertical-align: top;
+      font-size: 15px;
+    }
+
+    .detail-table th {
+      width: 36%;
+      color: #344058;
+      font-weight: 800;
+    }
+
+    .detail-table td {
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .amount-box {
+      margin: 26px 0 16px;
+      padding: 18px;
+      border: 1px solid #b8f0d4;
+      border-radius: 10px;
+      background: #f0fdf6;
+      text-align: center;
+    }
+
+    .amount-box span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .amount-box strong {
+      color: var(--green);
+      font-size: 32px;
+      font-weight: 900;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .summary-item {
+      padding: 15px 10px;
+      border-right: 1px solid var(--line);
+    }
+
+    .summary-item:last-child {
+      border-right: 0;
+    }
+
+    .summary-item span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .summary-item strong {
+      color: var(--ink);
+      font-size: 17px;
+    }
+
+    .summary-item .paid {
+      color: var(--green);
+    }
+
+    .summary-item .due {
+      color: var(--red);
+    }
+
+    @media (max-width: 680px) {
+      .receipt-sheet {
+        padding: 26px 22px;
+      }
+
+      .receipt-head,
+      .receipt-meta,
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .receipt-head {
+        display: block;
+      }
+
+      .receipt-no {
+        margin-top: 18px;
+        text-align: left;
+      }
+
+      .summary-item {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .receipt-page {
+        width: 100%;
+        margin: 0;
+      }
+
+      .receipt-toolbar {
+        display: none;
+      }
+
+      .receipt-sheet {
+        border-color: #4f46e5;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="receipt-page">
+    <div class="receipt-toolbar">
+      {% if back_url %}
+      <a href="{{ back_url }}">Back</a>
+      {% else %}
+      <a href="{% url 'fees_list' %}?tab=payments">Back</a>
+      {% endif %}
+      <button type="button" onclick="window.print()">Print Receipt</button>
     </div>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="receipt-document mb-4">
-                <!-- Receipt Header -->
-                <div class="receipt-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h3 class="fw-bold text-primary mb-1">BRIGHTWAVE INSTITUTE</h3>
-                        <p class="text-muted small mb-0">Online Examination & ERP Portal</p>
-                    </div>
-                    <div class="text-end">
-                        <span class="badge bg-soft-primary text-primary fs-6 mb-1">PAYMENT RECEIPT</span>
-                        <div class="text-muted small">No: <span class="fw-bold text-dark"><code>{{ receipt_number }}</code></span></div>
-                    </div>
-                </div>
-
-                <!-- Receipt Body Info -->
-                <div class="row mb-4">
-                    <div class="col-sm-6">
-                        <span class="text-muted small d-block">Student Name:</span>
-                        <strong class="text-dark fs-5">{{ payment.student.full_name }}</strong>
-                        <span class="text-muted small d-block mt-1">Email: {{ payment.student.email }}</span>
-                    </div>
-                    <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
-                        <span class="text-muted small d-block">Payment Date:</span>
-                        <strong class="text-dark">{{ payment.payment_date }}</strong>
-                        <span class="text-muted small d-block mt-1">Status: <span class="badge bg-success">SUCCESS</span></span>
-                    </div>
-                </div>
-
-                <!-- Receipt Details Table -->
-                <div class="border-top border-bottom py-2">
-                    <table class="w-100 receipt-details-table">
-                        <tbody>
-                            <tr>
-                                <th>Course Name</th>
-                                <td>{{ payment.student.batch.course.name|default:"N/A" }}</td>
-                            </tr>
-                            <tr>
-                                <th>Batch Name</th>
-                                <td>{{ payment.student.batch.name|default:"N/A" }}</td>
-                            </tr>
-                            <tr>
-                                <th>Payment Method</th>
-                                <td class="text-capitalize">{{ payment.get_payment_method_display }}</td>
-                            </tr>
-                            {% if payment.reference_number %}
-                            <tr>
-                                <th>Reference / Txn No.</th>
-                                <td><code>{{ payment.reference_number }}</code></td>
-                            </tr>
-                            {% endif %}
-                            {% if payment.remarks %}
-                            <tr>
-                                <th>Remarks</th>
-                                <td>{{ payment.remarks }}</td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Amount Box -->
-                <div class="receipt-amount-box mb-3">
-                    <span class="text-success small fw-semibold uppercase tracking-wider d-block mb-1">Amount Paid</span>
-                    <h2 class="text-success fw-bold mb-0">₹{{ payment.amount }}</h2>
-                </div>
-
-                <!-- Balance Summary Row -->
-                <div class="row g-2 text-center py-2 border-top">
-                    <div class="col-4 border-end">
-                        <span class="text-muted small d-block">Course Fee</span>
-                        <span class="fw-semibold text-dark">₹{{ course_fee }}</span>
-                    </div>
-                    <div class="col-4 border-end">
-                        <span class="text-muted small d-block">Amount Paid</span>
-                        <span class="fw-semibold text-success">₹{{ payment.amount }}</span>
-                    </div>
-                    <div class="col-4">
-                        <span class="text-muted small d-block">Remaining Balance</span>
-                        <span class="fw-semibold text-danger">₹{{ remaining_balance }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Print Trigger button -->
-            <div class="d-print-none text-center">
-                <button onclick="window.print();" class="btn btn-primary px-4 py-2">
-                    <i class="bi bi-printer-fill me-1"></i> Print Receipt
-                </button>
-            </div>
+    <section class="receipt-sheet">
+      <header class="receipt-head">
+        <div>
+          <h1>{{ fee_summary.center_name }}</h1>
+          <p>Online Examination & ERP Portal</p>
         </div>
-    </div>
-</div>
-{% endblock %}
+        <div class="receipt-no">
+          <strong>Payment Receipt</strong>
+          <div>No: <span>{{ receipt_number }}</span></div>
+        </div>
+      </header>
+
+      <div class="receipt-meta">
+        <div>
+          <span class="label">Student Name</span>
+          <span class="value">{{ fee_summary.student_name }}</span>
+          {% if fee_summary.student_email %}
+          <span class="label" style="margin-top:10px;">Email: {{ fee_summary.student_email }}</span>
+          {% endif %}
+        </div>
+        <div style="text-align:right;">
+          <span class="label">Payment Date</span>
+          <span class="value">{{ payment.payment_date|date:"F j, Y" }}</span>
+          <span class="success">Success</span>
+        </div>
+      </div>
+
+      <table class="detail-table">
+        <tbody>
+          <tr>
+            <th>Enrollment No</th>
+            <td>{{ fee_summary.enrollment_no|default:"N/A" }}</td>
+          </tr>
+          <tr>
+            <th>Course Name</th>
+            <td>{{ fee_summary.course_name }}</td>
+          </tr>
+          <tr>
+            <th>Batch Name</th>
+            <td>{{ fee_summary.batch_name }}</td>
+          </tr>
+          <tr>
+            <th>Payment Method</th>
+            <td>{{ payment.get_payment_method_display }}</td>
+          </tr>
+          <tr>
+            <th>Reference / Txn No.</th>
+            <td>{{ payment.reference_number|default:"N/A" }}</td>
+          </tr>
+          <tr>
+            <th>Remarks</th>
+            <td>{{ payment.remarks|default:"N/A" }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="amount-box">
+        <span>Amount Paid</span>
+        <strong>&#8377;{{ payment.amount|floatformat:2 }}</strong>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-item">
+          <span>Course Fee</span>
+          <strong>&#8377;{{ course_fee|floatformat:2 }}</strong>
+        </div>
+        <div class="summary-item">
+          <span>Total Paid</span>
+          <strong class="paid">&#8377;{{ fee_summary.amount_paid|floatformat:2 }}</strong>
+        </div>
+        <div class="summary-item">
+          <span>Remaining Balance</span>
+          <strong class="due">&#8377;{{ remaining_balance|floatformat:2 }}</strong>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -83,7 +83,7 @@
               <th class="text-uppercase text-muted" style="font-size: 0.8rem;">EMAIL</th>
               <th class="text-uppercase text-muted" style="font-size: 0.8rem;">COURSE</th>
               <th class="text-uppercase text-muted" style="font-size: 0.8rem; width: 140px;">ADMISSION TYPE</th>
-              <th class="pe-3 text-end text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">ACTIONS</th>
+              <th class="pe-3 text-end text-uppercase text-muted" style="font-size: 0.8rem; width: 310px;">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -131,6 +131,12 @@
                      class="btn btn-sm text-white px-3 py-1 rounded d-flex align-items-center gap-1" 
                      style="background-color: rgba(30,58,138,0.3); border: 1px solid #3b82f6; font-size: 0.8rem;">
                     <i class="bi bi-eye"></i>View
+                  </a>
+
+                  <a href="{% url 'create_student_login_password' s.pk %}" 
+                     class="btn btn-sm text-white px-3 py-1 rounded d-flex align-items-center gap-1" 
+                     style="background-color: rgba(16,185,129,0.12); border: 1px dashed #10b981; color: #34d399 !important; font-size: 0.8rem;">
+                    <i class="bi bi-key-fill"></i>Create Password
                   </a>
 
                   <!-- Revert to Pending Button (Swal Form) -->

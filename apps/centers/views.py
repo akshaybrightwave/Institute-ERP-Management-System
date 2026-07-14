@@ -594,11 +594,39 @@ def center_profile(request, pk):
     total_courses = center.course_assignments.count()
     registration_date = center.center_user.date_joined if hasattr(center, 'center_user') and center.center_user else None
 
+    from decimal import Decimal, InvalidOperation
+    from apps.fees.models import StudentPaymentSetting
+    from apps.fees.services import sync_student_payment_settings
+
+    sync_student_payment_settings()
+    admission_fee_setting = StudentPaymentSetting.objects.filter(title__iexact='Admission Fees').first()
+
+    if request.method == 'POST' and request.POST.get('action') == 'update_admission_fee_setting':
+        if not is_admin:
+            return HttpResponseForbidden("Access Denied: Only admins can update fee settings.")
+
+        amount_raw = request.POST.get('admission_fee_amount', '').strip()
+        try:
+            amount = Decimal(amount_raw)
+        except InvalidOperation:
+            amount = None
+
+        if amount is None or amount < Decimal('0.00'):
+            messages.error(request, "Enter a valid admission fee amount.")
+        else:
+            admission_fee_setting.amount = amount
+            admission_fee_setting.is_visible = request.POST.get('admission_fee_enabled') == 'on'
+            admission_fee_setting.save(update_fields=['amount', 'is_visible', 'updated_at'])
+            messages.success(request, "Admission fee setting updated successfully.")
+            return redirect(f"{request.path}#fees")
+
     return render(request, 'centers/center_profile.html', {
         'center': center,
         'total_students': total_students,
         'total_courses': total_courses,
         'registration_date': registration_date,
+        'admission_fee_setting': admission_fee_setting,
+        'can_update_fee_setting': is_admin,
     })
 
 

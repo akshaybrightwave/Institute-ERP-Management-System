@@ -1175,15 +1175,15 @@
 
   <!-- Exam(s) -->
   <button
-    class="sidebar-item {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam' %}active{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam,question_list,add_question,edit_question,import_questions' %}active{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbOnlineExam"
-    aria-expanded="{% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam,question_list,add_question,edit_question,import_questions' %}true{% else %}false{% endif %}">
     <i class="bi bi-journal-text si-icon"></i>
     <span class="si-label">Exam(S)</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam' %}show{% endif %}"
+    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam,question_list,add_question,edit_question,import_questions' %}show{% endif %}"
     id="sbOnlineExam">
     {% if request.user.role == 'center' %}
     <a href="{% url 'add_exam' %}"
@@ -1197,7 +1197,7 @@
     </a>
     {% endif %}
     <a href="{% url 'exam_list' %}"
-      class="{% if request.resolver_match.url_name == 'exam_list' %}active{% endif %}">
+      class="{% if request.resolver_match.url_name in 'exam_list,question_list,add_question,edit_question,import_questions' %}active{% endif %}">
       <i class="bi bi-list-ul me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List
     </a>
   </div>

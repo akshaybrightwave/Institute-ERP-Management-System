@@ -1,0 +1,218 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Import Exams | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="import-workspace">
+  <header class="import-page-head">
+    <h1>Import Exams</h1>
+    <nav aria-label="breadcrumb">
+      <a href="{% url 'home' %}">Home</a>
+      <span>-</span>
+      <a href="{% url 'exam_list' %}">Exam</a>
+      <span>-</span>
+      <strong>Question-import</strong>
+    </nav>
+  </header>
+
+  <section class="import-panel">
+    <div class="import-panel-head">
+      <h2>Import Questions</h2>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="import-form">
+      {% csrf_token %}
+      <div class="import-field">
+        <label for="csvFile">Upload CSV</label>
+        <div class="file-shell">
+          <input type="file" name="csv_file" id="csvFile" accept=".csv" required>
+          <span class="file-button">Choose File</span>
+          <span class="file-name" id="fileName">No file chosen</span>
+        </div>
+      </div>
+
+      <div class="import-actions">
+        <button type="submit" class="import-btn blue">
+          <i class="bi bi-upload"></i>
+          Upload
+        </button>
+        <a href="{% url 'question_list' exam.id %}" class="import-btn purple">
+          <i class="bi bi-list-ul"></i>
+          List Papers
+        </a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .import-workspace {
+    min-height: calc(100vh - var(--app-navbar-height, 68px));
+    background: #0f0f10;
+    color: #fff;
+    padding: 30px 26px 82px;
+  }
+
+  .import-page-head {
+    margin: 0 0 22px;
+  }
+
+  .import-page-head h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .import-page-head nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #59617c;
+    font-size: 13px;
+  }
+
+  .import-page-head nav a {
+    color: #59617c;
+    text-decoration: none;
+  }
+
+  .import-page-head nav strong {
+    color: #fff;
+    font-weight: 800;
+  }
+
+  .import-panel {
+    border: 2px solid #2b8cff;
+    border-radius: 7px;
+    background: #181818;
+    overflow: hidden;
+  }
+
+  .import-panel-head {
+    padding: 24px 30px;
+    border-bottom: 1px solid #2b2e3c;
+  }
+
+  .import-panel-head h2 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 900;
+  }
+
+  .import-form {
+    margin: 0;
+  }
+
+  .import-field {
+    padding: 38px 30px 36px;
+  }
+
+  .import-field label {
+    display: block;
+    color: #dce5ff;
+    font-weight: 800;
+    margin-bottom: 7px;
+    font-size: 14px;
+  }
+
+  .file-shell {
+    position: relative;
+    min-height: 43px;
+    border: 1px solid #34364a;
+    border-radius: 5px;
+    background: #151515;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .file-shell input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .file-button {
+    min-width: 109px;
+    padding: 0 13px;
+    border-right: 1px solid #34364a;
+    background: #18182a;
+    color: #aeb8d0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .file-name {
+    flex: 1;
+    min-width: 0;
+    padding: 0 13px;
+    color: #aeb8d0;
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .import-actions {
+    border-top: 1px solid #2b2e3c;
+    padding: 25px 30px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .import-btn {
+    height: 44px;
+    border: 0;
+    border-radius: 5px;
+    padding: 0 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    color: #fff;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .import-btn.blue {
+    background: #3d96f7;
+  }
+
+  .import-btn.purple {
+    background: #7434ed;
+  }
+
+  @media (max-width: 640px) {
+    .import-workspace {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .import-field,
+    .import-actions,
+    .import-panel-head {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+  }
+</style>
+
+<script>
+  const csvFile = document.getElementById('csvFile');
+  const fileName = document.getElementById('fileName');
+  if (csvFile && fileName) {
+    csvFile.addEventListener('change', function () {
+      fileName.textContent = this.files && this.files.length ? this.files[0].name : 'No file chosen';
+    });
+  }
+</script>
+{% endblock %}

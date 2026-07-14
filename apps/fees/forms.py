@@ -18,6 +18,7 @@ class FeePaymentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
+        self.course_fee = kwargs.pop('course_fee', None)
         super().__init__(*args, **kwargs)
         
         # Prepopulate with today's date if not set
@@ -54,7 +55,10 @@ class FeePaymentForm(forms.ModelForm):
             from django.db.models import Sum
             from decimal import Decimal
 
-            course_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+            if self.course_fee is not None:
+                course_fee = Decimal(str(self.course_fee))
+            else:
+                course_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
 
             other_payments = FeePayment.objects.filter(student=student)
             if self.instance and self.instance.pk:

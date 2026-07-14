@@ -4,6 +4,79 @@
 {% block title %}Student Admission | Examly{% endblock %}
 
 {% block erp_content %}
+<style>
+  .admission-fee-summary {
+    margin: 10px 0 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .admission-fee-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 13px;
+  }
+
+  .admission-fee-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 7px;
+    background: #223357;
+    color: #338ef4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+  }
+
+  .admission-fee-label {
+    color: #f6f4ff;
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+
+  .admission-fee-amount {
+    margin-top: 6px;
+    width: max-content;
+    padding: 2px 8px;
+    border-radius: 7px;
+    background: rgba(46, 200, 125, 0.14);
+    color: #39d985;
+    font-size: 24px;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+
+  .admission-wallet-card {
+    min-width: 170px;
+    min-height: 58px;
+    padding: 8px 18px;
+    border: 1px dotted #2690ff;
+    border-radius: 9px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: rgba(18, 20, 28, 0.65);
+  }
+
+  .admission-wallet-card strong {
+    font-size: 20px;
+    line-height: 1.1;
+  }
+
+  .admission-wallet-card span {
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+</style>
+
 <div class="container py-2">
 
   <!-- Title & Breadcrumbs -->
@@ -16,6 +89,25 @@
         <li class="breadcrumb-item text-white active" aria-current="page">Admission</li>
       </ol>
     </nav>
+  </div>
+
+  <div class="admission-fee-summary">
+    <div class="admission-fee-card">
+      <div class="admission-fee-icon">
+        <i class="bi bi-credit-card-2-front-fill"></i>
+      </div>
+      <div>
+        <div class="admission-fee-label">Student Admission Fee(s)</div>
+        <div class="admission-fee-amount">&#8377; {{ admission_fee|floatformat:0 }}</div>
+      </div>
+    </div>
+
+    {% if center_wallet_balance is not None %}
+    <div class="admission-wallet-card">
+      <strong>&#8377; {{ center_wallet_balance|floatformat:0 }}</strong>
+      <span>My Wallet</span>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Form Card -->

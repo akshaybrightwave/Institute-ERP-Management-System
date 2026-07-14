@@ -3,10 +3,12 @@ from django.http import HttpResponseForbidden
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.timezone import now
+from django.utils.dateparse import parse_date
 
 from apps.exams.models import Exam, StudentExamAttempt, StudentAnswer, Option
 from apps.students.models import StudentProfile, StudentAdmission
 from apps.students.forms import StudentProfileForm, StudentAdmissionForm
+from apps.fees.forms import FeePaymentForm
 from apps.accounts.views import admin_required
 
 
@@ -69,7 +71,7 @@ def student_dashboard(request):
     from apps.attendance.models import Attendance
     from decimal import Decimal
     from django.contrib import messages
-    from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth.forms import SetPasswordForm
     from django.contrib.auth import update_session_auth_hash
 
     # 1. Fetch Profile & Admission info
@@ -132,14 +134,19 @@ def student_dashboard(request):
         eligibility = get_student_eligibility(profile)
 
     # 5. Change Password Form
-    password_form = PasswordChangeForm(request.user)
+    password_form = SetPasswordForm(request.user)
+    active_profile_tab = ''
     if request.method == 'POST' and request.POST.get('action') == 'change_password':
-        password_form = PasswordChangeForm(request.user, request.POST)
+        active_profile_tab = 'password'
+        password_form = SetPasswordForm(request.user, {
+            'new_password1': request.POST.get('new_password', ''),
+            'new_password2': request.POST.get('confirm_password', ''),
+        })
         if password_form.is_valid():
             user = password_form.save()
             update_session_auth_hash(request, user)
             messages.success(request, 'Your password was successfully updated!')
-            return redirect('student_dashboard')
+            return redirect(f"{request.path}#password")
         else:
             messages.error(request, 'Please correct the error below.')
 
@@ -176,6 +183,7 @@ def student_dashboard(request):
         'eligibility': eligibility,
         'password_form': password_form,
         'notifications': notifications,
+        'active_profile_tab': active_profile_tab,
     }
     return render(request, 'student/student_dashboard.html', context)
 
@@ -560,9 +568,9 @@ def student_profile(request):
     pending_amount = 0.00
     fee_status = 'PENDING'
 
-    if profile:
+    if admission:
         from apps.attendance.models import Attendance
-        student_attendances = Attendance.objects.filter(student=profile)
+        student_attendances = Attendance.objects.filter(student=admission)
         present_days = student_attendances.filter(status='present').count()
         absent_days = student_attendances.filter(status='absent').count()
         total_days = present_days + absent_days
@@ -586,6 +594,126 @@ def student_profile(request):
         target_profile = StudentProfile.objects.filter(user__username=admission.enrollment_no).first()
         if not target_profile and admission.email:
             target_profile = StudentProfile.objects.filter(email=admission.email).first()
+
+    fee_payment_form = None
+    show_fee_payment_form = False
+    fee_payment_action = 'add_fee_payment'
+    editing_fee_payment = None
+    active_profile_tab = ''
+
+    profile_base_url = f"{request.path}?student_id={admission.pk}" if admission else request.path
+
+    if is_admin_or_center and admission and request.method == 'POST' and request.POST.get('action') == 'update_student_account':
+        editable_fields = [
+            'student_name', 'gender', 'status', 'whatsapp_no', 'alt_mobile', 'aadhar_no',
+            'email', 'father_name', 'mother_name', 'family_id', 'address', 'pincode',
+            'state', 'district', 'marital_status', 'category', 'medium',
+        ]
+        for field in editable_fields:
+            setattr(admission, field, request.POST.get(field, '').strip())
+
+        dob = parse_date(request.POST.get('dob', ''))
+        admission.dob = dob
+        admission.save(update_fields=editable_fields + ['dob'])
+
+        if profile:
+            profile.full_name = admission.student_name
+            profile.email = admission.email or profile.email
+            profile.phone = admission.whatsapp_no
+            profile.save(update_fields=['full_name', 'email', 'phone'])
+
+        messages.success(request, "Student account details updated successfully.")
+        return redirect(f"{profile_base_url}#update")
+
+    if is_admin_or_center and admission and request.method == 'POST' and request.POST.get('action') == 'update_document':
+        document_fields = {
+            'aadhar_card': 'Aadhar details',
+            'admission_form_doc': 'Admission form',
+            'family_id_doc': 'Family ID document',
+            'marksheet_10th': '10th marksheet',
+            'marksheet_10th_plus': '10th+ marksheet',
+        }
+        document_field = request.POST.get('document_field')
+        upload = request.FILES.get('document_file')
+
+        if document_field in document_fields and upload:
+            setattr(admission, document_field, upload)
+            admission.save(update_fields=[document_field])
+            messages.success(request, f"{document_fields[document_field]} updated successfully.")
+            return redirect(f"{profile_base_url}#documents")
+
+        active_profile_tab = 'documents'
+        messages.error(request, "Please choose a valid document file.")
+
+    if is_admin_or_center and request.method == 'POST' and request.POST.get('action') == 'change_password':
+        active_profile_tab = 'password'
+        target_user = admission.user if admission and admission.user else (profile.user if profile else None)
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        if not target_user:
+            messages.error(request, "Student login user is not linked.")
+        elif len(new_password) < 8:
+            messages.error(request, "Password must be at least 8 characters.")
+        elif new_password != confirm_password:
+            messages.error(request, "New password and confirm password do not match.")
+        else:
+            target_user.set_password(new_password)
+            target_user.save(update_fields=['password'])
+            messages.success(request, "Student password updated successfully.")
+            return redirect(f"{profile_base_url}#password")
+
+    if is_admin_or_center:
+        if target_profile:
+            profile_fees_url = f"{profile_base_url}#fees"
+            edit_payment_id = request.GET.get('edit_payment') if request.method == 'GET' else None
+            if edit_payment_id:
+                editing_fee_payment = FeePayment.objects.filter(pk=edit_payment_id, student=target_profile).first()
+                if editing_fee_payment:
+                    fee_payment_action = 'update_fee_payment'
+                    show_fee_payment_form = True
+
+            fee_payment_form = FeePaymentForm(
+                instance=editing_fee_payment,
+                initial={'student': target_profile.pk},
+                user=request.user,
+                course_fee=course_fee,
+            )
+
+            if request.method == 'POST' and request.POST.get('action') in ['add_fee_payment', 'update_fee_payment']:
+                action = request.POST.get('action')
+                post_data = request.POST.copy()
+                post_data['student'] = str(target_profile.pk)
+                if action == 'update_fee_payment':
+                    editing_fee_payment = FeePayment.objects.filter(
+                        pk=request.POST.get('payment_id'),
+                        student=target_profile,
+                    ).first()
+                    fee_payment_action = 'update_fee_payment'
+
+                fee_payment_form = FeePaymentForm(
+                    post_data,
+                    instance=editing_fee_payment,
+                    user=request.user,
+                    course_fee=course_fee,
+                )
+                show_fee_payment_form = True
+
+                if action == 'update_fee_payment' and not editing_fee_payment:
+                    messages.error(request, "Selected fee payment was not found.")
+                elif fee_payment_form.is_valid():
+                    fee_payment_form.save()
+                    messages.success(
+                        request,
+                        "Fee payment updated successfully." if action == 'update_fee_payment' else "Fee payment added successfully.",
+                    )
+                    return redirect(profile_fees_url)
+
+                if fee_payment_form.errors:
+                    messages.error(request, "Please correct the fee payment fields.")
+        elif request.method == 'POST' and request.POST.get('action') in ['add_fee_payment', 'update_fee_payment']:
+            messages.error(request, "Student profile is required before adding a fee payment.")
+            show_fee_payment_form = True
 
     if target_profile:
         fee_payments = FeePayment.objects.filter(student=target_profile).order_by('-payment_date', '-id')
@@ -642,6 +770,11 @@ def student_profile(request):
         'certificates': student_certificates,
         'issued_certificates_count': issued_count,
         'eligibility': eligibility,
+        'fee_payment_form': fee_payment_form,
+        'show_fee_payment_form': show_fee_payment_form,
+        'fee_payment_action': fee_payment_action,
+        'editing_fee_payment': editing_fee_payment,
+        'active_profile_tab': active_profile_tab,
     })
 
 
@@ -743,20 +876,51 @@ def sync_student_admission_user(admission):
 def student_admission_view(request):
     if request.user.role not in ['admin', 'center', 'superadmin']:
         return HttpResponseForbidden("Access Denied.")
+
+    from django.db import transaction
+    from apps.centers.models import Center
+    from apps.fees.models import StudentPaymentSetting
+    from apps.fees.services import sync_student_payment_settings
+    from decimal import Decimal
+
+    sync_student_payment_settings()
+    admission_fee_setting = StudentPaymentSetting.objects.filter(title__iexact='Admission Fees').first()
+    admission_fee = admission_fee_setting.amount if (admission_fee_setting and admission_fee_setting.is_visible) else Decimal('0.00')
+    center_context = request.user.center if request.user.role == 'center' else None
+
     if request.method == 'POST':
         form = StudentAdmissionForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            admission = form.save(commit=False)
-            if request.user.role == 'center':
-                admission.center = request.user.center
-            admission.save()
-            sync_student_admission_user(admission)
-            messages.success(request, 'Student Admission processed successfully.')
-            return redirect('student_admission')
+            with transaction.atomic():
+                admission = form.save(commit=False)
+                if request.user.role == 'center':
+                    center = Center.objects.select_for_update().get(pk=request.user.center_id)
+                    if admission_fee > center.wallet_balance:
+                        form.add_error(None, f"Insufficient wallet balance. Student admission fee is ₹{admission_fee:.2f}, available balance is ₹{center.wallet_balance:.2f}.")
+                    else:
+                        admission.center = center
+                        admission.save()
+                        if admission_fee > 0:
+                            center.wallet_balance -= admission_fee
+                            center.save(update_fields=['wallet_balance'])
+                            center_context = center
+                        sync_student_admission_user(admission)
+                        messages.success(request, f"Student Admission processed successfully. ₹{admission_fee:.2f} deducted from wallet.")
+                        return redirect('student_admission')
+                else:
+                    admission.save()
+                    sync_student_admission_user(admission)
+                    messages.success(request, 'Student Admission processed successfully.')
+                    return redirect('student_admission')
     else:
         form = StudentAdmissionForm(user=request.user)
     
-    return render(request, 'student/student_admission.html', {'form': form})
+    return render(request, 'student/student_admission.html', {
+        'form': form,
+        'admission_fee': admission_fee,
+        'center_wallet_balance': center_context.wallet_balance if center_context else None,
+        'center_context': center_context,
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -1036,6 +1200,71 @@ def student_approved_list(request):
         'page_obj': page_obj,
         'query': q,
         'show_entries': show_entries,
+    })
+
+
+@login_required
+def create_student_login_password(request, pk):
+    """Allow admin/center users to set the login password for an approved student."""
+    from apps.accounts.models import User
+
+    if request.user.role not in ['admin', 'center']:
+        return redirect('student_dashboard')
+
+    admission = get_object_or_404(
+        StudentAdmission.objects.select_related('center', 'course', 'user'),
+        pk=pk,
+        status='Approved',
+    )
+
+    if request.user.role == 'center' and admission.center and admission.center != request.user.center:
+        messages.error(request, 'Permission denied.')
+        return redirect('student_approved_list')
+
+    user = sync_student_admission_user(admission)
+    created_password = None
+    form_errors = []
+
+    if request.method == 'POST':
+        password = (request.POST.get('password') or '').strip()
+        confirm_password = (request.POST.get('confirm_password') or '').strip()
+        desired_username = (admission.enrollment_no or '').strip()
+
+        if not password:
+            form_errors.append('Password is required.')
+        if password and len(password) < 6:
+            form_errors.append('Password must be at least 6 characters long.')
+        if password != confirm_password:
+            form_errors.append('Confirm password must match the password.')
+        if not desired_username:
+            form_errors.append('Enrollment number is required before creating a student login.')
+
+        if desired_username and user.username != desired_username:
+            username_exists = User.all_objects.filter(username__iexact=desired_username).exclude(pk=user.pk).exists()
+            if username_exists:
+                form_errors.append('This enrollment number is already used by another login account.')
+
+        if not form_errors:
+            user.username = desired_username
+            user.email = admission.email or user.email
+            user.first_name = admission.student_name
+            user.role = 'student'
+            user.is_active = True
+            user.set_password(password)
+            user.save(update_fields=['username', 'email', 'first_name', 'role', 'is_active', 'password'])
+
+            if admission.user_id != user.id:
+                admission.user = user
+                admission.save(update_fields=['user', 'updated_at'])
+
+            created_password = password
+            messages.success(request, 'Student password created successfully.')
+
+    return render(request, 'student/create_student_password.html', {
+        'admission': admission,
+        'login_user': user,
+        'created_password': created_password,
+        'form_errors': form_errors,
     })
 
 

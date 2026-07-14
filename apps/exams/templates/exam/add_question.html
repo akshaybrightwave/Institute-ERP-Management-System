@@ -79,8 +79,8 @@
         newRow.className = 'option-row mb-2 d-flex align-items-center';
 
         newRow.innerHTML = `
-            <input type="radio" name="is_correct" value="₹{optionCount}" required class="form-check-input me-3 fs-5">
-            <input type="text" name="option_text" class="form-control me-2" placeholder="Option ₹{optionCount + 1}" required>
+            <input type="radio" name="is_correct" value="${optionCount}" required class="form-check-input me-3 fs-5">
+            <input type="text" name="option_text" class="form-control me-2" placeholder="Option ${optionCount + 1}" required>
             <button type="button" class="btn btn-sm btn-outline-danger remove-btn"><i class="bi bi-trash"></i></button>
         `;
 
@@ -96,7 +96,7 @@
             const rows = document.querySelectorAll('.option-row');
             rows.forEach((row, index) => {
                 row.querySelector('input[type="radio"]').value = index;
-                row.querySelector('input[type="text"]').placeholder = `Option ₹{index + 1}`;
+                row.querySelector('input[type="text"]').placeholder = `Option ${index + 1}`;
             });
         }
     });

@@ -6,14 +6,133 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Sum, Q, DecimalField
 from django.db.models.functions import Coalesce
+from django.utils.http import url_has_allowed_host_and_scheme
 from apps.accounts.views import admin_required
-from apps.students.models import StudentProfile
+from apps.students.models import StudentAdmission, StudentProfile
 from apps.batches.models import Batch
 from apps.teachers.models import TeacherProfile
 from .models import CenterPaymentSetting, FeePayment, StudentPaymentSetting
 from .forms import CenterPaymentSettingForm, FeePaymentForm, StudentPaymentSettingForm
 from .services import sync_center_payment_settings, sync_student_payment_settings
 from decimal import Decimal
+
+
+def _build_fee_emi_schedule(course_fee, paid_amount):
+    course_fee = Decimal(str(course_fee or Decimal('0.00')))
+    paid_amount = Decimal(str(paid_amount or Decimal('0.00')))
+    if course_fee <= 0:
+        return []
+
+    installment_count = 4
+    installment_amount = (course_fee / installment_count).quantize(Decimal('0.01'))
+    remaining_paid = paid_amount
+    rows = []
+
+    for installment_no in range(1, installment_count + 1):
+        amount = installment_amount if installment_no < installment_count else course_fee - (installment_amount * (installment_count - 1))
+        if remaining_paid >= amount:
+            status = 'Paid'
+            paid_for_installment = amount
+            remaining_paid -= amount
+        elif remaining_paid > 0:
+            status = 'Partially Paid'
+            paid_for_installment = remaining_paid
+            remaining_paid = Decimal('0.00')
+        else:
+            status = 'Pending'
+            paid_for_installment = Decimal('0.00')
+
+        rows.append({
+            'installment_no': installment_no,
+            'due_date': f'Month {installment_no}',
+            'amount': amount,
+            'paid_amount': paid_for_installment,
+            'status': status,
+        })
+
+    return rows
+
+
+def _get_student_admission(profile):
+    if not profile:
+        return None
+
+    qs = StudentAdmission.objects.select_related('course', 'center', 'user')
+    if profile.user_id:
+        admission = qs.filter(user=profile.user).first()
+        if admission:
+            return admission
+
+        admission = qs.filter(enrollment_no=profile.user.username).first()
+        if admission:
+            return admission
+
+    if profile.email:
+        admission = qs.filter(email=profile.email).first()
+        if admission:
+            return admission
+
+    return qs.filter(student_name=profile.full_name).first()
+
+
+def _build_student_fee_summary(profile):
+    admission = _get_student_admission(profile)
+    course = None
+    center = None
+    batch_name = 'N/A'
+
+    if admission:
+        course = admission.course
+        center = admission.center
+
+    if profile and profile.batch:
+        batch_name = profile.batch.name
+        course = course or profile.batch.course
+        center = center or profile.batch.center
+
+    course_fee = course.fees if course else Decimal('0.00')
+    paid_amount = FeePayment.objects.filter(student=profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    pending_balance = course_fee - paid_amount
+    if pending_balance < Decimal('0.00'):
+        pending_balance = Decimal('0.00')
+
+    return {
+        'admission': admission,
+        'student_name': admission.student_name if admission else profile.full_name,
+        'student_email': admission.email or profile.email if admission else profile.email,
+        'enrollment_no': admission.enrollment_no if admission else '',
+        'course_name': course.name if course else 'N/A',
+        'batch_name': batch_name,
+        'center_name': center.name if center else 'BRIGHTWAVE INSTITUTE',
+        'total_fees': course_fee,
+        'amount_paid': paid_amount,
+        'pending_balance': pending_balance,
+    }
+
+
+def _payment_allowed_for_user(payment, user, summary=None):
+    if user.role == 'admin':
+        return True
+    if user.role == 'student':
+        return payment.student.user_id == user.id
+    if user.role == 'center':
+        summary = summary or _build_student_fee_summary(payment.student)
+        admission = summary.get('admission')
+        if admission and admission.center_id == getattr(user, 'center_id', None):
+            return True
+        return bool(payment.student.batch and payment.student.batch.center_id == getattr(user, 'center_id', None))
+    return False
+
+
+def _safe_next_url(request):
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return None
 
 
 @admin_required
@@ -134,10 +253,30 @@ def fees_list(request):
         
     if is_student:
         from apps.students.models import StudentAdmission
-        admission = StudentAdmission.objects.select_related('course').filter(user=request.user).first()
+        from django.contrib.auth import update_session_auth_hash
+        from django.contrib.auth.forms import SetPasswordForm
+
+        admission = StudentAdmission.objects.select_related('course', 'center').filter(user=request.user).first()
         if not admission:
             return HttpResponseForbidden("Access Denied: No student admission found.")
-            
+
+        active_tab = request.POST.get('active_tab') or request.GET.get('tab', 'overview')
+        if active_tab == 'emis':
+            active_tab = 'fees'
+        if active_tab not in ['overview', 'fees', 'password', 'notifications']:
+            active_tab = 'overview'
+
+        password_form = SetPasswordForm(request.user)
+        if request.method == 'POST' and request.POST.get('action') == 'change_password':
+            active_tab = 'password'
+            password_form = SetPasswordForm(request.user, request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Password changed successfully.")
+                return redirect(f"{request.path}?tab=password")
+            messages.error(request, "Please correct the password fields below.")
+
         profile = getattr(request.user, 'studentprofile', None)
         if not profile:
             payments = FeePayment.objects.none()
@@ -151,25 +290,51 @@ def fees_list(request):
             paid_amount = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
             paid_amount = Decimal(str(paid_amount))
             pending_amount = course_fee - paid_amount
-            
+
             if paid_amount == 0:
                 fee_status = 'PENDING'
             elif pending_amount <= 0:
                 fee_status = 'PAID'
             else:
                 fee_status = 'PARTIAL'
-            
-        paginator = Paginator(payments, 10)
+
+        if pending_amount < Decimal('0.00'):
+            pending_amount = Decimal('0.00')
+
+        query = request.GET.get('q', '').strip()
+        if query and profile:
+            payments = payments.filter(
+                Q(reference_number__icontains=query) |
+                Q(payment_method__icontains=query) |
+                Q(remarks__icontains=query)
+            )
+
+        show_entries = request.GET.get('show', '10')
+        try:
+            per_page = int(show_entries)
+        except ValueError:
+            per_page = 10
+        if per_page not in [10, 25, 50]:
+            per_page = 10
+
+        paginator = Paginator(payments, per_page)
         page_number = request.GET.get('page', 1)
         page_obj = paginator.get_page(page_number)
-        
+
         return render(request, 'fees/student_fees_record.html', {
             'page_obj': page_obj,
+            'fee_payments': page_obj,
+            'admission': admission,
             'course_fee': course_fee,
             'paid_amount': paid_amount,
             'pending_amount': pending_amount,
             'fee_status': fee_status,
             'student_profile': profile,
+            'password_form': password_form,
+            'query': query,
+            'show_entries': str(per_page),
+            'notifications': [],
+            'active_tab': active_tab,
         })
         
     tab = request.GET.get('tab', 'students')
@@ -421,12 +586,13 @@ def payment_update(request, pk):
     if not (is_admin or is_center):
         return HttpResponseForbidden("Access Denied: Admins or Centers only.")
         
-    payment = get_object_or_404(FeePayment, pk=pk)
+    payment = get_object_or_404(FeePayment.objects.select_related('student__user', 'student__batch__course', 'student__batch__center'), pk=pk)
+    next_url = _safe_next_url(request)
+    payment_summary = _build_student_fee_summary(payment.student)
     
     # Check center isolation
-    if is_center:
-        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.center != request.user.center:
-            return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
+    if is_center and not _payment_allowed_for_user(payment, request.user, payment_summary):
+        return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
             
     selected_student_id = None
     if request.method == 'POST':
@@ -438,40 +604,41 @@ def payment_update(request, pk):
     fee_summary = None
     if selected_student_id:
         try:
-            if is_center:
-                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__center=request.user.center)
-            else:
-                student_profile = StudentProfile.objects.get(pk=selected_student_id)
-                
-            total_fee = student_profile.batch.course.fees if (student_profile.batch and student_profile.batch.course) else Decimal('0.00')
-            paid_amount = FeePayment.objects.filter(student=student_profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            pending_balance = total_fee - paid_amount
-            fee_summary = {
-                'student_name': student_profile.full_name,
-                'course_name': student_profile.batch.course.name if (student_profile.batch and student_profile.batch.course) else 'N/A',
-                'batch_name': student_profile.batch.name if student_profile.batch else 'N/A',
-                'total_fees': total_fee,
-                'amount_paid': paid_amount,
-                'pending_balance': pending_balance
-            }
+            student_profile = StudentProfile.objects.select_related('user', 'batch__course', 'batch__center').get(pk=selected_student_id)
+            fee_summary = _build_student_fee_summary(student_profile)
+            if is_center and not (
+                (fee_summary['admission'] and fee_summary['admission'].center_id == getattr(request.user, 'center_id', None)) or
+                (student_profile.batch and student_profile.batch.center_id == getattr(request.user, 'center_id', None))
+            ):
+                return HttpResponseForbidden("Access Denied: This student belongs to another center.")
         except StudentProfile.DoesNotExist:
             pass
 
     if request.method == 'POST':
-        form = FeePaymentForm(request.POST, instance=payment, user=request.user)
+        form = FeePaymentForm(
+            request.POST,
+            instance=payment,
+            user=request.user,
+            course_fee=fee_summary['total_fees'] if fee_summary else payment_summary['total_fees'],
+        )
         if form.is_valid():
             form.save()
             messages.success(request, "Fee payment updated successfully.")
-            return redirect('fees_list')
+            return redirect(next_url or 'fees_list')
     else:
-        form = FeePaymentForm(instance=payment, user=request.user)
+        form = FeePaymentForm(
+            instance=payment,
+            user=request.user,
+            course_fee=fee_summary['total_fees'] if fee_summary else payment_summary['total_fees'],
+        )
         
     return render(request, 'fees/fee_form.html', {
         'form': form,
         'action': 'Edit',
         'payment': payment,
         'fee_summary': fee_summary,
-        'student_profile': student_profile
+        'student_profile': student_profile,
+        'next_url': next_url,
     })
 
 
@@ -483,57 +650,46 @@ def payment_delete(request, pk):
     if not (is_admin or is_center):
         return HttpResponseForbidden("Access Denied: Admins or Centers only.")
         
-    payment = get_object_or_404(FeePayment, pk=pk)
+    payment = get_object_or_404(FeePayment.objects.select_related('student__user', 'student__batch__course', 'student__batch__center'), pk=pk)
+    next_url = _safe_next_url(request)
+    payment_summary = _build_student_fee_summary(payment.student)
     
     # Check center isolation
-    if is_center:
-        if not payment.student.batch or not payment.student.batch.course or payment.student.batch.center != request.user.center:
-            return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
+    if is_center and not _payment_allowed_for_user(payment, request.user, payment_summary):
+        return HttpResponseForbidden("Access Denied: This payment belongs to another center.")
             
     if request.method == 'POST':
         payment.delete()
         messages.success(request, "Fee payment deleted successfully.")
-        return redirect('fees_list')
+        return redirect(next_url or 'fees_list')
         
     return render(request, 'fees/fee_confirm_delete.html', {
-        'payment': payment
+        'payment': payment,
+        'next_url': next_url,
     })
 
 
 @login_required
 def payment_receipt(request, pk):
-    payment = get_object_or_404(FeePayment, pk=pk)
+    payment = get_object_or_404(FeePayment.objects.select_related('student__user', 'student__batch__course', 'student__batch__center'), pk=pk)
     user = request.user
-    
-    is_authorized = False
-    if user.role == 'admin':
-        is_authorized = True
-    elif user.role == 'center':
-        if user.center and payment.student.batch and payment.student.batch.center == user.center:
-            is_authorized = True
-    elif user.role == 'student':
-        if payment.student.user == user:
-            is_authorized = True
-            
-    if not is_authorized:
+    fee_summary = _build_student_fee_summary(payment.student)
+
+    if not _payment_allowed_for_user(payment, user, fee_summary):
         return HttpResponseForbidden("Access Denied: You are not authorized to view this receipt.")
         
-    student = payment.student
-    course_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
-    
-    # Sum of all payments for this student
-    total_paid = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    remaining_balance = course_fee - total_paid
-    if remaining_balance < Decimal('0.00'):
-        remaining_balance = Decimal('0.00')
-        
     receipt_number = f"RCPT-{payment.payment_date.year}-{payment.id:04d}"
+    back_url = _safe_next_url(request)
+    if not back_url and fee_summary['admission']:
+        back_url = f"/student_profile/?student_id={fee_summary['admission'].pk}#fees"
     
     return render(request, 'fees/receipt.html', {
         'payment': payment,
         'receipt_number': receipt_number,
-        'course_fee': course_fee,
-        'remaining_balance': remaining_balance,
+        'fee_summary': fee_summary,
+        'course_fee': fee_summary['total_fees'],
+        'remaining_balance': fee_summary['pending_balance'],
+        'back_url': back_url,
         'is_admin': user.role == 'admin',
         'is_center': user.role == 'center',
     })

@@ -15,6 +15,7 @@ from apps.academics.models import AcademicSession
 from apps.students.models import StudentProfile, StudentAdmission
 from apps.batches.models import Batch
 import csv
+import io
 
 
 # ---------------------------------------------------------------------------
@@ -296,7 +297,7 @@ def question_list(request, exam_id):
     if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
         return redirect('exam_list')
 
-    questions = exam.questions.all()
+    questions = exam.questions.prefetch_related('options').all()
     return render(request, 'exam/question_list.html', {'exam': exam, 'questions': questions})
 
 
@@ -373,6 +374,133 @@ def delete_question(request, question_id):
     exam_id = question.exam.id
     question.delete()
     return redirect('question_list', exam_id=exam_id)
+
+
+def _get_csv_value(row, *names):
+    normalized = {str(k).strip().lower().replace(' ', '_'): (v or '').strip() for k, v in row.items()}
+    for name in names:
+        value = normalized.get(name)
+        if value:
+            return value
+    return ''
+
+
+@user_passes_test(is_admin_or_teacher)
+def import_questions(request, exam_id):
+    exam = get_object_or_404(Exam, id=exam_id)
+
+    if request.user.role == 'teacher' and not exam.batches.filter(teacher__user=request.user).exists():
+        return redirect('exam_list')
+
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('csv_file')
+        if not uploaded_file:
+            messages.error(request, "Please choose a CSV file to upload.")
+            return redirect('import_questions', exam_id=exam.id)
+
+        if not uploaded_file.name.lower().endswith('.csv'):
+            messages.error(request, "Only CSV files are supported.")
+            return redirect('import_questions', exam_id=exam.id)
+
+        try:
+            decoded_file = uploaded_file.read().decode('utf-8-sig')
+        except UnicodeDecodeError:
+            messages.error(request, "Unable to read this CSV. Please save it as UTF-8 CSV and try again.")
+            return redirect('import_questions', exam_id=exam.id)
+
+        reader = csv.DictReader(io.StringIO(decoded_file))
+        if not reader.fieldnames:
+            messages.error(request, "The CSV file is empty or missing a header row.")
+            return redirect('import_questions', exam_id=exam.id)
+
+        imported_count = 0
+        skipped_rows = []
+
+        for row_number, row in enumerate(reader, start=2):
+            question_text = _get_csv_value(row, 'question_text', 'question', 'title')
+            marks_text = _get_csv_value(row, 'marks', 'mark')
+            correct_value = _get_csv_value(row, 'correct_option', 'correct_answer', 'answer', 'is_correct')
+            option_values = []
+            option_letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+            for index in range(1, 9):
+                letter = option_letters[index - 1]
+                option_text = _get_csv_value(
+                    row,
+                    f'option_{index}',
+                    f'option{index}',
+                    f'option_{letter}',
+                    f'option{letter}',
+                    f'answer_{index}',
+                    f'answer{index}',
+                    f'answer_{letter}',
+                    f'answer{letter}',
+                    f'choice_{index}',
+                    f'choice_{letter}',
+                    letter,
+                )
+                if option_text:
+                    option_values.append(option_text)
+
+            if not question_text or len(option_values) < 2 or not correct_value:
+                skipped_rows.append(str(row_number))
+                continue
+
+            try:
+                marks = int(marks_text) if marks_text else 1
+            except ValueError:
+                marks = 1
+
+            correct_index = None
+            if correct_value.isdigit():
+                numeric_index = int(correct_value)
+                if 1 <= numeric_index <= len(option_values):
+                    correct_index = numeric_index - 1
+                elif 0 <= numeric_index < len(option_values):
+                    correct_index = numeric_index
+            else:
+                lowered_correct = correct_value.lower()
+                letter_map = {'a': 0, 'b': 1, 'c': 2, 'd': 3}
+                if lowered_correct in letter_map and letter_map[lowered_correct] < len(option_values):
+                    correct_index = letter_map[lowered_correct]
+                else:
+                    for index, option_text in enumerate(option_values):
+                        if option_text.strip().lower() == lowered_correct:
+                            correct_index = index
+                            break
+
+            if correct_index is None:
+                skipped_rows.append(str(row_number))
+                continue
+
+            question = Question.objects.create(
+                exam=exam,
+                question_text=question_text,
+                marks=max(marks, 1)
+            )
+
+            for index, option_text in enumerate(option_values):
+                Option.objects.create(
+                    question=question,
+                    text=option_text,
+                    is_correct=(index == correct_index)
+                )
+
+            imported_count += 1
+
+        if imported_count:
+            exam.total_questions = exam.questions.count()
+            exam.save(update_fields=['total_questions'])
+            messages.success(request, f"Imported {imported_count} question(s) successfully.")
+
+        if skipped_rows:
+            messages.warning(request, f"Skipped row(s): {', '.join(skipped_rows)}. Check question, options, and correct answer.")
+        elif not imported_count:
+            messages.error(request, "No valid questions were found in the CSV.")
+
+        return redirect('question_list', exam_id=exam.id)
+
+    return render(request, 'exam/import_questions.html', {'exam': exam})
 
 
 # ---------------------------------------------------------------------------

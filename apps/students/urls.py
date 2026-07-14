@@ -20,6 +20,7 @@ urlpatterns = [
     path('id_card/', views.student_id_card_view, name='student_id_card'),
     path('pending-list/', views.student_pending_list, name='student_pending_list'),
     path('approved-list/', views.student_approved_list, name='student_approved_list'),
+    path('approved/<int:pk>/password/', views.create_student_login_password, name='create_student_login_password'),
     path('cancel-list/', views.student_cancelled_list, name='student_cancelled_list'),
     path('approve/<int:pk>/', views.student_approve_action, name='student_approve_action'),
     path('cancel/<int:pk>/', views.student_cancel_action, name='student_cancel_action'),

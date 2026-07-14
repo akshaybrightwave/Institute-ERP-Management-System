@@ -3,6 +3,152 @@
 
 {% block title %}Center Overview | Examly{% endblock %}
 
+{% block style %}
+{{ block.super }}
+<style>
+  .center-fee-setting-card {
+    background: #1a1a1a;
+    border: 2px solid #2690ff;
+    border-radius: 7px;
+    overflow: hidden;
+  }
+
+  .center-fee-setting-head {
+    min-height: 69px;
+    padding: 22px 30px;
+    border-bottom: 1px solid #2a2d42;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .center-fee-setting-head h5 {
+    margin: 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 900;
+  }
+
+  .center-fee-setting-head i {
+    color: #666a96;
+    font-size: 18px;
+  }
+
+  .center-fee-setting-form {
+    margin: 0;
+  }
+
+  .fee-setting-row {
+    padding: 26px 30px 39px;
+    border-bottom: 1px solid #2a2d42;
+    display: grid;
+    grid-template-columns: 206px minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .fee-setting-toggle {
+    min-height: 43px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid #30344d;
+    border-radius: 5px 0 0 5px;
+    background: #1b1b2b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-weight: 900;
+  }
+
+  .fee-setting-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .fee-setting-toggle span {
+    width: 31px;
+    height: 19px;
+    border-radius: 999px;
+    background: #424761;
+    position: relative;
+    flex: 0 0 auto;
+  }
+
+  .fee-setting-toggle span::after {
+    content: "";
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    transition: transform 0.18s ease;
+  }
+
+  .fee-setting-toggle input:checked + span {
+    background: #3393ff;
+  }
+
+  .fee-setting-toggle input:checked + span::after {
+    transform: translateX(12px);
+  }
+
+  .fee-setting-row > input {
+    min-height: 43px;
+    padding: 0 13px;
+    border: 1px solid #30344d;
+    border-left: 0;
+    border-radius: 0 5px 5px 0;
+    background: #1a1a1a;
+    color: #bfc5d7;
+    font-size: 15px;
+    font-weight: 800;
+    outline: none;
+  }
+
+  .center-fee-setting-actions {
+    padding: 25px 30px 27px;
+  }
+
+  .fee-save-setting-btn {
+    min-height: 45px;
+    padding: 0 22px;
+    border: 1px dashed #2ec87d;
+    border-radius: 6px;
+    background: transparent;
+    color: #2ec87d;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 900;
+  }
+
+  .fee-view-note {
+    color: #8389a8;
+    font-weight: 800;
+  }
+
+  @media (max-width: 768px) {
+    .fee-setting-row {
+      grid-template-columns: 1fr;
+    }
+
+    .fee-setting-toggle,
+    .fee-setting-row > input {
+      border-radius: 5px;
+      border: 1px solid #30344d;
+    }
+
+    .fee-setting-row > input {
+      border-top: 0;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block erp_content %}
 <div class="container py-2">
 
@@ -291,6 +437,37 @@
 
         <!-- Tab 4: Fee System -->
         <div class="tab-pane fade" id="fees" role="tabpanel" aria-labelledby="fees-tab">
+          <div class="center-fee-setting-card">
+            <div class="center-fee-setting-head">
+              <h5>Fees Setting</h5>
+              <i class="bi bi-chevron-up"></i>
+            </div>
+
+            <form method="post" class="center-fee-setting-form">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="update_admission_fee_setting">
+
+              <div class="fee-setting-row">
+                <label class="fee-setting-toggle">
+                  <input type="checkbox" name="admission_fee_enabled" {% if admission_fee_setting.is_visible %}checked{% endif %} {% if not can_update_fee_setting %}disabled{% endif %}>
+                  <span></span>
+                  <strong>Admission Fees</strong>
+                </label>
+                <input type="number" name="admission_fee_amount" min="0" step="0.01" value="{{ admission_fee_setting.amount|floatformat:0 }}" {% if not can_update_fee_setting %}readonly{% endif %}>
+              </div>
+
+              <div class="center-fee-setting-actions">
+                {% if can_update_fee_setting %}
+                <button type="submit" class="fee-save-setting-btn">
+                  <i class="bi bi-bookmark-fill"></i> Save
+                </button>
+                {% else %}
+                <span class="fee-view-note">Only admin can update this setting.</span>
+                {% endif %}
+              </div>
+            </form>
+          </div>
+          {% if False %}
           <div class="card border-0" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px;">
             <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Wallet & Fee System</h5>
             
@@ -318,6 +495,7 @@
               </div>
             </div>
           </div>
+          {% endif %}
         </div>
 
         <!-- Tab 5: Notifications -->

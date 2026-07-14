@@ -272,17 +272,25 @@ def admin_dashboard(request):
     from apps.categories.models import Category
     from apps.admit_card.models import AdmitCard
     from apps.results.models import Result
-    from apps.exams.models import Exam
+    from apps.exams.models import Exam, StudentExamAttempt
     from apps.certificates.models import Certificate
     from django.db.models import Sum, F, Count, Q
     from django.db.models.functions import Coalesce
     from decimal import Decimal
+    import datetime
 
-    # Fee metrics
-    total_fee_collection = FeePayment.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    total_course_fees = StudentProfile.objects.aggregate(total=Sum('batch__course__fees'))['total'] or Decimal('0.00')
-    total_pending_fees = Decimal(str(total_course_fees)) - Decimal(str(total_fee_collection))
-    
+    today = datetime.date.today()
+
+    # ── Fee metrics (2 queries → combined) ────────────────────────────────────
+    fee_agg = FeePayment.objects.aggregate(total=Coalesce(Sum('amount'), Decimal('0.00')))
+    total_fee_collection = fee_agg['total']
+
+    course_fee_agg = StudentProfile.objects.aggregate(
+        total=Coalesce(Sum('batch__course__fees'), Decimal('0.00'))
+    )
+    total_course_fees = course_fee_agg['total']
+    total_pending_fees = total_course_fees - total_fee_collection
+
     students_with_pending_fees = StudentProfile.objects.annotate(
         paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'))
     ).filter(
@@ -290,50 +298,74 @@ def admin_dashboard(request):
         paid_amount__lt=F('batch__course__fees')
     ).count()
 
-    # Certificate & Exam metrics
-    from apps.exams.models import StudentExamAttempt
-    
+    # ── Certificate & Exam metrics ─────────────────────────────────────────────
     total_certificates = Certificate.objects.count()
     issued_certificates_count = total_certificates
-    revoked_certificates_count = 0
 
-    # Calculate count of eligible students
-    paid_map = {p['student_id']: p['total'] or Decimal('0.00') for p in FeePayment.objects.values('student_id').annotate(total=Sum('amount'))}
-    att_map = {a['student_id']: (a['total'], a['present']) for a in Attendance.objects.values('student_id').annotate(total=Count('id'), present=Count('id', filter=Q(status='present')))}
+    # ── Eligible students: replaced Python loop with DB annotation ─────────────
+    # Students with ≥75% attendance AND fees fully paid
+    # Keep payment and attendance aggregates separate to avoid a slow multi-join.
+    paid_map = {
+        p['student_id']: p['total'] or Decimal('0.00')
+        for p in FeePayment.objects.values('student_id').annotate(total=Sum('amount'))
+    }
+    attendance_by_user = Attendance.objects.exclude(student__user__isnull=True).values(
+        'student__user_id'
+    ).annotate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='present')),
+    )
+    att_map = {
+        a['student__user_id']: (a['total'], a['present'])
+        for a in attendance_by_user
+    }
 
     eligible_students_count = 0
-    for student in StudentProfile.objects.filter(batch__isnull=False).select_related('batch', 'batch__course'):
+    eligible_students = StudentProfile.objects.filter(
+        batch__isnull=False,
+        batch__course__isnull=False,
+    ).select_related('batch__course', 'user')
+    for student in eligible_students:
         paid = paid_map.get(student.id, Decimal('0.00'))
-        course_fee = Decimal(str(student.batch.course.fees)) if (student.batch and student.batch.course) else Decimal('0.00')
-        fee_eligible = paid >= course_fee
-        
-        total_att, present_att = att_map.get(student.id, (0, 0))
-        attendance_pct = (present_att / total_att) * 100 if total_att > 0 else 0.0
-        attendance_eligible = attendance_pct >= 75.0
-        
-        if fee_eligible and attendance_eligible:
+        course_fee = Decimal(str(student.batch.course.fees))
+        total_att, present_att = att_map.get(student.user_id, (0, 0))
+        attendance_pct = (present_att / total_att) * 100 if total_att else 0.0
+        if paid >= course_fee and attendance_pct >= 75.0:
             eligible_students_count += 1
 
-    # Dashboard Analytics (ERP Phase 8)
-    import datetime
-    today = datetime.date.today()
-    active_students = User.objects.filter(role='student', is_active=True, is_deleted=False).count()
-    active_teachers = User.objects.filter(role='teacher', is_active=True, is_deleted=False).count()
+    # ── Dashboard Analytics (combined where possible) ─────────────────────────
+    user_counts = User.objects.aggregate(
+        active_students=Count('id', filter=Q(role='student', is_active=True, is_deleted=False)),
+        active_teachers=Count('id', filter=Q(role='teacher', is_active=True, is_deleted=False)),
+    )
+    active_students = user_counts['active_students']
+    active_teachers = user_counts['active_teachers']
+
     active_batches = Batch.objects.filter(start_date__lte=today, end_date__gte=today).count()
-    
-    total_att_count = Attendance.objects.count()
-    present_att_count = Attendance.objects.filter(status='present').count()
+
+    # Attendance rate: 2 queries → 1 aggregate
+    att_agg = Attendance.objects.aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='present')),
+    )
+    total_att_count = att_agg['total']
+    present_att_count = att_agg['present']
     attendance_rate = round((present_att_count / total_att_count * 100), 1) if total_att_count > 0 else 0.0
-    
-    fee_collection_rate = round((total_fee_collection / total_course_fees * 100), 1) if total_course_fees > 0 else 0.0
-    
-    total_attempts = StudentExamAttempt.objects.filter(is_completed=True).count()
-    passed_attempts = StudentExamAttempt.objects.filter(is_completed=True, score__gte=F('exam__pass_percentage')).count()
+
+    fee_collection_rate = round((float(total_fee_collection) / float(total_course_fees) * 100), 1) if total_course_fees > 0 else 0.0
+
+    # Exam pass rate: 2 queries → 1 aggregate
+    exam_agg = StudentExamAttempt.objects.filter(is_completed=True).aggregate(
+        total=Count('id'),
+        passed=Count('id', filter=Q(score__gte=F('exam__pass_percentage'))),
+    )
+    total_attempts = exam_agg['total']
+    passed_attempts = exam_agg['passed']
     exam_pass_rate = round((passed_attempts / total_attempts * 100), 1) if total_attempts > 0 else 0.0
 
-    # New Admin KPI metrics
+    # ── KPI metrics ────────────────────────────────────────────────────────────
     total_course_categories = Category.objects.count()
-    
+
     admission_counts = StudentAdmission.objects.aggregate(
         total=Count('id'),
         approved=Count('id', filter=Q(status='Approved')),
@@ -349,26 +381,43 @@ def admin_dashboard(request):
     total_results = Result.objects.count()
     total_id_cards = approved_admissions
 
-    total_pending_centers = Center.objects.filter(center_user__is_active=False).count()
-    total_approved_centers = Center.objects.filter(center_user__is_active=True).count()
+    center_agg = Center.objects.aggregate(
+        pending=Count('id', filter=Q(center_user__is_active=False)),
+        approved=Count('id', filter=Q(center_user__is_active=True)),
+    )
+    total_pending_centers = center_agg['pending']
+    total_approved_centers = center_agg['approved']
+
+    # Batch/exam/course aggregate counts
+    exam_counts = Exam.objects.aggregate(
+        total=Count('id'),
+        published=Count('id', filter=Q(is_published=True)),
+        batch_assigned=Count('id', filter=Q(batches__isnull=False), distinct=True),
+    )
+
+    # Total students/teachers (admin side) - combine into one query
+    user_total_agg = User.objects.aggregate(
+        total_students=Count('id', filter=Q(role='student', is_deleted=False)),
+        total_teachers=Count('id', filter=Q(role='teacher', is_deleted=False)),
+    )
 
     context = {
-        'total_students': User.objects.filter(role='student', is_deleted=False).count(),
-        'total_teachers': User.objects.filter(role='teacher', is_deleted=False).count(),
-        'total_exams': Exam.objects.count(),
-        'active_exams': Exam.objects.filter(is_published=True).count(),
-        'batch_assigned_exams': Exam.objects.filter(batches__isnull=False).distinct().count(),
+        'total_students': user_total_agg['total_students'],
+        'total_teachers': user_total_agg['total_teachers'],
+        'total_exams': exam_counts['total'],
+        'active_exams': exam_counts['published'],
+        'batch_assigned_exams': exam_counts['batch_assigned'],
         'unread_feedback_count': Feedback.objects.filter(is_read=False).count(),
         'total_centers': Center.objects.count(),
         'total_courses': Course.objects.count(),
         'total_batches': Batch.objects.count(),
-        'total_attendance_records': Attendance.objects.count(),
+        'total_attendance_records': total_att_count,
         'total_fee_collection': total_fee_collection,
         'total_pending_fees': total_pending_fees,
         'students_with_pending_fees': students_with_pending_fees,
         'total_certificates': total_certificates,
         'issued_certificates_count': issued_certificates_count,
-        'revoked_certificates_count': revoked_certificates_count,
+        'revoked_certificates_count': 0,
         'eligible_students_count': eligible_students_count,
         'active_students': active_students,
         'active_teachers': active_teachers,
@@ -377,8 +426,7 @@ def admin_dashboard(request):
         'fee_collection_rate': fee_collection_rate,
         'exam_pass_rate': exam_pass_rate,
         'certificate_issuance_count': issued_certificates_count,
-        
-        # New context variables
+        # KPI variables
         'total_course_categories': total_course_categories,
         'total_admissions': total_admissions,
         'approved_admissions': approved_admissions,

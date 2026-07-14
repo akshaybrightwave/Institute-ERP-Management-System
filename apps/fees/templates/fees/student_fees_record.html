@@ -1,153 +1,986 @@
 {% extends 'accounts/admin_dashboard.html' %}
 {% load static %}
 
-{% block title %}My Fee Record | Examly{% endblock %}
+{% block title %}Account Fees Record | Examly{% endblock %}
 
 {% block erp_content %}
-<div class="container py-2">
+<div class="student-fee-page">
+  <header class="fee-page-title">
+    <h1>{{ admission.center.name|default:"Bengal Vocational College And Technical Foundation" }}</h1>
+    <div class="fee-heading-line">
+      <i class="bi bi-calendar2-week"></i>
+      <div>
+        <h2>Account Fees Record</h2>
+        <nav>
+          <a href="{% url 'student_dashboard' %}">Home</a>
+          <span>-</span>
+          <span>Student</span>
+          <span>-</span>
+          <strong>Profile</strong>
+        </nav>
+      </div>
+    </div>
+  </header>
 
-  <!-- Breadcrumbs & Title -->
-  <div class="mb-4">
-    <h2 class="fw-bold text-white mb-1">
-      <i class="bi bi-credit-card text-primary me-2"></i>My Fee Record
-    </h2>
-    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
-      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
-        <li class="breadcrumb-item">
-          <a href="{% url 'student_dashboard' %}" class="text-decoration-none text-muted">Home</a>
-        </li>
-        <li class="breadcrumb-item text-muted">Student</li>
-        <li class="breadcrumb-item active text-white-50" aria-current="page">Fee Record</li>
-      </ol>
-    </nav>
-  </div>
-
-  <!-- Fees Summary Cards -->
-  <div class="row g-3 mb-4 row-cols-1 row-cols-md-4">
-    <div class="col">
-      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
-        <span class="d-block text-white-50 small mb-1">Total Course Fee</span>
-        <span class="fs-5 fw-bold text-white">₹{{ course_fee|floatformat:2 }}</span>
-      </div>
-    </div>
-    <div class="col">
-      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
-        <span class="d-block text-white-50 small mb-1">Paid Amount</span>
-        <span class="fs-5 fw-bold text-success">₹{{ paid_amount|floatformat:2 }}</span>
-      </div>
-    </div>
-    <div class="col">
-      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
-        <span class="d-block text-white-50 small mb-1">Remaining Fee</span>
-        <span class="fs-5 fw-bold text-danger">₹{{ pending_amount|floatformat:2 }}</span>
-      </div>
-    </div>
-    <div class="col">
-      <div class="p-3 rounded text-center" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
-        <span class="d-block text-white-50 small mb-1">Fee Status</span>
-        {% if fee_status == 'PAID' %}
-          <span class="badge bg-success mt-1 px-3 py-1">PAID</span>
-        {% elif fee_status == 'PARTIAL' %}
-          <span class="badge bg-warning text-dark mt-1 px-3 py-1">PARTIAL</span>
+  <section class="fee-profile-card">
+    <div class="fee-profile-body">
+      <div class="student-photo-wrap">
+        {% if admission.photo %}
+        <img src="{{ admission.photo.url }}" alt="{{ admission.student_name }}">
+        {% elif student_profile.profile_picture %}
+        <img src="{{ student_profile.profile_picture.url }}" alt="{{ admission.student_name }}">
         {% else %}
-          <span class="badge bg-danger mt-1 px-3 py-1">PENDING</span>
+        <div class="photo-fallback"><i class="bi bi-person"></i></div>
+        {% endif %}
+      </div>
+
+      <div class="student-summary">
+        <div class="student-name-row">
+          <h3>{{ admission.student_name|default:student_profile.full_name }}</h3>
+          <i class="bi bi-patch-check verified-blue"></i>
+          <i class="bi bi-check-circle verified-green"></i>
+        </div>
+        <div class="student-meta">
+          <span><i class="bi bi-person-circle"></i> Student</span>
+          <span><i class="bi bi-geo-alt"></i> Address</span>
+          <span><i class="bi bi-envelope"></i> {{ admission.email|default:student_profile.email|default:"-" }}</span>
+        </div>
+
+        <div class="fee-stat-grid">
+          <div class="fee-stat">
+            <strong>{{ admission.enrollment_no|default:"-" }}</strong>
+            <span>Enrollment No</span>
+            <button type="button" class="copy-enrollment" data-copy="{{ admission.enrollment_no|default:'' }}" aria-label="Copy enrollment number">
+              <i class="bi bi-copy"></i>
+            </button>
+          </div>
+          <div class="fee-stat">
+            <strong>{{ admission.dob|date:"d-m-Y"|default:"-" }}</strong>
+            <span>Date of Birth</span>
+          </div>
+          <div class="fee-stat">
+            <strong>{{ admission.gender|default:"-" }}</strong>
+            <span>Gender</span>
+          </div>
+          <div class="fee-stat fee-stat-danger">
+            <strong><i class="bi bi-bank"></i> &#8377;{{ pending_amount|floatformat:0 }}</strong>
+            <span>Remaining Course Fee</span>
+          </div>
+          <div class="fee-stat fee-stat-success">
+            <strong><i class="bi bi-bank"></i> &#8377;{{ course_fee|floatformat:0 }}</strong>
+            <span>Total Course Fee</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="fee-tabs" aria-label="Student fee sections">
+      <a class="{% if active_tab == 'overview' %}active{% endif %}" href="?tab=overview">
+        <i class="bi bi-ui-radios-grid"></i> Overview
+      </a>
+      <a class="{% if active_tab == 'fees' %}active{% endif %}" href="?tab=fees">
+        <i class="bi bi-credit-card-2-front"></i> Fees Record
+      </a>
+      <a class="{% if active_tab == 'password' %}active{% endif %}" href="?tab=password">
+        <i class="bi bi-key"></i> Change Password
+      </a>
+      <a class="{% if active_tab == 'notifications' %}active{% endif %}" href="?tab=notifications">
+        <i class="bi bi-bell"></i> Notification(s)
+      </a>
+    </nav>
+  </section>
+
+  {% if active_tab == 'overview' %}
+  <section class="fee-section-card">
+    <h3>Account Overview</h3>
+    <div class="overview-table-wrap">
+      <table class="overview-table">
+        <tbody>
+          <tr>
+            <th>Center Name</th>
+            <td colspan="3">{{ admission.center.name|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>Course Name</th>
+            <td>{{ admission.course.name|default:"-" }}</td>
+            <th>Duration</th>
+            <td>{{ admission.course.duration|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>Mobile</th>
+            <td>
+              <a href="tel:{{ admission.whatsapp_no }}">{{ admission.whatsapp_no|default:"-" }}</a>
+              <span class="self-badge">Self</span>
+            </td>
+            <th>Email</th>
+            <td><a href="mailto:{{ admission.email }}">{{ admission.email|default:"-" }}</a></td>
+          </tr>
+          <tr>
+            <th>Father Name</th>
+            <td>{{ admission.father_name|default:"-" }}</td>
+            <th>Mother Name</th>
+            <td>{{ admission.mother_name|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>State Name</th>
+            <td>{{ admission.state|default:"-" }}</td>
+            <th>City Name</th>
+            <td>{{ admission.district|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>Address</th>
+            <td>{{ admission.address|default:"-" }}</td>
+            <th>Pincode</th>
+            <td>{{ admission.pincode|default:"-" }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if active_tab == 'fees' %}
+  <section class="fee-section-card">
+    <h3>Fee Record</h3>
+    <div class="fee-table-toolbar">
+      <form method="get" class="show-form">
+        <input type="hidden" name="tab" value="fees">
+        <label for="showRows">Show</label>
+        <select id="showRows" name="show" onchange="this.form.submit()">
+          <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+          <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+          <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+        </select>
+      </form>
+      <form method="get" class="search-form">
+        <input type="hidden" name="tab" value="fees">
+        <input type="hidden" name="show" value="{{ show_entries }}">
+        <label for="feeSearch">Search:</label>
+        <input id="feeSearch" type="text" name="q" value="{{ query }}">
+      </form>
+      <div class="export-actions">
+        <button type="button" data-export="copy">Copy</button>
+        <button type="button" data-export="csv">CSV</button>
+        <button type="button" data-export="excel">Excel</button>
+        <button type="button" data-export="pdf">PDF</button>
+        <button type="button" data-export="print">Print</button>
+      </div>
+    </div>
+
+    <div class="fee-ledger-wrap">
+      <table class="fee-ledger-table" id="studentFeeTable">
+        <thead>
+          <tr>
+            <th colspan="6" class="student-table-name">{{ admission.student_name|default:student_profile.full_name }}</th>
+          </tr>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Transaction ID</th>
+            <th>Fee Amount</th>
+            <th>Fee Type</th>
+            <th>Receipt</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in fee_payments %}
+          <tr>
+            <td>{{ forloop.counter0|add:page_obj.start_index }}</td>
+            <td>{{ payment.payment_date|date:"d-m-Y" }}</td>
+            <td>{{ payment.reference_number|default:payment.id }}</td>
+            <td class="amount-cell">&#8377; {{ payment.amount|floatformat:0 }}</td>
+            <td>{{ payment.get_payment_method_display|default:payment.payment_method }}</td>
+            <td>
+              <a href="{% url 'payment_receipt' payment.pk %}" target="_blank" class="receipt-btn">
+                <i class="bi bi-file-earmark-fill"></i> Receipt
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="empty-ledger">
+              <i class="bi bi-wallet2"></i>
+              No fee payments recorded.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% if fee_payments %}
+        <tfoot>
+          <tr>
+            <td colspan="3">Total</td>
+            <td colspan="3">&#8377; {{ paid_amount|floatformat:0 }} ( &#8377; {{ paid_amount|floatformat:0 }} Total )</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="fee-pagination">
+      <span>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records</span>
+      <div>
+        {% if page_obj.has_previous %}
+        <a href="?tab=fees&page={{ page_obj.previous_page_number }}&show={{ show_entries }}{% if query %}&q={{ query }}{% endif %}">&lt;</a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+          <span class="active">{{ num }}</span>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a href="?tab=fees&page={{ num }}&show={{ show_entries }}{% if query %}&q={{ query }}{% endif %}">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a href="?tab=fees&page={{ page_obj.next_page_number }}&show={{ show_entries }}{% if query %}&q={{ query }}{% endif %}">&gt;</a>
         {% endif %}
       </div>
     </div>
-  </div>
+    {% endif %}
+  </section>
+  {% endif %}
 
-  <!-- Fees Table Card -->
-  <div class="card border-0 shadow-sm rounded-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08) !important;">
-    <div class="card-header border-0 bg-transparent pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
-      <h5 class="fw-bold mb-0 text-white" style="font-size: 1.1rem;">My Fee Ledger</h5>
-    </div>
-    <div class="card-body p-4">
-      <div class="table-responsive">
-        <table class="table table-examly table-hover align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
-          <thead>
-            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
-              <th class="ps-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Date</th>
-              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Payment Method</th>
-              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Reference Number</th>
-              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Remarks</th>
-              <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Amount</th>
-              <th class="pe-3 text-end text-uppercase text-muted" style="font-size: 0.75rem;">Receipt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for payment in page_obj %}
-            <tr style="border-color: rgba(255,255,255,0.05) !important;">
-              <td class="ps-3 text-white-50" style="font-size: 0.9rem;">
-                {{ payment.payment_date|date:"d-m-Y" }}
-              </td>
-              <td class="text-white-50 text-uppercase" style="font-size: 0.9rem;">
-                {{ payment.payment_method }}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {{ payment.reference_number|default:"—" }}
-              </td>
-              <td class="text-white-50" style="font-size: 0.9rem;">
-                {{ payment.remarks|default:"—" }}
-              </td>
-              <td class="fw-bold text-success" style="font-size: 0.9rem;">
-                ₹{{ payment.amount }}
-              </td>
-              <td class="pe-3 text-end">
-                <a href="{% url 'payment_receipt' payment.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3" target="_blank">
-                  <i class="bi bi-file-earmark-pdf"></i> Receipt
-                </a>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" class="text-center py-5 text-muted">
-                <i class="bi bi-wallet2 text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
-                No fee payments recorded.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      {% if page_obj.has_other_pages %}
-      <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <span class="text-muted" style="font-size: 0.85rem;">
-          Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
-        </span>
-        <nav aria-label="Page navigation">
-          <ul class="pagination pagination-sm mb-0">
-            {% if page_obj.has_previous %}
-              <li class="page-item">
-                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}">&lt;</a>
-              </li>
-            {% endif %}
-
-            {% for num in page_obj.paginator.page_range %}
-              {% if page_obj.number == num %}
-                <li class="page-item active">
-                  <span class="page-link bg-primary border-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; padding:0;">{{ num }}</span>
-                </li>
-              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item">
-                  <a class="page-link dark-input text-white border-secondary rounded-circle d-flex align-items-center justify-content-center mx-1" style="width:28px; height:28px; padding:0;" href="?page={{ num }}">{{ num }}</a>
-                </li>
+  {% if False %}
+  <section class="fee-section-card">
+    <h3>Fee EMIs Record</h3>
+    <div class="fee-ledger-wrap">
+      <table class="fee-ledger-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Due Timeline</th>
+            <th>Installment Amount</th>
+            <th>Paid Amount</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for emi in emis %}
+          <tr>
+            <td>{{ emi.installment_no }}</td>
+            <td>{{ emi.due_date }}</td>
+            <td>&#8377;{{ emi.amount|floatformat:2 }}</td>
+            <td>&#8377;{{ emi.paid_amount|floatformat:2 }}</td>
+            <td>
+              {% if emi.status == 'Paid' %}
+              <span class="status-badge paid">PAID</span>
+              {% elif emi.status == 'Partially Paid' %}
+              <span class="status-badge partial">PARTIAL</span>
+              {% else %}
+              <span class="status-badge pending">PENDING</span>
               {% endif %}
-            {% endfor %}
-
-            {% if page_obj.has_next %}
-              <li class="page-item">
-                <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}">&gt;</a>
-              </li>
-            {% endif %}
-          </ul>
-        </nav>
-      </div>
-      {% endif %}
-
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="empty-ledger">No EMI record available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-  </div>
+  </section>
+  {% endif %}
 
+  {% if active_tab == 'password' %}
+  <section class="fee-section-card accent-card">
+    <form method="post" class="password-panel">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="change_password">
+      <input type="hidden" name="active_tab" value="password">
+      <div class="password-head">
+        <h3>Change Password</h3>
+        <button type="submit" class="change-pass-btn"><i class="bi bi-key-fill"></i> Change Password</button>
+      </div>
+      <div class="password-grid">
+        <div class="password-field">
+          <label for="id_new_password1">New Password</label>
+          <div class="password-input-wrap">
+            <input id="id_new_password1" type="password" name="new_password1" autocomplete="new-password" required>
+            <button type="button" class="toggle-password" data-target="id_new_password1" aria-label="Show password"><i class="bi bi-eye-slash"></i></button>
+          </div>
+          <div class="strength-lines"><span></span><span></span><span></span><span></span></div>
+          <small>Use 8 or more characters with a mix of letters, numbers &amp; symbols.</small>
+          {% for error in password_form.new_password1.errors %}
+          <div class="field-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+        <div class="password-field">
+          <label for="id_new_password2">Confirm Password</label>
+          <div class="password-input-wrap">
+            <input id="id_new_password2" type="password" name="new_password2" autocomplete="new-password" required>
+            <button type="button" class="toggle-password" data-target="id_new_password2" aria-label="Show password"><i class="bi bi-eye-slash"></i></button>
+          </div>
+          <div class="strength-lines"><span></span><span></span><span></span><span></span></div>
+          <small>Use 8 or more characters with a mix of letters, numbers &amp; symbols.</small>
+          {% for error in password_form.new_password2.errors %}
+          <div class="field-error">{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% if password_form.non_field_errors %}
+      <div class="field-error mt-error">{{ password_form.non_field_errors }}</div>
+      {% endif %}
+    </form>
+  </section>
+  {% endif %}
+
+  {% if active_tab == 'notifications' %}
+  <section class="fee-section-card accent-card">
+    <h3><i class="bi bi-bell"></i> List Notification(s)</h3>
+    <div class="notification-list">
+      {% for note in notifications %}
+      <div class="notification-item">
+        <strong>{{ note.title }}</strong>
+        <span>{{ note.message }}</span>
+      </div>
+      {% empty %}
+      <div class="notification-empty">Notification Not Found..</div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+  .student-fee-page {
+    min-height: calc(100vh - var(--app-navbar-height, 68px));
+    color: #fff;
+    background:
+      linear-gradient(135deg, transparent 0 70%, rgba(76, 23, 61, 0.22) 70% 100%),
+      #111;
+  }
+
+  .fee-page-title {
+    margin-bottom: 20px;
+  }
+
+  .fee-page-title h1 {
+    color: #ff3030;
+    font-size: 24px;
+    font-weight: 900;
+    margin: 0 0 38px;
+  }
+
+  .fee-heading-line {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .fee-heading-line > i {
+    color: #6670a4;
+    font-size: 20px;
+  }
+
+  .fee-heading-line h2 {
+    font-size: 25px;
+    margin: 0 0 3px;
+    font-weight: 900;
+  }
+
+  .fee-heading-line nav {
+    color: #5d638e;
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .fee-heading-line nav a {
+    color: #5d638e;
+    text-decoration: none;
+  }
+
+  .fee-heading-line nav strong {
+    color: #fff;
+  }
+
+  .fee-profile-card,
+  .fee-section-card {
+    background: #1a1a1a;
+    border: 1px solid #292b3d;
+    border-radius: 7px;
+  }
+
+  .fee-profile-card {
+    margin-bottom: 34px;
+    overflow: hidden;
+  }
+
+  .fee-profile-body {
+    padding: 29px 29px 0;
+    display: flex;
+    gap: 23px;
+    align-items: flex-start;
+  }
+
+  .student-photo-wrap img,
+  .photo-fallback {
+    width: 125px;
+    height: 125px;
+    border-radius: 5px;
+    object-fit: cover;
+    background: #eee;
+  }
+
+  .photo-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    font-size: 54px;
+  }
+
+  .student-summary {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .student-name-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 2px 0 8px;
+  }
+
+  .student-name-row h3 {
+    font-size: 20px;
+    margin: 0;
+    font-weight: 900;
+  }
+
+  .verified-blue {
+    color: #1689ff;
+    font-size: 19px;
+  }
+
+  .verified-green {
+    color: #00d982;
+    font-size: 19px;
+  }
+
+  .student-meta {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    color: #62679b;
+    font-size: 14px;
+    margin-bottom: 29px;
+  }
+
+  .student-meta i {
+    margin-right: 5px;
+  }
+
+  .fee-stat-grid {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+    max-width: 760px;
+  }
+
+  .fee-stat {
+    min-width: 134px;
+    min-height: 76px;
+    padding: 14px 38px 11px 13px;
+    border: 1px dashed #2d3048;
+    border-radius: 6px;
+    position: relative;
+    background: #1a1a1a;
+  }
+
+  .fee-stat strong {
+    display: block;
+    font-size: 20px;
+    line-height: 1.15;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .fee-stat span {
+    display: block;
+    color: #62679b;
+    margin-top: 5px;
+    font-size: 14px;
+  }
+
+  .fee-stat-danger {
+    border-color: #ff2f70;
+  }
+
+  .fee-stat-danger strong,
+  .fee-stat-danger span {
+    color: #ff2f70;
+  }
+
+  .fee-stat-success {
+    border-color: #26d884;
+  }
+
+  .fee-stat-success strong,
+  .fee-stat-success span {
+    color: #2ee48d;
+  }
+
+  .copy-enrollment {
+    position: absolute;
+    right: 12px;
+    top: 11px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 6px;
+    background: #35314f;
+    color: #8d88bd;
+  }
+
+  .fee-tabs {
+    display: flex;
+    gap: 30px;
+    padding: 28px 29px 0;
+    overflow-x: auto;
+  }
+
+  .fee-tabs a {
+    min-height: 48px;
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 9px;
+    color: #55598a;
+    text-decoration: none;
+    font-weight: 800;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+
+  .fee-tabs a.active {
+    color: #1d8cff;
+    border-bottom-color: #1d8cff;
+  }
+
+  .fee-tabs i {
+    font-size: 19px;
+  }
+
+  .fee-section-card {
+    margin-bottom: 22px;
+    overflow: hidden;
+  }
+
+  .fee-section-card h3 {
+    padding: 25px 30px;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+    border-bottom: 1px solid #292b3d;
+  }
+
+  .overview-table-wrap,
+  .fee-ledger-wrap {
+    overflow-x: auto;
+  }
+
+  .overview-table,
+  .fee-ledger-table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    color: #fff;
+  }
+
+  .overview-table th,
+  .overview-table td,
+  .fee-ledger-table th,
+  .fee-ledger-table td {
+    border: 1px solid #2b2d40;
+    padding: 12px 11px;
+    font-size: 14px;
+  }
+
+  .overview-table th,
+  .fee-ledger-table th {
+    font-weight: 900;
+    text-align: left;
+  }
+
+  .overview-table a {
+    color: #208fff;
+    text-decoration: none;
+  }
+
+  .self-badge {
+    display: inline-flex;
+    margin-left: 5px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    background: #7f35e9;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .fee-table-toolbar {
+    padding: 18px 27px 13px;
+    display: grid;
+    grid-template-columns: auto minmax(240px, 1fr) auto;
+    align-items: center;
+    gap: 22px;
+    border-bottom: 1px solid #292b3d;
+  }
+
+  .show-form,
+  .search-form,
+  .export-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .show-form label,
+  .search-form label {
+    font-size: 14px;
+    color: #fff;
+    font-weight: 800;
+  }
+
+  .show-form select,
+  .search-form input {
+    height: 35px;
+    background: #18182c;
+    border: 1px solid #18182c;
+    color: #dce4ff;
+    border-radius: 4px;
+    padding: 0 10px;
+  }
+
+  .show-form select {
+    width: 74px;
+  }
+
+  .search-form input {
+    width: 190px;
+  }
+
+  .export-actions {
+    background: #171719;
+    padding: 0 12px;
+    min-height: 43px;
+  }
+
+  .export-actions button {
+    border: 0;
+    background: transparent;
+    color: #a8adbd;
+    padding: 0 12px;
+  }
+
+  .student-table-name {
+    text-align: center !important;
+    font-size: 20px !important;
+    padding: 12px !important;
+  }
+
+  .fee-ledger-table td {
+    height: 63px;
+  }
+
+  .amount-cell {
+    font-weight: 900;
+    font-size: 18px !important;
+  }
+
+  .receipt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #32d484;
+    border: 1px dashed #32d484;
+    border-radius: 6px;
+    padding: 10px 15px;
+    text-decoration: none;
+    font-weight: 900;
+  }
+
+  .empty-ledger {
+    text-align: center;
+    color: #fff;
+    padding: 55px 10px !important;
+    font-weight: 900;
+  }
+
+  .empty-ledger i {
+    display: block;
+    color: #4538b8;
+    font-size: 45px;
+    margin-bottom: 10px;
+  }
+
+  .fee-ledger-table tfoot td {
+    font-weight: 900;
+    color: #2ee48d;
+  }
+
+  .fee-pagination {
+    padding: 16px 27px;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    color: #747b98;
+    font-size: 13px;
+  }
+
+  .fee-pagination a,
+  .fee-pagination span.active {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    background: #161922;
+    border: 1px solid #2b2d40;
+    text-decoration: none;
+    margin-left: 4px;
+  }
+
+  .fee-pagination span.active {
+    background: #1d8cff;
+    border-color: #1d8cff;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .status-badge.paid {
+    background: #1d9b62;
+  }
+
+  .status-badge.partial {
+    background: #f6bf31;
+    color: #151515;
+  }
+
+  .status-badge.pending {
+    background: #ff2f70;
+  }
+
+  .accent-card {
+    border: 2px solid #1d8cff;
+  }
+
+  .password-panel {
+    margin: 0;
+  }
+
+  .password-head {
+    padding: 13px 30px;
+    min-height: 69px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #292b3d;
+  }
+
+  .password-head h3 {
+    padding: 0;
+    border: 0;
+  }
+
+  .change-pass-btn {
+    color: #31d082;
+    border: 1px dashed #31d082;
+    background: transparent;
+    border-radius: 6px;
+    padding: 10px 21px;
+    font-weight: 900;
+  }
+
+  .password-grid {
+    padding: 27px 30px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 19px;
+  }
+
+  .password-field label {
+    display: block;
+    color: #dce4ff;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+
+  .password-input-wrap {
+    position: relative;
+  }
+
+  .password-input-wrap input {
+    width: 100%;
+    height: 45px;
+    padding: 0 47px 0 12px;
+    border: 0;
+    border-radius: 6px;
+    background: #18182c;
+    color: #fff;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: #4b4a74;
+    font-size: 20px;
+  }
+
+  .strength-lines {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 10px 0 8px;
+  }
+
+  .strength-lines span {
+    height: 5px;
+    border-radius: 999px;
+    background: #3d3e61;
+  }
+
+  .password-field small {
+    color: #62679b;
+  }
+
+  .field-error {
+    color: #ff3b72;
+    font-size: 13px;
+    margin-top: 7px;
+  }
+
+  .mt-error {
+    margin: 0 30px 24px;
+  }
+
+  .notification-list {
+    padding: 27px 30px 39px;
+    min-height: 113px;
+    background:
+      linear-gradient(135deg, transparent 0 68%, rgba(77, 20, 64, 0.24) 68% 100%),
+      radial-gradient(circle at 27% 110%, rgba(24, 77, 54, 0.32) 0 115px, transparent 116px);
+  }
+
+  .notification-empty,
+  .notification-item {
+    border: 1px solid #ff2f70;
+    background: rgba(255, 47, 112, 0.18);
+    color: #ff2f70;
+    border-radius: 6px;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 900px) {
+    .fee-profile-body,
+    .password-grid {
+      grid-template-columns: 1fr;
+      flex-direction: column;
+    }
+
+    .fee-table-toolbar {
+      grid-template-columns: 1fr;
+      align-items: flex-start;
+    }
+
+    .fee-tabs {
+      gap: 18px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .fee-page-title h1 {
+      font-size: 19px;
+      margin-bottom: 24px;
+    }
+
+    .fee-profile-body,
+    .fee-section-card h3,
+    .password-head,
+    .password-grid,
+    .notification-list {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    .password-head {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+</style>
+
+<script>
+(function () {
+  const copyButton = document.querySelector('.copy-enrollment');
+  if (copyButton) {
+    copyButton.addEventListener('click', function () {
+      const value = this.getAttribute('data-copy');
+      if (value && navigator.clipboard) {
+        navigator.clipboard.writeText(value);
+      }
+    });
+  }
+
+  document.querySelectorAll('.toggle-password').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const input = document.getElementById(this.dataset.target);
+      if (!input) return;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      const icon = this.querySelector('i');
+      if (icon) icon.className = input.type === 'password' ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+  });
+
+  const table = document.getElementById('studentFeeTable');
+  function tableText() {
+    if (!table) return '';
+    return Array.from(table.querySelectorAll('tr')).map(function (row) {
+      return Array.from(row.children).map(function (cell) {
+        return cell.innerText.replace(/\s+/g, ' ').trim();
+      }).join(',');
+    }).join('\n');
+  }
+
+  document.querySelectorAll('[data-export]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const action = this.dataset.export;
+      if (!table) return;
+      if (action === 'copy' && navigator.clipboard) {
+        navigator.clipboard.writeText(table.innerText);
+      } else if (action === 'csv' || action === 'excel') {
+        const blob = new Blob([tableText()], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = action === 'excel' ? 'fee-record.xls' : 'fee-record.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      } else if (action === 'pdf' || action === 'print') {
+        window.print();
+      }
+    });
+  });
+})();
+</script>
 {% endblock %}

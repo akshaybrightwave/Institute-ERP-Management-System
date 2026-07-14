@@ -40,6 +40,15 @@ class Exam(SoftDeleteModel):
     def __str__(self):
         return self.title
 
+    @property
+    def timer_label(self):
+        if not self.duration_minutes:
+            return ''
+        if self.duration_minutes % 60 == 0:
+            hours = self.duration_minutes // 60
+            return f"{hours} hour" if hours == 1 else f"{hours} hours"
+        return f"{self.duration_minutes} Minutes"
+
 
 class Question(SoftDeleteModel):
     exam = models.ForeignKey(
