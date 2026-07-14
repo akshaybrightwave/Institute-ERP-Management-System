@@ -1233,6 +1233,15 @@
     <span class="si-label">Student Exam(S)</span>
   </a>
 
+  {% if request.user.role != 'center' %}
+  <!-- Exam Centre — independent master module -->
+  <a href="{% url 'exam_centre_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'exam_centre_list' %}active{% endif %}">
+    <i class="bi bi-geo-alt-fill si-icon"></i>
+    <span class="si-label">Exam Centre</span>
+  </a>
+  {% endif %}
+
   <!-- ── CENTER AREA ── -->
   {% if request.user.role != 'center' %}
   <div class="sidebar-section">Center Area</div>

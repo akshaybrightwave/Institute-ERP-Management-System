@@ -43,4 +43,10 @@ urlpatterns = [
     path('student-exams/', views.admin_student_exam_list, name='admin_student_exam_list'),
     path('student-exams/<int:pk>/delete/', views.delete_student_exam_attempt_ajax, name='delete_student_exam_attempt_ajax'),
     path('student-exams/<int:pk>/edit/', views.edit_student_exam_attempt_ajax, name='edit_student_exam_attempt_ajax'),
+
+    # ── Exam Centre — independent master module ──
+    path('exam-centres/', views.exam_centre_list, name='exam_centre_list'),
+    path('centers/', views.exam_centre_list, name='center_list'),
+    path('exam-centres/<int:pk>/edit/', views.exam_centre_edit, name='exam_centre_edit'),
+    path('exam-centres/<int:pk>/delete/', views.exam_centre_delete, name='exam_centre_delete'),
 ]
