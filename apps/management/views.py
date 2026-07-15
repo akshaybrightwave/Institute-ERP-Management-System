@@ -5,7 +5,7 @@ from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.core.cache import cache
 from django.core.paginator import Paginator
-from django.db.models import Q, Count, Avg, F
+from django.db.models import Q, Count, Avg, F, Prefetch
 from django.db import transaction
 from django.urls import reverse
 import datetime
@@ -15,12 +15,67 @@ import csv
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet
+from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, VisitSheet, AdmissionSheet, InquiryCallStatusHistory
 from .forms import InquiryForm, LeadConversionForm, LeadForm, CallLogForm, FollowUpForm, CounselingSessionForm, CounselorFollowUpForm, CounselorLeadStatusForm, VisitSheetForm, AdmissionSheetForm, ManagementUserCreateForm
 from .decorators import superadmin_required, admin_required, telecaller_required, counselor_required, telecaller_counselor_admin_required
 from apps.accounts.auth_logging import log_auth_activity
 
 ADMIN_ROLES = ('admin', 'superadmin', 'SUPER_ADMIN')
+
+COUNSELOR_TELECALLING_STATUS_GROUPS = {
+    'busy_callback_not_connected': {
+        'label': 'Busy / Call Back / Not Connected',
+        'statuses': ['BUSY', 'CALL_BACK', 'NO_ANSWER'],
+    },
+    'switch_wrong_invalid': {
+        'label': 'Switch Off / Wrong No. / Invalid No.',
+        'statuses': ['SWITCHED_OFF', 'WRONG_NUMBER', 'INVALID_NUMBER'],
+    },
+    'not_interested_disconnected': {
+        'label': 'Not Interested / Call Disc.',
+        'statuses': ['NOT_INTERESTED', 'CALL_DISCONNECTED'],
+    },
+    'call_connected': {
+        'label': 'Call Connected',
+        'statuses': ['CALL_CONNECTED'],
+    },
+    'other': {
+        'label': 'Other',
+        'statuses': ['OTHER'],
+    },
+}
+
+COUNSELOR_TELECALLING_UPDATE_CHOICES = [
+    ('BUSY', 'Busy / Call Back / Not Connected'),
+    ('SWITCHED_OFF', 'Switch Off / Wrong No. / Invalid No.'),
+    ('NOT_INTERESTED', 'Not Interested / Call Disc.'),
+    ('CALL_CONNECTED', 'Call Connected'),
+    ('OTHER', 'Other'),
+]
+
+GROUPED_CALL_STATUS_CODES = [
+    status
+    for group in COUNSELOR_TELECALLING_STATUS_GROUPS.values()
+    for status in group['statuses']
+]
+
+def uses_grouped_call_statuses(user, scope):
+    return scope == 'counselor_telecalling' or getattr(user, 'role', None) == 'telecaller'
+
+def grouped_call_status_label(call_status):
+    for group in COUNSELOR_TELECALLING_STATUS_GROUPS.values():
+        if call_status in group['statuses']:
+            return group['label']
+    return dict(Inquiry.CALL_STATUS_CHOICES).get(call_status, call_status)
+
+def grouped_call_outcome_summary(queryset, include_converted_count=None):
+    summary = {
+        group['label']: queryset.filter(call_status__in=group['statuses']).count()
+        for group in COUNSELOR_TELECALLING_STATUS_GROUPS.values()
+    }
+    if include_converted_count is not None:
+        summary['Convert to Lead'] = include_converted_count
+    return summary
 
 def is_admin_user(user):
     return user.is_authenticated and user.role in ADMIN_ROLES
@@ -125,16 +180,11 @@ def export_telecaller_dashboard_csv(request):
     """Export telecaller dashboard status card data to CSV (excludes Assigned Enquiries)."""
     start_date, end_date, date_filter, period_label = _get_date_range(request)
 
-    # The status cards shown on dashboard (excludes NEW = Assigned Enquiries)
-    EXPORT_STATUSES = ['BUSY', 'NO_ANSWER', 'CALL_BACK', 'WRONG_NUMBER',
-                       'INTERESTED', 'NOT_INTERESTED', 'PENDING_FOLLOW_UP',
-                       'CALL_DISCONNECTED', 'OTHER']
-
     # Active contacts: assigned to telecaller, not yet converted, only for status cards shown
     active_contacts_qs = Inquiry.objects.filter(
         lead__assigned_telecaller=request.user,
         lead__converted_at__isnull=True,
-        call_status__in=EXPORT_STATUSES
+        call_status__in=GROUPED_CALL_STATUS_CODES
     ).distinct()
 
     # Converted leads: assigned_telecaller=this user AND converted_at is set
@@ -151,22 +201,7 @@ def export_telecaller_dashboard_csv(request):
         active_contacts_qs = active_contacts_qs.filter(updated_at__date__lte=end_date)
         converted_leads_qs = converted_leads_qs.filter(converted_at__date__lte=end_date)
 
-    timeout_threshold = timezone.now() - timedelta(hours=24)
-
-    # Summary stats matching exactly the 9 dashboard cards
-    call_outcomes = {
-        'Busy':             active_contacts_qs.filter(call_status='BUSY').count(),
-        'Ringing':          active_contacts_qs.filter(call_status='NO_ANSWER').count(),
-        'Call Back':        active_contacts_qs.filter(call_status='CALL_BACK').count(),
-        'Call Disconnected': active_contacts_qs.filter(call_status='CALL_DISCONNECTED').count(),
-        'Wrong Number':     active_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
-        'Other':            active_contacts_qs.filter(call_status='OTHER').count(),
-        'Interested':       active_contacts_qs.filter(call_status='INTERESTED').count(),
-        'Not Interested':   active_contacts_qs.filter(call_status='NOT_INTERESTED').count(),
-        'Pending Follow Up':  active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).count(),
-        'Overdue Follow Up':  active_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).count(),
-        'Convert to Lead':  converted_leads_qs.count(),
-    }
+    call_outcomes = grouped_call_outcome_summary(active_contacts_qs, converted_leads_qs.count())
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="telecaller_dashboard_export_{period_label.replace(" ", "_")}.csv"'
@@ -175,25 +210,19 @@ def export_telecaller_dashboard_csv(request):
     # Header row
     writer.writerow(['Contact Name', 'Phone Number', 'Source', 'Date', 'Status'])
 
-    # Status card contacts (Busy / Ringing / Call Back / Wrong Number / Interested / Not Interested / Pending / Overdue)
+    # Status card contacts use the same grouped current-status buckets as the dashboard.
     for contact in active_contacts_qs.order_by('call_status', '-updated_at'):
         date_str = timezone.localtime(contact.updated_at).strftime('%d %b %Y %I:%M %p') if contact.updated_at else ''
-        phone = getattr(contact, 'phone', '') or ''
+        phone = contact.mobile_number or ''
         source = getattr(contact, 'source', '') or ''
-
-        if contact.call_status == 'PENDING_FOLLOW_UP':
-            status = 'Overdue Follow Up' if (contact.updated_at and contact.updated_at < timeout_threshold) else 'Pending Follow Up'
-        elif contact.call_status == 'NO_ANSWER':
-            status = 'Ringing'
-        else:
-            status = contact.get_call_status_display()
+        status = grouped_call_status_label(contact.call_status)
 
         writer.writerow([contact.full_name, phone, source, date_str, status])
 
     # Convert to Lead rows
     for lead in converted_leads_qs.order_by('-converted_at'):
         date_str = timezone.localtime(lead.converted_at).strftime('%d %b %Y %I:%M %p') if lead.converted_at else ''
-        phone = getattr(lead.inquiry, 'phone', '') or ''
+        phone = lead.inquiry.mobile_number or ''
         source = getattr(lead.inquiry, 'source', '') or ''
         writer.writerow([lead.inquiry.full_name, phone, source, date_str, 'Convert to Lead'])
 
@@ -211,7 +240,7 @@ def export_telecaller_dashboard_csv(request):
 @login_required
 @telecaller_required
 def export_telecaller_message_numbers_csv(request):
-    """Export only phone numbers (Busy, Ringing, Call Back) for messaging for a telecaller.
+    """Export phone numbers for the telecaller's Busy / Call Back / Not Connected card.
     Supports: today_before_2pm, today_after_2pm, yesterday, this_week.
     Numbers exported as plain text to avoid scientific notation in Excel.
     """
@@ -219,12 +248,12 @@ def export_telecaller_message_numbers_csv(request):
 
     date_filter = request.GET.get('date_filter', 'today_before_2pm')
 
-    # Base queryset - only Busy, Ringing (NO_ANSWER), Call Back assigned to this telecaller
-    MESSAGE_STATUSES = ['BUSY', 'NO_ANSWER', 'CALL_BACK']
+    # Base queryset - only the Busy / Call Back / Not Connected card contacts.
+    message_statuses = COUNSELOR_TELECALLING_STATUS_GROUPS['busy_callback_not_connected']['statuses']
     qs = Inquiry.objects.filter(
         lead__assigned_telecaller=request.user,
         lead__converted_at__isnull=True,
-        call_status__in=MESSAGE_STATUSES
+        call_status__in=message_statuses
     ).distinct()
 
     local_tz = timezone.get_current_timezone()
@@ -254,14 +283,14 @@ def export_telecaller_message_numbers_csv(request):
     response['Content-Disposition'] = f'attachment; filename="telecaller_message_export_{period_label}.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['full_name', 'phone_number'])
+    writer.writerow(['full_name', 'phone_number', 'current_status'])
 
     for contact in qs.order_by('-updated_at'):
         phone = (contact.mobile_number or '').strip()
         name = (contact.full_name or '').strip()
         if phone:
             # Prefix phone with tab forces Excel to treat as text (no scientific notation)
-            writer.writerow([name, '\t' + phone])
+            writer.writerow([name, '\t' + phone, grouped_call_status_label(contact.call_status)])
 
     return response
 
@@ -365,14 +394,21 @@ def management_dashboard(request):
     }
 
     call_outcomes = {
+        'accepted': active_contacts_qs.filter(call_status='ACCEPTED').count(),
         'busy': active_contacts_qs.filter(call_status='BUSY').count(),
         'ringing': active_contacts_qs.filter(call_status='NO_ANSWER').count(),
         'call_back': active_contacts_qs.filter(call_status='CALL_BACK').count(),
         'call_disconnected': active_contacts_qs.filter(call_status='CALL_DISCONNECTED').count(),
         'wrong_number': active_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
+        'invalid_number': active_contacts_qs.filter(call_status='INVALID_NUMBER').count(),
         'other': active_contacts_qs.filter(call_status='OTHER').count(),
         'interested': active_contacts_qs.filter(call_status='INTERESTED').count(),
         'not_interested': active_contacts_qs.filter(call_status='NOT_INTERESTED').count(),
+        'call_connected': active_contacts_qs.filter(call_status='CALL_CONNECTED').count(),
+        'switched_off': active_contacts_qs.filter(call_status='SWITCHED_OFF').count(),
+        'busy_callback_not_connected': active_contacts_qs.filter(call_status__in=COUNSELOR_TELECALLING_STATUS_GROUPS['busy_callback_not_connected']['statuses']).count(),
+        'switch_wrong_invalid': active_contacts_qs.filter(call_status__in=COUNSELOR_TELECALLING_STATUS_GROUPS['switch_wrong_invalid']['statuses']).count(),
+        'not_interested_disconnected': active_contacts_qs.filter(call_status__in=COUNSELOR_TELECALLING_STATUS_GROUPS['not_interested_disconnected']['statuses']).count(),
         'pending_follow_up': active_contacts_qs.filter(
             call_status='PENDING_FOLLOW_UP',
             updated_at__gte=timeout_threshold,
@@ -1014,7 +1050,13 @@ def inquiry_list(request):
     if course:
         inquiries = inquiries.filter(course_interest=course)
 
+    grouped_call_statuses = uses_grouped_call_statuses(request.user, scope)
     call_status = request.GET.get('call_status', '').strip()
+    call_status_group = request.GET.get('call_status_group', '').strip()
+    if grouped_call_statuses and call_status_group in COUNSELOR_TELECALLING_STATUS_GROUPS:
+        inquiries = inquiries.filter(
+            call_status__in=COUNSELOR_TELECALLING_STATUS_GROUPS[call_status_group]['statuses']
+        )
     if 'call_status' in request.GET:
         if call_status:
             inquiries = inquiries.filter(call_status=call_status)
@@ -1022,7 +1064,7 @@ def inquiry_list(request):
         # Default behavior: If no call_status is requested, and we are not searching globally,
         # only show 'NEW' (unactioned) items in telecalling base views so they disappear once actioned.
         queue = request.GET.get('queue', '').strip()
-        if not q and converted != 'yes' and (scope == 'counselor_telecalling' or request.user.role == 'telecaller'):
+        if not q and not call_status_group and converted != 'yes' and (scope == 'counselor_telecalling' or request.user.role == 'telecaller'):
             inquiries = inquiries.filter(call_status='NEW')
             call_status = 'NEW'
 
@@ -1083,6 +1125,14 @@ def inquiry_list(request):
         annotated_converted_by=Subquery(converted_by_sq)
     )
 
+    inquiries = inquiries.prefetch_related(
+        Prefetch(
+            'call_status_history',
+            queryset=InquiryCallStatusHistory.objects.select_related('updated_by'),
+            to_attr='prefetched_call_status_history',
+        )
+    )
+
     paginator = Paginator(inquiries, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -1092,11 +1142,14 @@ def inquiry_list(request):
         is_active=True,
         is_deleted=False,
     ).order_by('username')
-    call_status_update_choices = [
-        (code, name)
-        for code, name in Inquiry.CALL_STATUS_CHOICES
-        if code not in ('NEW', 'ACCEPTED')
-    ]
+    if grouped_call_statuses:
+        call_status_update_choices = COUNSELOR_TELECALLING_UPDATE_CHOICES
+    else:
+        call_status_update_choices = [
+            (code, name)
+            for code, name in Inquiry.CALL_STATUS_CHOICES
+            if code not in ('NEW', 'ACCEPTED')
+        ]
 
     return render(request, 'management/inquiry_list.html', {
         'page_obj': page_obj,
@@ -1106,6 +1159,7 @@ def inquiry_list(request):
         'status': status,
         'course': course,
         'call_status': call_status,
+        'call_status_group': call_status_group,
         'scope': scope,
         'converted': converted,
         'overdue': overdue,
@@ -1121,6 +1175,10 @@ def inquiry_list(request):
             ('Other', 'Other'),
         ],
         'call_status_choices': Inquiry.CALL_STATUS_CHOICES,
+        'call_status_group_choices': [
+            (key, item['label'])
+            for key, item in COUNSELOR_TELECALLING_STATUS_GROUPS.items()
+        ],
         'call_status_update_choices': call_status_update_choices,
         'can_delete_inquiries': is_admin_user(request.user),
     })
@@ -1435,21 +1493,36 @@ def update_call_status(request, pk):
     try:
         data = json.loads(request.body)
         new_status = data.get('call_status', '').strip()
+        remarks = (data.get('remarks') or '').strip()
     except (json.JSONDecodeError, AttributeError):
         return JsonResponse({'success': False, 'message': 'Invalid data.'}, status=400)
 
-    valid_statuses = [choice[0] for choice in Inquiry.CALL_STATUS_CHOICES]
+    valid_statuses = [
+        choice[0]
+        for choice in Inquiry.CALL_STATUS_CHOICES
+        if choice[0] not in ('NEW', 'ACCEPTED')
+    ]
     if new_status not in valid_statuses:
         return JsonResponse({'success': False, 'message': f'Invalid call status: {new_status}'}, status=400)
 
-    inquiry.call_status = new_status
-    inquiry.save(update_fields=['call_status', 'updated_at'])
+    with transaction.atomic():
+        inquiry.call_status = new_status
+        inquiry.save(update_fields=['call_status', 'updated_at'])
+        history = InquiryCallStatusHistory.objects.create(
+            inquiry=inquiry,
+            call_status=new_status,
+            remarks=remarks,
+            updated_by=request.user,
+        )
 
     return JsonResponse({
         'success': True,
         'message': 'Call status updated successfully.',
         'call_status': new_status,
         'call_status_display': dict(Inquiry.CALL_STATUS_CHOICES).get(new_status, new_status),
+        'updated_at': timezone.localtime(history.created_at).strftime('%d %b %Y, %I:%M %p'),
+        'remarks': history.remarks,
+        'history_id': history.pk,
     })
 
 
@@ -3318,9 +3391,9 @@ def counselor_admission_trend_data(request):
 @counselor_required
 def counselor_lead_list(request):
     if is_admin_user(request.user):
-        leads = Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=False)
+        leads = Lead.objects.filter(assigned_counselor__isnull=False, converted_at__isnull=False).select_related('inquiry')
     else:
-        leads = Lead.objects.filter(assigned_counselor=request.user, converted_at__isnull=False)
+        leads = Lead.objects.filter(assigned_counselor=request.user, converted_at__isnull=False).select_related('inquiry')
 
     # Search candidates
     q = request.GET.get('q', '').strip()
@@ -3333,10 +3406,6 @@ def counselor_lead_list(request):
     status = request.GET.get('status', '').strip()
     if status:
         leads = leads.filter(counselor_status=status)
-
-    priority = request.GET.get('priority', '').strip()
-    if priority:
-        leads = leads.filter(priority=priority)
 
     # --- Date Preset Filtering ---
     date_preset = request.GET.get('date_preset', '').strip()
@@ -3414,14 +3483,12 @@ def counselor_lead_list(request):
         'page_obj': page_obj,
         'q': q,
         'status': status,
-        'priority': priority,
         'date_filter': date_filter,
         'date_preset': date_preset,
         'start_date': start_date_str,
         'end_date': end_date_str,
         'followup_state': followup_state,
         'status_choices': counselor_status_choices,
-        'priority_choices': Lead.PRIORITY_CHOICES,
     })
 
 
@@ -3489,6 +3556,8 @@ def counselor_lead_status_update(request, pk):
         form = CounselorLeadStatusForm(request.POST, instance=lead)
         if form.is_valid():
             old_status = lead.counselor_status
+            old_course = (lead.inquiry.course_interest or '').strip()
+            new_course = (request.POST.get('course_interest') or '').strip()
             updated_lead = form.save(commit=False)
 
             # Always stamp the update time so filters work correctly
@@ -3507,6 +3576,16 @@ def counselor_lead_status_update(request, pk):
                 )
 
             updated_lead.save()
+            if new_course != old_course:
+                inquiry = updated_lead.inquiry
+                inquiry.course_interest = new_course
+                inquiry.save(update_fields=['course_interest'])
+                log_lead_activity(
+                    updated_lead,
+                    'NOTE',
+                    f"Course updated from {old_course or 'Not set'} to {new_course}.",
+                    request.user
+                )
 
             messages.success(request, f"Counselor status updated successfully to {updated_lead.counselor_status}.")
             return redirect('counselor_lead_detail', pk=lead.pk)
@@ -5329,11 +5408,6 @@ def export_counselor_telecalling_csv(request):
     """Export counselor telecalling dashboard status card data to CSV (excludes Assigned Enquiries)."""
     start_date, end_date, date_filter, period_label = _get_date_range(request)
 
-    # The status cards shown on dashboard (excludes NEW = Assigned Enquiries)
-    EXPORT_STATUSES = ['BUSY', 'NO_ANSWER', 'CALL_BACK', 'WRONG_NUMBER',
-                       'INTERESTED', 'SWITCHED_OFF', 'PENDING_FOLLOW_UP',
-                       'CALL_DISCONNECTED', 'OTHER']
-
     User = get_user_model()
     if is_admin_user(request.user):
         counselor_users = User.objects.filter(role='counselor', is_deleted=False, is_active=True)
@@ -5347,7 +5421,7 @@ def export_counselor_telecalling_csv(request):
     # Only status-card contacts — exclude NEW (Assigned Enquiries)
     active_status_contacts_qs = active_contacts_qs.filter(
         lead__converted_at__isnull=True,
-        call_status__in=EXPORT_STATUSES
+        call_status__in=GROUPED_CALL_STATUS_CODES
     )
     converted_from_telecalling_qs = Lead.objects.filter(
         counselor_telecalling_converted_lead_q(counselor_users)
@@ -5361,22 +5435,7 @@ def export_counselor_telecalling_csv(request):
         active_status_contacts_qs = active_status_contacts_qs.filter(updated_at__date__lte=end_date)
         converted_from_telecalling_qs = converted_from_telecalling_qs.filter(converted_at__date__lte=end_date)
 
-    timeout_threshold = timezone.now() - timedelta(hours=24)
-
-    # Summary stats matching exactly the 9 dashboard cards
-    call_outcomes = {
-        'Busy':             active_status_contacts_qs.filter(call_status='BUSY').count(),
-        'Ringing':          active_status_contacts_qs.filter(call_status='NO_ANSWER').count(),
-        'Call Back':        active_status_contacts_qs.filter(call_status='CALL_BACK').count(),
-        'Call Disconnected': active_status_contacts_qs.filter(call_status='CALL_DISCONNECTED').count(),
-        'Wrong Number':     active_status_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
-        'Other':            active_status_contacts_qs.filter(call_status='OTHER').count(),
-        'Interested':       active_status_contacts_qs.filter(call_status='INTERESTED').count(),
-        'Switched Off':     active_status_contacts_qs.filter(call_status='SWITCHED_OFF').count(),
-        'Pending Follow Up':  active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).count(),
-        'Overdue Follow Up':  active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).count(),
-        'Convert to Lead':  converted_from_telecalling_qs.count(),
-    }
+    call_outcomes = grouped_call_outcome_summary(active_status_contacts_qs, converted_from_telecalling_qs.count())
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="telecalling_export_{period_label.replace(" ", "_")}.csv"'
@@ -5385,25 +5444,19 @@ def export_counselor_telecalling_csv(request):
     # Header row
     writer.writerow(['Contact Name', 'Phone Number', 'Source', 'Date', 'Status'])
 
-    # Status card contacts (Busy / Ringing / Call Back / Wrong Number / Interested / Not Interested / Pending / Overdue)
+    # Status card contacts use the same grouped current-status buckets as the dashboard.
     for contact in active_status_contacts_qs.order_by('call_status', '-updated_at'):
         date_str = timezone.localtime(contact.updated_at).strftime('%d %b %Y %I:%M %p') if contact.updated_at else ''
-        phone = getattr(contact, 'phone', '') or ''
+        phone = contact.mobile_number or ''
         source = getattr(contact, 'source', '') or ''
-
-        if contact.call_status == 'PENDING_FOLLOW_UP':
-            status = 'Overdue Follow Up' if (contact.updated_at and contact.updated_at < timeout_threshold) else 'Pending Follow Up'
-        elif contact.call_status == 'NO_ANSWER':
-            status = 'Ringing'
-        else:
-            status = contact.get_call_status_display()
+        status = grouped_call_status_label(contact.call_status)
 
         writer.writerow([contact.full_name, phone, source, date_str, status])
 
     # Convert to Lead rows
     for lead in converted_from_telecalling_qs.order_by('-converted_at'):
         date_str = timezone.localtime(lead.converted_at).strftime('%d %b %Y %I:%M %p') if lead.converted_at else ''
-        phone = getattr(lead.inquiry, 'phone', '') or ''
+        phone = lead.inquiry.mobile_number or ''
         source = getattr(lead.inquiry, 'source', '') or ''
         writer.writerow([lead.inquiry.full_name, phone, source, date_str, 'Convert to Lead'])
 
@@ -5421,7 +5474,7 @@ def export_counselor_telecalling_csv(request):
 @login_required
 @counselor_required
 def export_message_numbers_csv(request):
-    """Export only phone numbers (Busy, Ringing, Call Back) for messaging.
+    """Export phone numbers for the counselor telecalling Busy / Call Back / Not Connected card.
     Supports: today_before_2pm, today_after_2pm, yesterday, this_week.
     Numbers exported as plain text to avoid scientific notation in Excel.
     """
@@ -5435,13 +5488,13 @@ def export_message_numbers_csv(request):
     else:
         counselor_users = User.objects.filter(pk=request.user.pk)
 
-    # Base queryset - only Busy, Ringing (NO_ANSWER), Call Back
-    MESSAGE_STATUSES = ['BUSY', 'NO_ANSWER', 'CALL_BACK']
+    # Base queryset - only the Busy / Call Back / Not Connected card contacts.
+    message_statuses = COUNSELOR_TELECALLING_STATUS_GROUPS['busy_callback_not_connected']['statuses']
     qs = Inquiry.objects.filter(
         counselor_telecalling_inquiry_q(counselor_users)
     ).exclude(status='Qualified').filter(
         lead__converted_at__isnull=True,
-        call_status__in=MESSAGE_STATUSES
+        call_status__in=message_statuses
     ).distinct()
 
     local_tz = timezone.get_current_timezone()
@@ -5471,14 +5524,14 @@ def export_message_numbers_csv(request):
     response['Content-Disposition'] = f'attachment; filename="message_export_{period_label}.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['full_name', 'phone_number'])
+    writer.writerow(['full_name', 'phone_number', 'current_status'])
 
     for contact in qs.order_by('-updated_at'):
         phone = (contact.mobile_number or '').strip()
         name = (contact.full_name or '').strip()
         if phone:
             # Prefix phone with tab forces Excel to treat as text (no scientific notation)
-            writer.writerow([name, '\t' + phone])
+            writer.writerow([name, '\t' + phone, grouped_call_status_label(contact.call_status)])
 
     return response
 
@@ -5589,9 +5642,15 @@ def counselor_telecalling_dashboard(request):
         'call_back': active_status_contacts_qs.filter(call_status='CALL_BACK').count(),
         'call_disconnected': active_status_contacts_qs.filter(call_status='CALL_DISCONNECTED').count(),
         'wrong_number': active_status_contacts_qs.filter(call_status='WRONG_NUMBER').count(),
+        'invalid_number': active_status_contacts_qs.filter(call_status='INVALID_NUMBER').count(),
         'other': active_status_contacts_qs.filter(call_status='OTHER').count(),
         'interested': active_status_contacts_qs.filter(call_status='INTERESTED').count(),
+        'not_interested': active_status_contacts_qs.filter(call_status='NOT_INTERESTED').count(),
+        'call_connected': active_status_contacts_qs.filter(call_status='CALL_CONNECTED').count(),
         'switched_off': active_status_contacts_qs.filter(call_status='SWITCHED_OFF').count(),
+        'busy_callback_not_connected': active_status_contacts_qs.filter(call_status__in=COUNSELOR_TELECALLING_STATUS_GROUPS['busy_callback_not_connected']['statuses']).count(),
+        'switch_wrong_invalid': active_status_contacts_qs.filter(call_status__in=COUNSELOR_TELECALLING_STATUS_GROUPS['switch_wrong_invalid']['statuses']).count(),
+        'not_interested_disconnected': active_status_contacts_qs.filter(call_status__in=COUNSELOR_TELECALLING_STATUS_GROUPS['not_interested_disconnected']['statuses']).count(),
         'pending_follow_up': active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__gte=timeout_threshold).count(),
         'overdue_follow_up': active_status_contacts_qs.filter(call_status='PENDING_FOLLOW_UP', updated_at__lt=timeout_threshold).count(),
     }

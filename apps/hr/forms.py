@@ -25,6 +25,17 @@ from .models import (
 )
 
 
+CANDIDATE_DASHBOARD_STATUS_CHOICES = (
+    ('new', 'Applied'),
+    ('follow_up_pending', 'Pending Follow-ups'),
+    ('interview_scheduled', 'Interviews Scheduled'),
+    ('selected', 'Selected'),
+    ('rejected', 'Rejected'),
+    ('joined', 'Joined'),
+    ('on_hold', 'On Hold'),
+)
+
+
 TIME_SELECT_CHOICES = [('', '---------')]
 for hour in range(24):
     for minute in range(0, 60, 5):
@@ -89,10 +100,15 @@ class HRModelFormMixin:
 class CandidateBasicForm(HRModelFormMixin, forms.ModelForm):
     class Meta:
         model = Candidate
-        fields = ['full_name', 'gender', 'dob', 'mobile', 'email', 'address']
+        fields = ['full_name', 'mobile', 'email', 'location']
+        labels = {
+            'full_name': 'Candidate Name',
+            'mobile': 'Contact No',
+            'email': 'Mail Id',
+            'location': 'Location',
+        }
         widgets = {
-            'dob': forms.DateInput(attrs={'type': 'date'}),
-            'address': forms.Textarea(attrs={'rows': 3}),
+            'location': forms.TextInput(attrs={'placeholder': 'Candidate location'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -104,18 +120,24 @@ class CandidateProfessionalForm(HRModelFormMixin, forms.ModelForm):
     class Meta:
         model = Candidate
         fields = [
-            'qualification',
+            'applying_position',
             'experience',
-            'current_company',
-            'skills',
             'current_salary',
             'expected_salary',
+            'notice_period',
         ]
+        labels = {
+            'applying_position': 'Position',
+            'experience': 'Year of Experience',
+            'current_salary': 'Current CTC',
+            'expected_salary': 'Expected CTC',
+            'notice_period': 'Notice Period',
+        }
         widgets = {
             'experience': forms.TextInput(attrs={'placeholder': 'e.g. Fresher, 2 years, 1.5 years'}),
-            'skills': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Python, Excel, Communication...'}),
             'current_salary': forms.TextInput(attrs={'placeholder': 'e.g. 3 LPA, 25000, Negotiable'}),
             'expected_salary': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 35000, Negotiable'}),
+            'notice_period': forms.TextInput(attrs={'placeholder': 'e.g. Immediate, 15 days, 30 days'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -124,13 +146,29 @@ class CandidateProfessionalForm(HRModelFormMixin, forms.ModelForm):
 
 
 class CandidateRecruitmentForm(HRModelFormMixin, forms.ModelForm):
+    source = forms.CharField(
+        required=False,
+        label='Source',
+        widget=forms.TextInput(attrs={'placeholder': 'Source'}),
+    )
+
     class Meta:
         model = Candidate
-        fields = ['applying_position', 'department', 'source', 'assigned_hr', 'status']
+        fields = ['interview_date', 'status', 'source', 'assigned_hr', 'remarks']
+        labels = {
+            'interview_date': 'Interview Date',
+            'status': 'Interview Status',
+            'remarks': 'Remark',
+        }
+        widgets = {
+            'interview_date': forms.DateInput(attrs={'type': 'date'}),
+            'remarks': forms.Textarea(attrs={'rows': 3}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['assigned_hr'].queryset = User.objects.filter(role='hr', is_active=True).order_by('username')
+        self.fields['status'].choices = CANDIDATE_DASHBOARD_STATUS_CHOICES
         self.apply_control_styles()
 
 
@@ -144,43 +182,77 @@ class CandidateDocumentsForm(HRModelFormMixin, forms.ModelForm):
         self.apply_control_styles()
 
 
+class CandidateImportForm(forms.Form):
+    candidates_file = forms.FileField(
+        label='Upload Excel / CSV',
+        help_text='Accepted columns: Interview Date, Candidate Name, Position, Contact No, Year of Experience, Mail Id, Current CTC, Expected CTC, Notice Period, Location, Interview Status, Remark, Source.',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.xlsx,.csv',
+        }),
+    )
+
+
 class CandidateQuickForm(
     CandidateBasicForm,
     CandidateProfessionalForm,
     CandidateRecruitmentForm,
     CandidateDocumentsForm,
 ):
+    source = forms.CharField(
+        required=False,
+        label='Source',
+        widget=forms.TextInput(attrs={'placeholder': 'Source'}),
+    )
+
     class Meta:
         model = Candidate
         fields = [
             'full_name',
-            'gender',
-            'dob',
             'mobile',
             'email',
-            'address',
-            'qualification',
+            'location',
             'experience',
-            'current_company',
-            'skills',
             'current_salary',
             'expected_salary',
+            'notice_period',
             'applying_position',
-            'department',
+            'interview_date',
             'source',
             'assigned_hr',
             'status',
+            'remarks',
             'resume',
             'photo',
         ]
+        labels = {
+            'full_name': 'Candidate Name',
+            'mobile': 'Contact No',
+            'email': 'Mail Id',
+            'location': 'Location',
+            'experience': 'Year of Experience',
+            'current_salary': 'Current CTC',
+            'expected_salary': 'Expected CTC',
+            'notice_period': 'Notice Period',
+            'applying_position': 'Position',
+            'interview_date': 'Interview Date',
+            'status': 'Interview Status',
+            'remarks': 'Remark',
+        }
         widgets = {
-            'dob': forms.DateInput(attrs={'type': 'date'}),
-            'address': forms.Textarea(attrs={'rows': 3}),
             'experience': forms.TextInput(attrs={'placeholder': 'e.g. Fresher, 2 years, 1.5 years'}),
-            'skills': forms.Textarea(attrs={'rows': 3}),
             'current_salary': forms.TextInput(attrs={'placeholder': 'e.g. 3 LPA, 25000, Negotiable'}),
             'expected_salary': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 35000, Negotiable'}),
+            'notice_period': forms.TextInput(attrs={'placeholder': 'e.g. Immediate, 15 days, 30 days'}),
+            'interview_date': forms.DateInput(attrs={'type': 'date'}),
+            'remarks': forms.Textarea(attrs={'rows': 3}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['status'].choices = CANDIDATE_DASHBOARD_STATUS_CHOICES
+        self.fields['assigned_hr'].queryset = User.objects.filter(role='hr', is_active=True).order_by('username')
+        self.apply_control_styles()
 
 
 class FollowUpForm(HRModelFormMixin, forms.ModelForm):
@@ -253,6 +325,7 @@ class CandidateStatusForm(HRModelFormMixin, forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['status'].choices = CANDIDATE_DASHBOARD_STATUS_CHOICES
         self.apply_control_styles()
 
 

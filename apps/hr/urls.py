@@ -9,6 +9,7 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('candidates/', views.candidate_list, name='candidate_list'),
     path('candidates/add/', views.candidate_create, name='candidate_create'),
+    path('candidates/import/', views.candidate_import, name='candidate_import'),
     path('candidates/<int:candidate_id>/', views.candidate_detail, name='candidate_detail'),
     path('candidates/<int:candidate_id>/edit/', views.candidate_edit, name='candidate_edit'),
     path('candidates/<int:candidate_id>/delete/', views.candidate_delete, name='candidate_delete'),

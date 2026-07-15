@@ -1,6 +1,8 @@
 import csv
+import io
+import re
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import wraps
 
 from django.contrib import messages
@@ -24,8 +26,10 @@ except ImportError:
 from apps.accounts.models import User
 from apps.accounts.auth_logging import log_auth_activity
 from .forms import (
+    CANDIDATE_DASHBOARD_STATUS_CHOICES,
     CandidateBasicForm,
     CandidateDocumentsForm,
+    CandidateImportForm,
     CandidateNoteForm,
     CandidateProfessionalForm,
     CandidateQuickForm,
@@ -155,11 +159,10 @@ def dashboard_metrics(request):
     prev_month_start = prev_month_end.replace(day=1)
 
     candidates = hr_scope(Candidate.objects.all(), request)
-    activities = hr_scope(CandidateActivity.objects.filter(candidate__in=candidates), request)
     followups = hr_scope(FollowUp.objects.filter(candidate__in=candidates), request)
     interviews = hr_scope(Interview.objects.filter(candidate__in=candidates), request)
 
-    def metric(label, icon, color, value, current_filter, previous_filter):
+    def metric(label, icon, color, value, current_filter, previous_filter, url=''):
         current = candidates.filter(current_filter).count() if current_filter else value
         previous = candidates.filter(previous_filter).count() if previous_filter else 0
         return {
@@ -167,26 +170,25 @@ def dashboard_metrics(request):
             'icon': icon,
             'color': color,
             'value': value,
+            'url': url,
             'trend': trend_label(current, previous),
             'spark': [max(8, min(100, value % 70 + 20)), max(8, min(100, current % 80 + 15)), max(8, min(100, (previous + value) % 90 + 10))],
         }
 
-    calls_current = activities.filter(activity_type='call', created_at__date__gte=month_start).count()
-    calls_previous = activities.filter(activity_type='call', created_at__date__gte=prev_month_start, created_at__date__lte=prev_month_end).count()
     interviews_current = interviews.filter(created_at__date__gte=month_start).count()
     interviews_previous = interviews.filter(created_at__date__gte=prev_month_start, created_at__date__lte=prev_month_end).count()
     pending_followups = followups.filter(completed=False, follow_up_date__gte=today).count()
-    todays_activities = activities.filter(created_at__date=today).count()
+    candidate_list_url = reverse('hr:candidate_list')
 
     return [
-        metric('Total Candidates', 'bi-people-fill', 'indigo', candidates.count(), Q(created_at__date__gte=month_start), Q(created_at__date__gte=prev_month_start, created_at__date__lte=prev_month_end)),
-        {'label': 'Calls Made', 'icon': 'bi-telephone-fill', 'color': 'emerald', 'value': calls_current, 'trend': trend_label(calls_current, calls_previous), 'spark': [22, 45, 70]},
-        metric('Interviews Scheduled', 'bi-calendar-check-fill', 'blue', candidates.filter(status='interview_scheduled').count(), Q(status='interview_scheduled', updated_at__date__gte=month_start), Q(status='interview_scheduled', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
-        metric('Selected', 'bi-patch-check-fill', 'orange', candidates.filter(status='selected').count(), Q(status='selected', updated_at__date__gte=month_start), Q(status='selected', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
-        metric('Rejected', 'bi-x-octagon-fill', 'red', candidates.filter(status='rejected').count(), Q(status='rejected', updated_at__date__gte=month_start), Q(status='rejected', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
-        metric('Joined', 'bi-person-check-fill', 'teal', candidates.filter(status='joined').count(), Q(status='joined', updated_at__date__gte=month_start), Q(status='joined', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
-        metric('Pending Follow-ups', 'bi-clock-fill', 'amber', candidates.filter(status='follow_up_pending').count(), Q(status='follow_up_pending', updated_at__date__gte=month_start), Q(status='follow_up_pending', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end)),
-        {'label': "Today's Activities", 'icon': 'bi-lightning-charge-fill', 'color': 'violet', 'value': todays_activities, 'trend': '+Today', 'spark': [18, 35, 58]},
+        metric('Total Candidates', 'bi-people-fill', 'indigo', candidates.count(), Q(created_at__date__gte=month_start), Q(created_at__date__gte=prev_month_start, created_at__date__lte=prev_month_end), candidate_list_url),
+        metric('Applied', 'bi-person-plus-fill', 'violet', candidates.filter(status='new').count(), Q(status='new', updated_at__date__gte=month_start), Q(status='new', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end), f'{candidate_list_url}?status=new'),
+        metric('Interviews Scheduled', 'bi-calendar-check-fill', 'blue', candidates.filter(status='interview_scheduled').count(), Q(status='interview_scheduled', updated_at__date__gte=month_start), Q(status='interview_scheduled', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end), f'{candidate_list_url}?status=interview_scheduled'),
+        metric('Selected', 'bi-patch-check-fill', 'orange', candidates.filter(status='selected').count(), Q(status='selected', updated_at__date__gte=month_start), Q(status='selected', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end), f'{candidate_list_url}?status=selected'),
+        metric('Rejected', 'bi-x-octagon-fill', 'red', candidates.filter(status='rejected').count(), Q(status='rejected', updated_at__date__gte=month_start), Q(status='rejected', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end), f'{candidate_list_url}?status=rejected'),
+        metric('Joined', 'bi-person-check-fill', 'teal', candidates.filter(status='joined').count(), Q(status='joined', updated_at__date__gte=month_start), Q(status='joined', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end), f'{candidate_list_url}?status=joined'),
+        metric('On Hold', 'bi-pause-circle-fill', 'amber', candidates.filter(status='on_hold').count(), Q(status='on_hold', updated_at__date__gte=month_start), Q(status='on_hold', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end), f'{candidate_list_url}?status=on_hold'),
+        metric('Pending Follow-ups', 'bi-clock-fill', 'amber', candidates.filter(status='follow_up_pending').count(), Q(status='follow_up_pending', updated_at__date__gte=month_start), Q(status='follow_up_pending', updated_at__date__gte=prev_month_start, updated_at__date__lte=prev_month_end), f'{candidate_list_url}?status=follow_up_pending'),
     ]
 
 
@@ -195,7 +197,9 @@ def candidate_queryset(request):
     query = request.GET.get('q', '').strip()
     status = request.GET.get('status', '').strip()
     source = request.GET.get('source', '').strip()
-    hr_id = request.GET.get('hr', '').strip()
+    added = request.GET.get('added', '').strip()
+    added_from = request.GET.get('added_from', '').strip()
+    added_to = request.GET.get('added_to', '').strip()
 
     if query:
         qs = qs.filter(
@@ -203,14 +207,234 @@ def candidate_queryset(request):
             | Q(mobile__icontains=query)
             | Q(email__icontains=query)
             | Q(applying_position__icontains=query)
+            | Q(location__icontains=query)
+            | Q(remarks__icontains=query)
         )
     if status:
         qs = qs.filter(status=status)
     if source:
         qs = qs.filter(source=source)
-    if hr_id:
-        qs = qs.filter(assigned_hr_id=hr_id)
+    today = timezone.localdate()
+    if added == 'today':
+        qs = qs.filter(date_added=today)
+    elif added == 'yesterday':
+        qs = qs.filter(date_added=today - timedelta(days=1))
+    elif added == 'week':
+        qs = qs.filter(date_added__gte=today - timedelta(days=6), date_added__lte=today)
+    elif added == 'date':
+        if added_from:
+            try:
+                qs = qs.filter(date_added__gte=datetime.strptime(added_from, '%Y-%m-%d').date())
+            except ValueError:
+                pass
+        if added_to:
+            try:
+                qs = qs.filter(date_added__lte=datetime.strptime(added_to, '%Y-%m-%d').date())
+            except ValueError:
+                pass
     return qs
+
+
+def normalize_candidate_header(value):
+    return ''.join(ch for ch in str(value or '').strip().lower() if ch.isalnum())
+
+
+CANDIDATE_IMPORT_ALIASES = {
+    'interview_date': {'interviewdate', 'interviewdatetime', 'date', 'scheduleddate'},
+    'full_name': {'candidatename', 'candidate', 'name', 'fullname'},
+    'applying_position': {'position', 'appliedfor', 'applyingposition', 'role', 'post'},
+    'mobile': {'contactno', 'contactnumber', 'mobileno', 'mobile', 'phone', 'phonenumber'},
+    'experience': {
+        'yearofexperience',
+        'yearofexpereince',
+        'yearofexprience',
+        'yearofexperiance',
+        'yearsofexperience',
+        'yearsofexpereince',
+        'yearsofexprience',
+        'workexperience',
+        'totalexperience',
+        'totalexp',
+        'experience',
+        'exp',
+    },
+    'email': {'mailid', 'email', 'emailid', 'mail'},
+    'current_salary': {'currentctc', 'currentc2c', 'currentsalary', 'currentpackage'},
+    'expected_salary': {'expectctc', 'expectedctc', 'expectedsalary', 'expectedpackage'},
+    'notice_period': {'noticeperiod', 'notice'},
+    'location': {'location', 'city', 'place'},
+    'status': {'interviewstatus', 'status', 'candidatestatus'},
+    'remarks': {'remark', 'remarks', 'note', 'notes', 'comment', 'comments'},
+    'source': {'source', 'sources', 'leadsource', 'candidatesource'},
+}
+
+
+def candidate_import_field_for_header(header):
+    normalized = normalize_candidate_header(header)
+    for field, aliases in CANDIDATE_IMPORT_ALIASES.items():
+        if normalized in aliases:
+            return field
+    if 'interview' in normalized and 'date' in normalized:
+        return 'interview_date'
+    if normalized.startswith(('year', 'years', 'yr', 'yrs')) and 'exp' in normalized:
+        return 'experience'
+    if 'experience' in normalized or 'expereince' in normalized or 'experenice' in normalized or 'experince' in normalized:
+        return 'experience'
+    return ''
+
+
+def add_candidate_standard_column_fallbacks(field_by_index):
+    fields = set(field_by_index.values())
+    inverse = {field: index for index, field in field_by_index.items()}
+    if 'interview_date' not in fields and 'full_name' in inverse:
+        date_index = inverse['full_name'] - 1
+        if date_index >= 0 and date_index not in field_by_index:
+            field_by_index[date_index] = 'interview_date'
+    if 'experience' not in fields and 'mobile' in inverse:
+        experience_index = inverse['mobile'] + 1
+        if experience_index not in field_by_index:
+            field_by_index[experience_index] = 'experience'
+    return field_by_index
+
+
+def candidate_import_rows(uploaded_file):
+    filename = uploaded_file.name.lower()
+    if filename.endswith('.csv'):
+        decoded = uploaded_file.read().decode('utf-8-sig')
+        return list(csv.reader(io.StringIO(decoded)))
+    if filename.endswith('.xlsx'):
+        import openpyxl
+        workbook = openpyxl.load_workbook(uploaded_file, read_only=True, data_only=True)
+        sheet = workbook.active
+        return [list(row) for row in sheet.iter_rows(values_only=True)]
+    raise ValidationError('Only .xlsx and .csv candidate import files are allowed.')
+
+
+def parse_candidate_import_date(value):
+    if not value:
+        return None
+    if isinstance(value, (int, float)):
+        try:
+            return (datetime(1899, 12, 30) + timedelta(days=int(value))).date()
+        except (OverflowError, ValueError):
+            return None
+    if hasattr(value, 'date'):
+        return value.date()
+    if hasattr(value, 'year') and hasattr(value, 'month') and hasattr(value, 'day'):
+        return value
+    text = str(value).strip()
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'(\d{1,2})(st|nd|rd|th)', r'\1', text, flags=re.IGNORECASE)
+    if re.fullmatch(r'\d+(\.0+)?', text):
+        serial = int(float(text))
+        if 20000 <= serial <= 80000:
+            return (datetime(1899, 12, 30) + timedelta(days=serial)).date()
+    if ' ' in text:
+        leading_date = text.split(' ', 1)[0]
+        parsed = parse_candidate_import_date(leading_date)
+        if parsed:
+            return parsed
+    try:
+        return datetime.fromisoformat(text).date()
+    except ValueError:
+        pass
+    for fmt in (
+        '%d-%m-%Y',
+        '%d/%m/%Y',
+        '%Y-%m-%d',
+        '%d %b %Y',
+        '%d %B %Y',
+        '%d-%b-%Y',
+        '%d-%B-%Y',
+        '%d.%m.%Y',
+        '%m/%d/%Y',
+        '%d-%m-%y',
+        '%d/%m/%y',
+        '%d-%b-%y',
+        '%d %b %y',
+        '%Y/%m/%d',
+        '%Y.%m.%d',
+        '%b %d, %Y',
+        '%B %d, %Y',
+        '%b %d %Y',
+        '%B %d %Y',
+        '%b %d, %y',
+        '%B %d, %y',
+        '%b %d %y',
+        '%B %d %y',
+    ):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    for fmt in (
+        '%d %b',
+        '%d %B',
+        '%d-%b',
+        '%d-%B',
+        '%b %d',
+        '%B %d',
+    ):
+        try:
+            parsed_without_year = datetime.strptime(text, fmt).date()
+            return parsed_without_year.replace(year=timezone.localdate().year)
+        except ValueError:
+            continue
+    date_patterns = (
+        r'\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}',
+        r'\d{4}[-/.]\d{1,2}[-/.]\d{1,2}',
+        r'\d{1,2}[- ]+[A-Za-z]{3,9}[, -]+\d{2,4}',
+        r'[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{2,4}',
+        r'\d{1,2}[- ]+[A-Za-z]{3,9}',
+        r'[A-Za-z]{3,9}\s+\d{1,2}',
+    )
+    for pattern in date_patterns:
+        match = re.search(pattern, text)
+        if match and match.group(0) != text:
+            parsed = parse_candidate_import_date(match.group(0).strip(' ,'))
+            if parsed:
+                return parsed
+    return None
+
+
+def candidate_status_from_import(value):
+    normalized = normalize_candidate_header(value)
+    if not normalized:
+        return 'new'
+    status_aliases = {
+        'new': 'new',
+        'newcandidate': 'new',
+        'applied': 'new',
+        'called': 'follow_up_pending',
+        'noresponse': 'follow_up_pending',
+        'notconnected': 'follow_up_pending',
+        'notconnect': 'follow_up_pending',
+        'followuppending': 'follow_up_pending',
+        'pendingfollowup': 'follow_up_pending',
+        'pending': 'follow_up_pending',
+        'interviewscheduled': 'interview_scheduled',
+        'scheduled': 'interview_scheduled',
+        'interviewcompleted': 'interview_scheduled',
+        'completed': 'interview_scheduled',
+        'selected': 'selected',
+        'rejected': 'rejected',
+        'joined': 'joined',
+        'onhold': 'on_hold',
+        'hold': 'on_hold',
+    }
+    return status_aliases.get(normalized, 'new')
+
+
+def candidate_source_from_import(value):
+    return candidate_text(value)
+
+
+def candidate_text(value):
+    if value is None:
+        return ''
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value).strip()
 
 
 @login_required
@@ -218,9 +442,9 @@ def candidate_queryset(request):
 def dashboard(request):
     candidates = candidate_queryset(request)
     today = timezone.localdate()
-    recent_candidates = candidates[:7]
+    recent_candidates = candidates[:5]
     selected_candidate = candidates.first()
-    status_counts = OrderedDict((key, candidates.filter(status=key).count()) for key, _ in Candidate.STATUS_CHOICES)
+    status_counts = OrderedDict((key, candidates.filter(status=key).count()) for key, _ in CANDIDATE_DASHBOARD_STATUS_CHOICES)
     hr_users = User.objects.filter(role='hr').order_by('username')
     hr_performance = [
         {
@@ -241,7 +465,7 @@ def dashboard(request):
         'hr_performance': hr_performance,
         'todays_followups': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False, follow_up_date=today), request).count(),
         'pending_followups': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False), request).count(),
-        'status_choices': Candidate.STATUS_CHOICES,
+        'status_choices': CANDIDATE_DASHBOARD_STATUS_CHOICES,
         'today_interviews_count': hr_scope(Interview.objects.filter(candidate__in=candidates, date=today), request).count(),
         'today_calls_pending': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False, follow_up_date=today, follow_up_type='call'), request).count(),
         'today_offer_discussions': hr_scope(FollowUp.objects.filter(candidate__in=candidates, completed=False, follow_up_date=today, follow_up_type='meeting'), request).count(),
@@ -255,15 +479,23 @@ def candidate_list(request):
     qs = candidate_queryset(request)
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
+    source_labels = dict(Candidate.SOURCE_CHOICES)
+    source_values = (
+        hr_scope(Candidate.objects.exclude(source=''), request)
+        .values_list('source', flat=True)
+        .distinct()
+        .order_by('source')
+    )
     return render(request, 'hr/candidate_list.html', {
         'page_obj': page_obj,
-        'status_choices': Candidate.STATUS_CHOICES,
-        'source_choices': Candidate.SOURCE_CHOICES,
-        'hr_users': User.objects.filter(role='hr').order_by('username'),
+        'status_choices': CANDIDATE_DASHBOARD_STATUS_CHOICES,
+        'source_choices': [(source, source_labels.get(source, source)) for source in source_values],
         'query': request.GET.get('q', ''),
         'selected_status': request.GET.get('status', ''),
         'selected_source': request.GET.get('source', ''),
-        'selected_hr': request.GET.get('hr', ''),
+        'selected_added': request.GET.get('added', ''),
+        'selected_added_from': request.GET.get('added_from', ''),
+        'selected_added_to': request.GET.get('added_to', ''),
     })
 
 
@@ -289,6 +521,115 @@ def candidate_create(request):
         return redirect('hr:candidate_detail', candidate_id=candidate.id)
 
     return render(request, 'hr/candidate_form.html', {'forms': forms, 'mode': 'add'})
+
+
+@login_required
+@hr_required
+def candidate_import(request):
+    form = CandidateImportForm(request.POST or None, request.FILES or None)
+    preview_errors = []
+    if request.method == 'POST' and form.is_valid():
+        try:
+            rows = candidate_import_rows(form.cleaned_data['candidates_file'])
+        except (ValidationError, UnicodeDecodeError, ValueError) as exc:
+            messages.error(request, f'Unable to read candidate import file: {exc}')
+            return render(request, 'hr/candidate_import.html', {'form': form, 'preview_errors': preview_errors})
+
+        header_index = None
+        field_by_index = {}
+        for index, row in enumerate(rows):
+            mapped = {
+                col_index: candidate_import_field_for_header(value)
+                for col_index, value in enumerate(row)
+            }
+            mapped = {col_index: field for col_index, field in mapped.items() if field}
+            if {'full_name', 'mobile'}.issubset(set(mapped.values())):
+                header_index = index
+                field_by_index = add_candidate_standard_column_fallbacks(mapped)
+                break
+
+        if header_index is None:
+            messages.error(request, 'Import failed. Header row must include Candidate Name and Contact No.')
+            return render(request, 'hr/candidate_import.html', {'form': form, 'preview_errors': preview_errors})
+
+        created_count = 0
+        updated_count = 0
+        skipped_count = 0
+        scoped_candidates = hr_scope(Candidate.objects.all(), request)
+
+        for row_number, row in enumerate(rows[header_index + 1:], start=header_index + 2):
+            data = {}
+            for col_index, field in field_by_index.items():
+                if col_index < len(row):
+                    value = row[col_index]
+                    if candidate_text(value) or field not in data:
+                        data[field] = value
+
+            full_name = candidate_text(data.get('full_name'))
+            mobile = candidate_text(data.get('mobile'))
+            if not full_name and not mobile:
+                continue
+            if not full_name or not mobile:
+                skipped_count += 1
+                preview_errors.append(f'Row {row_number}: Candidate Name and Contact No are required.')
+                continue
+
+            candidate = scoped_candidates.filter(mobile=mobile).first()
+            is_new = candidate is None
+            if is_new:
+                candidate = Candidate(created_by=request.user)
+
+            candidate.full_name = full_name
+            candidate.mobile = mobile
+            candidate.email = candidate_text(data.get('email'))
+            candidate.applying_position = candidate_text(data.get('applying_position')) or candidate.applying_position or 'Not specified'
+            imported_experience = candidate_text(data.get('experience'))
+            if imported_experience or is_new:
+                candidate.experience = imported_experience
+            candidate.current_salary = candidate_text(data.get('current_salary'))
+            candidate.expected_salary = candidate_text(data.get('expected_salary'))
+            candidate.notice_period = candidate_text(data.get('notice_period'))
+            candidate.location = candidate_text(data.get('location'))
+            imported_interview_date = parse_candidate_import_date(data.get('interview_date'))
+            if imported_interview_date or is_new:
+                candidate.interview_date = imported_interview_date
+            candidate.status = candidate_status_from_import(data.get('status'))
+            candidate.source = candidate_source_from_import(data.get('source'))
+            candidate.remarks = candidate_text(data.get('remarks'))
+            if not candidate.assigned_hr:
+                candidate.assigned_hr = request.user
+
+            candidate.save()
+            add_activity(
+                candidate,
+                'created' if is_new else 'document',
+                'Candidate Imported' if is_new else 'Candidate Import Updated',
+                request,
+                f'Candidate data imported from file row {row_number}.',
+            )
+            if candidate.remarks:
+                CandidateActivity.objects.create(
+                    candidate=candidate,
+                    activity_type='note',
+                    title='Import Remark',
+                    description=candidate.remarks[:500],
+                    created_by=request.user,
+                )
+
+            if is_new:
+                created_count += 1
+            else:
+                updated_count += 1
+
+        if created_count or updated_count:
+            messages.success(
+                request,
+                f'Candidate import completed. Created: {created_count}, Updated: {updated_count}, Skipped: {skipped_count}.',
+            )
+            return redirect('hr:candidate_list')
+        messages.warning(request, f'No candidate records imported. Skipped: {skipped_count}.')
+
+    return render(request, 'hr/candidate_import.html', {'form': form, 'preview_errors': preview_errors})
 
 
 @login_required
@@ -604,18 +945,38 @@ def export_candidates(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="hr-candidates.csv"'
     writer = csv.writer(response)
-    writer.writerow(['Name', 'Mobile', 'Email', 'Applying For', 'Department', 'Assigned HR', 'Status', 'Source', 'Date Added'])
+    writer.writerow([
+        'Interview Date',
+        'Candidate Name',
+        'Position',
+        'Contact No',
+        'Year of Experience',
+        'Mail Id',
+        'Current CTC',
+        'Expected CTC',
+        'Notice Period',
+        'Location',
+        'Interview Status',
+        'Remark',
+        'Source',
+        'Assigned HR',
+    ])
     for candidate in candidate_queryset(request):
         writer.writerow([
+            candidate.interview_date,
             candidate.full_name,
-            candidate.mobile,
-            candidate.email,
             candidate.applying_position,
-            candidate.department,
-            candidate.assigned_hr.username if candidate.assigned_hr else '',
+            candidate.mobile,
+            candidate.experience,
+            candidate.email,
+            candidate.current_salary,
+            candidate.expected_salary,
+            candidate.notice_period,
+            candidate.location,
             candidate.get_status_display(),
-            candidate.get_source_display(),
-            candidate.date_added,
+            candidate.remarks,
+            candidate.source_display,
+            candidate.assigned_hr.username if candidate.assigned_hr else '',
         ])
     return response
 

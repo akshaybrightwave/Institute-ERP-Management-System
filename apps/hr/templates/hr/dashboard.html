@@ -189,13 +189,14 @@
 }
 .summary-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1rem;
   margin-top: 1rem;
 }
 .chart-wrap {
-  width: 140px;
-  height: 140px;
+  width: 170px;
+  height: 170px;
   position: relative;
 }
 .chart-center-text {
@@ -216,13 +217,21 @@
   color: #9ca3af;
 }
 .custom-legend {
-  flex-grow: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 .legend-item {
   display: flex;
   align-items: center;
-  margin-bottom: 0.5rem;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 0;
   font-size: 0.875rem;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
 }
 .legend-item:last-child {
   margin-bottom: 0;
@@ -236,15 +245,25 @@
 .legend-label {
   color: #e2e8f0;
   flex-grow: 1;
+  min-width: 0;
 }
 .legend-value {
   font-weight: 600;
   color: #ffffff;
-  margin-right: 0.5rem;
+  margin-right: 0;
 }
 .legend-pct {
   color: #94a3b8;
   font-size: 0.75rem;
+}
+.recent-candidates-scroll {
+  max-height: 350px;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding-right: 6px;
+}
+.recent-candidates-scroll table {
+  margin-bottom: 0;
 }
 
 /* Follow Up Cards */
@@ -345,10 +364,10 @@
         </div>
         
         <!-- Footer Strip -->
-        <div style="background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.4); padding: 8px 15px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 2;">
+        <a href="{{ metric.url|default:'#' }}" style="background: rgba(0,0,0,0.25); border-top: 1px solid rgba(255,255,255,0.4); padding: 8px 15px; display: flex; align-items: center; gap: 6px; position: relative; z-index: 2; text-decoration: none;">
           <i class="bi bi-list-task text-white" style="font-size: 14px;"></i>
           <span style="color: #ffffff; font-size: 12px; font-weight: 600;">View List</span>
-        </div>
+        </a>
         
       </div>
     </div>
@@ -364,7 +383,7 @@
           <span class="fw-bold text-white fs-5">Recent Candidates</span>
           <a href="{% url 'hr:candidate_list' %}" class="btn btn-outline-primary btn-sm px-3 fw-semibold" style="border-radius: 6px;">View All <i class="bi bi-arrow-right ms-1"></i></a>
         </div>
-        <div class="table-responsive">
+        <div class="table-responsive recent-candidates-scroll">
           <table class="table hr-table">
             <thead>
               <tr>
@@ -469,6 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
     'selected': '#10b981',
     'joined': '#059669',
     'rejected': '#ef4444',
+    'on_hold': '#f59e0b',
   };
   
   function getLabel(key) {
@@ -492,7 +512,6 @@ document.addEventListener('DOMContentLoaded', function() {
   } else {
       labels.forEach((label, index) => {
         let val = rawData[index];
-        let pct = Math.round((val / statusTotal) * 100);
         let valStr = val < 10 ? '0'+val : val;
         let color = backgroundColors[index];
         legendHtml += `
@@ -500,7 +519,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="legend-color" style="background:${color};"></div>
             <div class="legend-label">${label}</div>
             <div class="legend-value">${valStr}</div>
-            <div class="legend-pct">(${pct}%)</div>
           </div>
         `;
       });

@@ -430,7 +430,9 @@
   /* Inline Call Status Dropdown */
   .call-status-wrapper {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
   .call-status-select {
     appearance: none;
@@ -469,16 +471,57 @@
     opacity: 0.6;
     pointer-events: none;
   }
+  .call-status-save-btn {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid rgba(59,130,246,0.45);
+    background: rgba(59,130,246,0.16);
+    color: #60a5fa;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  }
+  .call-status-save-btn:hover {
+    background: rgba(59,130,246,0.28);
+    border-color: #60a5fa;
+    color: #bfdbfe;
+  }
+  .call-remark-inline {
+    width: min(230px, 100%);
+    min-height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(15, 23, 42, 0.62);
+    color: #e2e8f0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 7px 10px;
+    outline: none;
+  }
+  .call-remark-inline::placeholder {
+    color: #64748b;
+  }
+  .call-remark-inline:focus {
+    border-color: rgba(59,130,246,0.7);
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.18);
+  }
 
   /* Color-coded select classes */
   .call-status-select.cs-NEW { background: #f3e8ff; color: #7c3aed; border-color: #c4b5fd; }
   .call-status-select.cs-ACCEPTED { background: #dcfce7; color: #15803d; border-color: #86efac; }
   .call-status-select.cs-INTERESTED { background: #d1fae5; color: #047857; border-color: #6ee7b7; }
+  .call-status-select.cs-NOT_INTERESTED { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
   .call-status-select.cs-BUSY { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
   .call-status-select.cs-CALL_BACK { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+  .call-status-select.cs-CALL_CONNECTED { background: #cffafe; color: #0e7490; border-color: #67e8f9; }
   .call-status-select.cs-CALL_DISCONNECTED { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
   .call-status-select.cs-NO_ANSWER { background: #f1f5f9; color: #475569; border-color: #94a3b8; }
   .call-status-select.cs-WRONG_NUMBER { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+  .call-status-select.cs-INVALID_NUMBER { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
   .call-status-select.cs-OTHER { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; }
   .call-status-select.cs-SWITCHED_OFF { background: #fecdd3; color: #9f1239; border-color: #fda4af; }
   .call-status-select.cs-PENDING_FOLLOW_UP { background: #ccfbf1; color: #0f766e; border-color: #5eead4; }
@@ -486,7 +529,7 @@
   .call-status-wrapper::after {
     content: '\25BC';
     position: absolute;
-    right: 8px;
+    right: 42px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 8px;
@@ -773,11 +816,14 @@
   .call-status-badge.cs-NEW        { background: rgba(124,58,237,0.15) !important; color: #a78bfa !important; }
   .call-status-badge.cs-ACCEPTED   { background: rgba(21,128,61,0.15) !important;  color: #4ade80 !important; }
   .call-status-badge.cs-INTERESTED { background: rgba(4,120,87,0.15) !important;   color: #34d399 !important; }
+  .call-status-badge.cs-NOT_INTERESTED { background: rgba(185,28,28,0.15) !important; color: #f87171 !important; }
   .call-status-badge.cs-BUSY       { background: rgba(194,65,12,0.15) !important;  color: #fb923c !important; }
   .call-status-badge.cs-CALL_BACK  { background: rgba(29,78,216,0.15) !important;  color: #60a5fa !important; }
+  .call-status-badge.cs-CALL_CONNECTED { background: rgba(14,116,144,0.15) !important; color: #22d3ee !important; }
   .call-status-badge.cs-CALL_DISCONNECTED { background: rgba(71,85,105,0.15) !important; color: #94a3b8 !important; }
   .call-status-badge.cs-NO_ANSWER  { background: rgba(71,85,105,0.15) !important;  color: #94a3b8 !important; }
   .call-status-badge.cs-WRONG_NUMBER   { background: rgba(185,28,28,0.15) !important; color: #f87171 !important; }
+  .call-status-badge.cs-INVALID_NUMBER   { background: rgba(153,27,27,0.15) !important; color: #fca5a5 !important; }
   .call-status-badge.cs-OTHER      { background: rgba(75,85,99,0.15) !important;  color: #9ca3af !important; }
   .call-status-badge.cs-SWITCHED_OFF { background: rgba(159,18,57,0.15) !important; color: #fb7185 !important; }
   .call-status-badge.cs-PENDING_FOLLOW_UP { background: rgba(20,184,166,0.15) !important; color: #2dd4bf !important; }
@@ -795,11 +841,14 @@
   .call-status-select.cs-NEW        { background: rgba(124,58,237,0.18) !important; color: #a78bfa !important; border-color: rgba(124,58,237,0.35) !important; }
   .call-status-select.cs-ACCEPTED   { background: rgba(21,128,61,0.18) !important;  color: #4ade80 !important; border-color: rgba(21,128,61,0.35) !important; }
   .call-status-select.cs-INTERESTED { background: rgba(4,120,87,0.18) !important;   color: #34d399 !important; border-color: rgba(4,120,87,0.35) !important; }
+  .call-status-select.cs-NOT_INTERESTED { background: rgba(185,28,28,0.18) !important; color: #f87171 !important; border-color: rgba(185,28,28,0.35) !important; }
   .call-status-select.cs-BUSY       { background: rgba(194,65,12,0.18) !important;  color: #fb923c !important; border-color: rgba(194,65,12,0.35) !important; }
   .call-status-select.cs-CALL_BACK  { background: rgba(29,78,216,0.18) !important;  color: #60a5fa !important; border-color: rgba(29,78,216,0.35) !important; }
+  .call-status-select.cs-CALL_CONNECTED { background: rgba(14,116,144,0.18) !important; color: #22d3ee !important; border-color: rgba(14,116,144,0.35) !important; }
   .call-status-select.cs-CALL_DISCONNECTED { background: rgba(71,85,105,0.18) !important; color: #94a3b8 !important; border-color: rgba(71,85,105,0.35) !important; }
   .call-status-select.cs-NO_ANSWER  { background: rgba(71,85,105,0.18) !important;  color: #94a3b8 !important; border-color: rgba(71,85,105,0.35) !important; }
   .call-status-select.cs-WRONG_NUMBER   { background: rgba(185,28,28,0.18) !important; color: #f87171 !important; border-color: rgba(185,28,28,0.35) !important; }
+  .call-status-select.cs-INVALID_NUMBER   { background: rgba(153,27,27,0.18) !important; color: #fca5a5 !important; border-color: rgba(153,27,27,0.35) !important; }
   .call-status-select.cs-OTHER      { background: rgba(75,85,99,0.18) !important;  color: #9ca3af !important; border-color: rgba(75,85,99,0.35) !important; }
   .call-status-select.cs-SWITCHED_OFF { background: rgba(159,18,57,0.18) !important; color: #fb7185 !important; border-color: rgba(159,18,57,0.35) !important; }
   .call-status-select.cs-PENDING_FOLLOW_UP { background: rgba(20,184,166,0.18) !important; color: #2dd4bf !important; border-color: rgba(20,184,166,0.35) !important; }
@@ -974,6 +1023,90 @@
     font-weight: 600;
     color: #e2e8f0;
   }
+  .inquiry-status-panel {
+    max-width: 720px;
+    padding: 12px;
+    height: auto;
+  }
+  .inquiry-status-grid {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(220px, 320px);
+    gap: 12px;
+    align-items: start;
+  }
+  .inquiry-status-column,
+  .inquiry-updates-column {
+    min-width: 0;
+  }
+  .inquiry-status-panel .inquiry-detail-panel-title {
+    font-size: 0.72rem;
+    margin-bottom: 8px;
+  }
+  .inquiry-status-panel .inquiry-detail-field {
+    padding: 6px 0;
+  }
+  .inquiry-status-panel .inquiry-detail-label {
+    font-size: 0.66rem;
+  }
+  .inquiry-status-panel .inquiry-detail-value {
+    font-size: 0.8rem;
+  }
+  @media (max-width: 767.98px) {
+    .inquiry-status-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .call-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 2px;
+    max-width: 320px;
+  }
+  .call-history-item {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.58);
+    overflow: hidden;
+  }
+  .call-history-item summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 8px;
+    min-height: 30px;
+  }
+  .call-history-item summary::-webkit-details-marker {
+    display: none;
+  }
+  .call-history-item .call-status-badge {
+    font-size: 0.7rem;
+    padding: 3px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .call-history-date {
+    color: #bfdbfe;
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+  .call-history-remark {
+    border-top: 1px solid rgba(255,255,255,0.07);
+    color: #e2e8f0;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    padding: 7px 8px;
+    background: rgba(30, 41, 59, 0.7);
+  }
+  .call-history-empty {
+    color: #64748b;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 6px 0;
+  }
 </style>
 {% endblock %}
 
@@ -1038,12 +1171,21 @@
 
       <div class="col-lg-3 col-md-6">
         <label class="form-label">Call Status</label>
-        <select name="call_status" class="form-select">
-          <option value="">All Call Statuses</option>
-          {% for code, name in call_status_choices %}
-          <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
-          {% endfor %}
-        </select>
+        {% if scope == 'counselor_telecalling' or request.user.role == 'telecaller' %}
+          <select name="call_status_group" class="form-select">
+            <option value="">All Call Statuses</option>
+            {% for code, name in call_status_group_choices %}
+            <option value="{{ code }}" {% if call_status_group == code %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <select name="call_status" class="form-select">
+            <option value="">All Call Statuses</option>
+            {% for code, name in call_status_choices %}
+            <option value="{{ code }}" {% if call_status == code %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+        {% endif %}
       </div>
 
       <div class="col-lg-1 inquiry-filter-actions">
@@ -1073,7 +1215,7 @@
         <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
       </div>
 
-      {% if q or status or course or call_status or date_filter or date_from or date_to or queue or converted or overdue %}
+      {% if q or status or course or call_status or call_status_group or date_filter or date_from or date_to or queue or converted or overdue %}
         <div class="col-12 mt-2">
           <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-x-circle me-1"></i> Clear filters
@@ -1160,10 +1302,10 @@
                 <td data-label="Contact">
                   <div class="d-flex flex-column justify-content-center gap-2">
                     {% if inquiry.mobile_number %}
-                      <a href="tel:{{ inquiry.mobile_number }}" class="d-flex align-items-center gap-2 text-decoration-none" style="color:#38bdf8; font-size:0.85rem; font-weight:600;">
-                        <i class="bi bi-telephone-fill"></i>
+                      <span class="d-flex align-items-center gap-2" style="color:#ffffff; font-size:0.85rem; font-weight:600; user-select:text;">
+                        <i class="bi bi-telephone-fill" style="color:#38bdf8;"></i>
                         {{ inquiry.mobile_number }}
-                      </a>
+                      </span>
                     {% else %}
                       <span class="text-muted" style="font-size:0.8rem;">—</span>
                     {% endif %}
@@ -1174,6 +1316,7 @@
                         </span>
                       </div>
                     {% endif %}
+                    <input type="text" class="call-remark-inline" data-inquiry-remark="{{ inquiry.pk }}" placeholder="Remark for this call">
                   </div>
                 </td>
                 <td data-label="Status">
@@ -1208,13 +1351,13 @@
                 {% else %}
                   <td data-label="Last Updated">
                     <div class="inquiry-date">
-                      <span><i class="bi bi-calendar3"></i>{{ inquiry.updated_at|date:"d M Y" }}</span>
+                      <span id="updated-date-{{ inquiry.pk }}"><i class="bi bi-calendar3"></i>{{ inquiry.updated_at|date:"d M Y" }}</span>
                     </div>
                   </td>
                 {% endif %}
                 <td data-label="Call Status">
                   <div class="call-status-wrapper">
-                    <select class="call-status-select cs-{{ inquiry.call_status }}" data-inquiry-id="{{ inquiry.pk }}" onchange="updateCallStatus(this)">
+                    <select class="call-status-select cs-{{ inquiry.call_status }}" data-inquiry-id="{{ inquiry.pk }}" data-current-status="{{ inquiry.call_status }}">
                       {% if inquiry.call_status == 'NEW' or inquiry.call_status == 'ACCEPTED' %}
                         <option value="" selected disabled>Update status</option>
                       {% endif %}
@@ -1222,10 +1365,13 @@
                         <option value="{{ code }}" {% if inquiry.call_status == code %}selected{% endif %}>{{ name }}</option>
                       {% endfor %}
                     </select>
+                    <button type="button" class="call-status-save-btn" title="Save this call status again" aria-label="Save call status for {{ inquiry.full_name }}" onclick="updateCallStatus(this.previousElementSibling)">
+                      <i class="bi bi-check2"></i>
+                    </button>
                   </div>
                   <div class="mt-1">
                     <span class="call-status-badge cs-{{ inquiry.call_status }}" id="badge-{{ inquiry.pk }}">
-                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'CALL_DISCONNECTED' %}<i class="bi bi-telephone-minus"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'SWITCHED_OFF' %}<i class="bi bi-power"></i>{% elif inquiry.call_status == 'PENDING_FOLLOW_UP' %}<i class="bi bi-calendar-check"></i>{% elif inquiry.call_status == 'OTHER' %}<i class="bi bi-three-dots"></i>{% endif %}
+                      {% if inquiry.call_status == 'NEW' %}<i class="bi bi-stars"></i>{% elif inquiry.call_status == 'ACCEPTED' %}<i class="bi bi-check-circle"></i>{% elif inquiry.call_status == 'INTERESTED' %}<i class="bi bi-heart-fill"></i>{% elif inquiry.call_status == 'NOT_INTERESTED' %}<i class="bi bi-hand-thumbs-down"></i>{% elif inquiry.call_status == 'BUSY' %}<i class="bi bi-clock"></i>{% elif inquiry.call_status == 'CALL_BACK' %}<i class="bi bi-arrow-repeat"></i>{% elif inquiry.call_status == 'CALL_CONNECTED' %}<i class="bi bi-telephone-outbound"></i>{% elif inquiry.call_status == 'NO_ANSWER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'CALL_DISCONNECTED' %}<i class="bi bi-telephone-minus"></i>{% elif inquiry.call_status == 'WRONG_NUMBER' %}<i class="bi bi-x-circle"></i>{% elif inquiry.call_status == 'INVALID_NUMBER' %}<i class="bi bi-telephone-x"></i>{% elif inquiry.call_status == 'SWITCHED_OFF' %}<i class="bi bi-power"></i>{% elif inquiry.call_status == 'PENDING_FOLLOW_UP' %}<i class="bi bi-calendar-check"></i>{% elif inquiry.call_status == 'OTHER' %}<i class="bi bi-three-dots"></i>{% endif %}
                       {{ inquiry.get_call_status_display }}
                     </span>
                   </div>
@@ -1298,17 +1444,17 @@
           <ul class="pagination justify-content-center flex-wrap gap-1">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous page">&laquo;</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous page">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a>
+                <a class="page-link" href="?page={{ i }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next page">&raquo;</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next page">&raquo;</a>
               </li>
             {% endif %}
           </ul>
@@ -1319,7 +1465,7 @@
         <h4>No Inquiries Found</h4>
         <p class="text-muted">No records match your search or filters.</p>
         <div class="d-flex justify-content-center gap-2 flex-wrap">
-          {% if q or status or course or call_status or date_filter or date_from or date_to or queue or converted or overdue %}
+          {% if q or status or course or call_status or call_status_group or date_filter or date_from or date_to or queue or converted or overdue %}
             <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
           {% endif %}
           <button type="button" class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">Add Inquiry</button>
@@ -1400,7 +1546,7 @@
       </div>
       <div class="modal-body p-3">
         <div class="row g-3">
-          <div class="col-lg-8">
+          <div class="col-12">
             <div class="inquiry-detail-panel">
               <h6 class="inquiry-detail-panel-title"><i class="bi bi-telephone text-primary me-2"></i>Contact Information</h6>
               <div class="row g-2">
@@ -1422,32 +1568,53 @@
                 <div class="col-6">
                   <div class="inquiry-detail-field"><span class="inquiry-detail-label">Source</span><span class="inquiry-detail-value">{{ inquiry.source }}</span></div>
                 </div>
-                <div class="col-12">
-                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">Remarks</span><span class="inquiry-detail-value">{{ inquiry.remarks|default:"—" }}</span></div>
-                </div>
               </div>
             </div>
           </div>
-          <div class="col-lg-4">
-            <div class="inquiry-detail-panel">
+          <div class="col-12">
+            <div class="inquiry-detail-panel inquiry-status-panel">
               <h6 class="inquiry-detail-panel-title"><i class="bi bi-info-circle text-primary me-2"></i>Status</h6>
-              <div class="inquiry-detail-field">
-                <span class="inquiry-detail-label">Status</span>
-                <span>
-                  {% if inquiry.status == 'New' %}<span class="status-pill status-new">New</span>
-                  {% elif inquiry.status == 'Contacted' %}<span class="status-pill status-contacted">Contacted</span>
-                  {% elif inquiry.status == 'Qualified' %}<span class="status-pill status-qualified">Qualified</span>
-                  {% else %}<span class="status-pill status-rejected">Rejected</span>
-                  {% endif %}
-                </span>
-              </div>
-              <div class="inquiry-detail-field">
-                <span class="inquiry-detail-label">Call Status</span>
-                <span class="call-status-badge cs-{{ inquiry.call_status }}">{{ inquiry.get_call_status_display }}</span>
-              </div>
-              <div class="inquiry-detail-field">
-                <span class="inquiry-detail-label">Added</span>
-                <span class="inquiry-detail-value">{{ inquiry.created_at|date:"d M Y, h:i A" }}</span>
+              <div class="inquiry-status-grid">
+                <div class="inquiry-status-column">
+                  <div class="inquiry-detail-field">
+                    <span class="inquiry-detail-label">Status</span>
+                    <span>
+                      {% if inquiry.status == 'New' %}<span class="status-pill status-new">New</span>
+                      {% elif inquiry.status == 'Contacted' %}<span class="status-pill status-contacted">Contacted</span>
+                      {% elif inquiry.status == 'Qualified' %}<span class="status-pill status-qualified">Qualified</span>
+                      {% else %}<span class="status-pill status-rejected">Rejected</span>
+                      {% endif %}
+                    </span>
+                  </div>
+                  <div class="inquiry-detail-field">
+                    <span class="inquiry-detail-label">Call Status</span>
+                    <span class="call-status-badge cs-{{ inquiry.call_status }}">{{ inquiry.get_call_status_display }}</span>
+                  </div>
+                  <div class="inquiry-detail-field">
+                    <span class="inquiry-detail-label">Added</span>
+                    <span class="inquiry-detail-value">{{ inquiry.created_at|date:"d M Y, h:i A" }}</span>
+                  </div>
+                </div>
+                <div class="inquiry-updates-column">
+                  <div class="inquiry-detail-field">
+                    <span class="inquiry-detail-label">Call Updates</span>
+                    <div class="call-history-list" id="call-history-{{ inquiry.pk }}">
+                      {% for history in inquiry.prefetched_call_status_history %}
+                        <details class="call-history-item">
+                          <summary>
+                            <span class="call-history-date">{{ history.created_at|date:"d M Y, h:i A" }}</span>
+                            <span class="call-status-badge cs-{{ history.call_status }}">{{ history.get_call_status_display }}</span>
+                          </summary>
+                          <div class="call-history-remark">
+                            {{ history.remarks|default:"No remark added."|linebreaksbr }}
+                          </div>
+                        </details>
+                      {% empty %}
+                        <div class="call-history-empty">No call status updates yet.</div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1505,10 +1672,6 @@
                   <option value="{{ code }}" {% if inquiry.status == code %}selected{% endif %}>{{ name }}</option>
                 {% endfor %}
               </select>
-            </div>
-            <div class="col-12">
-              <label class="form-label" for="edit-remarks-{{ inquiry.pk }}">Remarks / Notes</label>
-              <textarea class="form-control" id="edit-remarks-{{ inquiry.pk }}" name="remarks" rows="3" placeholder="Enter new remarks/notes..."></textarea>
             </div>
           </div>
         </div>
@@ -1631,11 +1794,14 @@ const badgeIcons = {
   'NEW': '<i class="bi bi-stars"></i>',
   'ACCEPTED': '<i class="bi bi-check-circle"></i>',
   'INTERESTED': '<i class="bi bi-heart-fill"></i>',
+  'NOT_INTERESTED': '<i class="bi bi-hand-thumbs-down"></i>',
   'BUSY': '<i class="bi bi-clock"></i>',
   'CALL_BACK': '<i class="bi bi-arrow-repeat"></i>',
+  'CALL_CONNECTED': '<i class="bi bi-telephone-outbound"></i>',
   'CALL_DISCONNECTED': '<i class="bi bi-telephone-minus"></i>',
   'NO_ANSWER': '<i class="bi bi-telephone-x"></i>',
   'WRONG_NUMBER': '<i class="bi bi-x-circle"></i>',
+  'INVALID_NUMBER': '<i class="bi bi-telephone-x"></i>',
   'OTHER': '<i class="bi bi-three-dots"></i>',
   'SWITCHED_OFF': '<i class="bi bi-power"></i>',
   'PENDING_FOLLOW_UP': '<i class="bi bi-calendar-check"></i>'
@@ -1697,6 +1863,15 @@ updateBulkDeleteState();
 function updateCallStatus(selectEl) {
   const inquiryId = selectEl.dataset.inquiryId;
   const newStatus = selectEl.value;
+  const previousStatus = selectEl.dataset.currentStatus || newStatus;
+  const remarkInput = document.querySelector('[data-inquiry-remark="' + inquiryId + '"]');
+  const remarks = remarkInput ? remarkInput.value.trim() : '';
+
+  if (!newStatus) {
+    showToast('Please select a call status.', true);
+    return;
+  }
+
   selectEl.classList.add('saving');
 
   fetch(`/management/inquiries/${inquiryId}/update-call-status/`, {
@@ -1705,7 +1880,7 @@ function updateCallStatus(selectEl) {
       'Content-Type': 'application/json',
       'X-CSRFToken': getCookie('csrftoken')
     },
-    body: JSON.stringify({ call_status: newStatus })
+    body: JSON.stringify({ call_status: newStatus, remarks: remarks })
   })
   .then(resp => {
     if (!resp.ok && resp.status === 403) {
@@ -1718,18 +1893,50 @@ function updateCallStatus(selectEl) {
     if (data.success) {
       showToast(data.message, false);
       selectEl.className = 'call-status-select cs-' + newStatus;
+      selectEl.dataset.currentStatus = newStatus;
+      if (remarkInput) {
+        remarkInput.value = '';
+      }
       const badge = document.getElementById('badge-' + inquiryId);
       if (badge) {
         const icon = badgeIcons[newStatus] || '';
         badge.className = 'call-status-badge cs-' + newStatus;
         badge.innerHTML = icon + ' ' + data.call_status_display;
       }
+      const updatedDate = document.getElementById('updated-date-' + inquiryId);
+      if (updatedDate && data.updated_at) {
+        updatedDate.innerHTML = '<i class="bi bi-calendar3"></i>' + data.updated_at.split(',')[0];
+      }
+      const historyList = document.getElementById('call-history-' + inquiryId);
+      if (historyList && data.updated_at) {
+        const emptyState = historyList.querySelector('.call-history-empty');
+        if (emptyState) emptyState.remove();
+        const icon = badgeIcons[newStatus] || '';
+        const safeRemark = (data.remarks || 'No remark added.')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;')
+          .replace(/\n/g, '<br>');
+        historyList.insertAdjacentHTML('afterbegin',
+          '<details class="call-history-item">' +
+            '<summary>' +
+              '<span class="call-history-date">' + data.updated_at + '</span>' +
+              '<span class="call-status-badge cs-' + newStatus + '">' + icon + ' ' + data.call_status_display + '</span>' +
+            '</summary>' +
+            '<div class="call-history-remark">' + safeRemark + '</div>' +
+          '</details>'
+        );
+      }
     } else {
       showToast(data.message || 'Error updating status.', true);
+      selectEl.value = previousStatus;
     }
   })
   .catch(err => {
     selectEl.classList.remove('saving');
+    selectEl.value = previousStatus;
     showToast(err.message || 'Network error.', true);
   });
 }

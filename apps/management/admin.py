@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession
+from .models import Inquiry, Lead, CallLog, FollowUp, LeadImport, LeadNote, LeadActivity, ImportErrorLog, CounselingSession, InquiryCallStatusHistory
 
 @admin.register(Inquiry)
 class InquiryAdmin(admin.ModelAdmin):
@@ -21,6 +21,14 @@ class CallLogAdmin(admin.ModelAdmin):
     list_filter = ('call_status', 'call_date')
     search_fields = ('lead__inquiry__full_name', 'lead__inquiry__mobile_number', 'remarks')
     ordering = ('-call_date',)
+
+
+@admin.register(InquiryCallStatusHistory)
+class InquiryCallStatusHistoryAdmin(admin.ModelAdmin):
+    list_display = ('inquiry', 'call_status', 'updated_by', 'created_at')
+    list_filter = ('call_status', 'created_at')
+    search_fields = ('inquiry__full_name', 'inquiry__mobile_number', 'remarks', 'updated_by__username')
+    ordering = ('-created_at',)
 
 @admin.register(FollowUp)
 class FollowUpAdmin(admin.ModelAdmin):
