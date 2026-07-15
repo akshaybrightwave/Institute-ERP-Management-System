@@ -47,6 +47,19 @@ def center_list(request):
 
 @admin_required
 def pending_centers(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        center_id = request.POST.get('center_id')
+        if action == 'approve' and center_id:
+            center = get_object_or_404(Center, id=center_id)
+            if hasattr(center, 'center_user') and center.center_user:
+                center.center_user.is_active = True
+                center.center_user.save()
+                messages.success(request, f"{center.name} has been approved.")
+            else:
+                messages.error(request, "Error: User account for this center not found.")
+            return redirect('pending_centers')
+
     query = request.GET.get('q', '').strip()
     name_filter = request.GET.get('name', '').strip()
     state_filter = request.GET.get('state', '').strip()
@@ -78,7 +91,7 @@ def center_info_list(request):
     query = request.GET.get('q', '').strip()
     
     # Base queryset for all active centers (not soft-deleted)
-    qs = Center.objects.prefetch_related('course_assignments').order_by('-id')
+    qs = Center.objects.filter(center_user__is_active=True).prefetch_related('course_assignments').order_by('-id')
     
     if query:
         qs = qs.filter(name__icontains=query)
@@ -159,13 +172,15 @@ def center_create(request):
                 password = form.cleaned_data.get('password')
                 
                 # Use email as username if not provided
-                User.objects.create_user(
+                user = User.objects.create_user(
                     username=email,
                     email=email,
                     password=password,
                     role='center',
                     center=center
                 )
+                user.is_active = False
+                user.save()
             
             messages.success(request, 'Center created successfully.')
             return redirect('center_list')
@@ -413,7 +428,7 @@ def center_dashboard(request):
 
     dashboard_cards = [
         {'label': 'Active Students', 'value': active_students, 'icon': 'bi-mortarboard-fill', 'class': 'bg-g-purple', 'url': reverse('student_list_by_center'), 'action': 'View List'},
-        {'label': 'Passout Students', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-teal', 'url': reverse('passout_student_list'), 'action': 'View List'},
+        {'label': 'Passout Students', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-cyan', 'url': reverse('passout_student_list'), 'action': 'View List'},
         {'label': 'Course Categories', 'value': total_course_categories, 'icon': 'bi-tags-fill', 'class': 'bg-g-green', 'url': reverse('course_list'), 'action': 'View Courses'},
         {'label': 'Assigned Courses', 'value': total_assigned_courses, 'icon': 'bi-journal-bookmark-fill', 'class': 'bg-g-pink', 'url': reverse('course_list'), 'action': 'View Courses'},
         {'label': 'Admissions', 'value': total_admissions, 'icon': 'bi-person-plus-fill', 'class': 'bg-g-blue', 'url': reverse('student_list_by_center'), 'action': 'View List'},
@@ -597,6 +612,14 @@ def center_profile(request, pk):
 
 @admin_required
 def deleted_centers(request):
+    if request.method == 'POST' and request.POST.get('action') == 'hard_delete':
+        center_id = request.POST.get('center_id')
+        if center_id:
+            center = get_object_or_404(Center.all_objects, pk=center_id)
+            center.hard_delete()
+            messages.success(request, f"Center '{center.name}' has been permanently deleted.")
+            return redirect('deleted_centers')
+
     query = request.GET.get('q', '').strip()
     
     # Base queryset for all soft-deleted centers

@@ -421,6 +421,10 @@
     background: linear-gradient(145deg, #071348 0%, #11277f 100%);
   }
 
+  .erp-shell .bg-g-cyan {
+    background: linear-gradient(145deg, #087f8c 0%, #0db9ce 100%);
+  }
+
   /* ── Section divider ── */
   .erp-shell .section-label {
     font-size: 0.75rem;
@@ -1362,7 +1366,7 @@
 
     <!-- Card 2: Passout Student(s) -->
     <div class="col">
-      <div class="erp-card bg-g-teal">
+      <div class="erp-card bg-g-cyan">
         <div class="erp-card-body">
           <div class="erp-card-title">Passout Student(s)</div>
           <div class="erp-card-number">{{ total_certificates }}</div>
@@ -1531,14 +1535,14 @@
 
     <!-- Card 13: Total Pending Center(s) -->
     <div class="col">
-      <div class="erp-card bg-g-dred">
+      <div class="erp-card bg-g-teal">
         <div class="erp-card-body">
           <div class="erp-card-title">Total Pending Center(s)</div>
           <div class="erp-card-number">{{ total_pending_centers }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-clipboard-minus"></i></div>
         </div>
         <a href="{% url 'pending_centers' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View
+          <i class="bi bi-list-ul"></i> View List
         </a>
       </div>
     </div>
