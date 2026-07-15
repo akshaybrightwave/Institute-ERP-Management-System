@@ -10,7 +10,7 @@ from apps.centers.models import CenterCourseAssignment
 
 def _center_manages_course(user_center, course):
     """Return True if the user's center has this course assigned via CenterCourseAssignment."""
-    return CenterCourseAssignment.objects.filter(center=user_center, course=course).exists()
+    return CenterCourseAssignment.objects.filter(center=user_center, course=course, is_active=True).exists()
 
 
 @login_required
@@ -46,7 +46,8 @@ def course_list(request):
         else:
             # Courses assigned to this center via CenterCourseAssignment
             assigned_course_ids = CenterCourseAssignment.objects.filter(
-                center=request.user.center
+                center=request.user.center,
+                is_active=True
             ).values_list('course_id', flat=True)
             qs = Course.objects.filter(id__in=assigned_course_ids).select_related('category')
             deleted_qs = Course.all_objects.filter(

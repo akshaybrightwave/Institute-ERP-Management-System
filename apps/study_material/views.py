@@ -59,7 +59,22 @@ def study_material_list(request):
         form = StudyMaterialForm(request.POST, request.FILES, user=request.user)
         course_id = request.POST.get('course')
         if course_id:
-            form.fields['course'].queryset = Course.objects.filter(id=course_id)
+            if is_center:
+                form.fields['course'].queryset = Course.objects.filter(
+                    id=course_id,
+                    assignments__center=request.user.center,
+                    assignments__is_active=True
+                )
+            else:
+                admin_center_id = request.POST.get('center')
+                if admin_center_id:
+                    form.fields['course'].queryset = Course.objects.filter(
+                        id=course_id,
+                        assignments__center_id=admin_center_id,
+                        assignments__is_active=True
+                    )
+                else:
+                    form.fields['course'].queryset = Course.objects.filter(id=course_id)
 
         if form.is_valid():
             try:
@@ -147,7 +162,22 @@ def study_material_edit(request, pk):
         form = StudyMaterialForm(request.POST, request.FILES, instance=material, user=request.user)
         course_id = request.POST.get('course')
         if course_id:
-            form.fields['course'].queryset = Course.objects.filter(id=course_id)
+            if is_center:
+                form.fields['course'].queryset = Course.objects.filter(
+                    id=course_id,
+                    assignments__center=request.user.center,
+                    assignments__is_active=True
+                )
+            else:
+                admin_center_id = request.POST.get('center')
+                if admin_center_id:
+                    form.fields['course'].queryset = Course.objects.filter(
+                        id=course_id,
+                        assignments__center_id=admin_center_id,
+                        assignments__is_active=True
+                    )
+                else:
+                    form.fields['course'].queryset = Course.objects.filter(id=course_id)
 
         if form.is_valid():
             form.save()

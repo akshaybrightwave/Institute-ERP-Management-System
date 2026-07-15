@@ -148,9 +148,9 @@ def student_payment_setting(request):
                 messages.info(request, "Student payment settings are already synced.")
             return redirect('student_payment_setting')
 
-        settings_qs = StudentPaymentSetting.objects.only(
-            'id', 'title', 'amount', 'is_visible', 'sort_order'
-        ).order_by('sort_order', 'title')
+        settings_qs = StudentPaymentSetting.objects.filter(
+            title__in=['Admission Fees', 'Re-Admission Fees', 'Exam Fees', 'Re-Exam Fees']
+        ).only('id', 'title', 'amount', 'is_visible', 'sort_order').order_by('sort_order', 'title')
         forms = []
         is_valid = True
         for setting in settings_qs:
@@ -179,9 +179,9 @@ def student_payment_setting(request):
     else:
         rows = [
             (setting, StudentPaymentSettingForm(instance=setting))
-            for setting in StudentPaymentSetting.objects.only(
-                'id', 'title', 'amount', 'is_visible', 'sort_order'
-            ).order_by('sort_order', 'title')
+            for setting in StudentPaymentSetting.objects.filter(
+                title__in=['Admission Fees', 'Re-Admission Fees', 'Exam Fees', 'Re-Exam Fees']
+            ).only('id', 'title', 'amount', 'is_visible', 'sort_order').order_by('sort_order', 'title')
         ]
 
     return render(request, 'fees/student_payment_setting.html', {
@@ -202,9 +202,9 @@ def center_payment_setting(request):
                 messages.info(request, "Center payment settings are already synced.")
             return redirect('center_payment_setting')
 
-        settings_qs = CenterPaymentSetting.objects.only(
-            'id', 'title', 'amount', 'is_visible', 'sort_order'
-        ).order_by('sort_order', 'title')
+        settings_qs = CenterPaymentSetting.objects.filter(
+            title__in=['Admission Fees', 'Re-Admission Fees', 'Exam Fees', 'Re-Exam Fees']
+        ).only('id', 'title', 'amount', 'is_visible', 'sort_order').order_by('sort_order', 'title')
         forms = []
         is_valid = True
         for setting in settings_qs:
@@ -231,9 +231,9 @@ def center_payment_setting(request):
     else:
         rows = [
             (setting, CenterPaymentSettingForm(instance=setting))
-            for setting in CenterPaymentSetting.objects.only(
-                'id', 'title', 'amount', 'is_visible', 'sort_order'
-            ).order_by('sort_order', 'title')
+            for setting in CenterPaymentSetting.objects.filter(
+                title__in=['Admission Fees', 'Re-Admission Fees', 'Exam Fees', 'Re-Exam Fees']
+            ).only('id', 'title', 'amount', 'is_visible', 'sort_order').order_by('sort_order', 'title')
         ]
 
     return render(request, 'fees/center_payment_setting.html', {

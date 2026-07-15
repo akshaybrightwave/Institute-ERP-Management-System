@@ -889,7 +889,8 @@
 
   {% if request.user.role == 'student' %}
   <!-- Student Dashboard -->
-  <a href="{% url 'student_dashboard' %}" class="sidebar-dash-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
+  <a href="{% url 'student_dashboard' %}"
+    class="sidebar-dash-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
     <i class="bi bi-grid-1x2-fill"></i>
     <span>Dashboard</span>
   </a>
@@ -897,62 +898,72 @@
   <div class="sidebar-section">Student Portal</div>
 
   <!-- Profile -->
-  <a href="{% url 'student_profile' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}">
+  <a href="{% url 'student_profile' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}">
     <i class="bi bi-person-fill si-icon"></i>
     <span class="si-label">Profile</span>
   </a>
 
   <!-- ID Card -->
-  <a href="{% url 'student_id_card' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}">
+  <a href="{% url 'student_id_card' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}">
     <i class="bi bi-person-badge si-icon"></i>
     <span class="si-label">ID Card</span>
   </a>
 
   <!-- Attendance -->
-  <a href="{% url 'student_my_attendance' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_my_attendance' %}active{% endif %}">
+  <a href="{% url 'student_my_attendance' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_my_attendance' %}active{% endif %}">
     <i class="bi bi-calendar-check si-icon"></i>
     <span class="si-label">Attendance</span>
   </a>
 
   <!-- Admit Card -->
-  <a href="{% url 'admit_card_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' %}active{% endif %}">
+  <a href="{% url 'admit_card_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' %}active{% endif %}">
     <i class="bi bi-file-earmark-spreadsheet si-icon"></i>
     <span class="si-label">Admit Card</span>
   </a>
 
   <!-- Marksheet -->
-  <a href="{% url 'result_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'result_list' %}active{% endif %}">
+  <a href="{% url 'result_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'result_list' %}active{% endif %}">
     <i class="bi bi-file-earmark-bar-graph si-icon"></i>
     <span class="si-label">Marksheet</span>
   </a>
 
   <!-- Certificate -->
-  <a href="{% url 'certificate_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'certificate_list' %}active{% endif %}">
+  <a href="{% url 'certificate_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'certificate_list' %}active{% endif %}">
     <i class="bi bi-award si-icon"></i>
     <span class="si-label">Certificate</span>
   </a>
 
   <!-- Fee Record -->
-  <a href="{% url 'fees_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'fees_list' %}active{% endif %}">
+  <a href="{% url 'fees_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'fees_list' %}active{% endif %}">
     <i class="bi bi-credit-card si-icon"></i>
     <span class="si-label">Fee Record</span>
   </a>
 
   <!-- Study Material -->
-  <a href="{% url 'study_material_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' %}active{% endif %}">
+  <a href="{% url 'study_material_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' %}active{% endif %}">
     <i class="bi bi-book si-icon"></i>
     <span class="si-label">Study Material</span>
   </a>
 
   <!-- Exam Area -->
-  <a href="{% url 'student_exam_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_exam_list' %}active{% endif %}">
+  <a href="{% url 'student_exam_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_exam_list' %}active{% endif %}">
     <i class="bi bi-journal-text si-icon"></i>
     <span class="si-label">Exam Area</span>
   </a>
   {% else %}
 
   <!-- Dashboard -->
-  <a href="{% if request.user.role == 'center' %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="sidebar-dash-item">
+  <a href="{% if request.user.role == 'center' %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}"
+    class="sidebar-dash-item">
     <i class="bi bi-grid-1x2-fill"></i>
     <span>Dashboard</span>
   </a>
@@ -1186,13 +1197,11 @@
     class="collapse sidebar-sub {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam,question_list,add_question,edit_question,import_questions' %}show{% endif %}"
     id="sbOnlineExam">
     {% if request.user.role == 'center' %}
-    <a href="{% url 'add_exam' %}"
-      class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
+    <a href="{% url 'add_exam' %}" class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
       <i class="bi bi-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Request
     </a>
     {% else %}
-    <a href="{% url 'add_exam' %}"
-      class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
+    <a href="{% url 'add_exam' %}" class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
       <i class="bi bi-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Create
     </a>
     {% endif %}
@@ -1215,8 +1224,7 @@
   <div
     class="collapse sidebar-sub {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}show{% endif %}"
     id="sbAssignExam">
-    <a href="#"
-      class="{% if request.resolver_match.url_name == 'assign_exam_center' %}active{% endif %}">
+    <a href="#" class="{% if request.resolver_match.url_name == 'assign_exam_center' %}active{% endif %}">
       <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Center
     </a>
     <a href="{% url 'assign_exam_student' %}"
@@ -1233,14 +1241,7 @@
     <span class="si-label">Student Exam(S)</span>
   </a>
 
-  {% if request.user.role != 'center' %}
-  <!-- Exam Centre — independent master module -->
-  <a href="{% url 'exam_centre_list' %}"
-    class="sidebar-item {% if request.resolver_match.url_name == 'exam_centre_list' %}active{% endif %}">
-    <i class="bi bi-geo-alt-fill si-icon"></i>
-    <span class="si-label">Exam Centre</span>
-  </a>
-  {% endif %}
+
 
   <!-- ── CENTER AREA ── -->
   {% if request.user.role != 'center' %}
@@ -1263,19 +1264,23 @@
     </a>
     <a href="{% url 'assign_courses' %}"
       class="{% if request.resolver_match.url_name == 'assign_courses' %}active{% endif %}">
-      <i class="bi bi-journal-plus text-info me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Assign Courses
+      <i class="bi bi-journal-plus text-info me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Assign
+      Courses
     </a>
     <a href="{% url 'pending_centers' %}"
       class="{% if request.resolver_match.url_name == 'pending_centers' %}active{% endif %}">
-      <i class="bi bi-clipboard-minus text-warning me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Pending Centers
+      <i class="bi bi-clipboard-minus text-warning me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Pending
+      Centers
     </a>
     <a href="{% url 'center_info_list' %}"
       class="{% if request.resolver_match.url_name == 'center_info_list' %}active{% endif %}">
-      <i class="bi bi-clipboard-check text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Center
+      <i class="bi bi-clipboard-check text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List
+      Center
     </a>
     <a href="{% url 'deleted_centers' %}"
       class="{% if request.resolver_match.url_name == 'deleted_centers' %}active{% endif %}">
-      <i class="bi bi-clipboard-x text-danger me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Deleted Center List
+      <i class="bi bi-clipboard-x text-danger me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Deleted
+      Center List
     </a>
   </div>
 
@@ -1349,7 +1354,7 @@
           <div class="erp-card-number">{{ active_students }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-mortarboard-fill"></i></div>
         </div>
-        <a href="{% url 'user_list' %}?role=student" class="erp-card-footer">
+        <a href="{% url 'student_approved_list' %}" class="erp-card-footer">
           <i class="bi bi-list-ul"></i> View List
         </a>
       </div>
@@ -1582,214 +1587,120 @@
 
   </div>
 
-  <!-- ══ ANALYTICS ══ -->
-  <div class="section-label">Institutional Analytics</div>
-  <div class="row g-3 mb-4 row-cols-2 row-cols-sm-3 row-cols-xl-7">
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Attendance Rate</div>
-          <div class="rate-value">{{ attendance_rate }}%</div>
+  <!-- ══ ADMISSION TREND CHART ══ -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="erp-card bg-g-card p-4" style="background: var(--erp-bg-card); border-radius: 14px; border: 1px solid var(--erp-border-color);">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="mb-0 fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Student Admission Trend</h5>
+          <select id="trendYearSelect" class="form-select form-select-sm w-auto" style="background-color: var(--erp-bg-input); color: var(--erp-text-primary); border-color: var(--erp-border-input);">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+          </select>
         </div>
-        <div class="rate-icon text-warning"><i class="bi bi-percent"></i></div>
+        <div style="height: 320px; width: 100%;">
+          <canvas id="admissionTrendChart"></canvas>
+        </div>
       </div>
     </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Fee Collection Rate</div>
-          <div class="rate-value">{{ fee_collection_rate }}%</div>
-        </div>
-        <div class="rate-icon text-success"><i class="bi bi-cash-stack"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Exam Pass Rate</div>
-          <div class="rate-value">{{ exam_pass_rate }}%</div>
-        </div>
-        <div class="rate-icon text-danger"><i class="bi bi-graph-up-arrow"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Pending Fee Students</div>
-          <div class="rate-value">{{ students_with_pending_fees }}</div>
-        </div>
-        <div class="rate-icon text-warning"><i class="bi bi-people-fill"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Revoked Certificates</div>
-          <div class="rate-value">{{ revoked_certificates_count }}</div>
-        </div>
-        <div class="rate-icon text-danger"><i class="bi bi-x-octagon-fill"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Eligible Students</div>
-          <div class="rate-value">{{ eligible_students_count }}</div>
-        </div>
-        <div class="rate-icon text-info"><i class="bi bi-person-check"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Certs Issued</div>
-          <div class="rate-value">{{ certificate_issuance_count }}</div>
-        </div>
-        <div class="rate-icon text-primary"><i class="bi bi-award-fill"></i></div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ══ QUICK ACTIONS ══ -->
-  <div class="section-label">Quick Actions</div>
-  <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('admissionTrendChart');
+      if (!ctx) return;
+      
+      let trendChart = null;
+      const yearSelect = document.getElementById('trendYearSelect');
+      
+      const currentYear = new Date().getFullYear();
+      if(Array.from(yearSelect.options).some(opt => opt.value == currentYear)) {
+          yearSelect.value = currentYear;
+      } else {
+          const opt = document.createElement('option');
+          opt.value = currentYear;
+          opt.text = currentYear;
+          yearSelect.add(opt, yearSelect.options[0]);
+          yearSelect.value = currentYear;
+      }
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-people-fill"></i></div>
-        <h6>Manage Users</h6>
-        <p>Add, edit and remove students and teachers from your institute.</p>
-        <a href="{% url 'user_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Users
-        </a>
-      </div>
-    </div>
+      function fetchTrendData(year) {
+          fetch(`?action=admission_trend&year=${year}`, {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          })
+          .then(response => response.json())
+          .then(data => {
+              renderChart(data.data);
+          })
+          .catch(err => console.error("Error fetching trend data:", err));
+      }
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-journal-text"></i></div>
-        <h6>Manage Exams</h6>
-        <p>Create, edit and delete exams across the platform.</p>
-        <a href="{% url 'exam_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Exams
-        </a>
-      </div>
-    </div>
+      function renderChart(dataArr) {
+          if (trendChart) {
+              trendChart.destroy();
+          }
+          trendChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                  datasets: [{
+                      label: 'Admissions',
+                      data: dataArr,
+                      borderColor: '#3b82f6',
+                      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                      borderWidth: 2,
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: '#3b82f6',
+                      pointRadius: 4,
+                      pointHoverRadius: 6
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                          mode: 'index',
+                          intersect: false,
+                          backgroundColor: '#1e293b',
+                          titleColor: '#f8fafc',
+                          bodyColor: '#cbd5e1',
+                          borderColor: '#334155',
+                          borderWidth: 1
+                      }
+                  },
+                  scales: {
+                      x: {
+                          grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                          ticks: { color: '#94a3b8' }
+                      },
+                      y: {
+                          beginAtZero: true,
+                          grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                          ticks: { color: '#94a3b8', stepSize: 1 }
+                      }
+                  },
+                  interaction: {
+                      mode: 'nearest',
+                      axis: 'x',
+                      intersect: false
+                  }
+              }
+          });
+      }
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-person-plus-fill"></i></div>
-        <h6>Add New User</h6>
-        <p>Quickly onboard a new student or teacher account.</p>
-        <a href="{% url 'user_list' %}" class="btn-qa btn-qa-outline">
-          <i class="bi bi-plus-circle"></i> Add User
-        </a>
-      </div>
-    </div>
+      yearSelect.addEventListener('change', function() {
+          fetchTrendData(this.value);
+      });
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-envelope-paper-fill"></i></div>
-        <h6>Feedback Inbox</h6>
-        <p>Read and respond to messages submitted via the contact form.</p>
-        <a href="{% url 'feedback_list' %}" class="btn-qa btn-qa-outline">
-          <i class="bi bi-envelope-open"></i> View Feedback
-        </a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══ ERP MANAGEMENT ══ -->
-  <div class="section-label">ERP Management</div>
-  <div class="row g-3 mb-5 row-cols-1 row-cols-sm-2 row-cols-lg-4">
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-building text-primary"></i></div>
-        <h6>Manage Centers</h6>
-        <p>Add, edit, and delete centers across the institute.</p>
-        <a href="{% url 'center_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Centers
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-journal-bookmark text-primary"></i></div>
-        <h6>Manage Courses</h6>
-        <p>Configure training courses, durations, and pricing.</p>
-        <a href="{% url 'course_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Courses
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-calendar-event text-primary"></i></div>
-        <h6>Manage Batches</h6>
-        <p>Organize schedules, assign teachers, and manage active student groups.</p>
-        <a href="{% url 'batch_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Batches
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-clock-history text-primary"></i></div>
-        <h6>Manage Attendance</h6>
-        <p>Filter, search, and view attendance logs across all batches.</p>
-        <a href="{% url 'attendance_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Attendance
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-wallet2 text-primary"></i></div>
-        <h6>Manage Fees</h6>
-        <p>Track course payments, collection logs, and student balances.</p>
-        <a href="{% url 'fees_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Fees
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-award text-primary"></i></div>
-        <h6>Manage Certificates</h6>
-        <p>Verify eligibility, issue course certificates, and view/revoke logs.</p>
-        <a href="{% url 'certificate_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Certificates
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-bar-chart-line text-primary"></i></div>
-        <h6>Reports &amp; Analytics</h6>
-        <p>Access summary charts, audits, logs, academic and fee analytics reports.</p>
-        <a href="{% url 'reports_dashboard' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Reports
-        </a>
-      </div>
-    </div>
-
-  </div>
+      fetchTrendData(yearSelect.value);
+  });
+  </script>
 
   {% endblock %}
 </div><!-- /erp-content -->

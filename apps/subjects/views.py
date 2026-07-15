@@ -11,7 +11,7 @@ from apps.centers.models import CenterCourseAssignment
 
 def _center_manages_course(user_center, course):
     """Return True if the user's center has this course assigned via CenterCourseAssignment."""
-    return CenterCourseAssignment.objects.filter(center=user_center, course=course).exists()
+    return CenterCourseAssignment.objects.filter(center=user_center, course=course, is_active=True).exists()
 
 
 @login_required
@@ -184,7 +184,7 @@ def arrange_subjects(request):
         if not request.user.center:
             courses = Course.objects.none()
         else:
-            courses = Course.objects.filter(center=request.user.center)
+            courses = Course.objects.filter(assignments__center=request.user.center, assignments__is_active=True).distinct()
     else:
         courses = Course.objects.all()
 
@@ -195,7 +195,7 @@ def arrange_subjects(request):
     if selected_course_id:
         # Validate course exists and user has permission
         if request.user.role == 'center':
-            selected_course = get_object_or_404(Course, id=selected_course_id, center=request.user.center)
+            selected_course = get_object_or_404(Course, id=selected_course_id, assignments__center=request.user.center, assignments__is_active=True)
         else:
             selected_course = get_object_or_404(Course, id=selected_course_id)
 

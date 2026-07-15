@@ -62,7 +62,7 @@ def reports_dashboard(request):
             total_students = StudentProfile.objects.filter(batch__center=center).count()
             total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__center=center).distinct().count()
             total_batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
-            total_courses = Course.objects.filter(center=center).count()
+            total_courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct().count()
             total_centers = 1
             total_exams = Exam.objects.filter(batches__course__assignments__center=center, course__assignments__is_active=True).distinct().count()
             total_certificates = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
@@ -108,7 +108,7 @@ def student_report(request):
             batches = Batch.objects.none()
         else:
             students = StudentProfile.objects.filter(batch__center=center)
-            courses = Course.objects.filter(center=center)
+            courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct()
             batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
@@ -508,7 +508,7 @@ def fee_report(request):
         else:
             students = StudentProfile.objects.filter(batch__center=center)
             batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
-            courses = Course.objects.filter(center=center)
+            courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct()
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
@@ -754,7 +754,7 @@ def certificate_report(request):
         else:
             certs = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
             batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
-            courses = Course.objects.filter(center=center)
+            courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct()
             student_qs = StudentProfile.objects.filter(batch__center=center)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)

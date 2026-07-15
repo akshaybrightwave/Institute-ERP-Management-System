@@ -205,110 +205,119 @@
   {% endfor %}
 </div>
 
-<div class="row g-3 mb-4">
-  <div class="col-lg-4">
-    <div class="center-section-card h-100">
-      <h5 class="fw-bold mb-3"><i class="bi bi-check2-all text-primary me-2"></i>Attendance</h5>
-      <div class="d-flex justify-content-between mb-2">
-        <span class="text-muted">Present Records</span>
-        <strong>{{ attendance_present }}</strong>
+<!-- ══ ADMISSION TREND CHART ══ -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="erp-card bg-g-card p-4" style="background: var(--erp-bg-card); border-radius: 14px; border: 1px solid var(--erp-border-color);">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Student Admission Trend</h5>
+        <select id="trendYearSelect" class="form-select form-select-sm w-auto" style="background-color: var(--erp-bg-input); color: var(--erp-text-primary); border-color: var(--erp-border-input);">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
       </div>
-      <div class="d-flex justify-content-between mb-2">
-        <span class="text-muted">Absent Records</span>
-        <strong>{{ attendance_absent }}</strong>
-      </div>
-      <div class="d-flex justify-content-between">
-        <span class="text-muted">Attendance Rate</span>
-        <strong>{{ attendance_pct }}%</strong>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="center-section-card h-100">
-      <h5 class="fw-bold mb-3"><i class="bi bi-journal-text text-primary me-2"></i>Exam Activity</h5>
-      <div class="d-flex justify-content-between mb-2">
-        <span class="text-muted">Assigned Exams</span>
-        <strong>{{ total_exams }}</strong>
-      </div>
-      <div class="d-flex justify-content-between">
-        <span class="text-muted">Student Attempts</span>
-        <strong>{{ total_attempts }}</strong>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="center-section-card h-100">
-      <h5 class="fw-bold mb-3"><i class="bi bi-briefcase text-primary me-2"></i>Center Summary</h5>
-      <div class="d-flex justify-content-between mb-2">
-        <span class="text-muted">Assigned Courses</span>
-        <strong>{{ total_assigned_courses }}</strong>
-      </div>
-      <div class="d-flex justify-content-between">
-        <span class="text-muted">Student Certificates</span>
-        <strong>{{ total_certificates }}</strong>
+      <div style="height: 320px; width: 100%;">
+        <canvas id="admissionTrendChart"></canvas>
       </div>
     </div>
   </div>
 </div>
 
-<div class="row g-3">
-  <div class="col-lg-6">
-    <div class="center-section-card h-100">
-      <h5 class="fw-bold mb-3"><i class="bi bi-people text-primary me-2"></i>Recent Students</h5>
-      <div class="table-responsive">
-        <table class="table align-middle mb-0">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Batch</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for student in recent_students %}
-            <tr>
-              <td>{{ student.full_name }}</td>
-              <td>{{ student.batch.name|default:"-" }}</td>
-              <td>{{ student.user.date_joined|date:"d M Y" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="3" class="text-center text-muted py-3">No students found.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-6">
-    <div class="center-section-card h-100">
-      <h5 class="fw-bold mb-3"><i class="bi bi-calendar-event text-primary me-2"></i>Recent Batches</h5>
-      <div class="table-responsive">
-        <table class="table align-middle mb-0">
-          <thead>
-            <tr>
-              <th>Batch</th>
-              <th>Course</th>
-              <th>Teacher</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for batch in recent_batches %}
-            <tr>
-              <td>{{ batch.name }}</td>
-              <td>{{ batch.course.name|default:"-" }}</td>
-              <td>{{ batch.teacher.full_name|default:"-" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="3" class="text-center text-muted py-3">No batches found.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('admissionTrendChart');
+    if (!ctx) return;
+    
+    let trendChart = null;
+    const yearSelect = document.getElementById('trendYearSelect');
+    
+    const currentYear = new Date().getFullYear();
+    if(Array.from(yearSelect.options).some(opt => opt.value == currentYear)) {
+        yearSelect.value = currentYear;
+    } else {
+        const opt = document.createElement('option');
+        opt.value = currentYear;
+        opt.text = currentYear;
+        yearSelect.add(opt, yearSelect.options[0]);
+        yearSelect.value = currentYear;
+    }
+
+    function fetchTrendData(year) {
+        fetch(`?action=admission_trend&year=${year}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            renderChart(data.data);
+        })
+        .catch(err => console.error("Error fetching trend data:", err));
+    }
+
+    function renderChart(dataArr) {
+        if (trendChart) {
+            trendChart.destroy();
+        }
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Admissions',
+                    data: dataArr,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#3b82f6',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1e293b',
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1',
+                        borderColor: '#334155',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                        ticks: { color: '#94a3b8', stepSize: 1 }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+
+    yearSelect.addEventListener('change', function() {
+        fetchTrendData(this.value);
+    });
+
+    fetchTrendData(yearSelect.value);
+});
+</script>
+
 {% endblock %}

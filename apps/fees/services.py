@@ -6,11 +6,10 @@ from .models import CenterPaymentSetting, StudentPaymentSetting
 
 
 CENTER_PAYMENT_TYPES = [
-    'Center Registration Fee',
-    'Center Renewal Fee',
-    'Center Security Deposit',
-    'Certificate Fee',
-    'License Renewal Fee',
+    'Admission Fees',
+    'Re-Admission Fees',
+    'Exam Fees',
+    'Re-Exam Fees',
 ]
 
 STUDENT_PAYMENT_TYPES = [

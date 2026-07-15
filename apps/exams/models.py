@@ -99,11 +99,37 @@ class StudentAnswer(models.Model):
         return f"Answer to {self.question.id} by {self.attempt.student.username}"
 
 
+# ---------------------------------------------------------------------------
+# Exam Centre — Independent master module (NOT related to Center Information)
+# ---------------------------------------------------------------------------
+
+class ExamCentre(SoftDeleteModel):
+    """
+    A dedicated Exam Centre is a physical examination location.
+    This model is completely independent from the Center Information module
+    (apps.centers.Center). Do NOT merge or link these two models.
+    """
+    centre_name = models.CharField(max_length=255, verbose_name="Centre Name")
+    centre_code = models.CharField(max_length=50, unique=True, verbose_name="Centre Code")
+    address = models.TextField(verbose_name="Address")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-id']
+        verbose_name = "Exam Centre"
+        verbose_name_plural = "Exam Centres"
+
+    def __str__(self):
+        return f"{self.centre_name} ({self.centre_code})"
+
+
 class ExamSchedule(SoftDeleteModel):
     center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_center')
     course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='exam_schedules')
     duration = models.CharField(max_length=100)
-    exam_center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_exam_center')
+    exam_center = models.ForeignKey(ExamCentre, on_delete=models.CASCADE, related_name='exam_schedules_exam_center')
     session = models.ForeignKey('academics.AcademicSession', on_delete=models.CASCADE, related_name='exam_schedules')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -132,29 +158,3 @@ class ExamStudentAssignment(SoftDeleteModel):
 
     def __str__(self):
         return f"{self.exam.title} - {self.student.student_name}"
-
-
-# ---------------------------------------------------------------------------
-# Exam Centre — Independent master module (NOT related to Center Information)
-# ---------------------------------------------------------------------------
-
-class ExamCentre(SoftDeleteModel):
-    """
-    A dedicated Exam Centre is a physical examination location.
-    This model is completely independent from the Center Information module
-    (apps.centers.Center). Do NOT merge or link these two models.
-    """
-    centre_name = models.CharField(max_length=255, verbose_name="Centre Name")
-    centre_code = models.CharField(max_length=50, unique=True, verbose_name="Centre Code")
-    address = models.TextField(verbose_name="Address")
-    is_active = models.BooleanField(default=True, verbose_name="Active")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-id']
-        verbose_name = "Exam Centre"
-        verbose_name_plural = "Exam Centres"
-
-    def __str__(self):
-        return f"{self.centre_name} ({self.centre_code})"

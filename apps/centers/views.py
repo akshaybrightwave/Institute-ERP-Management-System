@@ -269,6 +269,34 @@ def center_delete(request, pk):
 def center_dashboard(request):
     if request.user.role != 'center':
         return redirect('login')
+        
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.GET.get('action') == 'admission_trend':
+        from django.http import JsonResponse
+        from django.db.models.functions import ExtractMonth, Cast
+        from django.db.models import Count, DateField
+        from apps.students.models import StudentAdmission
+        import datetime
+        
+        year_str = request.GET.get('year')
+        try:
+            year = int(year_str)
+        except (TypeError, ValueError):
+            year = datetime.date.today().year
+
+        qs = StudentAdmission.objects.filter(center=request.user.center, created_at__year=year)
+        trend = qs.annotate(
+            created_date=Cast('created_at', DateField())
+        ).annotate(
+            month=ExtractMonth('created_date')
+        ).values('month').annotate(count=Count('id')).order_by('month')
+        
+        data = [0] * 12
+        for item in trend:
+            if item['month']:
+                month_index = item['month'] - 1
+                data[month_index] = item['count']
+                
+        return JsonResponse({'data': data})
     
     from apps.batches.models import Batch
     from apps.students.models import StudentProfile
@@ -526,6 +554,7 @@ def center_profile(request, pk):
         .prefetch_related('admissions', 'course_assignments'),
         pk=pk
     )
+    is_admin = getattr(request.user, 'role', None) == 'admin'
     total_students = center.admissions.count()
     total_courses = center.course_assignments.count()
     registration_date = center.center_user.date_joined if hasattr(center, 'center_user') and center.center_user else None

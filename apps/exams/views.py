@@ -935,7 +935,7 @@ def exam_schedule_list(request):
         qs = qs.filter(
             Q(course__name__icontains=query) |
             Q(center__name__icontains=query) |
-            Q(exam_center__name__icontains=query) |
+            Q(exam_center__centre_name__icontains=query) |
             Q(session__session_name__icontains=query)
         )
 
