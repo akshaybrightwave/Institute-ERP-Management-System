@@ -5,6 +5,23 @@
 {% block extra_style %}
 {# All dark theme CSS (topbar, sidebar, cards, tables, erp-card, gradients) comes from the shared include #}
 {% include 'management/premium_theme_css.html' %}
+<style>
+  .telecaller-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .telecaller-stats-row > .col {
+    min-width: 0;
+  }
+
+  @media (min-width: 1200px) {
+    .telecaller-stats-row {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>
 {% endblock %}
 
 {% block management_content %}
@@ -68,7 +85,7 @@
           </a>
         </li>
         <li><hr class="dropdown-divider border-secondary"></li>
-        <li><small class="dropdown-header text-muted" style="font-size:0.65rem;">Exports: Busy · Ringing · Call Back numbers only</small></li>
+        <li><small class="dropdown-header text-muted" style="font-size:0.65rem;">Exports Busy / Call Back / Not Conn. numbers only</small></li>
       </ul>
     </div>
     <div class="dropdown">
@@ -93,7 +110,7 @@
     </div>
   </div>
 </div><!-- Stats Row -->
-<div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-6">
+<div class="telecaller-stats-row mb-4">
 
   <!-- 1. Assigned Enquiries -->
   <div class="col">
@@ -112,13 +129,13 @@
     </a>
   </div>
 
-  <!-- 2. Busy -->
+  <!-- 2. Busy / Call Back / Not Connected -->
   <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=BUSY" class="text-decoration-none d-block h-100">
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status_group=busy_callback_not_connected" class="text-decoration-none d-block h-100">
       <div class="erp-card bg-g-orange h-100" style="cursor:pointer;">
         <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Busy</div>
-          <div class="erp-card-number">{{ call_outcomes.busy }}</div>
+          <div class="erp-card-title text-truncate">Busy / Call Back / Not Conn.</div>
+          <div class="erp-card-number">{{ call_outcomes.busy_callback_not_connected }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
         </div>
         <div class="erp-card-footer">
@@ -128,61 +145,13 @@
     </a>
   </div>
 
-  <!-- 3. Ringing -->
+  <!-- 3. Switch Off / Wrong Number / Invalid Number -->
   <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=NO_ANSWER" class="text-decoration-none d-block h-100">
-      <div class="erp-card bg-g-cyan h-100" style="cursor:pointer;">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Ringing</div>
-          <div class="erp-card-number">{{ call_outcomes.ringing }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
-        </div>
-        <div class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View all
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- 4. Call Back -->
-  <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=CALL_BACK" class="text-decoration-none d-block h-100">
-      <div class="erp-card bg-g-magenta h-100" style="cursor:pointer;">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Call Back</div>
-          <div class="erp-card-number">{{ call_outcomes.call_back }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-arrow-return-left"></i></div>
-        </div>
-        <div class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View all
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- 5. Call Disconnected -->
-  <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=CALL_DISCONNECTED" class="text-decoration-none d-block h-100">
-      <div class="erp-card bg-g-brown h-100" style="cursor:pointer;">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Call Disconnected</div>
-          <div class="erp-card-number">{{ call_outcomes.call_disconnected }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
-        </div>
-        <div class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View all
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- 6. Wrong Number -->
-  <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=WRONG_NUMBER" class="text-decoration-none d-block h-100">
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status_group=switch_wrong_invalid" class="text-decoration-none d-block h-100">
       <div class="erp-card bg-g-burgundy h-100" style="cursor:pointer;">
         <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Wrong Number</div>
-          <div class="erp-card-number">{{ call_outcomes.wrong_number }}</div>
+          <div class="erp-card-title text-truncate">Sw. Off / Wrong No. / Invalid No.</div>
+          <div class="erp-card-number">{{ call_outcomes.switch_wrong_invalid }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-telephone-x-fill"></i></div>
         </div>
         <div class="erp-card-footer">
@@ -192,9 +161,41 @@
     </a>
   </div>
 
-  <!-- 7. Other -->
+  <!-- 4. Not Interested / Call Disconnected -->
   <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=OTHER" class="text-decoration-none d-block h-100">
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status_group=not_interested_disconnected" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-brown h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Not Int. / Call Disc.</div>
+          <div class="erp-card-number">{{ call_outcomes.not_interested_disconnected }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-telephone-minus-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- 5. Call Connected -->
+  <div class="col">
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status_group=call_connected" class="text-decoration-none d-block h-100">
+      <div class="erp-card bg-g-cyan h-100" style="cursor:pointer;">
+        <div class="erp-card-body">
+          <div class="erp-card-title text-truncate">Call Connected</div>
+          <div class="erp-card-number">{{ call_outcomes.call_connected }}</div>
+          <div class="erp-card-bg-icon"><i class="bi bi-telephone-outbound-fill"></i></div>
+        </div>
+        <div class="erp-card-footer">
+          <i class="bi bi-list-ul"></i> View all
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- 6. Other -->
+  <div class="col">
+    <a href="{% url 'inquiry_list' %}?queue=active&call_status_group=other" class="text-decoration-none d-block h-100">
       <div class="erp-card bg-g-slate h-100" style="cursor:pointer;">
         <div class="erp-card-body">
           <div class="erp-card-title text-truncate">Other</div>
@@ -208,71 +209,7 @@
     </a>
   </div>
 
-  <!-- 8. Interested -->
-  <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=INTERESTED" class="text-decoration-none d-block h-100">
-      <div class="erp-card bg-g-lime h-100" style="cursor:pointer;">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Interested</div>
-          <div class="erp-card-number">{{ call_outcomes.interested }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-heart-fill"></i></div>
-        </div>
-        <div class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View all
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- 9. Switched Off -->
-  <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=SWITCHED_OFF" class="text-decoration-none d-block h-100">
-      <div class="erp-card bg-g-pink h-100" style="cursor:pointer;">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Switched Off</div>
-          <div class="erp-card-number">{{ call_outcomes.switched_off }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-power"></i></div>
-        </div>
-        <div class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View all
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- 10. Pending Follow Up -->
-  <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=false" class="text-decoration-none d-block h-100">
-      <div class="erp-card bg-g-amber h-100" style="cursor:pointer;">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Pending Follow Up</div>
-          <div class="erp-card-number">{{ call_outcomes.pending_follow_up }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-calendar-check-fill"></i></div>
-        </div>
-        <div class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View pending
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- 11. Overdue Follow Up -->
-  <div class="col">
-    <a href="{% url 'inquiry_list' %}?queue=active&call_status=PENDING_FOLLOW_UP&overdue=true" class="text-decoration-none d-block h-100">
-      <div class="erp-card bg-g-red h-100" style="cursor:pointer;">
-        <div class="erp-card-body">
-          <div class="erp-card-title text-truncate">Overdue Follow Up</div>
-          <div class="erp-card-number">{{ call_outcomes.overdue_follow_up }}</div>
-          <div class="erp-card-bg-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
-        </div>
-        <div class="erp-card-footer">
-          <i class="bi bi-list-ul"></i> View overdue
-        </div>
-      </div>
-    </a>
-  </div>
-
-  <!-- 12. Convert to Lead -->
+  <!-- 7. Convert to Lead -->
   <div class="col">
     <a href="{% url 'lead_list' %}" class="text-decoration-none d-block h-100">
       <div class="erp-card bg-g-emerald border border-success h-100" style="cursor:pointer;">
@@ -506,11 +443,11 @@
     <div class="m-card mb-4">
       <h5 class="fw-bold text-white mb-3"><i class="bi bi-telephone-outbound-fill me-2 text-info"></i>Call Outcomes</h5>
       <div class="d-flex flex-wrap gap-2">
-        <span class="badge-premium bg-success"><i class="bi bi-check-circle me-1"></i>Accepted: {{ call_outcomes.accepted }}</span>
-        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Busy: {{ call_outcomes.busy }}</span>
-        <span class="badge-premium bg-info"><i class="bi bi-arrow-repeat me-1"></i>Call Back: {{ call_outcomes.call_back }}</span>
-        <span class="badge-premium bg-primary"><i class="bi bi-heart-fill me-1"></i>Interested: {{ call_outcomes.interested }}</span>
-        <span class="badge-premium bg-danger"><i class="bi bi-hand-thumbs-down me-1"></i>Not Interested: {{ call_outcomes.not_interested }}</span>
+        <span class="badge-premium bg-warning"><i class="bi bi-clock me-1"></i>Busy / CB / Not Conn.: {{ call_outcomes.busy_callback_not_connected }}</span>
+        <span class="badge-premium bg-danger"><i class="bi bi-telephone-x me-1"></i>Sw. Off / Wrong / Invalid: {{ call_outcomes.switch_wrong_invalid }}</span>
+        <span class="badge-premium bg-secondary"><i class="bi bi-telephone-minus me-1"></i>Not Int. / Disc.: {{ call_outcomes.not_interested_disconnected }}</span>
+        <span class="badge-premium bg-info"><i class="bi bi-telephone-outbound me-1"></i>Call Connected: {{ call_outcomes.call_connected }}</span>
+        <span class="badge-premium bg-dark"><i class="bi bi-three-dots me-1"></i>Other: {{ call_outcomes.other }}</span>
       </div>
     </div>
 

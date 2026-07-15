@@ -222,6 +222,7 @@ class CounselorLeadStatusForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['counselor_status'].choices = [
             ('', '-- Select the option --'),
+            ('NEW', 'New'),
             ('INTERESTED', 'Interested'),
             ('NOT_INTERESTED', 'Not Interested'),
             ('ADMISSION', 'Admission'),

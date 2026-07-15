@@ -28,7 +28,10 @@ class Inquiry(SoftDeleteModel):
         ('CALL_BACK', 'Call Back'),
         ('CALL_DISCONNECTED', 'Call Disconnected'),
         ('WRONG_NUMBER', 'Wrong Number'),
+        ('INVALID_NUMBER', 'Invalid Number'),
         ('INTERESTED', 'Interested'),
+        ('NOT_INTERESTED', 'Not Interested'),
+        ('CALL_CONNECTED', 'Call Connected'),
         ('SWITCHED_OFF', 'Switched Off'),
         ('PENDING_FOLLOW_UP', 'Pending Follow Up'),
         ('OTHER', 'Other'),
@@ -63,6 +66,34 @@ class Inquiry(SoftDeleteModel):
 
     def __str__(self):
         return f"{self.full_name} ({self.status})"
+
+
+class InquiryCallStatusHistory(models.Model):
+    inquiry = models.ForeignKey(
+        Inquiry,
+        on_delete=models.CASCADE,
+        related_name='call_status_history',
+    )
+    call_status = models.CharField(max_length=25, choices=Inquiry.CALL_STATUS_CHOICES, db_index=True)
+    remarks = models.TextField(blank=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inquiry_call_status_updates',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        indexes = [
+            models.Index(fields=['inquiry', '-created_at'], name='mg_inq_call_hist_idx'),
+            models.Index(fields=['call_status', '-created_at'], name='mg_inq_call_status_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.inquiry.full_name} - {self.get_call_status_display()}"
 
 
 class Lead(SoftDeleteModel):

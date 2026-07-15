@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from apps.management.models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet
+from apps.management.models import Inquiry, Lead, CallLog, FollowUp, CounselingSession, VisitSheet, InquiryCallStatusHistory
 import datetime
 
 User = get_user_model()
@@ -316,6 +316,23 @@ class TelecallerModuleTests(TestCase):
         self.inquiry1.refresh_from_db()
         self.assertEqual(self.inquiry1.call_status, 'BUSY')
 
+    def test_repeated_call_status_updates_create_history_with_remarks(self):
+        for remark in ('First ringing call', 'Second ringing call'):
+            response = self.client_tele1.post(
+                reverse('update_call_status', kwargs={'pk': self.inquiry1.pk}),
+                data=f'{{"call_status":"NO_ANSWER","remarks":"{remark}"}}',
+                content_type='application/json'
+            )
+            self.assertEqual(response.status_code, 200)
+
+        self.inquiry1.refresh_from_db()
+        history = InquiryCallStatusHistory.objects.filter(inquiry=self.inquiry1).order_by('created_at', 'id')
+
+        self.assertEqual(self.inquiry1.call_status, 'NO_ANSWER')
+        self.assertEqual(history.count(), 2)
+        self.assertEqual([item.call_status for item in history], ['NO_ANSWER', 'NO_ANSWER'])
+        self.assertEqual([item.remarks for item in history], ['First ringing call', 'Second ringing call'])
+
     def test_telecaller_dashboard_cards_match_scoped_lists(self):
         Lead.objects.create(
             inquiry=self.inquiry1,
@@ -358,6 +375,113 @@ class TelecallerModuleTests(TestCase):
         self.assertEqual(converted_list.status_code, 200)
         converted_ids = {inquiry.lead.pk for inquiry in converted_list.context['page_obj'].object_list}
         self.assertIn(converted_lead.pk, converted_ids)
+
+    def test_telecaller_grouped_call_status_cards_and_filter(self):
+        Lead.objects.create(
+            inquiry=self.inquiry1,
+            assigned_telecaller=self.tele1,
+            assigned_by=self.admin,
+            status='New'
+        )
+        self.inquiry1.call_status = 'BUSY'
+        self.inquiry1.save(update_fields=['call_status'])
+
+        ringing_contact = Inquiry.objects.create(
+            full_name='Ringing Tele Contact',
+            mobile_number='9991110001',
+            email='ringing.tele@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='NO_ANSWER',
+            created_by=self.admin
+        )
+        other_contact = Inquiry.objects.create(
+            full_name='Other Tele Contact',
+            mobile_number='9991110002',
+            email='other.tele@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='OTHER',
+            created_by=self.admin
+        )
+        for inquiry in (ringing_contact, other_contact):
+            Lead.objects.create(
+                inquiry=inquiry,
+                assigned_telecaller=self.tele1,
+                assigned_by=self.admin,
+                status='New'
+            )
+
+        dashboard = self.client_tele1.get(reverse('management_dashboard'))
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertEqual(dashboard.context['call_outcomes']['busy_callback_not_connected'], 2)
+        self.assertEqual(dashboard.context['call_outcomes']['other'], 1)
+
+        response = self.client_tele1.get(reverse('inquiry_list'), {
+            'queue': 'active',
+            'call_status_group': 'busy_callback_not_connected',
+        })
+        self.assertEqual(response.status_code, 200)
+        inquiry_ids = {inquiry.pk for inquiry in response.context['page_obj'].object_list}
+        self.assertIn(self.inquiry1.pk, inquiry_ids)
+        self.assertIn(ringing_contact.pk, inquiry_ids)
+        self.assertNotIn(other_contact.pk, inquiry_ids)
+        self.assertEqual(response.context['call_status_group'], 'busy_callback_not_connected')
+        self.assertIn(('BUSY', 'Busy / Call Back / Not Connected'), response.context['call_status_update_choices'])
+
+    def test_telecaller_exports_use_current_grouped_statuses(self):
+        Lead.objects.create(
+            inquiry=self.inquiry1,
+            assigned_telecaller=self.tele1,
+            assigned_by=self.admin,
+            status='New'
+        )
+        self.inquiry1.call_status = 'INVALID_NUMBER'
+        self.inquiry1.save(update_fields=['call_status'])
+        message_contact = Inquiry.objects.create(
+            full_name='Message Call Back Contact',
+            mobile_number='7777777777',
+            email='message.callback@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='CALL_BACK',
+            created_by=self.admin
+        )
+        Lead.objects.create(
+            inquiry=message_contact,
+            assigned_telecaller=self.tele1,
+            assigned_by=self.admin,
+            status='New'
+        )
+
+        export_response = self.client_tele1.get(reverse('export_telecaller_dashboard_csv'), {
+            'date_filter': 'all',
+        })
+        self.assertEqual(export_response.status_code, 200)
+        export_csv = export_response.content.decode()
+        self.assertIn('John Doe', export_csv)
+        self.assertIn('1234567890', export_csv)
+        self.assertIn('Switch Off / Wrong No. / Invalid No.', export_csv)
+        self.assertNotIn('Pending Follow Up', export_csv)
+
+        message_response = self.client_tele1.get(reverse('export_telecaller_message_numbers_csv'), {
+            'date_filter': 'all',
+        })
+        self.assertEqual(message_response.status_code, 200)
+        message_csv = message_response.content.decode()
+        self.assertIn('current_status', message_csv)
+        self.assertIn('Message Call Back Contact', message_csv)
+        self.assertIn('7777777777', message_csv)
+        self.assertIn('Busy / Call Back / Not Connected', message_csv)
+        self.assertNotIn('John Doe', message_csv)
+        self.assertNotIn('1234567890', message_csv)
+        self.assertNotIn('Switch Off / Wrong No. / Invalid No.', message_csv)
 
     def test_lead_notes_timeline(self):
         # Create a lead
@@ -983,6 +1107,28 @@ class CounselorModuleTests(TestCase):
         self.lead1.refresh_from_db()
         self.assertEqual(self.lead1.counselor_status, 'INTERESTED')
 
+    def test_counselor_lead_list_shows_and_updates_course_without_priority(self):
+        self.lead1.converted_at = timezone.now()
+        self.lead1.save(update_fields=['converted_at'])
+
+        response = self.client_counselor1.get(reverse('counselor_lead_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Python')
+        self.assertContains(response, 'Course')
+        self.assertNotContains(response, 'Priority')
+
+        response = self.client_counselor1.post(reverse('counselor_lead_status_update', kwargs={'pk': self.lead1.pk}), {
+            'counselor_status': 'NEW',
+            'course_interest': 'Cloud Security',
+            'notes': 'Updated course after counseling call',
+        })
+        self.assertEqual(response.status_code, 302)
+
+        self.inquiry1.refresh_from_db()
+        self.lead1.refresh_from_db()
+        self.assertEqual(self.inquiry1.course_interest, 'Cloud Security')
+        self.assertEqual(self.lead1.counselor_status, 'NEW')
+
     def test_counselor_assignment_management(self):
         # Telecaller tries counselor assignment - forbidden
         response = self.client_tele.post(reverse('lead_assign_counselor'), {
@@ -1048,6 +1194,127 @@ class CounselorModuleTests(TestCase):
             lead.assigned_telecaller_id or lead.assigned_counselor_id
             for lead in response.context['page_obj'].object_list
         ))
+
+    def test_counselor_telecalling_grouped_call_status_cards_and_filter(self):
+        busy_contact = Inquiry.objects.create(
+            full_name='Busy Group Contact',
+            mobile_number='9999999995',
+            email='busy@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='BUSY',
+            created_by=self.admin,
+        )
+        ringing_contact = Inquiry.objects.create(
+            full_name='Ringing Group Contact',
+            mobile_number='9999999996',
+            email='ringing@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='NO_ANSWER',
+            created_by=self.admin,
+        )
+        other_contact = Inquiry.objects.create(
+            full_name='Other Group Contact',
+            mobile_number='9999999997',
+            email='other@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='OTHER',
+            created_by=self.admin,
+        )
+
+        for inquiry in (busy_contact, ringing_contact, other_contact):
+            Lead.objects.create(
+                inquiry=inquiry,
+                assigned_counselor=self.counselor1,
+                first_assigned_counselor=self.counselor1,
+                assigned_by=self.admin,
+                status='New',
+            )
+
+        dashboard = self.client_counselor1.get(reverse('counselor_telecalling_dashboard'))
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertEqual(dashboard.context['call_outcomes']['busy_callback_not_connected'], 2)
+        self.assertEqual(dashboard.context['call_outcomes']['other'], 1)
+
+        response = self.client_counselor1.get(reverse('inquiry_list'), {
+            'scope': 'counselor_telecalling',
+            'call_status_group': 'busy_callback_not_connected',
+        })
+        self.assertEqual(response.status_code, 200)
+        inquiry_ids = {inquiry.pk for inquiry in response.context['page_obj'].object_list}
+        self.assertIn(busy_contact.pk, inquiry_ids)
+        self.assertIn(ringing_contact.pk, inquiry_ids)
+        self.assertNotIn(other_contact.pk, inquiry_ids)
+        self.assertEqual(response.context['call_status_group'], 'busy_callback_not_connected')
+
+    def test_counselor_telecalling_exports_use_current_grouped_statuses(self):
+        contact = Inquiry.objects.create(
+            full_name='Counselor Invalid Contact',
+            mobile_number='9999999901',
+            email='invalid.counselor@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='INVALID_NUMBER',
+            created_by=self.admin,
+        )
+        Lead.objects.create(
+            inquiry=contact,
+            assigned_counselor=self.counselor1,
+            first_assigned_counselor=self.counselor1,
+            assigned_by=self.admin,
+            status='New',
+        )
+        message_contact = Inquiry.objects.create(
+            full_name='Counselor Call Back Contact',
+            mobile_number='9999999902',
+            email='callback.counselor@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            call_status='CALL_BACK',
+            created_by=self.admin,
+        )
+        Lead.objects.create(
+            inquiry=message_contact,
+            assigned_counselor=self.counselor1,
+            first_assigned_counselor=self.counselor1,
+            assigned_by=self.admin,
+            status='New',
+        )
+
+        export_response = self.client_counselor1.get(reverse('export_counselor_telecalling_csv'), {
+            'date_filter': 'all',
+        })
+        self.assertEqual(export_response.status_code, 200)
+        export_csv = export_response.content.decode()
+        self.assertIn('Counselor Invalid Contact', export_csv)
+        self.assertIn('9999999901', export_csv)
+        self.assertIn('Switch Off / Wrong No. / Invalid No.', export_csv)
+        self.assertNotIn('Pending Follow Up', export_csv)
+
+        message_response = self.client_counselor1.get(reverse('export_message_numbers_csv'), {
+            'date_filter': 'all',
+        })
+        self.assertEqual(message_response.status_code, 200)
+        message_csv = message_response.content.decode()
+        self.assertIn('current_status', message_csv)
+        self.assertIn('Counselor Call Back Contact', message_csv)
+        self.assertIn('9999999902', message_csv)
+        self.assertIn('Busy / Call Back / Not Connected', message_csv)
+        self.assertNotIn('Counselor Invalid Contact', message_csv)
+        self.assertNotIn('9999999901', message_csv)
+        self.assertNotIn('Switch Off / Wrong No. / Invalid No.', message_csv)
 
     def test_counselor_reports_dashboard_and_exports(self):
         # Record counseling session & followup to populate reports

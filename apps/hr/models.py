@@ -46,7 +46,11 @@ class Candidate(models.Model):
     expected_salary = models.CharField(max_length=100, null=True, blank=True)
     applying_position = models.CharField(max_length=160)
     department = models.CharField(max_length=120, blank=True)
-    source = models.CharField(max_length=30, choices=SOURCE_CHOICES, blank=True)
+    source = models.CharField(max_length=160, blank=True)
+    interview_date = models.DateField(null=True, blank=True)
+    notice_period = models.CharField(max_length=100, blank=True)
+    location = models.CharField(max_length=160, blank=True)
+    remarks = models.TextField(blank=True)
     assigned_hr = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -77,6 +81,10 @@ class Candidate(models.Model):
 
     def __str__(self):
         return self.full_name
+
+    @property
+    def source_display(self):
+        return dict(self.SOURCE_CHOICES).get(self.source, self.source)
 
     @property
     def latest_follow_up(self):

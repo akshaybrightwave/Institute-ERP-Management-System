@@ -1,0 +1,382 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Import Candidates | HR Portal{% endblock %}
+
+{% block content %}
+<style>
+  .import-candidates-shell {
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #141414;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+    animation: importFadeIn 0.35s ease both;
+  }
+  .import-candidates-hero {
+    min-height: 74px;
+    padding: 18px 24px;
+    background:
+      radial-gradient(circle at 82% 18%, rgba(99, 102, 241, 0.22), transparent 28%),
+      linear-gradient(135deg, #111111 0%, #171827 62%, #0f1117 100%);
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: center;
+  }
+  .import-candidates-hero h1 {
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1.1;
+    margin: 0 0 8px;
+    font-weight: 700;
+  }
+  .import-step-strip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .import-step-line {
+    width: 64px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+  }
+  .import-step-line::before {
+    content: "";
+    display: block;
+    width: 70%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #3b82f6, #7c3aed);
+  }
+  .import-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(226, 232, 240, 0.75);
+  }
+  .import-back-btn {
+    padding: 9px 14px;
+    border-radius: 10px;
+    color: #f8fafc;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .import-back-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+  }
+  .import-upload-stage {
+    position: relative;
+    min-height: 292px;
+    padding: 22px;
+    background:
+      radial-gradient(circle at 15% 22%, rgba(34, 197, 94, 0.08), transparent 18%),
+      radial-gradient(circle at 86% 68%, rgba(99, 102, 241, 0.16), transparent 20%),
+      linear-gradient(180deg, #161616 0%, #101010 100%);
+  }
+  .import-drop-zone {
+    position: relative;
+    min-height: 218px;
+    border: 1px dashed rgba(99, 102, 241, 0.8);
+    border-radius: 14px;
+    background: rgba(17, 24, 39, 0.58);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 20px;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    animation: importDropIn 0.45s ease 0.08s both;
+  }
+  .import-drop-zone.is-dragging {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.12);
+    transform: translateY(-2px);
+    background: rgba(17, 24, 39, 0.82);
+  }
+  .import-drop-zone::before,
+  .import-drop-zone::after {
+    content: "";
+    position: absolute;
+    border: 1px dashed rgba(99, 102, 241, 0.14);
+    border-radius: 999px;
+    pointer-events: none;
+  }
+  .import-drop-zone::before {
+    width: 160px;
+    height: 60px;
+    left: -78px;
+    bottom: 46px;
+  }
+  .import-drop-zone::after {
+    width: 170px;
+    height: 70px;
+    right: -82px;
+    top: 118px;
+  }
+  .import-upload-visual {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.04) 62%, transparent 63%);
+    display: grid;
+    place-items: center;
+    position: relative;
+  }
+  .import-file-card {
+    width: 40px;
+    height: 52px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #ffffff, #edf4ff);
+    box-shadow: 0 18px 30px rgba(30, 64, 175, 0.18);
+    position: relative;
+  }
+  .import-file-card::before {
+    content: "XLS";
+    position: absolute;
+    left: -12px;
+    top: 15px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    color: #ffffff;
+    background: #22c55e;
+    font-weight: 800;
+    font-size: 10px;
+  }
+  .import-file-card::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 0 12px 0 12px;
+    background: #dbe7ff;
+  }
+  .import-upload-orb {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    position: absolute;
+    right: 9px;
+    bottom: 10px;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    font-size: 15px;
+    background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+    box-shadow: 0 14px 30px rgba(79, 70, 229, 0.32);
+  }
+  .import-drop-zone h2 {
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1.2;
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  .import-drop-zone p {
+    color: #a6adbb;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .import-choice-divider {
+    width: min(300px, 100%);
+    margin: 12px auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: #858da0;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .import-choice-divider::before,
+  .import-choice-divider::after {
+    content: "";
+    height: 1px;
+    flex: 1;
+    background: rgba(100, 116, 139, 0.22);
+  }
+  .import-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .import-choose-btn,
+  .import-submit-btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #4f46e5, #8b5cf6);
+    box-shadow: 0 16px 28px rgba(79, 70, 229, 0.28);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    min-width: 154px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .import-choose-btn:hover,
+  .import-submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 24px rgba(79, 70, 229, 0.24);
+  }
+  .import-submit-btn {
+    margin-top: 0;
+    background: linear-gradient(135deg, #2563eb, #5b5ff6);
+  }
+  .import-action-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .import-selected-file {
+    min-height: 22px;
+    margin-top: 8px;
+    color: #cbd5e1;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .import-security-note {
+    width: min(460px, 100%);
+    margin: 12px auto 0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    font-weight: 500;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 16px 30px rgba(30, 64, 175, 0.08);
+  }
+  .import-security-note i {
+    color: #5b5ff6;
+    font-size: 18px;
+  }
+  @keyframes importFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes importDropIn {
+    from { opacity: 0; transform: scale(0.985); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @media (max-width: 991.98px) {
+    .import-candidates-hero {
+      padding: 18px;
+      flex-direction: column;
+    }
+    .import-upload-stage {
+      padding: 22px 16px;
+    }
+  }
+</style>
+
+<div class="import-candidates-shell">
+  <div class="import-candidates-hero">
+    <div>
+      <h1>Import Candidates</h1>
+      <div class="import-step-strip">
+        <span class="import-step-line"></span>
+        <span class="import-dot"></span>
+        <span class="import-dot"></span>
+      </div>
+    </div>
+    <a class="import-back-btn" href="{% url 'hr:candidate_list' %}"><i class="bi bi-arrow-left me-2"></i>Back to Candidates</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="import-upload-stage">
+      <div class="import-drop-zone" id="candidate-import-drop-zone">
+        <div>
+          <div class="import-upload-visual">
+            <div class="import-file-card"></div>
+            <div class="import-upload-orb"><i class="bi bi-arrow-up"></i></div>
+          </div>
+          <h2>Upload your recruitment sheet</h2>
+          <p>Drag & drop your Excel or CSV file here</p>
+          <div class="import-choice-divider">or</div>
+          <input class="import-file-input" type="file" name="{{ form.candidates_file.html_name }}" id="{{ form.candidates_file.id_for_label }}" accept=".xlsx,.csv" required>
+          <div class="import-action-row">
+            <label class="import-choose-btn" for="{{ form.candidates_file.id_for_label }}"><i class="bi bi-upload"></i>Choose File</label>
+            <button class="import-submit-btn" type="submit"><i class="bi bi-cloud-arrow-up"></i>Import</button>
+          </div>
+          <div class="import-selected-file" id="candidate-import-file-name">No file selected</div>
+          <div class="text-danger small mt-3">{{ form.candidates_file.errors }}</div>
+        </div>
+      </div>
+
+      <div class="import-security-note">
+        <i class="bi bi-shield-check"></i>
+        <span>Your data is <strong>secure</strong> and will only be used for recruitment purposes.</span>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% if preview_errors %}
+<div class="alert alert-warning mt-3 mb-0">
+  {% for error in preview_errors %}
+    <div>{{ error }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('{{ form.candidates_file.id_for_label }}');
+    const fileName = document.getElementById('candidate-import-file-name');
+    const dropZone = document.getElementById('candidate-import-drop-zone');
+    if (!fileInput || !fileName || !dropZone) return;
+
+    function setFileName() {
+      fileName.textContent = fileInput.files.length ? fileInput.files[0].name : 'No file selected';
+    }
+
+    fileInput.addEventListener('change', function () {
+      setFileName();
+    });
+
+    ['dragenter', 'dragover'].forEach(function (eventName) {
+      dropZone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        dropZone.classList.add('is-dragging');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(function (eventName) {
+      dropZone.addEventListener(eventName, function (event) {
+        event.preventDefault();
+        dropZone.classList.remove('is-dragging');
+      });
+    });
+
+    dropZone.addEventListener('drop', function (event) {
+      const files = event.dataTransfer.files;
+      if (!files.length) return;
+      fileInput.files = files;
+      setFileName();
+    });
+  });
+</script>
+{% endblock %}
