@@ -48,7 +48,7 @@ def get_student_eligibility(student):
     attendance_eligible = attendance_pct >= 75.0
 
     # Fee calculations
-    course_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+    course_fee = student.course_fee_at_admission if student.course_fee_at_admission is not None else Decimal('0.00')
     paid_amount = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
 
     course_fee = Decimal(str(course_fee))

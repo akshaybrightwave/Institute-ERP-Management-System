@@ -90,7 +90,7 @@ def _build_student_fee_summary(profile):
         course = course or profile.batch.course
         center = center or profile.batch.center
 
-    course_fee = course.fees if course else Decimal('0.00')
+    course_fee = profile.course_fee_at_admission if (profile and profile.course_fee_at_admission is not None) else (course.fees if course else Decimal('0.00'))
     paid_amount = FeePayment.objects.filter(student=profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     pending_balance = course_fee - paid_amount
     if pending_balance < Decimal('0.00'):
@@ -250,6 +250,14 @@ def fees_list(request):
     
     if not (is_admin or is_center or is_teacher or is_student):
         return HttpResponseForbidden("Access Denied: Unauthorized role.")
+
+    if request.method == 'POST' and (is_admin or is_center):
+        action = request.POST.get('action')
+        if action == 'delete_student_fee':
+            student_id = request.POST.get('student_id')
+            FeePayment.objects.filter(student_id=student_id).delete()
+            messages.success(request, "All fee payments for the student have been deleted successfully.")
+            return redirect(_safe_next_url(request) or 'fees_list')
         
     if is_student:
         from apps.students.models import StudentAdmission
@@ -286,7 +294,7 @@ def fees_list(request):
             fee_status = 'PENDING'
         else:
             payments = FeePayment.objects.filter(student=profile).select_related('student__batch__course').order_by('-payment_date', '-id')
-            course_fee = Decimal(str(admission.course.fees)) if admission.course else Decimal('0.00')
+            course_fee = profile.course_fee_at_admission if profile.course_fee_at_admission is not None else Decimal('0.00')
             paid_amount = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
             paid_amount = Decimal(str(paid_amount))
             pending_amount = course_fee - paid_amount
@@ -342,10 +350,15 @@ def fees_list(request):
     batch_id = request.GET.get('batch', '').strip()
     
     # Prepare data for Student summaries tab
+    # Exclude soft-deleted payments via Q filter on the reverse FK annotation
     students_qs = StudentProfile.objects.select_related('batch__course', 'batch__teacher').annotate(
-        paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'), output_field=DecimalField())
+        paid_amount=Coalesce(
+            Sum('feepayment__amount', filter=Q(feepayment__is_deleted=False)),
+            Decimal('0.00'),
+            output_field=DecimalField()
+        )
     )
-    
+
     if is_center:
         center = request.user.center
         students_qs = students_qs.filter(batch__center=center)
@@ -354,9 +367,9 @@ def fees_list(request):
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         students_qs = students_qs.filter(batch__teacher=teacher_profile)
         batches = Batch.objects.filter(teacher=teacher_profile)
-    else: # admin
+    else:  # admin
         batches = Batch.objects.all()
-        
+
     # Apply search/filter to student summaries
     if query:
         students_qs = students_qs.filter(
@@ -364,21 +377,23 @@ def fees_list(request):
         )
     if batch_id:
         students_qs = students_qs.filter(batch_id=batch_id)
-        
-    # Calculate pending and status for each student
+
+    # Build student table list — use ONLY the locked course_fee_at_admission
     student_list = []
     for student in students_qs.order_by('full_name'):
-        total_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+        # Strictly use the locked historical fee; do NOT fall back to batch.course.fees
+        total_fee = student.course_fee_at_admission if student.course_fee_at_admission is not None else Decimal('0.00')
         paid = student.paid_amount
-        pending = total_fee - paid
-        
+        # Clamp pending to zero — overpayment is not shown as negative
+        pending = max(total_fee - paid, Decimal('0.00'))
+
         if paid == 0:
             status = 'PENDING'
         elif pending <= 0:
             status = 'PAID'
         else:
             status = 'PARTIAL'
-            
+
         student_list.append({
             'student': student,
             'course_fee': total_fee,
@@ -411,10 +426,13 @@ def fees_list(request):
         page_payments = request.GET.get('page_payments', 1)
         payments_page_obj = paginator_payments.get_page(page_payments)
 
-    # Calculate dashboard metrics (restricted to logged-in center for center, global for admin)
+    # Calculate dashboard KPI metrics
+    # FeePayment.objects.all() already excludes is_deleted=True via SoftDeleteManager.
+    # However, for reverse-FK annotations on StudentProfile, we must use an explicit
+    # Q filter so that deleted payments are excluded from per-student aggregations.
     metrics_students = StudentProfile.objects.select_related('batch__course')
-    metrics_payments = FeePayment.objects.all()
-    
+    metrics_payments = FeePayment.objects.all()  # SoftDeleteManager already filters is_deleted=False
+
     if is_center:
         center = request.user.center
         metrics_students = metrics_students.filter(batch__center=center)
@@ -424,31 +442,38 @@ def fees_list(request):
         metrics_students = metrics_students.filter(batch__teacher=teacher_profile)
         metrics_payments = metrics_payments.filter(student__batch__teacher=teacher_profile)
 
-    # Aggregations for dashboard
+    # Total collected fees (SoftDeleteManager excludes deleted records automatically)
     total_students_count = metrics_students.count()
     total_fee_collected = metrics_payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    
+
+    # Per-student annotation — explicitly exclude soft-deleted payments via Q filter
     students_annotated = metrics_students.annotate(
-        paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'), output_field=DecimalField())
+        paid_amount=Coalesce(
+            Sum('feepayment__amount', filter=Q(feepayment__is_deleted=False)),
+            Decimal('0.00'),
+            output_field=DecimalField()
+        )
     )
-    
+
     total_course_fees = Decimal('0.00')
     paid_students_count = 0
     pending_students_count = 0
-    
+
     for s in students_annotated:
-        s_fee = s.batch.course.fees if (s.batch and s.batch.course) else Decimal('0.00')
+        # Use ONLY the locked historical fee — no runtime fallback to batch.course.fees
+        s_fee = s.course_fee_at_admission if s.course_fee_at_admission is not None else Decimal('0.00')
         total_course_fees += s_fee
-        if s.paid_amount >= s_fee:
+        # Clamp: overpaying does not produce negative pending
+        pending = max(s_fee - s.paid_amount, Decimal('0.00'))
+        if pending <= Decimal('0.00'):
             paid_students_count += 1
         else:
             pending_students_count += 1
-            
-    total_pending_fees = total_course_fees - total_fee_collected
-    if total_pending_fees < Decimal('0.00'):
-        total_pending_fees = Decimal('0.00')
-        
-    collection_percentage = (float(total_fee_collected) / float(total_course_fees) * 100) if total_course_fees > Decimal('0.00') else 0.0
+
+    total_pending_fees = max(total_course_fees - total_fee_collected, Decimal('0.00'))
+    collection_percentage = (
+        float(total_fee_collected) / float(total_course_fees) * 100
+    ) if total_course_fees > Decimal('0.00') else 0.0
         
     return render(request, 'fees/fees_list.html', {
         'students_page_obj': students_page_obj,
@@ -547,7 +572,7 @@ def payment_create(request):
             else:
                 student_profile = StudentProfile.objects.get(pk=selected_student_id)
                 
-            total_fee = student_profile.batch.course.fees if (student_profile.batch and student_profile.batch.course) else Decimal('0.00')
+            total_fee = student_profile.course_fee_at_admission if student_profile.course_fee_at_admission is not None else Decimal('0.00')
             paid_amount = FeePayment.objects.filter(student=student_profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
             pending_balance = total_fee - paid_amount
             fee_summary = {
@@ -775,7 +800,7 @@ def student_fee_summary_ajax(request):
     except StudentProfile.DoesNotExist:
         return JsonResponse({'error': 'Student not found'}, status=404)
 
-    total_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+    total_fee = student.course_fee_at_admission if student.course_fee_at_admission is not None else Decimal('0.00')
     paid_amount = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     remaining = total_fee - paid_amount
     if remaining < Decimal('0.00'):

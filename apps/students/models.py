@@ -16,6 +16,13 @@ class StudentProfile(SoftDeleteModel):
         null=True,
         blank=True
     )
+    course_fee_at_admission = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="The locked course fee at the time of admission approval."
+    )
 
     class Meta:
         # Pin to the existing DB table so no ALTER TABLE is needed.

@@ -329,82 +329,112 @@
           <div class="fee-record-header">
             <h5>Fee Record</h5>
             {% if request.user.role == 'admin' or request.user.role == 'center' %}
-            <button type="button" class="fee-add-toggle" id="feeAddToggle">
+            <button type="button" class="fee-add-toggle" id="feeAddToggle" data-bs-toggle="modal" data-bs-target="#feeModal">
               <i class="bi bi-plus-lg"></i> Add Payment
             </button>
             {% endif %}
           </div>
 
           {% if request.user.role == 'admin' or request.user.role == 'center' %}
-          <div class="fee-add-panel {% if show_fee_payment_form %}is-open{% endif %}" id="feeAddPanel">
-            {% if fee_payment_form %}
-            <form method="post" class="fee-add-form" novalidate>
-              {% csrf_token %}
-              <input type="hidden" name="action" value="{{ fee_payment_action|default:'add_fee_payment' }}">
-              {% if editing_fee_payment %}
-              <input type="hidden" name="payment_id" value="{{ editing_fee_payment.pk }}">
-              {% endif %}
-
-              <div class="fee-add-grid">
-                <div class="fee-add-field">
-                  <label for="{{ fee_payment_form.payment_date.id_for_label }}">Payment Date</label>
-                  {{ fee_payment_form.payment_date }}
-                  {% for error in fee_payment_form.payment_date.errors %}
-                  <small class="fee-field-error">{{ error }}</small>
-                  {% endfor %}
+          <!-- Edit Fee Record Modal -->
+          <div class="modal fade dark-modal" id="feeModal" tabindex="-1" aria-labelledby="feeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+              <div class="modal-content" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+                <div class="modal-header border-secondary">
+                  <h5 class="modal-title fw-bold text-white" id="feeModalLabel">
+                    <i class="bi bi-wallet2 text-primary me-2"></i>{% if editing_fee_payment %}Edit Fee Record{% else %}Add Fee Record{% endif %}
+                  </h5>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                {% if fee_payment_form %}
+                <form method="post" class="fee-add-form" novalidate>
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="{{ fee_payment_action|default:'add_fee_payment' }}">
+                  {% if editing_fee_payment %}
+                  <input type="hidden" name="payment_id" value="{{ editing_fee_payment.pk }}">
+                  {% endif %}
 
-                <div class="fee-add-field">
-                  <label for="{{ fee_payment_form.amount.id_for_label }}">Fee Amount</label>
-                  {{ fee_payment_form.amount }}
-                  {% for error in fee_payment_form.amount.errors %}
-                  <small class="fee-field-error">{{ error }}</small>
-                  {% endfor %}
-                </div>
+                  <div class="modal-body">
+                    <div class="row g-3">
+                      <!-- Transaction ID -->
+                      <div class="col-md-6">
+                        <label for="{{ fee_payment_form.reference_number.id_for_label }}" class="form-label fw-semibold text-white">Transaction ID</label>
+                        {{ fee_payment_form.reference_number }}
+                        {% for error in fee_payment_form.reference_number.errors %}
+                        <small class="text-danger d-block mt-1">{{ error }}</small>
+                        {% endfor %}
+                      </div>
 
-                <div class="fee-add-field">
-                  <label for="{{ fee_payment_form.payment_method.id_for_label }}">Fee Type</label>
-                  {{ fee_payment_form.payment_method }}
-                  {% for error in fee_payment_form.payment_method.errors %}
-                  <small class="fee-field-error">{{ error }}</small>
-                  {% endfor %}
-                </div>
+                      <!-- Date -->
+                      <div class="col-md-6">
+                        <label for="{{ fee_payment_form.payment_date.id_for_label }}" class="form-label fw-semibold text-white">Date</label>
+                        {{ fee_payment_form.payment_date }}
+                        {% for error in fee_payment_form.payment_date.errors %}
+                        <small class="text-danger d-block mt-1">{{ error }}</small>
+                        {% endfor %}
+                      </div>
 
-                <div class="fee-add-field">
-                  <label for="{{ fee_payment_form.reference_number.id_for_label }}">Transaction ID</label>
-                  {{ fee_payment_form.reference_number }}
-                  {% for error in fee_payment_form.reference_number.errors %}
-                  <small class="fee-field-error">{{ error }}</small>
-                  {% endfor %}
-                </div>
+                      <!-- Total Amount -->
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold text-white">Total Amount</label>
+                        <input type="text" class="form-control" value="₹ {{ course_fee|floatformat:2 }}" readonly style="opacity: 0.7;">
+                      </div>
 
-                <div class="fee-add-field fee-add-field-wide">
-                  <label for="{{ fee_payment_form.remarks.id_for_label }}">Payment Information</label>
-                  {{ fee_payment_form.remarks }}
-                  {% for error in fee_payment_form.remarks.errors %}
-                  <small class="fee-field-error">{{ error }}</small>
-                  {% endfor %}
-                </div>
-              </div>
+                      <!-- Amount -->
+                      <div class="col-md-6">
+                        <label for="{{ fee_payment_form.amount.id_for_label }}" class="form-label fw-semibold text-white">Amount <span class="text-danger">*</span></label>
+                        {{ fee_payment_form.amount }}
+                        {% for error in fee_payment_form.amount.errors %}
+                        <small class="text-danger d-block mt-1">{{ error }}</small>
+                        {% endfor %}
+                      </div>
 
-              {% if fee_payment_form.non_field_errors %}
-              <div class="fee-form-errors">{{ fee_payment_form.non_field_errors }}</div>
-              {% endif %}
+                      <!-- Discount -->
+                      <div class="col-md-6">
+                        <label class="form-label fw-semibold text-white">Discount</label>
+                        <input type="text" class="form-control" value="₹ 0.00" readonly style="opacity: 0.7;">
+                      </div>
 
-              <div class="fee-add-actions">
-                <button type="submit" class="fee-save-btn">
-                  <i class="bi bi-check2-circle"></i> {% if editing_fee_payment %}Update Payment{% else %}Save Payment{% endif %}
-                </button>
-                {% if editing_fee_payment %}
-                <a href="{{ request.path }}?student_id={{ admission.pk }}#fees" class="fee-cancel-btn">Cancel</a>
+                      <!-- Payment Type -->
+                      <div class="col-md-6">
+                        <label for="{{ fee_payment_form.payment_method.id_for_label }}" class="form-label fw-semibold text-white">Payment Type <span class="text-danger">*</span></label>
+                        {{ fee_payment_form.payment_method }}
+                        {% for error in fee_payment_form.payment_method.errors %}
+                        <small class="text-danger d-block mt-1">{{ error }}</small>
+                        {% endfor %}
+                      </div>
+
+                      <!-- Description -->
+                      <div class="col-md-12">
+                        <label for="{{ fee_payment_form.remarks.id_for_label }}" class="form-label fw-semibold text-white">Description</label>
+                        {{ fee_payment_form.remarks }}
+                        {% for error in fee_payment_form.remarks.errors %}
+                        <small class="text-danger d-block mt-1">{{ error }}</small>
+                        {% endfor %}
+                      </div>
+                    </div>
+
+                    {% if fee_payment_form.non_field_errors %}
+                    <div class="alert alert-danger mt-3 mb-0">{{ fee_payment_form.non_field_errors }}</div>
+                    {% endif %}
+                  </div>
+                  <div class="modal-footer border-secondary justify-content-end">
+                    <button type="button" class="btn btn-close-modal px-4 py-2 me-2" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-save-modal px-4 py-2 fee-save-btn">
+                      <i class="bi bi-bookmark-fill me-1"></i> Save Changes
+                    </button>
+                  </div>
+                </form>
                 {% else %}
-                <button type="button" class="fee-cancel-btn" id="feeAddCancel">Cancel</button>
+                <div class="modal-body">
+                  <div class="alert alert-danger mb-0">Student profile is required before adding a fee payment.</div>
+                </div>
+                <div class="modal-footer border-secondary">
+                  <button type="button" class="btn btn-close-modal px-4 py-2" data-bs-dismiss="modal">Close</button>
+                </div>
                 {% endif %}
               </div>
-            </form>
-            {% else %}
-            <div class="fee-form-errors mb-0">Student profile is required before adding a fee payment.</div>
-            {% endif %}
+            </div>
           </div>
           {% endif %}
           
@@ -466,7 +496,7 @@
                   <td class="pe-3">
                     <div class="premium-fee-action-group">
                       {% if request.user.role == 'admin' or request.user.role == 'center' %}
-                      <a href="{{ request.path }}?student_id={{ admission.pk }}&edit_payment={{ payment.pk }}#fees" class="premium-fee-action edit"><i class="bi bi-pencil-fill"></i> Edit</a>
+                      <a href="#" class="premium-fee-action edit" data-id="{{ payment.pk }}" data-date="{{ payment.payment_date|date:'Y-m-d' }}" data-amount="{{ payment.amount }}" data-method="{{ payment.payment_method }}" data-reference="{{ payment.reference_number|default:'' }}" data-remarks="{{ payment.remarks|default:'' }}"><i class="bi bi-pencil-fill"></i> Edit</a>
                       {% endif %}
                       <a href="{% url 'payment_receipt' payment.pk %}?next={{ request.path|urlencode }}%3Fstudent_id%3D{{ admission.pk }}%23fees" class="premium-fee-action receipt" target="_blank"><i class="bi bi-file-earmark-fill"></i> Receipt</a>
                       {% if request.user.role == 'admin' or request.user.role == 'center' %}
@@ -1427,7 +1457,7 @@
   const feesPane = document.getElementById('fees');
   if (!feesPane) return;
 
-  const shouldShowFees = window.location.hash === '#fees' || feesPane.querySelector('.fee-add-panel.is-open');
+  const shouldShowFees = window.location.hash === '#fees' || {% if show_fee_payment_form %}true{% else %}false{% endif %};
   if (shouldShowFees) {
     const feesTab = document.getElementById('fees-tab');
     if (feesTab && window.bootstrap && window.bootstrap.Tab) {
@@ -1437,19 +1467,91 @@
     }
   }
 
-  const feeAddToggle = document.getElementById('feeAddToggle');
-  const feeAddCancel = document.getElementById('feeAddCancel');
-  const feeAddPanel = document.getElementById('feeAddPanel');
-  if (feeAddToggle && feeAddPanel) {
-    feeAddToggle.addEventListener('click', function () {
-      feeAddPanel.classList.toggle('is-open');
+  const feeModalEl = document.getElementById('feeModal');
+  if (feeModalEl) {
+    feeModalEl.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      // If triggered by "Add Payment" button, reset the form to "Add" state
+      if (button && button.id === 'feeAddToggle') {
+        const form = feeModalEl.querySelector('.fee-add-form');
+        if (form) {
+          form.reset();
+          const actionInput = form.querySelector('input[name="action"]');
+          if (actionInput) actionInput.value = 'add_fee_payment';
+          const paymentIdInput = form.querySelector('input[name="payment_id"]');
+          if (paymentIdInput) paymentIdInput.remove();
+          const modalTitle = feeModalEl.querySelector('.modal-title');
+          if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-wallet2 text-primary me-2"></i>Add Fee Record';
+          const submitBtn = form.querySelector('.fee-save-btn');
+          if (submitBtn) submitBtn.innerHTML = '<i class="bi bi-bookmark-fill me-1"></i> Save Changes';
+        }
+      }
     });
+
+    const tableEl = feesPane.querySelector('table');
+    if (tableEl) {
+      tableEl.addEventListener('click', function (e) {
+        const editBtn = e.target.closest('.premium-fee-action.edit');
+        if (!editBtn) return;
+        e.preventDefault();
+
+        const paymentId = editBtn.getAttribute('data-id');
+        const paymentDate = editBtn.getAttribute('data-date');
+        const amount = editBtn.getAttribute('data-amount');
+        const method = editBtn.getAttribute('data-method');
+        const reference = editBtn.getAttribute('data-reference');
+        const remarks = editBtn.getAttribute('data-remarks');
+
+        const form = feeModalEl.querySelector('.fee-add-form');
+        if (form) {
+          const actionInput = form.querySelector('input[name="action"]');
+          if (actionInput) actionInput.value = 'update_fee_payment';
+
+          let paymentIdInput = form.querySelector('input[name="payment_id"]');
+          if (!paymentIdInput) {
+            paymentIdInput = document.createElement('input');
+            paymentIdInput.type = 'hidden';
+            paymentIdInput.name = 'payment_id';
+            form.appendChild(paymentIdInput);
+          }
+          paymentIdInput.value = paymentId;
+
+          const dateInput = form.querySelector('[name="payment_date"]');
+          if (dateInput) dateInput.value = paymentDate;
+
+          const amountInput = form.querySelector('[name="amount"]');
+          if (amountInput) amountInput.value = amount;
+
+          const methodSelect = form.querySelector('[name="payment_method"]');
+          if (methodSelect) methodSelect.value = method;
+
+          const refInput = form.querySelector('[name="reference_number"]');
+          if (refInput) refInput.value = reference;
+
+          const remarksText = form.querySelector('[name="remarks"]');
+          if (remarksText) remarksText.value = remarks;
+
+          const modalTitle = feeModalEl.querySelector('.modal-title');
+          if (modalTitle) modalTitle.innerHTML = '<i class="bi bi-wallet2 text-primary me-2"></i>Edit Fee Record';
+
+          const submitBtn = form.querySelector('.fee-save-btn');
+          if (submitBtn) {
+            submitBtn.innerHTML = '<i class="bi bi-bookmark-fill me-1"></i> Save Changes';
+          }
+        }
+
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(feeModalEl);
+        modalInstance.show();
+      });
+    }
   }
-  if (feeAddCancel && feeAddPanel) {
-    feeAddCancel.addEventListener('click', function () {
-      feeAddPanel.classList.remove('is-open');
-    });
+
+  {% if show_fee_payment_form %}
+  if (feeModalEl) {
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(feeModalEl);
+    modalInstance.show();
   }
+  {% endif %}
 
   const table = feesPane.querySelector('table');
   if (!table) return;

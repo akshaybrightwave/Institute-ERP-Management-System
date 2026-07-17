@@ -314,7 +314,7 @@ def admin_dashboard(request):
     total_fee_collection = fee_agg['total']
 
     course_fee_agg = StudentProfile.objects.aggregate(
-        total=Coalesce(Sum('batch__course__fees'), Decimal('0.00'))
+        total=Coalesce(Sum('course_fee_at_admission'), Decimal('0.00'))
     )
     total_course_fees = course_fee_agg['total']
     total_pending_fees = total_course_fees - total_fee_collection
@@ -323,7 +323,7 @@ def admin_dashboard(request):
         paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'))
     ).filter(
         batch__course__isnull=False,
-        paid_amount__lt=F('batch__course__fees')
+        paid_amount__lt=F('course_fee_at_admission')
     ).count()
 
     # ── Certificate & Exam metrics ─────────────────────────────────────────────
@@ -355,7 +355,7 @@ def admin_dashboard(request):
     ).select_related('batch__course', 'user')
     for student in eligible_students:
         paid = paid_map.get(student.id, Decimal('0.00'))
-        course_fee = Decimal(str(student.batch.course.fees))
+        course_fee = Decimal(str(student.course_fee_at_admission or '0.00'))
         total_att, present_att = att_map.get(student.user_id, (0, 0))
         attendance_pct = (present_att / total_att) * 100 if total_att else 0.0
         if paid >= course_fee and attendance_pct >= 75.0:

@@ -180,7 +180,7 @@ def student_report(request):
         attendance_pct = round((present_att / total_att * 100), 1) if total_att > 0 else 0.0
 
         paid_amount = fee_map.get(s.id, Decimal('0.00'))
-        course_fee = Decimal(str(s.batch.course.fees)) if (s.batch and s.batch.course) else Decimal('0.00')
+        course_fee = Decimal(str(s.course_fee_at_admission or '0.00'))
         pending_amount = course_fee - paid_amount
         if paid_amount == 0:
             fee_status = 'PENDING'
@@ -538,7 +538,7 @@ def fee_report(request):
     payments = FeePayment.objects.filter(student__in=students)
     total_fees_collected = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     
-    total_course_fees = students.aggregate(total=Sum('batch__course__fees'))['total'] or Decimal('0.00')
+    total_course_fees = students.aggregate(total=Sum('course_fee_at_admission'))['total'] or Decimal('0.00')
     total_pending_fees = Decimal(str(total_course_fees)) - Decimal(str(total_fees_collected))
 
     paid_map = {p['student_id']: p['total'] or Decimal('0.00') for p in FeePayment.objects.filter(student__in=students).values('student_id').annotate(total=Sum('amount'))}
@@ -549,7 +549,7 @@ def fee_report(request):
 
     for s in students:
         paid = paid_map.get(s.id, Decimal('0.00'))
-        course_fee = Decimal(str(s.batch.course.fees)) if (s.batch and s.batch.course) else Decimal('0.00')
+        course_fee = Decimal(str(s.course_fee_at_admission or '0.00'))
         pending = course_fee - paid
         if paid >= course_fee:
             paid_count += 1
@@ -811,7 +811,7 @@ def certificate_report(request):
 
     eligible_students_count = 0
     for student in students_stats:
-        course_fee = Decimal(str(student.batch.course.fees)) if (student.batch and student.batch.course) else Decimal('0.00')
+        course_fee = Decimal(str(student.course_fee_at_admission or '0.00'))
         fee_eligible = student.paid_amount >= course_fee
         
         total_att, present_att = att_map.get(student.id, (0, 0))

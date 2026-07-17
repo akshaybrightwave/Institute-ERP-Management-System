@@ -58,7 +58,7 @@ class FeePaymentForm(forms.ModelForm):
             if self.course_fee is not None:
                 course_fee = Decimal(str(self.course_fee))
             else:
-                course_fee = student.batch.course.fees if (student.batch and student.batch.course) else Decimal('0.00')
+                course_fee = student.course_fee_at_admission if student.course_fee_at_admission is not None else Decimal('0.00')
 
             other_payments = FeePayment.objects.filter(student=student)
             if self.instance and self.instance.pk:

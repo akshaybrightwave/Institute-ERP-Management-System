@@ -583,7 +583,9 @@ def student_profile(request):
     from apps.fees.models import FeePayment
     from decimal import Decimal
 
-    if admission and admission.course:
+    if profile and profile.course_fee_at_admission is not None:
+        course_fee = profile.course_fee_at_admission
+    elif admission and admission.course:
         course_fee = admission.course.fees
     elif profile and profile.batch and profile.batch.course:
         course_fee = profile.batch.course.fees
@@ -868,6 +870,9 @@ def sync_student_admission_user(admission):
         if batch:
             profile.batch = batch
             
+    if profile.course_fee_at_admission is None and admission.course:
+        profile.course_fee_at_admission = admission.course.fees
+        
     profile.save()
     return user
 
