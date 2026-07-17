@@ -410,7 +410,7 @@ def fees_list(request):
     # Prepare data for Payment Ledger tab (Admin & Center only)
     payments_page_obj = None
     if is_admin or is_center:
-        payments_qs = FeePayment.objects.select_related('student__batch__course').all().order_by('-payment_date', '-id')
+        payments_qs = FeePayment.objects.select_related('student__batch__course', 'student__batch__center').all().order_by('-payment_date', '-id')
         if is_center:
             payments_qs = payments_qs.filter(student__batch__center=request.user.center)
             
