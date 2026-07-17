@@ -433,6 +433,90 @@
             </div>
           </div>
           {% endif %}
+
+          <!-- Fee Receipt Preview Modal -->
+          <div class="modal fade" id="feeReceiptModal" tabindex="-1" aria-labelledby="feeReceiptModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable fee-receipt-dialog">
+              <div class="modal-content fee-receipt-modal">
+                <div class="modal-header border-secondary">
+                  <h5 class="modal-title fw-bold text-white" id="feeReceiptModalLabel">Fee Receipt</h5>
+                  <button type="button" class="btn btn-close-modal px-3 py-2" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <div class="fee-receipt-sheet" id="feeReceiptPrintArea">
+                    <div class="fee-receipt-top">
+                      <div class="fee-receipt-seal">
+                        <i class="bi bi-bank2"></i>
+                      </div>
+                      <button type="button" class="btn btn-save-modal px-4 py-2 fee-receipt-print">
+                        Print
+                      </button>
+                    </div>
+
+                    <div class="fee-receipt-title-row">
+                      <h5>Trancation ID #<span data-receipt-field="transaction"></span></h5>
+                      <div>
+                        <span class="fee-receipt-label">Date:</span>
+                        <strong data-receipt-field="date"></strong>
+                      </div>
+                    </div>
+
+                    <div class="fee-receipt-party-grid">
+                      <div>
+                        <span class="fee-receipt-label">Issue For:</span>
+                        <strong data-receipt-field="student"></strong>
+                        <span>Address</span>
+                        <small data-receipt-field="address"></small>
+                        <span>Course : <small data-receipt-field="course"></small> <small data-receipt-field="duration"></small></span>
+                      </div>
+                      <div>
+                        <span class="fee-receipt-label">Issued By:</span>
+                        <strong data-receipt-field="center"></strong>
+                        <span>Centre Code : N0088</span>
+                        <small>ADDRESS</small>
+                      </div>
+                    </div>
+
+                    <div class="table-responsive">
+                      <table class="table table-examly fee-receipt-table align-middle mb-0">
+                        <thead>
+                          <tr>
+                            <th>Month</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td data-receipt-field="month"></td>
+                            <td data-receipt-field="method"></td>
+                            <td>₹ <span data-receipt-field="amount"></span></td>
+                            <td class="text-white fw-bold">₹ <span data-receipt-field="total"></span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div class="fee-receipt-summary">
+                      <div>
+                        <span>Total Course Fee</span>
+                        <strong>₹ <span data-receipt-field="courseFee"></span></strong>
+                      </div>
+                      <div>
+                        <span>Total Payable Amount:</span>
+                        <strong>₹ <span data-receipt-field="payable"></span></strong>
+                        <span>Total Paid Amount:</span>
+                        <strong>₹ <span data-receipt-field="paid"></span></strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <!-- DataTable controls -->
           <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
@@ -492,7 +576,23 @@
                       {% if request.user.role == 'admin' or request.user.role == 'center' %}
                       <a href="#" class="premium-fee-action edit" data-id="{{ payment.pk }}" data-date="{{ payment.payment_date|date:'Y-m-d' }}" data-amount="{{ payment.amount }}" data-method="{{ payment.payment_method }}" data-reference="{{ payment.reference_number|default:'' }}" data-remarks="{{ payment.remarks|default:'' }}"><i class="bi bi-pencil-fill"></i> Edit</a>
                       {% endif %}
-                      <a href="{% url 'payment_receipt' payment.pk %}?next={{ request.path|urlencode }}%3Fstudent_id%3D{{ admission.pk }}%23fees" class="premium-fee-action receipt" target="_blank"><i class="bi bi-file-earmark-fill"></i> Receipt</a>
+                      <a href="{% url 'payment_receipt' payment.pk %}?next={{ request.path|urlencode }}%3Fstudent_id%3D{{ admission.pk }}%23fees"
+                         class="premium-fee-action receipt"
+                         target="_blank"
+                         data-transaction="{% if payment.reference_number %}{{ payment.reference_number }}{% else %}{{ payment.pk }}{% endif %}"
+                         data-date="{{ payment.payment_date|date:'d-m-Y' }}"
+                         data-month="{{ payment.payment_date|date:'d-M-Y' }}"
+                         data-amount="{{ payment.amount|floatformat:0 }}"
+                         data-method="{{ payment.get_payment_method_display }}"
+                         data-student="{{ admission.student_name }}"
+                         data-enrollment="{{ admission.enrollment_no }}"
+                         data-address="{{ admission.address|default:'Address' }}"
+                         data-course="{{ admission.course.name|default:'Course' }}"
+                         data-duration="{{ admission.course.duration|default:'0 Year' }}"
+                         data-center="{{ admission.center.name|default:'Institute' }}"
+                         data-course-fee="{{ course_fee|floatformat:0 }}">
+                        <i class="bi bi-file-earmark-fill"></i> Receipt
+                      </a>
                       {% if request.user.role == 'admin' or request.user.role == 'center' %}
                       <a href="{% url 'payment_delete' payment.pk %}?next={{ request.path|urlencode }}%3Fstudent_id%3D{{ admission.pk }}%23fees" class="premium-fee-action delete"><i class="bi bi-file-minus-fill"></i> Delete</a>
                       {% endif %}
@@ -1370,6 +1470,119 @@
     border-right: 1px dashed #198754;
   }
 
+  #feeReceiptModal.modal {
+    top: var(--app-navbar-height, 68px);
+    height: calc(100vh - var(--app-navbar-height, 68px));
+  }
+
+  #feeReceiptModal .fee-receipt-dialog {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  #feeReceiptModal .fee-receipt-dialog .modal-content {
+    max-height: calc(100vh - var(--app-navbar-height, 68px) - 2.5rem);
+    overflow: hidden;
+  }
+
+  .fee-receipt-modal .modal-body {
+    padding: 0;
+    background: var(--erp-bg-card);
+  }
+
+  .fee-receipt-sheet {
+    min-height: 620px;
+    padding: 1.8rem;
+    background: var(--erp-bg-card);
+    color: var(--erp-text-primary);
+  }
+
+  .fee-receipt-top,
+  .fee-receipt-title-row,
+  .fee-receipt-party-grid,
+  .fee-receipt-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .fee-receipt-top {
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .fee-receipt-seal {
+    width: 76px;
+    height: 76px;
+    border: 1px solid var(--erp-border-color);
+    border-radius: 50%;
+    background: var(--erp-bg-input);
+    color: #3b82f6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.25rem;
+  }
+
+  .fee-receipt-print {
+    justify-self: end;
+  }
+
+  .fee-receipt-title-row {
+    margin-bottom: 2rem;
+  }
+
+  .fee-receipt-title-row h5 {
+    margin: 0;
+    color: var(--erp-text-primary);
+    font-weight: 800;
+  }
+
+  .fee-receipt-label,
+  .fee-receipt-party-grid span,
+  .fee-receipt-party-grid small,
+  .fee-receipt-summary span {
+    display: block;
+    color: var(--erp-text-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .fee-receipt-party-grid {
+    margin-bottom: 2rem;
+  }
+
+  .fee-receipt-party-grid strong,
+  .fee-receipt-title-row strong,
+  .fee-receipt-summary strong {
+    display: block;
+    color: var(--erp-text-primary);
+    font-size: 0.92rem;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+
+  .fee-receipt-table {
+    margin-bottom: 1.5rem !important;
+  }
+
+  .fee-receipt-table th,
+  .fee-receipt-table td {
+    text-align: center;
+    border-color: var(--erp-border-color) !important;
+  }
+
+  .fee-receipt-summary {
+    border-top: 1px solid var(--erp-border-color);
+    padding-top: 1.3rem;
+  }
+
+  .fee-receipt-summary > div:last-child {
+    justify-self: end;
+    min-width: 300px;
+  }
+
   #fees .premium-fee-action.delete {
     color: #f03e65;
     border-top: 1px dashed #f03e65;
@@ -1386,6 +1599,54 @@
     padding: 12px 17px 18px;
     color: var(--erp-text-muted);
     font-size: 13px;
+  }
+
+  .fee-receipt-print-host {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    #feeReceiptModal .fee-receipt-dialog {
+      margin: 0.75rem;
+    }
+
+    #feeReceiptModal .fee-receipt-dialog .modal-content {
+      max-height: calc(100vh - var(--app-navbar-height, 68px) - 1.5rem);
+    }
+
+    .fee-receipt-top,
+    .fee-receipt-title-row,
+    .fee-receipt-party-grid,
+    .fee-receipt-summary {
+      grid-template-columns: 1fr;
+    }
+
+    .fee-receipt-print,
+    .fee-receipt-summary > div:last-child {
+      justify-self: start;
+    }
+  }
+
+  @media print {
+    body.fee-receipt-printing > *:not(.fee-receipt-print-host) {
+      display: none !important;
+    }
+
+    .fee-receipt-print-host {
+      display: block !important;
+      background: #fff !important;
+      color: #111 !important;
+      padding: 24px !important;
+    }
+
+    .fee-receipt-print-host .fee-receipt-sheet {
+      background: #fff !important;
+      color: #111 !important;
+    }
+
+    .fee-receipt-print-host .fee-receipt-print {
+      display: none !important;
+    }
   }
 
   @media (max-width: 992px) {
@@ -1497,6 +1758,14 @@
   }
 
   const feeModalEl = document.getElementById('feeModal');
+  const feeReceiptModalEl = document.getElementById('feeReceiptModal');
+  if (feeReceiptModalEl) {
+    const erpShell = document.querySelector('.erp-shell');
+    if (erpShell && feeReceiptModalEl.parentElement !== erpShell) {
+      erpShell.appendChild(feeReceiptModalEl);
+    }
+  }
+
   if (feeModalEl) {
     const erpShell = document.querySelector('.erp-shell');
     if (erpShell && feeModalEl.parentElement !== erpShell) {
@@ -1525,6 +1794,36 @@
     const tableEl = feesPane.querySelector('table');
     if (tableEl) {
       tableEl.addEventListener('click', function (e) {
+        const receiptBtn = e.target.closest('.premium-fee-action.receipt');
+        if (receiptBtn && feeReceiptModalEl) {
+          e.preventDefault();
+          const fields = {
+            transaction: receiptBtn.dataset.transaction || '',
+            date: receiptBtn.dataset.date || '',
+            month: receiptBtn.dataset.month || '',
+            amount: receiptBtn.dataset.amount || '0',
+            total: receiptBtn.dataset.amount || '0',
+            payable: receiptBtn.dataset.amount || '0',
+            paid: receiptBtn.dataset.amount || '0',
+            method: receiptBtn.dataset.method || '',
+            student: `${receiptBtn.dataset.student || ''} - ${receiptBtn.dataset.enrollment || ''}`,
+            address: receiptBtn.dataset.address || '',
+            course: receiptBtn.dataset.course || '',
+            duration: receiptBtn.dataset.duration || '',
+            center: receiptBtn.dataset.center || '',
+            courseFee: receiptBtn.dataset.courseFee || '0'
+          };
+
+          Object.entries(fields).forEach(function ([name, value]) {
+            feeReceiptModalEl.querySelectorAll(`[data-receipt-field="${name}"]`).forEach(function (node) {
+              node.textContent = value;
+            });
+          });
+
+          bootstrap.Modal.getOrCreateInstance(feeReceiptModalEl).show();
+          return;
+        }
+
         const editBtn = e.target.closest('.premium-fee-action.edit');
         if (!editBtn) return;
         e.preventDefault();
@@ -1580,6 +1879,25 @@
     }
   }
 
+  if (feeReceiptModalEl) {
+    const printBtn = feeReceiptModalEl.querySelector('.fee-receipt-print');
+    if (printBtn) {
+      printBtn.addEventListener('click', function () {
+        const sheet = feeReceiptModalEl.querySelector('.fee-receipt-sheet');
+        if (!sheet) return;
+
+        const host = document.createElement('div');
+        host.className = 'fee-receipt-print-host';
+        host.appendChild(sheet.cloneNode(true));
+        document.body.appendChild(host);
+        document.body.classList.add('fee-receipt-printing');
+        window.print();
+        document.body.classList.remove('fee-receipt-printing');
+        host.remove();
+      });
+    }
+  }
+
   {% if show_fee_payment_form %}
   if (feeModalEl) {
     const modalInstance = bootstrap.Modal.getOrCreateInstance(feeModalEl);
@@ -1589,6 +1907,39 @@
 
   const table = feesPane.querySelector('table');
   if (!table) return;
+
+  if (!feeModalEl && feeReceiptModalEl) {
+    table.addEventListener('click', function (e) {
+      const receiptBtn = e.target.closest('.premium-fee-action.receipt');
+      if (!receiptBtn) return;
+      e.preventDefault();
+
+      const fields = {
+        transaction: receiptBtn.dataset.transaction || '',
+        date: receiptBtn.dataset.date || '',
+        month: receiptBtn.dataset.month || '',
+        amount: receiptBtn.dataset.amount || '0',
+        total: receiptBtn.dataset.amount || '0',
+        payable: receiptBtn.dataset.amount || '0',
+        paid: receiptBtn.dataset.amount || '0',
+        method: receiptBtn.dataset.method || '',
+        student: `${receiptBtn.dataset.student || ''} - ${receiptBtn.dataset.enrollment || ''}`,
+        address: receiptBtn.dataset.address || '',
+        course: receiptBtn.dataset.course || '',
+        duration: receiptBtn.dataset.duration || '',
+        center: receiptBtn.dataset.center || '',
+        courseFee: receiptBtn.dataset.courseFee || '0'
+      };
+
+      Object.entries(fields).forEach(function ([name, value]) {
+        feeReceiptModalEl.querySelectorAll(`[data-receipt-field="${name}"]`).forEach(function (node) {
+          node.textContent = value;
+        });
+      });
+
+      bootstrap.Modal.getOrCreateInstance(feeReceiptModalEl).show();
+    });
+  }
 
   const feeTotalFoot = table.querySelector('tfoot');
   if (feeTotalFoot) feeTotalFoot.remove();
