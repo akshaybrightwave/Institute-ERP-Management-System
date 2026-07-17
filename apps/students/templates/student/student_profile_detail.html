@@ -1,22 +1,18 @@
 <div class="row g-4">
   <!-- SECTION 1: Account Header Profile Overview Card -->
   <div class="col-12">
-    <div class="profile-header-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; position: relative; overflow: hidden;">
-      
-      <!-- Top right decorative accent -->
-      <div style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: linear-gradient(135deg, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0)); transform: rotate(45deg); pointer-events: none;"></div>
-
+    <div class="profile-header-card qa-card">
       <div class="row align-items-center g-4">
         <!-- Photo and Primary Details -->
         <div class="col-lg-7 col-12">
           <div class="d-flex align-items-center flex-wrap gap-4 text-center text-sm-start">
             <div class="position-relative mx-auto mx-sm-0">
               {% if admission.photo %}
-                <img src="{{ admission.photo.url }}" alt="{{ admission.student_name }}" class="rounded-3 border border-secondary" style="width: 110px; height: 110px; object-fit: cover;">
+                <img src="{{ admission.photo.url }}" alt="{{ admission.student_name }}" class="profile-avatar rounded-3 border border-secondary">
               {% elif profile.profile_picture %}
-                <img src="{{ profile.profile_picture.url }}" alt="{{ admission.student_name }}" class="rounded-3 border border-secondary" style="width: 110px; height: 110px; object-fit: cover;">
+                <img src="{{ profile.profile_picture.url }}" alt="{{ admission.student_name }}" class="profile-avatar rounded-3 border border-secondary">
               {% else %}
-                <div class="rounded-3 bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 110px; height: 110px; font-size: 2.5rem;">
+                <div class="profile-avatar rounded-3 bg-secondary d-flex align-items-center justify-content-center text-white fs-1">
                   <i class="bi bi-person"></i>
                 </div>
               {% endif %}
@@ -25,11 +21,11 @@
             <div class="flex-grow-1">
               <h3 class="fw-bold text-white mb-2 d-flex align-items-center justify-content-center justify-content-sm-start gap-2">
                 {{ admission.student_name }}
-                <span class="text-primary" style="font-size: 1.1rem;"><i class="bi bi-patch-check-fill"></i></span>
-                <span class="text-success" style="font-size: 1.1rem;"><i class="bi bi-check-circle-fill"></i></span>
+                <span class="text-primary fs-6"><i class="bi bi-patch-check-fill"></i></span>
+                <span class="text-success fs-6"><i class="bi bi-check-circle-fill"></i></span>
               </h3>
 
-              <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 text-white-50" style="font-size: 0.88rem;">
+              <div class="profile-meta d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 text-white-50">
                 <span><i class="bi bi-person text-muted me-1"></i> Student</span>
                 <span><i class="bi bi-geo-alt text-muted me-1"></i> {{ admission.address|truncatechars:20 }}</span>
                 <span><i class="bi bi-envelope text-muted me-1"></i> {{ admission.email }}</span>
@@ -42,32 +38,32 @@
         <div class="col-lg-5 col-12">
           <div class="d-flex flex-wrap gap-2 justify-content-lg-end justify-content-center">
             <!-- Enrollment Box -->
-            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
-              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">ENROLLMENT NO</span>
+            <div class="profile-summary-pill p-2 px-3 rounded text-center">
+              <span class="profile-summary-label d-block text-white-50 fw-semibold">ENROLLMENT NO</span>
               <span class="fw-bold text-white small">{{ admission.enrollment_no }}</span>
             </div>
 
             <!-- DOB Box -->
-            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 110px;">
-              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">DATE OF BIRTH</span>
+            <div class="profile-summary-pill p-2 px-3 rounded text-center">
+              <span class="profile-summary-label d-block text-white-50 fw-semibold">DATE OF BIRTH</span>
               <span class="fw-bold text-white small">{{ admission.dob|date:"d-m-Y"|default:"—" }}</span>
             </div>
 
             <!-- Gender Box -->
-            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); min-width: 90px;">
-              <span class="d-block text-white-50 fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px;">GENDER</span>
+            <div class="profile-summary-pill p-2 px-3 rounded text-center">
+              <span class="profile-summary-label d-block text-white-50 fw-semibold">GENDER</span>
               <span class="fw-bold text-white small">{{ admission.gender|default:"—" }}</span>
             </div>
 
             <!-- Remaining Course Fee Box -->
-            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); min-width: 120px;">
-              <span class="d-block text-danger-emphasis fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #f87171 !important;">REMAINING FEE</span>
+            <div class="profile-summary-pill p-2 px-3 rounded text-center">
+              <span class="profile-summary-label d-block text-danger fw-semibold">REMAINING FEE</span>
               <span class="fw-bold text-white small">₹{{ pending_amount|floatformat:0 }}</span>
             </div>
 
             <!-- Total Course Fee Box -->
-            <div class="p-2 px-3 rounded text-center" style="background-color: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); min-width: 120px;">
-              <span class="d-block text-success-emphasis fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #34d399 !important;">TOTAL FEE</span>
+            <div class="profile-summary-pill p-2 px-3 rounded text-center">
+              <span class="profile-summary-label d-block text-success fw-semibold">TOTAL FEE</span>
               <span class="fw-bold text-white small">₹{{ course_fee|floatformat:0 }}</span>
             </div>
           </div>
@@ -76,28 +72,28 @@
 
       <!-- Tabbed Menu -->
       <div class="mt-5 border-top border-secondary pt-3">
-        <ul class="nav nav-pills gap-1 flex-wrap" id="studentProfileTab" role="tablist" style="border: none;">
+        <ul class="nav nav-pills gap-1 flex-wrap" id="studentProfileTab" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active px-4 py-2 text-white bg-primary rounded" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-grid-fill me-1"></i> Overview</button>
+            <button class="nav-link active px-4 py-2 text-white rounded hover-nav-pill" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true"><i class="bi bi-grid-fill me-1"></i> Overview</button>
           </li>
           {% if request.user.role == 'admin' or request.user.role == 'center' %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="update-tab" data-bs-toggle="pill" data-bs-target="#update" type="button" role="tab" aria-controls="update" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-pencil me-1"></i> Update</button>
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="update-tab" data-bs-toggle="pill" data-bs-target="#update" type="button" role="tab" aria-controls="update" aria-selected="false"><i class="bi bi-pencil me-1"></i> Update</button>
           </li>
           {% endif %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="fees-tab" data-bs-toggle="pill" data-bs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-wallet2 me-1"></i> Fees Record</button>
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="fees-tab" data-bs-toggle="pill" data-bs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="false"><i class="bi bi-wallet2 me-1"></i> Fees Record</button>
           </li>
           {% if request.user.role == 'admin' or request.user.role == 'center' %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="documents-tab" data-bs-toggle="pill" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-file-earmark-medical me-1"></i> Document(s)</button>
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="documents-tab" data-bs-toggle="pill" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false"><i class="bi bi-file-earmark-medical me-1"></i> Document(s)</button>
           </li>
           {% endif %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="password-tab" data-bs-toggle="pill" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-key-fill me-1"></i> Change Password</button>
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="password-tab" data-bs-toggle="pill" data-bs-target="#password" type="button" role="tab" aria-controls="password" aria-selected="false"><i class="bi bi-key-fill me-1"></i> Change Password</button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="notifications-tab" data-bs-toggle="pill" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false" style="font-size: 0.9rem; font-weight: 500;"><i class="bi bi-bell-fill me-1"></i> Notifications</button>
+            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="notifications-tab" data-bs-toggle="pill" data-bs-target="#notifications" type="button" role="tab" aria-controls="notifications" aria-selected="false"><i class="bi bi-bell-fill me-1"></i> Notifications</button>
           </li>
         </ul>
       </div>
@@ -116,8 +112,8 @@
         {% if total_exams is not None %}
         <div class="row g-3 mb-4 row-cols-1 row-cols-md-3">
           <div class="col">
-            <div class="p-3 rounded d-flex align-items-center gap-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
-              <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary" style="font-size: 1.5rem;"><i class="bi bi-journal-text"></i></div>
+            <div class="qa-card p-3 d-flex align-items-center gap-3">
+              <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary fs-4"><i class="bi bi-journal-text"></i></div>
               <div>
                 <span class="d-block text-white-50 small">Available Exams</span>
                 <span class="fs-4 fw-bold text-white">{{ total_exams }}</span>
@@ -125,8 +121,8 @@
             </div>
           </div>
           <div class="col">
-            <div class="p-3 rounded d-flex align-items-center gap-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
-              <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success" style="font-size: 1.5rem;"><i class="bi bi-check2-circle"></i></div>
+            <div class="qa-card p-3 d-flex align-items-center gap-3">
+              <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success fs-4"><i class="bi bi-check2-circle"></i></div>
               <div>
                 <span class="d-block text-white-50 small">Exams Attempted</span>
                 <span class="fs-4 fw-bold text-white">{{ total_attempts }}</span>
@@ -134,8 +130,8 @@
             </div>
           </div>
           <div class="col">
-            <div class="p-3 rounded d-flex align-items-center gap-3" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
-              <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning" style="font-size: 1.5rem;"><i class="bi bi-graph-up-arrow"></i></div>
+            <div class="qa-card p-3 d-flex align-items-center gap-3">
+              <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning fs-4"><i class="bi bi-graph-up-arrow"></i></div>
               <div>
                 <span class="d-block text-white-50 small">Average Score</span>
                 <span class="fs-4 fw-bold text-white">{{ average_score }}%</span>
@@ -145,40 +141,40 @@
         </div>
         {% endif %}
 
-        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+        <div class="qa-card">
           <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Account Overview</h5>
 
           <div class="table-responsive">
-            <table class="table table-dark table-borderless align-middle mb-0 text-white-50" style="font-size: 0.92rem; background: transparent;">
+            <table class="table table-examly table-hover align-middle mb-0">
               <tbody>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                  <td class="py-3 fw-bold text-white" style="width: 20%;">Center Name</td>
-                  <td class="py-3 text-white" style="width: 30%;">{{ admission.center.name|default:"—" }}</td>
-                  <td class="py-3 fw-bold text-white" style="width: 20%;">Duration</td>
-                  <td class="py-3 text-white" style="width: 30%;">{{ admission.course.duration|default:"—" }}</td>
+                <tr>
+                  <td class="py-3 fw-bold text-white">Center Name</td>
+                  <td class="py-3 text-white">{{ admission.center.name|default:"—" }}</td>
+                  <td class="py-3 fw-bold text-white">Duration</td>
+                  <td class="py-3 text-white">{{ admission.course.duration|default:"—" }}</td>
                 </tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <tr>
                   <td class="py-3 fw-bold text-white">Course Name</td>
                   <td class="py-3 text-white">{{ admission.course.name|default:"—" }}</td>
                   <td class="py-3 fw-bold text-white">Email</td>
                   <td class="py-3 text-white">{{ admission.email|default:"—" }}</td>
                 </tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <tr>
                   <td class="py-3 fw-bold text-white">Mobile</td>
                   <td class="py-3 text-white">
                     {{ admission.whatsapp_no }}
-                    <span class="badge bg-primary ms-2" style="font-size: 0.75rem;">Self</span>
+                    <span class="badge bg-primary ms-2">Self</span>
                   </td>
                   <td class="py-3 fw-bold text-white">Mother Name</td>
                   <td class="py-3 text-white">{{ admission.mother_name|default:"—" }}</td>
                 </tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <tr>
                   <td class="py-3 fw-bold text-white">Father Name</td>
                   <td class="py-3 text-white">{{ admission.father_name|default:"—" }}</td>
                   <td class="py-3 fw-bold text-white">City Name</td>
                   <td class="py-3 text-white">{{ admission.district|default:"—" }}</td>
                 </tr>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <tr>
                   <td class="py-3 fw-bold text-white">State Name</td>
                   <td class="py-3 text-white">{{ admission.state|default:"—" }}</td>
                   <td class="py-3 fw-bold text-white">Pincode</td>
@@ -325,7 +321,7 @@
 
       <!-- Fees Record Tab -->
       <div class="tab-pane fade" id="fees" role="tabpanel" aria-labelledby="fees-tab">
-        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+        <div class="qa-card">
           <div class="fee-record-header">
             <h5>Fee Record</h5>
             {% if request.user.role == 'admin' or request.user.role == 'center' %}
@@ -337,9 +333,9 @@
 
           {% if request.user.role == 'admin' or request.user.role == 'center' %}
           <!-- Edit Fee Record Modal -->
-          <div class="modal fade dark-modal" id="feeModal" tabindex="-1" aria-labelledby="feeModalLabel" aria-hidden="true">
+          <div class="modal fade" id="feeModal" tabindex="-1" aria-labelledby="feeModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered modal-lg">
-              <div class="modal-content" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08);">
+              <div class="modal-content">
                 <div class="modal-header border-secondary">
                   <h5 class="modal-title fw-bold text-white" id="feeModalLabel">
                     <i class="bi bi-wallet2 text-primary me-2"></i>{% if editing_fee_payment %}Edit Fee Record{% else %}Add Fee Record{% endif %}
@@ -441,9 +437,8 @@
           <!-- DataTable controls -->
           <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
             <div class="d-flex align-items-center gap-2">
-              <span style="color: #f6f4ff; font-size: 0.9rem;">Show</span>
-              <select name="show" class="form-select form-select-sm text-white fee-record-show" 
-                      style="width: 70px; background-color: var(--erp-bg-input, #161922); border: 1px solid var(--erp-border-input, #252a3c); border-radius: 4px;">
+              <span class="text-white fw-semibold small">Show</span>
+              <select name="show" class="form-select form-select-sm text-white fee-record-show">
                 <option value="10">10</option>
                 <option value="25">25</option>
                 <option value="50">50</option>
@@ -452,9 +447,8 @@
             
             <div class="d-flex align-items-center gap-3 flex-wrap">
               <div class="d-flex align-items-center gap-2">
-                <span style="color: #f6f4ff; font-size: 0.9rem;">Search:</span>
-                <input type="text" class="form-control form-control-sm text-white fee-record-search" 
-                       style="width: 180px; background-color: var(--erp-bg-input, #161922); border: 1px solid var(--erp-border-input, #252a3c); border-radius: 4px;">
+                <span class="text-white fw-semibold small">Search:</span>
+                <input type="text" class="form-control form-control-sm text-white fee-record-search">
               </div>
               
               <div class="d-flex gap-1 no-print">
@@ -468,31 +462,31 @@
           </div>
 
           <div class="table-responsive">
-            <table class="table table-examly table-bordered table-hover align-middle mb-0" style="border-color: rgba(255,255,255,0.05) !important;">
+            <table class="table table-examly table-bordered table-hover align-middle mb-0">
               <thead>
                 <!-- Centered Student Name header -->
                 <tr>
-                  <th colspan="6" class="text-center text-white py-3 fs-5" style="background-color: rgba(255,255,255,0.02); font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                  <th colspan="6" class="text-center text-white py-3 fs-5">
                     {{ admission.student_name }}
                   </th>
                 </tr>
-                <tr style="border-bottom: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.01);">
-                  <th class="ps-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 50px;">#</th>
-                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Date</th>
-                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Transaction ID</th>
-                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Fee Amount</th>
-                  <th class="text-uppercase text-muted fw-semibold" style="font-size: 0.75rem;">Fee Type</th>
-                  <th class="pe-3 text-uppercase text-muted fw-semibold" style="font-size: 0.75rem; width: 330px;">Action</th>
+                <tr>
+                  <th class="ps-3 text-uppercase text-muted fw-semibold">#</th>
+                  <th class="text-uppercase text-muted fw-semibold">Date</th>
+                  <th class="text-uppercase text-muted fw-semibold">Transaction ID</th>
+                  <th class="text-uppercase text-muted fw-semibold">Fee Amount</th>
+                  <th class="text-uppercase text-muted fw-semibold">Fee Type</th>
+                  <th class="pe-3 text-uppercase text-muted fw-semibold">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {% for payment in fee_payments %}
-                <tr class="fee-payment-row" style="border-color: rgba(255,255,255,0.05) !important;">
-                  <td class="ps-3 text-white-50 fw-bold" style="font-size: 0.9rem;">{{ forloop.counter }}</td>
-                  <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.payment_date|date:"d-m-Y" }}</td>
-                  <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.reference_number|default:"—" }}</td>
-                  <td class="fw-bold text-white" style="font-size: 0.9rem;">₹ {{ payment.amount|floatformat:0 }}</td>
-                  <td class="text-white-50" style="font-size: 0.9rem;">{{ payment.get_payment_method_display }}</td>
+                <tr class="fee-payment-row">
+                  <td class="ps-3 text-white-50 fw-bold">{{ forloop.counter }}</td>
+                  <td class="text-white-50">{{ payment.payment_date|date:"d-m-Y" }}</td>
+                  <td class="text-white-50">{{ payment.reference_number|default:"—" }}</td>
+                  <td class="fw-bold text-white">₹ {{ payment.amount|floatformat:0 }}</td>
+                  <td class="text-white-50">{{ payment.get_payment_method_display }}</td>
                   <td class="pe-3">
                     <div class="premium-fee-action-group">
                       {% if request.user.role == 'admin' or request.user.role == 'center' %}
@@ -508,7 +502,7 @@
                 {% empty %}
                 <tr class="fee-empty-row">
                   <td colspan="6" class="text-center py-5 text-muted">
-                    <i class="bi bi-wallet2 text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                    <i class="bi bi-wallet2 text-primary mb-2 d-block fs-1 opacity-50"></i>
                     No fee payments recorded.
                   </td>
                 </tr>
@@ -739,12 +733,12 @@
 
       <!-- Notifications Tab -->
       <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
-        <div class="qa-card" style="background-color: var(--erp-bg-card, #12141c); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px;">
+        <div class="qa-card">
           <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Notification(s)</h5>
           
           <div class="d-flex flex-column gap-3">
             {% for note in notifications %}
-            <div class="p-3 rounded d-flex gap-3 align-items-start" style="background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+            <div class="qa-card p-3 d-flex gap-3 align-items-start">
               <div class="fs-4 {{ note.icon }}"><i class="bi bi-bell"></i></div>
               <div class="flex-grow-1">
                 <h6 class="fw-bold text-white mb-1">{{ note.title }}</h6>
@@ -754,7 +748,7 @@
             </div>
             {% empty %}
             <div class="text-center py-5 text-muted">
-              <i class="bi bi-bell-slash text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+              <i class="bi bi-bell-slash text-primary mb-2 d-block fs-1 opacity-50"></i>
               No new notifications.
             </div>
             {% endfor %}
@@ -767,29 +761,58 @@
 </div>
 
 <style>
+  .profile-header-card {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .profile-avatar {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+  }
+
+  .profile-meta,
+  .profile-header-card .nav-link {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .profile-summary-pill {
+    min-width: 110px;
+    background: var(--erp-bg-input);
+    border: 1px solid var(--erp-border-color);
+  }
+
+  .profile-summary-label {
+    font-size: 0.72rem;
+    letter-spacing: 0;
+  }
+
   .hover-nav-pill {
-    transition: all 0.2s ease-in-out;
+    transition: background 0.2s, color 0.2s;
   }
   .hover-nav-pill:hover {
-    background-color: rgba(255,255,255,0.05) !important;
-    color: #fff !important;
+    background-color: var(--erp-bg-input) !important;
+    color: var(--erp-text-primary) !important;
   }
   .hover-nav-pill.active {
-    background-color: var(--color-primary, #0d6efd) !important;
-    color: #fff !important;
+    background-color: #4a46f3 !important;
+    color: var(--erp-text-primary) !important;
   }
 
   .profile-action-card {
-    background: #1a1a1a;
-    border: 1px solid #2a2d42;
-    border-radius: 7px;
+    background: var(--erp-bg-card) !important;
+    border: 1px solid var(--erp-border-color) !important;
+    border-radius: 14px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
     overflow: hidden;
   }
 
   .profile-section-head {
     min-height: 70px;
-    padding: 22px 30px;
-    border-bottom: 1px solid #2a2d42;
+    padding: 1.3rem;
+    border-bottom: 1px solid var(--erp-border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -798,36 +821,36 @@
 
   .profile-section-head h5 {
     margin: 0;
-    color: #fff;
-    font-size: 17px;
-    font-weight: 900;
+    color: var(--erp-text-primary);
+    font-size: 1rem;
+    font-weight: 700;
   }
 
   .profile-dashed-btn {
-    min-height: 48px;
+    min-height: 43px;
     padding: 0 22px;
-    border: 1px dashed #2690ff;
-    border-radius: 6px;
+    border: 1px dashed var(--erp-border-glow);
+    border-radius: 8px;
     background: transparent;
-    color: #2690ff;
+    color: #b6b6ff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 9px;
-    font-weight: 900;
+    font-weight: 600;
     text-decoration: none;
   }
 
   .profile-dashed-btn.success {
-    border-color: #2ec87d;
-    color: #2ec87d;
+    border-color: #198754;
+    color: #198754;
   }
 
   .profile-form-grid {
-    padding: 28px 30px 32px;
+    padding: 1.3rem;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 22px 20px;
+    gap: 1rem;
   }
 
   .profile-field {
@@ -837,13 +860,13 @@
   }
 
   .profile-field label {
-    color: #c5c7d4;
-    font-size: 14px;
-    font-weight: 900;
+    color: var(--erp-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
   }
 
   .profile-field label span {
-    color: #ff3470;
+    color: #f03e65;
   }
 
   .profile-field input,
@@ -852,11 +875,11 @@
     width: 100%;
     min-height: 44px;
     padding: 10px 13px;
-    border: 1px solid #30344d;
-    border-radius: 6px;
-    background: #1a1a1a;
-    color: #fff;
-    font-weight: 800;
+    border: 1px solid var(--erp-border-input);
+    border-radius: 8px;
+    background: var(--erp-bg-input);
+    color: var(--erp-text-primary);
+    font-weight: 600;
     outline: none;
   }
 
@@ -875,15 +898,15 @@
   }
 
   .profile-input-group span {
-    border: 1px solid #30344d;
+    border: 1px solid var(--erp-border-input);
     border-left: 0;
-    border-radius: 0 6px 6px 0;
-    background: #202033;
-    color: #aeb2c8;
+    border-radius: 0 8px 8px 0;
+    background: var(--erp-bg-input);
+    color: var(--erp-text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 900;
+    font-weight: 600;
   }
 
   .profile-field-wide-2 {
@@ -906,20 +929,22 @@
 
   .documents-table th,
   .documents-table td {
-    border: 1px solid #2a2d42;
+    border: 1px solid var(--erp-border-color);
     padding: 14px 12px;
-    color: #fff;
+    color: var(--erp-text-primary);
     vertical-align: middle;
-    font-weight: 900;
+    font-weight: 600;
   }
 
   .documents-table th {
-    color: #fff;
-    background: #1a1a1a;
+    color: var(--erp-text-muted);
+    background: var(--erp-bg-input);
+    text-transform: uppercase;
+    font-size: 0.8rem;
   }
 
   .documents-table tbody tr:nth-child(odd) {
-    background: #1a1a2a;
+    background: var(--erp-bg-card);
   }
 
   .document-upload-form {
@@ -938,40 +963,41 @@
   .document-missing {
     min-height: 37px;
     padding: 0 15px;
-    border-radius: 5px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     font-size: 13px;
-    font-weight: 900;
+    font-weight: 600;
     text-decoration: none;
   }
 
   .document-change-btn {
-    border: 1px solid #7437ef;
-    background: #111119;
-    color: #fff;
+    border: 1px dashed var(--erp-border-glow);
+    background: transparent;
+    color: #b6b6ff;
     cursor: pointer;
   }
 
   .document-view-btn {
     margin-left: 8px;
-    border: 1px dashed #2ec87d;
-    color: #2ec87d;
+    border: 1px dashed #198754;
+    color: #198754;
   }
 
   .document-missing {
-    background: #ff3470;
-    color: #fff;
+    background: transparent;
+    border: 1px dashed #f03e65;
+    color: #f03e65;
   }
 
   .password-card {
-    border-color: #2690ff;
+    border-color: var(--erp-border-color) !important;
   }
 
   .password-grid {
-    padding: 28px 30px 30px;
+    padding: 1.3rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
@@ -983,8 +1009,8 @@
 
   .password-input-wrap input {
     padding-right: 50px;
-    background: #18182c;
-    border-color: #18182c;
+    background: var(--erp-bg-input);
+    border-color: var(--erp-border-input);
   }
 
   .password-eye {
@@ -994,7 +1020,7 @@
     transform: translateY(-50%);
     border: 0;
     background: transparent;
-    color: #4b4e76;
+    color: var(--erp-text-muted);
     font-size: 18px;
   }
 
@@ -1007,33 +1033,33 @@
   .password-meter span {
     height: 5px;
     border-radius: 10px;
-    background: #373a5d;
+    background: var(--erp-border-input);
   }
 
   .password-field small {
-    color: #6f7399;
+    color: var(--erp-text-muted);
     font-size: 13px;
   }
 
   .password-field .password-error,
   .password-form-error {
-    color: #ff3470;
+    color: #f03e65;
     font-weight: 800;
   }
 
   .password-form-error {
     margin: 0 30px 28px;
     padding: 12px 14px;
-    border: 1px solid #ff3470;
-    border-radius: 6px;
+    border: 1px solid #f03e65;
+    border-radius: 8px;
     background: rgba(255, 52, 112, 0.12);
   }
 
   #fees .qa-card {
     padding: 0 !important;
-    border-color: #2a2d42 !important;
-    border-radius: 7px !important;
-    background: #1a1a1a !important;
+    border-color: var(--erp-border-color) !important;
+    border-radius: 14px !important;
+    background: var(--erp-bg-card) !important;
     overflow: hidden;
   }
 
@@ -1041,8 +1067,8 @@
   #fees .fee-record-header {
     min-height: 70px;
     margin: 0 !important;
-    padding: 24px 30px !important;
-    border-bottom: 1px solid #2a2d42 !important;
+    padding: 1.3rem !important;
+    border-bottom: 1px solid var(--erp-border-color) !important;
   }
 
   #fees .fee-record-header {
@@ -1054,33 +1080,34 @@
 
   #fees .fee-record-header h5 {
     margin: 0 !important;
-    font-size: 17px;
-    font-weight: 900;
+    color: var(--erp-text-primary);
+    font-size: 1rem;
+    font-weight: 700;
   }
 
   #fees .fee-add-toggle {
     min-height: 42px;
     padding: 0 18px;
-    border: 1px dashed #2690ff;
-    border-radius: 6px;
+    border: 1px dashed var(--erp-border-glow);
+    border-radius: 8px;
     background: transparent;
-    color: #2690ff;
+    color: #b6b6ff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-weight: 900;
+    font-weight: 600;
   }
 
   #fees .fee-add-toggle:hover {
-    background: rgba(38, 144, 255, 0.12);
+    background: rgba(74, 70, 243, 0.1);
   }
 
   #fees .fee-add-panel {
     display: none;
-    padding: 22px 30px 24px;
-    border-bottom: 1px solid #2a2d42;
-    background: #171717;
+    padding: 1.3rem;
+    border-bottom: 1px solid var(--erp-border-color);
+    background: var(--erp-bg-card);
   }
 
   #fees .fee-add-panel.is-open {
@@ -1108,9 +1135,9 @@
   }
 
   #fees .fee-add-field label {
-    color: #fff;
-    font-size: 14px;
-    font-weight: 900;
+    color: var(--erp-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
   }
 
   #fees .fee-add-field input.form-control,
@@ -1118,12 +1145,12 @@
   #fees .fee-add-field textarea.form-control {
     width: 100% !important;
     min-height: 44px !important;
-    border: 1px solid #2a2d42 !important;
-    border-radius: 5px !important;
-    background: #18182c !important;
-    color: #fff !important;
+    border: 1px solid var(--erp-border-input) !important;
+    border-radius: 8px !important;
+    background: var(--erp-bg-input) !important;
+    color: var(--erp-text-primary) !important;
     box-shadow: none !important;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   #fees .fee-add-field textarea.form-control {
@@ -1133,15 +1160,15 @@
 
   #fees .fee-field-error,
   #fees .fee-form-errors {
-    color: #ff3470;
+    color: #f03e65;
     font-weight: 800;
   }
 
   #fees .fee-form-errors {
     margin-top: 14px;
     padding: 12px 14px;
-    border: 1px solid #ff3470;
-    border-radius: 6px;
+    border: 1px solid #f03e65;
+    border-radius: 8px;
     background: rgba(255, 52, 112, 0.12);
   }
 
@@ -1157,28 +1184,28 @@
   #fees .fee-cancel-btn {
     min-height: 43px;
     padding: 0 18px;
-    border-radius: 6px;
+    border-radius: 8px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-weight: 900;
+    font-weight: 600;
   }
 
   #fees .fee-save-btn {
-    border: 1px dashed #2ec87d;
+    border: 1px dashed #198754;
     background: transparent;
-    color: #2ec87d;
+    color: #198754;
   }
 
   #fees .fee-save-btn:hover {
-    background: rgba(46, 200, 125, 0.12);
+    background: rgba(25, 135, 84, 0.1);
   }
 
   #fees .fee-cancel-btn {
-    border: 1px solid #2a2d42;
-    background: #181819;
-    color: #a9aec4;
+    border: 1px solid var(--erp-border-input);
+    background: var(--erp-bg-input);
+    color: var(--erp-text-secondary);
   }
 
   #fees .qa-card > .d-flex {
@@ -1189,7 +1216,7 @@
     grid-template-columns: minmax(170px, 1fr) minmax(260px, 1fr) auto;
     align-items: center !important;
     column-gap: 26px;
-    border-bottom: 1px solid #2a2d42;
+    border-bottom: 1px solid var(--erp-border-color);
   }
 
   #fees .qa-card > .d-flex > .d-flex:first-child {
@@ -1205,18 +1232,18 @@
   }
 
   #fees .qa-card > .d-flex span {
-    color: #fff !important;
+    color: var(--erp-text-primary) !important;
     font-size: 14px !important;
-    font-weight: 900;
+    font-weight: 600;
   }
 
   #fees .qa-card select,
   #fees .qa-card input.form-control {
     height: 35px !important;
-    border: 0 !important;
-    border-radius: 4px !important;
-    background: #18182c !important;
-    color: #bfc6dd !important;
+    border: 1px solid var(--erp-border-input) !important;
+    border-radius: 8px !important;
+    background: var(--erp-bg-input) !important;
+    color: var(--erp-text-primary) !important;
     box-shadow: none !important;
   }
 
@@ -1234,16 +1261,16 @@
     display: inline-flex !important;
     align-items: center;
     gap: 32px !important;
-    background: #181819;
+    background: var(--erp-bg-card);
   }
 
   #fees .qa-card .no-print .btn {
     border: 0 !important;
     background: transparent !important;
-    color: #a9aec4 !important;
+    color: var(--erp-text-secondary) !important;
     box-shadow: none !important;
     padding: 0 !important;
-    font-weight: 700;
+    font-weight: 600;
   }
 
   #fees .table-responsive {
@@ -1253,28 +1280,29 @@
   #fees table.table {
     min-width: 980px;
     border-collapse: collapse;
-    color: #fff;
+    color: var(--erp-text-primary);
   }
 
   #fees table.table th,
   #fees table.table td {
-    border: 1px solid #2a2d42 !important;
+    border: 1px solid var(--erp-border-color) !important;
     padding: 11px 10px !important;
     vertical-align: middle;
   }
 
   #fees table.table th {
-    color: #fff !important;
-    font-weight: 900 !important;
-    text-transform: none !important;
-    font-size: 14px !important;
+    color: var(--erp-text-muted) !important;
+    background: var(--erp-bg-input) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 0.8rem !important;
   }
 
   #fees table.table td {
     height: 64px;
-    color: #fff !important;
-    font-weight: 800;
-    font-size: 14px !important;
+    color: var(--erp-text-secondary) !important;
+    font-weight: 600;
+    font-size: 0.9rem !important;
   }
 
   #fees table.table thead tr:first-child th {
@@ -1289,12 +1317,13 @@
   }
 
   #fees table.table tbody td:nth-child(4) {
-    font-size: 19px !important;
-    font-weight: 900 !important;
+    color: var(--erp-text-primary) !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
   }
 
   #fees table.table tfoot td {
-    color: #2ec87d !important;
+    color: #198754 !important;
     font-weight: 900 !important;
   }
 
@@ -1305,7 +1334,7 @@
   #fees .premium-fee-action-group {
     display: inline-flex;
     min-height: 44px;
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
     vertical-align: middle;
   }
@@ -1319,7 +1348,7 @@
     justify-content: center;
     gap: 8px;
     text-decoration: none;
-    font-weight: 900;
+    font-weight: 600;
     background: transparent;
     line-height: 1;
   }
@@ -1330,22 +1359,22 @@
   }
 
   #fees .premium-fee-action.edit {
-    color: #2690ff;
-    border: 1px dashed #2690ff;
+    color: #3b82f6;
+    border: 1px dashed #3b82f6;
   }
 
   #fees .premium-fee-action.receipt {
-    color: #2ec87d;
-    border-top: 1px dashed #2ec87d;
-    border-bottom: 1px dashed #2ec87d;
-    border-right: 1px dashed #2ec87d;
+    color: #198754;
+    border-top: 1px dashed #198754;
+    border-bottom: 1px dashed #198754;
+    border-right: 1px dashed #198754;
   }
 
   #fees .premium-fee-action.delete {
-    color: #ff3470;
-    border-top: 1px dashed #ff3470;
-    border-right: 1px dashed #ff3470;
-    border-bottom: 1px dashed #ff3470;
+    color: #f03e65;
+    border-top: 1px dashed #f03e65;
+    border-right: 1px dashed #f03e65;
+    border-bottom: 1px dashed #f03e65;
   }
 
   #fees .premium-fee-hidden,
@@ -1355,7 +1384,7 @@
 
   .premium-fee-status {
     padding: 12px 17px 18px;
-    color: #7b839d;
+    color: var(--erp-text-muted);
     font-size: 13px;
   }
 
@@ -1469,6 +1498,11 @@
 
   const feeModalEl = document.getElementById('feeModal');
   if (feeModalEl) {
+    const erpShell = document.querySelector('.erp-shell');
+    if (erpShell && feeModalEl.parentElement !== erpShell) {
+      erpShell.appendChild(feeModalEl);
+    }
+
     feeModalEl.addEventListener('show.bs.modal', function (event) {
       const button = event.relatedTarget;
       // If triggered by "Add Payment" button, reset the form to "Add" state
