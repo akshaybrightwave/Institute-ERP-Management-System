@@ -32,6 +32,7 @@ urlpatterns = [
     path('reports/exams/student-performance/export/', views.export_student_performance_csv, name='export_student_performance_csv'),
     path('reports/exams/batch-performance/export/', views.export_batch_performance_csv, name='export_batch_performance_csv'),
     path('schedules/', views.exam_schedule_list, name='exam_schedule_list'),
+    path('schedules/ajax/subjects/', views.ajax_exam_schedule_subjects, name='ajax_exam_schedule_subjects'),
     path('schedules/<int:pk>/edit/', views.exam_schedule_edit, name='exam_schedule_edit'),
     path('schedules/<int:pk>/delete/', views.exam_schedule_delete, name='exam_schedule_delete'),
     

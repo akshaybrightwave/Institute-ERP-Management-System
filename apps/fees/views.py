@@ -75,6 +75,24 @@ def _get_student_admission(profile):
     return qs.filter(student_name=profile.full_name).first()
 
 
+def _center_student_q(center, prefix=''):
+    if not center:
+        return Q(**{f'{prefix}pk__in': []})
+
+    admissions = StudentAdmission.objects.filter(center=center)
+    admission_emails = admissions.exclude(email__isnull=True).exclude(email='').values_list('email', flat=True)
+    admission_phones = admissions.exclude(whatsapp_no__isnull=True).exclude(whatsapp_no='').values_list('whatsapp_no', flat=True)
+
+    return (
+        Q(**{f'{prefix}batch__center': center}) |
+        Q(**{f'{prefix}user_id__in': admissions.exclude(user__isnull=True).values_list('user_id', flat=True)}) |
+        Q(**{f'{prefix}user__username__in': admissions.values_list('enrollment_no', flat=True)}) |
+        Q(**{f'{prefix}email__in': admission_emails}) |
+        Q(**{f'{prefix}phone__in': admission_phones}) |
+        Q(**{f'{prefix}full_name__in': admissions.values_list('student_name', flat=True)})
+    )
+
+
 def _build_student_fee_summary(profile):
     admission = _get_student_admission(profile)
     course = None
@@ -361,7 +379,7 @@ def fees_list(request):
 
     if is_center:
         center = request.user.center
-        students_qs = students_qs.filter(batch__center=center)
+        students_qs = students_qs.filter(_center_student_q(center))
         batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
@@ -412,7 +430,7 @@ def fees_list(request):
     if is_admin or is_center:
         payments_qs = FeePayment.objects.select_related('student__batch__course', 'student__batch__center').all().order_by('-payment_date', '-id')
         if is_center:
-            payments_qs = payments_qs.filter(student__batch__center=request.user.center)
+            payments_qs = payments_qs.filter(_center_student_q(request.user.center, prefix='student__'))
             
         # Search/Filter in payments
         if query:
@@ -435,8 +453,8 @@ def fees_list(request):
 
     if is_center:
         center = request.user.center
-        metrics_students = metrics_students.filter(batch__center=center)
-        metrics_payments = metrics_payments.filter(student__batch__center=center)
+        metrics_students = metrics_students.filter(_center_student_q(center))
+        metrics_payments = metrics_payments.filter(_center_student_q(center, prefix='student__'))
     elif is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         metrics_students = metrics_students.filter(batch__teacher=teacher_profile)
@@ -515,7 +533,7 @@ def search_fee_payment(request):
     payments_qs = FeePayment.objects.select_related('student').all().order_by('-payment_date', '-id')
     
     if is_center:
-        payments_qs = payments_qs.filter(student__batch__center=request.user.center)
+        payments_qs = payments_qs.filter(_center_student_q(request.user.center, prefix='student__'))
         
     if query:
         q_filter = Q(id__icontains=query) | Q(reference_number__icontains=query) | Q(student__full_name__icontains=query) | Q(student__phone__icontains=query)
@@ -568,21 +586,11 @@ def payment_create(request):
     if selected_student_id:
         try:
             if is_center:
-                student_profile = StudentProfile.objects.get(pk=selected_student_id, batch__center=request.user.center)
+                student_profile = FeePaymentForm(user=request.user).fields['student'].queryset.get(pk=selected_student_id)
             else:
                 student_profile = StudentProfile.objects.get(pk=selected_student_id)
-                
-            total_fee = student_profile.course_fee_at_admission if student_profile.course_fee_at_admission is not None else Decimal('0.00')
-            paid_amount = FeePayment.objects.filter(student=student_profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            pending_balance = total_fee - paid_amount
-            fee_summary = {
-                'student_name': student_profile.full_name,
-                'course_name': student_profile.batch.course.name if (student_profile.batch and student_profile.batch.course) else 'N/A',
-                'batch_name': student_profile.batch.name if student_profile.batch else 'N/A',
-                'total_fees': total_fee,
-                'amount_paid': paid_amount,
-                'pending_balance': pending_balance
-            }
+
+            fee_summary = _build_student_fee_summary(student_profile)
         except StudentProfile.DoesNotExist:
             pass
 
@@ -736,13 +744,13 @@ def student_fee_autocomplete(request):
     results = []
     if q:
         # Primary search: StudentProfile (this is what FeePayment FK points to)
-        qs = StudentProfile.objects.select_related('batch__course').filter(
+        qs = StudentProfile.objects.select_related('batch__course', 'batch__center').filter(
             Q(full_name__icontains=q) |
             Q(phone__icontains=q) |
             Q(email__icontains=q)
         )
         if is_center and request.user.center:
-            qs = qs.filter(batch__center=request.user.center)
+            qs = qs.filter(_center_student_q(request.user.center))
         qs = qs.order_by('full_name')[:20]
 
         profiles = list(qs)
@@ -750,7 +758,10 @@ def student_fee_autocomplete(request):
         # Try to enrich with StudentAdmission data (enrollment_no, photo, whatsapp_no)
         name_set = {p.full_name for p in profiles}
         adm_map = {}
-        for adm in StudentAdmission.objects.filter(student_name__in=name_set):
+        admission_qs = StudentAdmission.objects.filter(student_name__in=name_set)
+        if is_center and request.user.center:
+            admission_qs = admission_qs.filter(center=request.user.center)
+        for adm in admission_qs:
             adm_map[adm.student_name] = adm
 
         for sp in profiles:
@@ -792,28 +803,24 @@ def student_fee_summary_ajax(request):
         return JsonResponse({'error': 'No student_id provided'}, status=400)
 
     try:
-        qs = StudentProfile.objects.select_related('batch__course')
+        qs = StudentProfile.objects.select_related('batch__course', 'batch__center')
         if is_center and request.user.center:
-            student = qs.get(pk=student_id, batch__center=request.user.center)
+            student = qs.filter(_center_student_q(request.user.center)).get(pk=student_id)
         else:
             student = qs.get(pk=student_id)
     except StudentProfile.DoesNotExist:
         return JsonResponse({'error': 'Student not found'}, status=404)
 
-    total_fee = student.course_fee_at_admission if student.course_fee_at_admission is not None else Decimal('0.00')
-    paid_amount = FeePayment.objects.filter(student=student).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-    remaining = total_fee - paid_amount
-    if remaining < Decimal('0.00'):
-        remaining = Decimal('0.00')
+    fee_summary = _build_student_fee_summary(student)
 
     return JsonResponse({
         'student_id': student.pk,
         'student_name': student.full_name,
-        'course_name': student.batch.course.name if (student.batch and student.batch.course) else 'N/A',
-        'batch_name': student.batch.name if student.batch else 'N/A',
-        'total_fee': str(total_fee),
-        'paid_amount': str(paid_amount),
-        'remaining_fee': str(remaining),
-        'has_due': remaining > Decimal('0.00'),
+        'course_name': fee_summary['course_name'],
+        'batch_name': fee_summary['batch_name'],
+        'total_fee': str(fee_summary['total_fees']),
+        'paid_amount': str(fee_summary['amount_paid']),
+        'remaining_fee': str(fee_summary['pending_balance']),
+        'has_due': fee_summary['pending_balance'] > Decimal('0.00'),
     })
 

@@ -400,7 +400,17 @@ def center_dashboard(request):
     total_admit_cards = AdmitCard.objects.filter(student__center=center).count()
     total_results = Result.objects.filter(student__center=center).count()
     total_id_cards = approved_admissions
-    total_fee_collection = FeePayment.objects.filter(student__batch__center=center).aggregate(
+    admission_emails = admissions.exclude(email__isnull=True).exclude(email='').values_list('email', flat=True)
+    admission_phones = admissions.exclude(whatsapp_no__isnull=True).exclude(whatsapp_no='').values_list('whatsapp_no', flat=True)
+    center_student_filter = (
+        Q(student__batch__center=center) |
+        Q(student__user_id__in=admissions.exclude(user__isnull=True).values_list('user_id', flat=True)) |
+        Q(student__user__username__in=admissions.values_list('enrollment_no', flat=True)) |
+        Q(student__email__in=admission_emails) |
+        Q(student__phone__in=admission_phones) |
+        Q(student__full_name__in=admissions.values_list('student_name', flat=True))
+    )
+    total_fee_collection = FeePayment.objects.filter(center_student_filter).aggregate(
         total=Coalesce(Sum('amount'), Value(Decimal('0.00')), output_field=DecimalField(max_digits=12, decimal_places=2))
     )['total']
     total_exams = Exam.objects.filter(

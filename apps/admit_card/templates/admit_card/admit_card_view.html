@@ -95,6 +95,50 @@
         </div>
       </div>
 
+      <div class="mt-4 pt-3 border-top">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+          <h6 class="fw-bold text-dark text-uppercase mb-0" style="font-size: 0.9rem;">Subject-Wise Exam Schedule</h6>
+          {% if exam_schedule %}
+          <div class="text-end" style="font-size: 0.78rem;">
+            <div class="fw-semibold text-dark">{{ exam_schedule.exam_center.centre_name }}</div>
+            <div class="text-muted">{{ exam_schedule.exam_center.address|default:"Exam centre address" }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if exam_schedule_rows %}
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle mb-0 text-dark" style="font-size: 0.82rem;">
+            <thead style="background-color: #eef2ff;">
+              <tr>
+                <th class="text-uppercase text-muted" style="width: 54px;">#</th>
+                <th class="text-uppercase text-muted">Subject</th>
+                <th class="text-uppercase text-muted" style="width: 140px;">Date</th>
+                <th class="text-uppercase text-muted" style="width: 120px;">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in exam_schedule_rows %}
+              <tr>
+                <td class="fw-bold text-muted">{{ forloop.counter }}</td>
+                <td>
+                  <span class="fw-bold text-dark">{{ row.subject.name }}</span>
+                  <span class="text-muted d-block">Code: {{ row.subject.subject_code|default:"-" }}</span>
+                </td>
+                <td class="fw-semibold">{{ row.exam_date|date:"d-m-Y" }}</td>
+                <td class="fw-semibold">{{ row.exam_time|time:"h:i A" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="border rounded-2 p-3 text-muted" style="font-size: 0.82rem; background-color: #f8f9fa;">
+          Exam schedule has not been published for this student's course and session yet.
+        </div>
+        {% endif %}
+      </div>
+
       <!-- Exam Rules / Information Placeholder Section (Future Ready) -->
       <div class="mt-4 pt-3 border-top">
         <h6 class="fw-bold text-dark text-uppercase mb-2" style="font-size: 0.9rem;">Important Instructions for Candidates</h6>

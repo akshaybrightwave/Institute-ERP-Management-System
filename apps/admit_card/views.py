@@ -9,6 +9,33 @@ from django.db.models import Q
 from .models import AdmitCard
 from .forms import AdmitCardForm
 from apps.students.models import StudentAdmission
+from apps.exams.models import ExamSchedule
+
+
+def _get_admit_card_exam_schedule(admit_card):
+    student = admit_card.student
+    if not student.center_id or not student.course_id or not admit_card.session_id:
+        return None
+
+    schedules = (
+        ExamSchedule.objects
+        .select_related('exam_center')
+        .prefetch_related('subject_schedules__subject')
+        .filter(
+            center=student.center,
+            course=student.course,
+            session=admit_card.session,
+        )
+        .order_by('-id')
+    )
+
+    course_duration = student.course.duration if student.course else ''
+    if course_duration:
+        duration_match = schedules.filter(duration=course_duration).first()
+        if duration_match:
+            return duration_match
+
+    return schedules.first()
 
 
 def _handle_list_and_csv(request, is_center):
@@ -161,8 +188,12 @@ def admit_card_view(request, pk):
     elif is_center and admit_card.student.center != request.user.center:
         return HttpResponseForbidden("Access Denied: Student is not in your center.")
 
+    exam_schedule = _get_admit_card_exam_schedule(admit_card)
+
     return render(request, 'admit_card/admit_card_view.html', {
         'admit_card': admit_card,
+        'exam_schedule': exam_schedule,
+        'exam_schedule_rows': exam_schedule.subject_schedules.all() if exam_schedule else [],
     })
 
 

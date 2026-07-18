@@ -1,19 +1,21 @@
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt, ExamSchedule, ExamStudentAssignment, ExamCentre
+from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt, ExamSchedule, ExamScheduleSubject, ExamStudentAssignment, ExamCentre
 from .forms import ExamForm, QuestionForm, OptionForm, ExamScheduleForm
 from apps.accounts.views import admin_required
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test, login_required
 from django.utils.timezone import now
 from django.db.models import Avg, Max, Min, Q, Count, F
+from django.db import transaction
 from django.core.paginator import Paginator
 from apps.centers.models import Center, CenterCourseAssignment
 from apps.courses.models import Course
 from apps.academics.models import AcademicSession
 from apps.students.models import StudentProfile, StudentAdmission
 from apps.batches.models import Batch
+from apps.subjects.models import Subject, SubjectOrder
 import csv
 import io
 
@@ -918,6 +920,81 @@ def export_batch_performance_csv(request):
     return response
 
 
+def _ordered_subjects_for_schedule(course, duration=''):
+    subjects_qs = Subject.objects.filter(course=course)
+    if duration:
+        duration_qs = subjects_qs.filter(duration_offset=duration)
+        if duration_qs.exists():
+            subjects_qs = duration_qs
+
+    orders = {
+        item.subject_id: item.order
+        for item in SubjectOrder.objects.filter(course=course)
+    }
+    subjects = list(subjects_qs)
+    subjects.sort(key=lambda item: (orders.get(item.id, 999999), -item.id))
+    return subjects
+
+
+def _build_schedule_subject_rows(schedule, post_data):
+    subject_ids = post_data.getlist('subject_ids[]') or post_data.getlist('subject_ids')
+    if len(subject_ids) == 1 and ',' in subject_ids[0]:
+        subject_ids = [sid.strip() for sid in subject_ids[0].split(',') if sid.strip()]
+
+    if not subject_ids:
+        return [], 'Please add at least one subject schedule row.'
+
+    allowed_subjects = {
+        str(subject.id): subject
+        for subject in _ordered_subjects_for_schedule(schedule.course, schedule.duration)
+    }
+    rows = []
+
+    for index, subject_id in enumerate(subject_ids, start=1):
+        subject = allowed_subjects.get(str(subject_id))
+        if not subject:
+            return [], 'Selected subject does not belong to the selected course.'
+
+        exam_date = post_data.get(f'exam_date_{subject_id}', '').strip()
+        exam_time = post_data.get(f'exam_time_{subject_id}', '').strip()
+        if not exam_date or not exam_time:
+            return [], f'Please enter date and time for {subject.name}.'
+
+        rows.append(ExamScheduleSubject(
+            schedule=schedule,
+            subject=subject,
+            exam_date=exam_date,
+            exam_time=exam_time,
+            order=index,
+        ))
+
+    return rows, ''
+
+
+@admin_required
+def ajax_exam_schedule_subjects(request):
+    course_id = request.GET.get('course_id')
+    duration = request.GET.get('duration', '').strip()
+
+    try:
+        course = Course.objects.get(pk=course_id)
+    except (Course.DoesNotExist, TypeError, ValueError):
+        return JsonResponse({'subjects': []})
+
+    subjects = _ordered_subjects_for_schedule(course, duration)
+    return JsonResponse({
+        'subjects': [
+            {
+                'id': subject.id,
+                'name': subject.name,
+                'code': subject.subject_code,
+                'duration': subject.duration_offset,
+            }
+            for subject in subjects
+        ]
+    })
+
+
 @admin_required
 def exam_schedule_list(request):
     form = ExamScheduleForm()
@@ -925,12 +1002,20 @@ def exam_schedule_list(request):
     if request.method == 'POST':
         form = ExamScheduleForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Schedule created successfully.')
-            return redirect('exam_schedule_list')
+            schedule = form.save(commit=False)
+            rows, row_error = _build_schedule_subject_rows(schedule, request.POST)
+            if row_error:
+                form.add_error(None, row_error)
+                messages.error(request, row_error)
+            else:
+                with transaction.atomic():
+                    schedule.save()
+                    ExamScheduleSubject.objects.bulk_create(rows)
+                messages.success(request, 'Schedule created successfully.')
+                return redirect('exam_schedule_list')
 
     query = request.GET.get('q', '').strip()
-    qs = ExamSchedule.objects.all().order_by('-id')
+    qs = ExamSchedule.objects.prefetch_related('subject_schedules__subject').all().order_by('-id')
     if query:
         qs = qs.filter(
             Q(course__name__icontains=query) |
@@ -956,7 +1041,18 @@ def exam_schedule_edit(request, pk):
     if request.method == 'POST':
         form = ExamScheduleForm(request.POST, instance=schedule)
         if form.is_valid():
-            form.save()
+            schedule = form.save(commit=False)
+            rows, row_error = _build_schedule_subject_rows(schedule, request.POST)
+            if row_error:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'errors': {'subjects': [row_error]}}, status=400)
+                form.add_error(None, row_error)
+                messages.error(request, row_error)
+                return redirect('exam_schedule_list')
+            with transaction.atomic():
+                schedule.save()
+                ExamScheduleSubject.objects.filter(schedule=schedule).delete()
+                ExamScheduleSubject.objects.bulk_create(rows)
             messages.success(request, 'Schedule updated successfully.')
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': True})
@@ -974,6 +1070,14 @@ def exam_schedule_edit(request, pk):
                 'duration': schedule.duration,
                 'exam_center': schedule.exam_center.pk if schedule.exam_center else '',
                 'session': schedule.session.pk if schedule.session else '',
+                'subjects': [
+                    {
+                        'id': row.subject_id,
+                        'date': row.exam_date.isoformat(),
+                        'time': row.exam_time.strftime('%H:%M'),
+                    }
+                    for row in schedule.subject_schedules.all()
+                ],
             })
         form = ExamScheduleForm(instance=schedule)
     return redirect('exam_schedule_list')

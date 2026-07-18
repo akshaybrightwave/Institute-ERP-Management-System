@@ -145,6 +145,21 @@ class ExamSchedule(SoftDeleteModel):
     #   apps/teachers/models.py  →  TeacherProfile
 
 
+class ExamScheduleSubject(models.Model):
+    schedule = models.ForeignKey(ExamSchedule, on_delete=models.CASCADE, related_name='subject_schedules')
+    subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE, related_name='exam_schedule_rows')
+    exam_date = models.DateField()
+    exam_time = models.TimeField()
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+        unique_together = ('schedule', 'subject')
+
+    def __str__(self):
+        return f"{self.schedule} - {self.subject.name}"
+
+
 class ExamStudentAssignment(SoftDeleteModel):
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='student_assignments')
     student = models.ForeignKey('students.StudentAdmission', on_delete=models.CASCADE, related_name='exam_assignments')

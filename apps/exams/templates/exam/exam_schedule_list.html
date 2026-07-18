@@ -29,6 +29,11 @@
 
           <form method="POST" action="{% url 'exam_schedule_list' %}" id="addScheduleForm" novalidate>
             {% csrf_token %}
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger mb-3">
+                {{ form.non_field_errors|join:", " }}
+              </div>
+            {% endif %}
 
             <div class="row g-3">
               <div class="col-md-4 col-12">
@@ -92,6 +97,25 @@
               </div>
             </div>
 
+            <div class="mt-4">
+              <div class="table-responsive">
+                <table class="table table-examly table-bordered align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Subject Name</th>
+                      <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Date</th>
+                      <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scheduleSubjectRows">
+                    <tr>
+                      <td colspan="3" class="text-center text-muted py-4">Select a course to load subjects.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <div class="mt-4" style="width: 150px;">
               <button type="submit" class="btn btn-publish w-100 py-2 rounded-3">
                 <i class="bi bi-file-earmark-plus me-1"></i> Publish
@@ -145,6 +169,7 @@
                   <th class="text-uppercase text-muted" style="font-size: 0.8rem;">DURATION</th>
                   <th class="text-uppercase text-muted" style="font-size: 0.8rem;">EXAM CENTRE</th>
                   <th class="text-uppercase text-muted" style="font-size: 0.8rem;">SESSION</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">SUBJECTS</th>
                   <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem; width: 220px;">ACTION</th>
                 </tr>
               </thead>
@@ -169,6 +194,9 @@
                   <td class="text-white">
                     {{ schedule.session.session_name }}
                   </td>
+                  <td class="text-white-50">
+                    {{ schedule.subject_schedules.count }} Subject{{ schedule.subject_schedules.count|pluralize }}
+                  </td>
                   <td class="pe-4 text-end">
                     <div class="d-flex gap-2 justify-content-end">
                       <button type="button"
@@ -189,7 +217,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                  <td colspan="7" class="text-center py-4 text-muted">
+                  <td colspan="8" class="text-center py-4 text-muted">
                     No schedules found.
                   </td>
                 </tr>
@@ -305,6 +333,25 @@
                 {% endfor %}
               </select>
             </div>
+
+            <div class="col-12">
+              <div class="table-responsive mt-2">
+                <table class="table table-examly table-bordered align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Subject Name</th>
+                      <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Date</th>
+                      <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="modalScheduleSubjectRows">
+                    <tr>
+                      <td colspan="3" class="text-center text-muted py-4">Select a course to load subjects.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer border-secondary">
@@ -323,6 +370,8 @@
 {% block scripts %}
 <script>
 (function () {
+  const SUBJECTS_URL = '{% url "ajax_exam_schedule_subjects" %}';
+
   // CSRF Utility
   function getCookie(name) {
     let cookieValue = null;
@@ -339,6 +388,87 @@
     return cookieValue;
   }
 
+  function subjectPlaceholder(targetBody, message) {
+    targetBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">' + message + '</td></tr>';
+  }
+
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, function (char) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[char];
+    });
+  }
+
+  function renderSubjectRows(targetBody, subjects, existingRows) {
+    if (!subjects.length) {
+      subjectPlaceholder(targetBody, 'No active subjects found for this course.');
+      return;
+    }
+
+    const existing = existingRows || {};
+    targetBody.innerHTML = subjects.map(function (subject) {
+      const saved = existing[String(subject.id)] || {};
+      const dateValue = saved.date || '';
+      const timeValue = saved.time || '';
+      const durationBadge = subject.duration ? '<span class="badge bg-primary ms-2">' + escapeHtml(subject.duration) + '</span>' : '';
+
+      return `
+        <tr>
+          <td class="text-white">
+            <input type="hidden" name="subject_ids" value="${subject.id}">
+            <span class="fw-semibold">${escapeHtml(subject.name)}</span>${durationBadge}
+            <div class="text-muted small">Code: ${escapeHtml(subject.code || '-')}</div>
+          </td>
+          <td>
+            <input type="date" name="exam_date_${subject.id}" value="${dateValue}" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;" required>
+          </td>
+          <td>
+            <input type="time" name="exam_time_${subject.id}" value="${timeValue}" class="form-control dark-input text-white" style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 8px;" required>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function loadSubjects(courseValue, durationValue, targetBody, existingRows) {
+    if (!courseValue) {
+      subjectPlaceholder(targetBody, 'Select a course to load subjects.');
+      return Promise.resolve();
+    }
+
+    subjectPlaceholder(targetBody, 'Loading subjects...');
+    const params = new URLSearchParams({ course_id: courseValue, duration: durationValue || '' });
+    return fetch(SUBJECTS_URL + '?' + params.toString(), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      renderSubjectRows(targetBody, data.subjects || [], existingRows || {});
+    })
+    .catch(function () {
+      subjectPlaceholder(targetBody, 'Unable to load subjects. Please try again.');
+    });
+  }
+
+  const addCourseSelect = document.getElementById('id_course');
+  const addDurationSelect = document.getElementById('id_duration');
+  const addSubjectRows = document.getElementById('scheduleSubjectRows');
+
+  if (addCourseSelect && addDurationSelect && addSubjectRows) {
+    function refreshAddSubjects() {
+      loadSubjects(addCourseSelect.value, addDurationSelect.value, addSubjectRows);
+    }
+
+    addCourseSelect.addEventListener('change', refreshAddSubjects);
+    addDurationSelect.addEventListener('change', refreshAddSubjects);
+    if (addCourseSelect.value) refreshAddSubjects();
+  }
+
   const editModal = document.getElementById('editScheduleModal');
   const bsModal = new bootstrap.Modal(editModal);
   const editForm = document.getElementById('editScheduleForm');
@@ -347,6 +477,7 @@
   const durationSelect = document.getElementById('modal_duration');
   const examCenterSelect = document.getElementById('modal_exam_center');
   const sessionSelect = document.getElementById('modal_session');
+  const modalSubjectRows = document.getElementById('modalScheduleSubjectRows');
   const modalError = document.getElementById('modalError');
   const submitBtn = document.getElementById('btnUpdateSubmit');
 
@@ -373,7 +504,13 @@
         durationSelect.value = data.duration;
         examCenterSelect.value = data.exam_center;
         sessionSelect.value = data.session;
-        bsModal.show();
+        const existingRows = {};
+        (data.subjects || []).forEach(function (row) {
+          existingRows[String(row.id)] = { date: row.date, time: row.time };
+        });
+        loadSubjects(data.course, data.duration, modalSubjectRows, existingRows).then(function () {
+          bsModal.show();
+        });
       })
       .catch(function () {
         Swal.fire({
@@ -385,6 +522,13 @@
       });
     });
   });
+
+  function refreshModalSubjects() {
+    loadSubjects(courseSelect.value, durationSelect.value, modalSubjectRows);
+  }
+
+  courseSelect.addEventListener('change', refreshModalSubjects);
+  durationSelect.addEventListener('change', refreshModalSubjects);
 
   // Handle AJAX Update Submit
   editForm.addEventListener('submit', function (e) {

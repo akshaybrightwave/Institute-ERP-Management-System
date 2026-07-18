@@ -1,6 +1,7 @@
 from django import forms
+from django.db.models import Q
 from .models import CenterPaymentSetting, FeePayment, StudentPaymentSetting
-from apps.students.models import StudentProfile
+from apps.students.models import StudentAdmission, StudentProfile
 
 
 class FeePaymentForm(forms.ModelForm):
@@ -28,11 +29,46 @@ class FeePaymentForm(forms.ModelForm):
             
         # Restrict student selection based on user role/center
         if self.user and self.user.role == 'center':
-            self.fields['student'].queryset = StudentProfile.objects.filter(
-                batch__center=self.user.center
-            ).order_by('full_name')
+            self.fields['student'].queryset = self._center_student_queryset().order_by('full_name')
         else:
             self.fields['student'].queryset = StudentProfile.objects.all().order_by('full_name')
+
+    def _center_admissions(self):
+        center = getattr(self.user, 'center', None)
+        if not center:
+            return StudentAdmission.objects.none()
+        return StudentAdmission.objects.filter(center=center)
+
+    def _center_student_queryset(self):
+        center = getattr(self.user, 'center', None)
+        if not center:
+            return StudentProfile.objects.none()
+
+        admissions = self._center_admissions()
+        return StudentProfile.objects.filter(
+            Q(batch__center=center) |
+            Q(user_id__in=admissions.exclude(user__isnull=True).values_list('user_id', flat=True)) |
+            Q(user__username__in=admissions.values_list('enrollment_no', flat=True)) |
+            Q(email__in=admissions.exclude(email='').values_list('email', flat=True)) |
+            Q(full_name__in=admissions.values_list('student_name', flat=True))
+        ).distinct()
+
+    def _student_belongs_to_center(self, student):
+        center = getattr(self.user, 'center', None)
+        if not center:
+            return False
+
+        if student.batch and student.batch.center_id == center.id:
+            return True
+
+        admissions = self._center_admissions()
+        admission_filter = Q(student_name=student.full_name)
+        if student.user_id:
+            admission_filter |= Q(user_id=student.user_id) | Q(enrollment_no=student.user.username)
+        if student.email:
+            admission_filter |= Q(email=student.email)
+
+        return admissions.filter(admission_filter).exists()
 
     def clean_amount(self):
         amount = self.cleaned_data.get('amount')
@@ -48,7 +84,7 @@ class FeePaymentForm(forms.ModelForm):
         if student and amount is not None:
             # Check center isolation
             if self.user and self.user.role == 'center':
-                if not student.batch or not student.batch.course or student.batch.center != self.user.center:
+                if not self._student_belongs_to_center(student):
                     raise forms.ValidationError("Student must belong to your assigned center.")
 
             # Validate overpayment: Amount Paid cannot exceed Remaining Balance
