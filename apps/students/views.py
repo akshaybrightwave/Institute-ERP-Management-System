@@ -135,7 +135,8 @@ def student_dashboard(request):
 
     # 5. Change Password Form
     password_form = SetPasswordForm(request.user)
-    active_profile_tab = ''
+    requested_tab = request.GET.get('tab', '')
+    active_profile_tab = requested_tab if requested_tab in {'fees', 'overview', 'password', 'notifications'} else ''
     if request.method == 'POST' and request.POST.get('action') == 'change_password':
         active_profile_tab = 'password'
         password_form = SetPasswordForm(request.user, {
@@ -194,7 +195,7 @@ def student_dashboard(request):
 
 def get_student_exam_queryset(user):
     from django.db.models import Q
-    from apps.exams.models import Exam
+    from apps.exams.models import Exam, ExamCenterAssignment
     from apps.students.models import StudentAdmission, StudentProfile
 
     admission = StudentAdmission.objects.select_related('center', 'course').filter(user=user).first()
@@ -209,15 +210,25 @@ def get_student_exam_queryset(user):
 
     qs = Exam.objects.filter(is_published=True).select_related('course').prefetch_related('batches')
 
+    center_assigned_exam_ids = ExamCenterAssignment.objects.filter(
+        center=admission.center,
+        status=True,
+        is_deleted=False
+    ).values_list('exam_id', flat=True)
+
     # Center security check
-    qs = qs.filter(Q(center=admission.center) | Q(center__isnull=True))
+    qs = qs.filter(
+        Q(center=admission.center) |
+        Q(center__isnull=True, center_assignments__isnull=True) |
+        Q(id__in=center_assigned_exam_ids)
+    )
 
     # Assignment condition: direct, batch, or course
     assignment_q = Q(student_assignments__student=admission, student_assignments__status=True, student_assignments__is_deleted=False)
     if batch:
-        assignment_q |= Q(batches=batch)
+        assignment_q |= Q(batches=batch, center_assignments__isnull=True)
     if admission.course:
-        assignment_q |= Q(course=admission.course)
+        assignment_q |= Q(course=admission.course, center_assignments__isnull=True)
 
     return qs.filter(assignment_q).distinct()
 

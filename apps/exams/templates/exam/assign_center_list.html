@@ -1,0 +1,292 @@
+{% extends 'accounts/admin_dashboard.html' %}
+{% load static %}
+
+{% block title %}Assign To Center | Examly{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+  <div class="mb-4">
+    <h2 class="fw-bold text-white mb-1">
+      <i class="bi bi-building-check text-primary me-2"></i>Assign To Center
+    </h2>
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '-';">
+      <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
+        <li class="breadcrumb-item">
+          <a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a>
+        </li>
+        <li class="breadcrumb-item text-muted">Exam</li>
+        <li class="breadcrumb-item active text-white-50" aria-current="page">Assign-to-center</li>
+      </ol>
+    </nav>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12">
+      <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3">
+          <h5 class="fw-bold mb-0 text-white">Assign Exam To Center(s)</h5>
+        </div>
+
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-white-50" style="font-size: 0.9rem;">Show</span>
+            <select id="showEntriesSelect" class="form-select form-select-sm dark-input" style="width: 75px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); color: #fff;">
+              <option value="10" {% if show_entries == "10" %}selected{% endif %}>10</option>
+              <option value="25" {% if show_entries == "25" %}selected{% endif %}>25</option>
+              <option value="50" {% if show_entries == "50" %}selected{% endif %}>50</option>
+            </select>
+          </div>
+
+          <form method="GET" action="{% url 'assign_exam_center' %}" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="show" value="{{ show_entries }}">
+            <span class="text-white-50" style="font-size: 0.9rem;">Search:</span>
+            <input type="text" name="q" class="form-control form-control-sm text-white" value="{{ query }}" style="width: 180px; background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 4px;">
+          </form>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-examly table-hover align-middle mb-0">
+            <thead>
+              <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 50px;">#</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Title</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Schedule</th>
+                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Assigned Centers</th>
+                <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in page_obj %}
+              <tr style="border-color: rgba(255,255,255,0.05) !important;">
+                <td class="ps-4 text-white-50" style="font-size: 0.9rem;">
+                  {{ forloop.counter0|add:page_obj.start_index }}.
+                </td>
+                <td class="text-white" style="font-size: 0.9rem; font-weight: 500;">
+                  {{ item.title }}
+                </td>
+                <td class="text-white-50" style="font-size: 0.9rem;">
+                  <div class="text-white text-uppercase" style="font-size: 0.85rem;">{{ item.course.name|default:"-" }}</div>
+                  {% if item.course_duration %}
+                    <span class="badge bg-primary">{{ item.course_duration }}</span>
+                  {% endif %}
+                </td>
+                <td class="text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
+                  {% if item.start_datetime and item.end_datetime %}
+                    <span class="badge bg-light text-dark mb-1">From : {{ item.start_datetime|date:"d-m-Y h:i A" }}</span><br>
+                    <span class="badge bg-light text-dark">To : {{ item.end_datetime|date:"d-m-Y h:i A" }}</span>
+                  {% else %}
+                    <span class="badge bg-danger">No Schedule</span>
+                  {% endif %}
+                </td>
+                <td class="text-white-50" style="font-size: 0.85rem;">
+                  {% if item.active_center_count %}
+                    {% for assignment in item.center_assignments.all %}
+                      {% if assignment.status %}
+                        <span class="badge bg-success me-1 mb-1">{{ assignment.center.name }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    <span class="text-muted">No center assigned</span>
+                  {% endif %}
+                </td>
+                <td class="pe-4 text-end">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-primary btn-assign-center"
+                          data-exam-id="{{ item.id }}"
+                          data-exam-title="{{ item.title }}">
+                    <i class="bi bi-building-check me-1"></i>Assign Center
+                  </button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  <i class="bi bi-journal-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
+                  No exams found.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <span class="text-muted" style="font-size: 0.85rem;">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+          </span>
+          <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&lt;</a>
+                </li>
+              {% endif %}
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link border-primary bg-primary text-white">{{ num }}</span>
+                  </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                  <li class="page-item">
+                    <a class="page-link dark-input text-white border-secondary" href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link dark-input text-white border-secondary" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}&show={{ show_entries }}">&gt;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="assignCenterModal" tabindex="-1" aria-labelledby="assignCenterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content" style="background-color: var(--erp-bg-card); color: #fff; border: 1px solid var(--erp-border-color);">
+        <div class="modal-header border-secondary">
+          <h5 class="modal-title fw-bold" id="assignCenterModalLabel">Assign Exam: <span id="modalExamTitle" class="text-primary"></span></h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="modalExamId">
+          <div class="d-flex align-items-center justify-content-between mb-3 gap-3 flex-wrap">
+            <span class="text-white-50 small">Select centers that can assign this exam to their students.</span>
+            <label class="d-flex align-items-center gap-2 text-white-50 small mb-0">
+              <input type="checkbox" class="form-check-input" id="selectAllCenters">
+              Select All
+            </label>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-examly table-hover align-middle mb-0">
+              <thead>
+                <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
+                  <th style="width: 45px;"></th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Center</th>
+                  <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Code</th>
+                </tr>
+              </thead>
+              <tbody id="modalCenterTbody">
+                <tr>
+                  <td colspan="3" class="text-center py-4 text-muted">Loading centers...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success px-4" id="btnSaveCenterAssignments">
+            <i class="bi bi-check2-circle me-1"></i>Save Assignments
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+$(document).ready(function() {
+  $('#showEntriesSelect').change(function() {
+    var url = new URL(window.location.href);
+    url.searchParams.set('show', $(this).val());
+    url.searchParams.set('page', '1');
+    window.location.href = url.href;
+  });
+
+  $('.btn-assign-center').click(function() {
+    var examId = $(this).data('exam-id');
+    var examTitle = $(this).data('exam-title');
+
+    $('#modalExamId').val(examId);
+    $('#modalExamTitle').text(examTitle);
+    $('#selectAllCenters').prop('checked', false);
+    $('#modalCenterTbody').html('<tr><td colspan="3" class="text-center py-4 text-muted">Loading centers...</td></tr>');
+
+    var modal = new bootstrap.Modal(document.getElementById('assignCenterModal'));
+    modal.show();
+
+    $.ajax({
+      url: "{% url 'ajax_get_exam_centers' %}",
+      type: "GET",
+      data: { exam_id: examId },
+      success: function(res) {
+        var tbody = $('#modalCenterTbody');
+        tbody.empty();
+        if (!res.success) {
+          tbody.html('<tr><td colspan="3" class="text-center py-4 text-danger">' + res.message + '</td></tr>');
+          return;
+        }
+        if (res.centers.length === 0) {
+          tbody.html('<tr><td colspan="3" class="text-center py-4 text-muted">No active centers found.</td></tr>');
+          return;
+        }
+        res.centers.forEach(function(center) {
+          var checked = center.assigned ? 'checked' : '';
+          tbody.append(`
+            <tr>
+              <td><input type="checkbox" class="form-check-input center-checkbox" value="${center.id}" ${checked}></td>
+              <td class="text-white fw-semibold">${center.name}</td>
+              <td class="text-white-50">${center.code || '-'}</td>
+            </tr>
+          `);
+        });
+      },
+      error: function() {
+        $('#modalCenterTbody').html('<tr><td colspan="3" class="text-center py-4 text-danger">Failed to load centers.</td></tr>');
+      }
+    });
+  });
+
+  $('#selectAllCenters').change(function() {
+    $('.center-checkbox').prop('checked', $(this).prop('checked'));
+  });
+
+  $('#btnSaveCenterAssignments').click(function() {
+    var examId = $('#modalExamId').val();
+    var centerIds = [];
+    $('.center-checkbox:checked').each(function() {
+      centerIds.push($(this).val());
+    });
+
+    var btn = $(this);
+    btn.html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...').prop('disabled', true);
+
+    $.ajax({
+      url: "{% url 'ajax_save_center_assignments' %}",
+      type: "POST",
+      headers: {'X-CSRFToken': '{{ csrf_token }}'},
+      contentType: "application/json",
+      data: JSON.stringify({
+        exam_id: examId,
+        center_ids: centerIds
+      }),
+      success: function(res) {
+        if (res.success) {
+          Swal.fire({icon: 'success', title: 'Success', text: res.message, background: '#1e1e2f', color: '#fff'}).then(function() {
+            window.location.reload();
+          });
+        } else {
+          Swal.fire({icon: 'error', title: 'Error', text: res.message, background: '#1e1e2f', color: '#fff'});
+        }
+      },
+      error: function() {
+        Swal.fire({icon: 'error', title: 'Error', text: 'Failed to save center assignments.', background: '#1e1e2f', color: '#fff'});
+      },
+      complete: function() {
+        btn.html('<i class="bi bi-check2-circle me-1"></i>Save Assignments').prop('disabled', false);
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

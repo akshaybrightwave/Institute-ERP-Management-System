@@ -286,7 +286,7 @@ def fees_list(request):
         if not admission:
             return HttpResponseForbidden("Access Denied: No student admission found.")
 
-        active_tab = request.POST.get('active_tab') or request.GET.get('tab', 'overview')
+        active_tab = request.POST.get('active_tab') or request.GET.get('tab', 'fees')
         if active_tab == 'emis':
             active_tab = 'fees'
         if active_tab not in ['overview', 'fees', 'password', 'notifications']:

@@ -74,7 +74,7 @@
       <div class="mt-5 border-top border-secondary pt-3">
         <ul class="nav nav-pills gap-1 flex-wrap" id="studentProfileTab" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active px-4 py-2 text-white rounded hover-nav-pill" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true"><i class="bi bi-grid-fill me-1"></i> Overview</button>
+            <button class="nav-link px-4 py-2 {% if not active_profile_tab or active_profile_tab == 'overview' %}active text-white{% else %}text-white-50{% endif %} rounded hover-nav-pill" id="overview-tab" data-bs-toggle="pill" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="{% if not active_profile_tab or active_profile_tab == 'overview' %}true{% else %}false{% endif %}"><i class="bi bi-grid-fill me-1"></i> Overview</button>
           </li>
           {% if request.user.role == 'admin' or request.user.role == 'center' %}
           <li class="nav-item" role="presentation">
@@ -82,7 +82,7 @@
           </li>
           {% endif %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-2 text-white-50 rounded hover-nav-pill" id="fees-tab" data-bs-toggle="pill" data-bs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="false"><i class="bi bi-wallet2 me-1"></i> Fees Record</button>
+            <button class="nav-link px-4 py-2 {% if active_profile_tab == 'fees' %}active text-white{% else %}text-white-50{% endif %} rounded hover-nav-pill" id="fees-tab" data-bs-toggle="pill" data-bs-target="#fees" type="button" role="tab" aria-controls="fees" aria-selected="{% if active_profile_tab == 'fees' %}true{% else %}false{% endif %}"><i class="bi bi-wallet2 me-1"></i> Fees Record</button>
           </li>
           {% if request.user.role == 'admin' or request.user.role == 'center' %}
           <li class="nav-item" role="presentation">
@@ -106,40 +106,7 @@
     <div class="tab-content" id="studentProfileTabContent">
       
       <!-- Overview Tab -->
-      <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
-        
-        <!-- Quick Stats Row -->
-        {% if total_exams is not None %}
-        <div class="row g-3 mb-4 row-cols-1 row-cols-md-3">
-          <div class="col">
-            <div class="qa-card p-3 d-flex align-items-center gap-3">
-              <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary fs-4"><i class="bi bi-journal-text"></i></div>
-              <div>
-                <span class="d-block text-white-50 small">Available Exams</span>
-                <span class="fs-4 fw-bold text-white">{{ total_exams }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="col">
-            <div class="qa-card p-3 d-flex align-items-center gap-3">
-              <div class="rounded-circle bg-success bg-opacity-10 p-3 text-success fs-4"><i class="bi bi-check2-circle"></i></div>
-              <div>
-                <span class="d-block text-white-50 small">Exams Attempted</span>
-                <span class="fs-4 fw-bold text-white">{{ total_attempts }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="col">
-            <div class="qa-card p-3 d-flex align-items-center gap-3">
-              <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning fs-4"><i class="bi bi-graph-up-arrow"></i></div>
-              <div>
-                <span class="d-block text-white-50 small">Average Score</span>
-                <span class="fs-4 fw-bold text-white">{{ average_score }}%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endif %}
+      <div class="tab-pane fade {% if not active_profile_tab or active_profile_tab == 'overview' %}show active{% endif %}" id="overview" role="tabpanel" aria-labelledby="overview-tab">
 
         <div class="qa-card">
           <h5 class="fw-bold mb-4 border-bottom border-secondary pb-3 text-white">Account Overview</h5>
@@ -320,7 +287,7 @@
       {% endif %}
 
       <!-- Fees Record Tab -->
-      <div class="tab-pane fade" id="fees" role="tabpanel" aria-labelledby="fees-tab">
+      <div class="tab-pane fade {% if active_profile_tab == 'fees' %}show active{% endif %}" id="fees" role="tabpanel" aria-labelledby="fees-tab">
         <div class="qa-card">
           <div class="fee-record-header">
             <h5>Fee Record</h5>

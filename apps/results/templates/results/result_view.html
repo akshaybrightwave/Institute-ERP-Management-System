@@ -60,10 +60,6 @@
                 <td class="text-dark">{{ result.session.session_name }}</td>
               </tr>
               <tr>
-                <td class="fw-bold text-muted">Result Type:</td>
-                <td class="text-dark"><span class="badge bg-success px-3">{{ result.result_type }}</span></td>
-              </tr>
-              <tr>
                 <td class="fw-bold text-muted">Issue Date:</td>
                 <td class="text-dark">{{ result.issue_date|date:"d-m-Y" }}</td>
               </tr>
@@ -105,29 +101,34 @@
               </tr>
             </thead>
             <tbody>
+              {% for row in rows %}
               <tr>
-                <td class="text-start fw-semibold">Theory &amp; Academic Component</td>
-                <td>100</td>
-                <td>85</td>
-                <td><span class="text-success fw-bold">Pass</span></td>
+                <td class="text-start fw-semibold">
+                  {{ row.name }}
+                  <span class="text-muted small d-block">{{ row.code }}{% if row.type %} - {{ row.type }}{% endif %}</span>
+                </td>
+                <td>{{ row.max }}</td>
+                <td>{{ row.obtained|default:"-" }}</td>
+                <td>
+                  <span class="{% if row.status == 'Pass' %}text-success{% else %}text-danger{% endif %} fw-bold">
+                    {{ row.status }}
+                  </span>
+                </td>
               </tr>
+              {% empty %}
               <tr>
-                <td class="text-start fw-semibold">Practical &amp; Lab Assignments</td>
-                <td>50</td>
-                <td>44</td>
-                <td><span class="text-success fw-bold">Pass</span></td>
+                <td colspan="4" class="text-muted py-4">No subject marks found for this result.</td>
               </tr>
-              <tr>
-                <td class="text-start fw-semibold">Viva &amp; Presentation</td>
-                <td>50</td>
-                <td>42</td>
-                <td><span class="text-success fw-bold">Pass</span></td>
-              </tr>
+              {% endfor %}
               <tr class="table-light fw-bold">
                 <td class="text-start text-dark">GRAND TOTAL</td>
-                <td>200</td>
-                <td>171</td>
-                <td><span class="badge bg-success px-3">FIRST DIVISION</span></td>
+                <td>{{ result.total_max_marks }}</td>
+                <td>{{ result.total_obtained_marks }}</td>
+                <td>
+                  <span class="badge {% if result.status_pass_fail == 'Pass' %}bg-success{% else %}bg-danger{% endif %} px-3">
+                    {{ result.status_pass_fail }}{% if result.percentage %} - {{ result.percentage }}%{% endif %}
+                  </span>
+                </td>
               </tr>
             </tbody>
           </table>

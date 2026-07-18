@@ -39,7 +39,7 @@
                     <select name="student" id="studentFilter" class="form-select">
                         <option value="">All Students</option>
                         {% for s in students %}
-                        <option value="{{ s.id }}" {% if selected_student == s.id|stringformat:"s" %}selected{% endif %}>{{ s.full_name }}</option>
+                        <option value="{{ s.id }}" {% if selected_student == s.id|stringformat:"s" %}selected{% endif %}>{{ s.student_name }}{% if s.enrollment_no %} ({{ s.enrollment_no }}){% endif %}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -81,9 +81,17 @@
                     <tbody>
                         {% for attendance in page_obj %}
                         <tr>
-                            <td class="ps-4 fw-semibold">{{ attendance.student.full_name }}</td>
-                            <td><span class="badge bg-light text-dark border">{{ attendance.batch.name }}</span></td>
-                            <td><span class="badge-soft-primary px-2 py-1 rounded small">{{ attendance.batch.course.name }}</span></td>
+                            <td class="ps-4 fw-semibold">{{ attendance.student.student_name }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {% if attendance.batch %}{{ attendance.batch.name }}{% else %}{{ attendance.timetable_name|default:"-" }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-soft-primary px-2 py-1 rounded small">
+                                    {{ attendance.student.course.name|default:"-" }}
+                                </span>
+                            </td>
                             <td>{{ attendance.date }}</td>
                             <td>
                                 {% if attendance.status == 'present' %}
@@ -107,9 +115,11 @@
                             {% if request.user.role == 'admin' or request.user.role == 'teacher' or request.user.role == 'center' %}
                             <td class="pe-4 text-end">
                                 <div class="d-flex justify-content-end gap-1">
+                                    {% if attendance.batch %}
                                     <a href="{% url 'mark_attendance' attendance.batch.id %}?date={{ attendance.date|date:'Y-m-d' }}" class="btn btn-sm btn-outline-primary" title="Edit entire day">
                                         <i class="bi bi-calendar-event me-1"></i>Edit Day
                                     </a>
+                                    {% endif %}
                                     {% if request.user.role == 'admin' or request.user.role == 'center' %}
                                     <a href="{% url 'attendance_edit' attendance.id %}" class="btn btn-sm btn-outline-secondary" title="Edit individual record">
                                         <i class="bi bi-pencil me-1"></i>Edit

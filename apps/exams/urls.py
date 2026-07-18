@@ -36,6 +36,11 @@ urlpatterns = [
     path('schedules/<int:pk>/edit/', views.exam_schedule_edit, name='exam_schedule_edit'),
     path('schedules/<int:pk>/delete/', views.exam_schedule_delete, name='exam_schedule_delete'),
     
+    # Assign Exam To Center
+    path('assign/center/', views.assign_exam_center_list, name='assign_exam_center'),
+    path('ajax/get-exam-centers/', views.ajax_get_exam_centers, name='ajax_get_exam_centers'),
+    path('ajax/save-center-assignments/', views.ajax_save_center_assignments, name='ajax_save_center_assignments'),
+
     # Assign Exam To Student
     path('assign/student/', views.assign_exam_student_list, name='assign_exam_student'),
     path('ajax/get-eligible-students/', views.ajax_get_eligible_students, name='ajax_get_eligible_students'),

@@ -5,89 +5,182 @@
 {% block style %}
 {{ block.super }}
 <style>
-  .center-hero {
-    background: linear-gradient(145deg, #111522 0%, #171a27 100%);
-    border: 1px solid var(--erp-border-color);
-    border-radius: 14px;
-    padding: 1.25rem;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  .center-dashboard-page {
+    max-width: 100%;
   }
 
-  .center-logo {
-    width: 72px;
-    height: 72px;
-    border-radius: 12px;
-    object-fit: cover;
-    background: #1e2231;
-    border: 1px solid #2a3042;
+  .center-dashboard-page .center-hero {
+    display: none !important;
   }
 
-  .center-logo-fallback {
-    width: 72px;
-    height: 72px;
-    border-radius: 12px;
-    display: inline-flex;
+  .center-topbar {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    background: #1e2231;
-    color: #8d8dff;
-    border: 1px solid #2a3042;
-    font-size: 2rem;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 52px;
+    margin: -0.55rem 0 1.15rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
   }
 
-  .center-meta {
-    color: var(--erp-text-muted);
-    font-size: 0.84rem;
+  .center-brand-line,
+  .center-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .center-brand-title {
+    margin: 0;
+    color: #ffd21f;
+    font-size: 1.2rem;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 48vw;
   }
 
   .center-badge {
     border-radius: 999px;
-    padding: 0.38rem 0.7rem;
+    padding: 0.28rem 0.48rem;
     font-size: 0.76rem;
-    font-weight: 700;
+    font-weight: 900;
+    line-height: 1;
+    color: #ffffff;
+  }
+
+  .center-badge-id {
+    background: #7c3aed;
+  }
+
+  .center-badge-valid {
+    background: #3b82f6;
   }
 
   .center-badge-active {
-    background: rgba(25, 135, 84, 0.16);
-    color: #38d982;
-    border: 1px solid rgba(56, 217, 130, 0.3);
+    background: #35c987;
   }
 
   .center-badge-inactive {
-    background: rgba(240, 62, 101, 0.16);
-    color: #ff718f;
-    border: 1px solid rgba(255, 113, 143, 0.3);
+    background: #ef476f;
   }
 
   .center-wallet {
-    background: #12141c;
-    border: 1px solid var(--erp-border-color);
-    border-radius: 10px;
-    padding: 0.7rem 0.85rem;
-    min-width: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-width: 160px;
+    min-height: 50px;
+    padding: 0.45rem 0.9rem;
+    background: #0d1019;
+    border: 1px dashed #2f6dff;
+    border-radius: 8px;
+    text-decoration: none;
+  }
+
+  .center-wallet-main {
+    color: var(--erp-text-primary);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.05;
   }
 
   .center-wallet-label {
-    color: var(--erp-text-muted);
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
-  .center-wallet-value {
-    color: var(--erp-text-primary);
-    font-size: 1.1rem;
+    display: block;
+    color: #ffffff;
+    font-size: 0.64rem;
     font-weight: 800;
+    text-align: center;
+    margin-top: 0.12rem;
   }
 
-  .center-icon-btn {
-    width: 38px;
-    height: 38px;
+  .center-wallet-plus {
+    width: 20px;
+    height: 20px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px;
+    border-radius: 6px;
+    color: #ffffff;
+    background: #3b82f6;
+    font-size: 0.85rem;
+  }
+
+  .center-icon-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: #b8c3e5;
+    background: transparent;
     text-decoration: none;
+  }
+
+  .center-icon-btn:hover {
+    color: #ffffff;
+    border-color: rgba(74, 108, 247, 0.5);
+    background: rgba(74, 108, 247, 0.12);
+  }
+
+  .center-certificate-btn {
+    border: 1px dashed #ffd21f;
+    border-radius: 6px;
+    padding: 0.55rem 1rem;
+    color: #ffd21f;
+    text-decoration: none;
+    font-size: 0.84rem;
+    font-weight: 800;
+  }
+
+  .center-dashboard-heading {
+    margin-bottom: 1rem;
+  }
+
+  .center-dashboard-heading .dash-title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.45rem;
+  }
+
+  .center-dashboard-heading .dash-title i {
+    color: #6157ff;
+    font-size: 1.2rem;
+  }
+
+  .center-dashboard-page .erp-card {
+    border-color: rgba(255, 255, 255, 0.72);
+    border-radius: 8px;
+    min-height: 108px;
+  }
+
+  .center-dashboard-page .erp-card-body {
+    padding: 0.9rem 0.95rem 0.75rem;
+  }
+
+  .center-dashboard-page .erp-card-title {
+    font-size: 0.84rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .center-dashboard-page .erp-card-number {
+    font-size: 2rem;
+  }
+
+  .center-dashboard-page .erp-card-footer {
+    min-height: 24px;
+    padding: 0.3rem 0.95rem;
+    border-top-color: rgba(255, 255, 255, 0.86);
   }
 
   .center-section-card {
@@ -99,10 +192,17 @@
   }
 
   @media (max-width: 768px) {
-    .center-hero {
-      padding: 1rem;
+    .center-topbar {
+      align-items: flex-start;
+      flex-direction: column;
     }
 
+    .center-brand-title {
+      max-width: 100%;
+      white-space: normal;
+    }
+
+    .center-top-actions,
     .center-wallet {
       width: 100%;
     }
@@ -111,14 +211,55 @@
 {% endblock %}
 
 {% block erp_content %}
-<div class="mb-4">
-  <div class="dash-breadcrumb mb-1">
-    <a href="{% url 'home' %}">Home</a>
-    <span style="margin:0 6px;">/</span>
-    <span class="current">Center Dashboard</span>
+<div class="center-dashboard-page">
+  {% if center %}
+  <div class="center-topbar">
+    <div class="center-brand-line">
+      <h2 class="center-brand-title">{{ center.name }}</h2>
+      <span class="center-badge center-badge-id">ID {{ center_certificate.certificate_number|default:center.code|default:"-" }}</span>
+      <span class="center-badge center-badge-valid">Valid Upto : {{ center.valid_upto|date:"Y-m-d"|default:"-" }}</span>
+      <span class="center-badge {% if center_status == 'Active' %}center-badge-active{% else %}center-badge-inactive{% endif %}">{{ center_status }}</span>
+    </div>
+    <div class="center-top-actions">
+      <a href="{% url 'center_profile' center.pk %}#fees" class="center-wallet" title="My Wallet">
+        <span>
+          <span class="center-wallet-main">&#8377; {{ wallet_balance|floatformat:0 }}</span>
+          <span class="center-wallet-label">My Wallet</span>
+        </span>
+        <span class="center-wallet-plus"><i class="bi bi-plus-lg"></i></span>
+      </a>
+      <a href="{% url 'center_profile' center.pk %}" class="center-icon-btn" title="Profile">
+        <i class="bi bi-box-arrow-up-right"></i>
+      </a>
+      {% if center_certificate %}
+      <a href="{% url 'center_certificate_detail' center_certificate.pk %}" class="center-certificate-btn" target="_blank">
+        <i class="bi bi-award-fill me-1"></i> View Certificate
+      </a>
+      {% endif %}
+      <a href="{% url 'logout' %}" class="center-icon-btn" title="Logout">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
   </div>
-  <h1 class="dash-title">Center Dashboard</h1>
-</div>
+  {% else %}
+  <div class="center-topbar">
+    <div class="center-brand-line">
+      <h2 class="center-brand-title">No Center Assigned</h2>
+      <span class="center-badge center-badge-inactive">Inactive</span>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="center-dashboard-heading">
+    <h1 class="dash-title"><i class="bi bi-grid-1x2-fill"></i> Dashboard</h1>
+    <div class="dash-breadcrumb mt-1">
+      <a href="{% url 'home' %}">Home</a>
+      <span style="margin:0 6px;">-</span>
+      <span>Center</span>
+      <span style="margin:0 6px;">-</span>
+      <span class="current">Dashboard</span>
+    </div>
+  </div>
 
 <div class="center-hero mb-4">
   {% if center %}
@@ -210,7 +351,7 @@
   <div class="col-12">
     <div class="erp-card bg-g-card p-4" style="background: var(--erp-bg-card); border-radius: 14px; border: 1px solid var(--erp-border-color);">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="mb-0 fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Student Admission Trend</h5>
+        <h5 class="mb-0 fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Student Record Chart</h5>
         <select id="trendYearSelect" class="form-select form-select-sm w-auto" style="background-color: var(--erp-bg-input); color: var(--erp-text-primary); border-color: var(--erp-border-input);">
           <option value="2026">2026</option>
           <option value="2025">2025</option>
@@ -223,6 +364,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

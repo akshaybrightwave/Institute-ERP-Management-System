@@ -186,6 +186,9 @@
                       <label class="form-label text-white-50">Select Center</label>
                       <select id="modalCenterId" class="form-select dark-input">
                           <option value="">-- All Centers --</option>
+                          {% for center in centers %}
+                          <option value="{{ center.id }}">{{ center.name }}{% if center.code %} ({{ center.code }}){% endif %}</option>
+                          {% endfor %}
                       </select>
                   </div>
                   {% endif %}

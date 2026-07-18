@@ -173,3 +173,18 @@ class ExamStudentAssignment(SoftDeleteModel):
 
     def __str__(self):
         return f"{self.exam.title} - {self.student.student_name}"
+
+
+class ExamCenterAssignment(SoftDeleteModel):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='center_assignments')
+    center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_assignments')
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('exam', 'center')
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.center.name}"

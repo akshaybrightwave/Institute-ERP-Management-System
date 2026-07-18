@@ -1,7 +1,7 @@
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseForbidden, JsonResponse
-from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt, ExamSchedule, ExamScheduleSubject, ExamStudentAssignment, ExamCentre
+from .models import Exam, Question, Option, StudentAnswer, StudentExamAttempt, ExamSchedule, ExamScheduleSubject, ExamStudentAssignment, ExamCenterAssignment, ExamCentre
 from .forms import ExamForm, QuestionForm, OptionForm, ExamScheduleForm
 from apps.accounts.views import admin_required
 from django.contrib import messages
@@ -1097,6 +1097,125 @@ def exam_schedule_delete(request, pk):
 
 
 # ---------------------------------------------------------------------------
+# Assign Exam To Center
+# ---------------------------------------------------------------------------
+
+@user_passes_test(is_admin)
+def assign_exam_center_list(request):
+    exams = Exam.objects.select_related('course', 'center').prefetch_related('center_assignments__center').annotate(
+        active_center_count=Count(
+            'center_assignments',
+            filter=Q(center_assignments__status=True, center_assignments__is_deleted=False),
+            distinct=True
+        )
+    )
+
+    q = request.GET.get('q', '').strip()
+    if q:
+        exams = exams.filter(
+            Q(title__icontains=q) |
+            Q(course__name__icontains=q) |
+            Q(course_duration__icontains=q)
+        )
+
+    exams = exams.order_by('-id')
+
+    show_entries = request.GET.get('show', '10')
+    try:
+        limit = int(show_entries)
+    except ValueError:
+        limit = 10
+
+    paginator = Paginator(exams, limit)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    centers = Center.objects.all().order_by('name')
+
+    return render(request, 'exam/assign_center_list.html', {
+        'page_obj': page_obj,
+        'centers': centers,
+        'query': q,
+        'show_entries': show_entries,
+    })
+
+
+@login_required
+def ajax_get_exam_centers(request):
+    if request.user.role != 'admin':
+        return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
+
+    exam_id = request.GET.get('exam_id')
+    if not exam_id:
+        return JsonResponse({'success': False, 'message': 'Missing exam.'}, status=400)
+
+    exam = get_object_or_404(Exam, id=exam_id)
+    assigned_center_ids = set(
+        ExamCenterAssignment.objects.filter(
+            exam=exam,
+            status=True,
+            is_deleted=False
+        ).values_list('center_id', flat=True)
+    )
+
+    centers = []
+    for center in Center.objects.all().order_by('name'):
+        centers.append({
+            'id': center.id,
+            'name': center.name,
+            'code': center.code,
+            'assigned': center.id in assigned_center_ids,
+        })
+
+    return JsonResponse({'success': True, 'centers': centers})
+
+
+@login_required
+def ajax_save_center_assignments(request):
+    if request.user.role != 'admin':
+        return JsonResponse({'success': False, 'message': 'Access Denied.'}, status=403)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid method.'}, status=405)
+
+    import json
+    try:
+        data = json.loads(request.body)
+        exam_id = data.get('exam_id')
+        center_ids = data.get('center_ids', [])
+
+        if not exam_id:
+            return JsonResponse({'success': False, 'message': 'Missing exam.'}, status=400)
+
+        exam = Exam.objects.get(id=exam_id)
+        valid_center_ids = set(Center.objects.filter(id__in=center_ids).values_list('id', flat=True))
+
+        with transaction.atomic():
+            ExamCenterAssignment.all_objects.filter(exam=exam).exclude(center_id__in=valid_center_ids).update(status=False)
+
+            assignments_saved = 0
+            for center_id in valid_center_ids:
+                obj, created = ExamCenterAssignment.all_objects.get_or_create(
+                    exam=exam,
+                    center_id=center_id,
+                    defaults={'assigned_by': request.user, 'status': True, 'is_deleted': False}
+                )
+                if not created and (not obj.status or obj.is_deleted):
+                    obj.status = True
+                    obj.is_deleted = False
+                    obj.deleted_at = None
+                    obj.assigned_by = request.user
+                    obj.save(update_fields=['status', 'is_deleted', 'deleted_at', 'assigned_by'])
+                assignments_saved += 1
+
+        return JsonResponse({'success': True, 'message': f'Successfully assigned exam to {assignments_saved} center(s).'})
+    except Exam.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Exam not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+# ---------------------------------------------------------------------------
 # Assign Exam To Student
 # ---------------------------------------------------------------------------
 
@@ -1106,7 +1225,10 @@ def assign_exam_student_list(request):
     is_center = request.user.role == 'center'
 
     if is_center:
-        exams = Exam.objects.filter(center=request.user.center)
+        exams = Exam.objects.filter(
+            Q(center=request.user.center) |
+            Q(center_assignments__center=request.user.center, center_assignments__status=True, center_assignments__is_deleted=False)
+        ).distinct()
     else:
         exams = Exam.objects.all()
 
@@ -1135,6 +1257,7 @@ def assign_exam_student_list(request):
 
     return render(request, 'exam/assign_student_list.html', {
         'page_obj': page_obj,
+        'centers': Center.objects.all().order_by('name') if is_admin else Center.objects.none(),
         'query': q,
         'show_entries': show_entries,
         'is_center': is_center,
@@ -1160,7 +1283,15 @@ def ajax_get_eligible_students(request):
     try:
         exam = Exam.objects.get(id=exam_id)
         # Verify access to exam
-        if is_center and exam.center != request.user.center:
+        if is_center and not (
+            exam.center == request.user.center or
+            ExamCenterAssignment.objects.filter(
+                exam=exam,
+                center=request.user.center,
+                status=True,
+                is_deleted=False
+            ).exists()
+        ):
             return JsonResponse({'success': False, 'message': 'Access Denied: You do not manage this exam.'}, status=403)
     except Exam.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Exam not found.'}, status=404)
@@ -1213,7 +1344,15 @@ def ajax_save_student_assignments(request):
             return JsonResponse({'success': False, 'message': 'Missing exam or students.'}, status=400)
 
         exam = Exam.objects.get(id=exam_id)
-        if is_center and exam.center != request.user.center:
+        if is_center and not (
+            exam.center == request.user.center or
+            ExamCenterAssignment.objects.filter(
+                exam=exam,
+                center=request.user.center,
+                status=True,
+                is_deleted=False
+            ).exists()
+        ):
             return JsonResponse({'success': False, 'message': 'Access Denied: You do not manage this exam.'}, status=403)
 
         assignments_created = 0
