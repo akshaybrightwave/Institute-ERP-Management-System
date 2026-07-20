@@ -69,7 +69,7 @@
               <tbody>
                 {% for center in page_obj %}
                 <tr>
-                  <td class="ps-4 fw-semibold text-white">#{{ center.id }}</td>
+                  <td class="ps-4 fw-semibold text-white">{{ center.code|default:"-" }}</td>
                   <td class="fw-semibold text-white">{{ center.name }}</td>
                   <td class="text-white-50">{{ center.owner_name|default:"-" }}</td>
                   <td class="text-white-50">{{ center.email|default:"-" }}</td>

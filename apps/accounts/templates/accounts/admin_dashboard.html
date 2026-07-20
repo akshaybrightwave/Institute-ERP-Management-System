@@ -1143,8 +1143,8 @@
   <!-- ── EXAM SLOT ── -->
   <div class="sidebar-section">Exam Slot</div>
 
-  <a href="{% url 'center_list' %}"
-    class="sidebar-item{% if request.resolver_match.url_name == 'center_list' %} active{% endif %}">
+  <a href="{% url 'exam_centre_list' %}"
+    class="sidebar-item{% if request.resolver_match.url_name == 'exam_centre_list' or request.resolver_match.url_name == 'exam_centre_edit' or request.resolver_match.url_name == 'exam_centre_delete' %} active{% endif %}">
     <i class="bi bi-people si-icon"></i>
     <span class="si-label">Exam Centre</span>
   </a>
@@ -1460,6 +1460,13 @@
 
   {% endif %}
   {% endif %}
+
+  <div class="sidebar-footer">
+    <a href="{% url 'logout' %}" class="sidebar-item">
+      <i class="bi bi-box-arrow-right si-icon"></i>
+      <span class="si-label">Logout</span>
+    </a>
+  </div>
 
 </aside>
 

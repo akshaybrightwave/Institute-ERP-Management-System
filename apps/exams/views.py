@@ -1335,6 +1335,7 @@ def ajax_save_student_assignments(request):
         return JsonResponse({'success': False, 'message': 'Invalid method.'}, status=405)
 
     import json
+    from apps.fees.services import deduct_center_wallet_for_student_fee
     try:
         data = json.loads(request.body)
         exam_id = data.get('exam_id')
@@ -1355,20 +1356,55 @@ def ajax_save_student_assignments(request):
         ):
             return JsonResponse({'success': False, 'message': 'Access Denied: You do not manage this exam.'}, status=403)
 
-        assignments_created = 0
-        for s_id in student_ids:
-            # Verify student belongs to center if role is center
-            student = StudentAdmission.objects.get(id=s_id)
-            if is_center and student.center != request.user.center:
-                continue
+        with transaction.atomic():
+            assignments_to_save = []
+            exam_fee_count = 0
+            re_exam_fee_count = 0
 
-            # Create assignment
-            obj, created = ExamStudentAssignment.objects.get_or_create(
-                exam=exam,
-                student=student,
-                defaults={'assigned_by': request.user, 'status': True}
-            )
-            if created:
+            for s_id in student_ids:
+                # Verify student belongs to center if role is center
+                student = StudentAdmission.objects.select_related('center', 'user').get(id=s_id)
+                if is_center and student.center != request.user.center:
+                    continue
+
+                existing_assignment = ExamStudentAssignment.all_objects.filter(exam=exam, student=student).first()
+                if existing_assignment and existing_assignment.status and not existing_assignment.is_deleted:
+                    continue
+
+                assignments_to_save.append((student, existing_assignment))
+
+                if is_center:
+                    has_completed_attempt = bool(
+                        student.user_id and StudentExamAttempt.objects.filter(
+                            student_id=student.user_id,
+                            exam=exam,
+                            is_completed=True
+                        ).exists()
+                    )
+                    if has_completed_attempt:
+                        re_exam_fee_count += 1
+                    else:
+                        exam_fee_count += 1
+
+            if is_center:
+                deduct_center_wallet_for_student_fee(request.user.center, 'Exam Fees', exam_fee_count)
+                deduct_center_wallet_for_student_fee(request.user.center, 'Re-Exam Fees', re_exam_fee_count)
+
+            assignments_created = 0
+            for student, existing_assignment in assignments_to_save:
+                if existing_assignment:
+                    existing_assignment.status = True
+                    existing_assignment.is_deleted = False
+                    existing_assignment.deleted_at = None
+                    existing_assignment.assigned_by = request.user
+                    existing_assignment.save(update_fields=['status', 'is_deleted', 'deleted_at', 'assigned_by'])
+                else:
+                    ExamStudentAssignment.objects.create(
+                        exam=exam,
+                        student=student,
+                        assigned_by=request.user,
+                        status=True
+                    )
                 assignments_created += 1
 
         return JsonResponse({'success': True, 'message': f'Successfully assigned {assignments_created} student(s) to the exam.'})
@@ -1568,7 +1604,7 @@ def exam_centre_list(request):
                 is_active=is_active,
             )
             messages.success(request, f'Exam Centre "{centre_name}" created successfully.')
-            return redirect('center_list')
+            return redirect('exam_centre_list')
 
         # Validation failed — re-render with errors and sticky values
         paginator = Paginator(centres, 10)
@@ -1646,4 +1682,4 @@ def exam_centre_delete(request, pk):
     centre_name = centre.centre_name
     centre.delete()  # SoftDeleteModel.delete()
     messages.success(request, f'Exam Centre "{centre_name}" deleted successfully.')
-    return redirect('center_list')
+    return redirect('exam_centre_list')

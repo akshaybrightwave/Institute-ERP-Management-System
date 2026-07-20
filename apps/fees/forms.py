@@ -95,6 +95,16 @@ class FeePaymentForm(forms.ModelForm):
                 course_fee = Decimal(str(self.course_fee))
             else:
                 course_fee = student.course_fee_at_admission if student.course_fee_at_admission is not None else Decimal('0.00')
+                if course_fee <= Decimal('0.00'):
+                    admission = StudentAdmission.objects.select_related('course').filter(user=student.user).first()
+                    if not admission and student.user_id:
+                        admission = StudentAdmission.objects.select_related('course').filter(enrollment_no=student.user.username).first()
+                    if not admission and student.email:
+                        admission = StudentAdmission.objects.select_related('course').filter(email=student.email).first()
+                    if not admission:
+                        admission = StudentAdmission.objects.select_related('course').filter(student_name=student.full_name).first()
+                    if admission and admission.course:
+                        course_fee = admission.course.fees
 
             other_payments = FeePayment.objects.filter(student=student)
             if self.instance and self.instance.pk:

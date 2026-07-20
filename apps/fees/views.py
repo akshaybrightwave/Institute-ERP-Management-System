@@ -75,6 +75,24 @@ def _get_student_admission(profile):
     return qs.filter(student_name=profile.full_name).first()
 
 
+def _resolve_student_course_and_fee(profile, admission=None):
+    admission = admission if admission is not None else _get_student_admission(profile)
+    course = admission.course if admission else None
+
+    if profile and profile.batch:
+        course = course or profile.batch.course
+
+    locked_fee = profile.course_fee_at_admission if profile else None
+    if locked_fee is not None and locked_fee > Decimal('0.00'):
+        course_fee = locked_fee
+    elif course:
+        course_fee = course.fees
+    else:
+        course_fee = Decimal('0.00')
+
+    return admission, course, course_fee
+
+
 def _center_student_q(center, prefix=''):
     if not center:
         return Q(**{f'{prefix}pk__in': []})
@@ -95,20 +113,17 @@ def _center_student_q(center, prefix=''):
 
 def _build_student_fee_summary(profile):
     admission = _get_student_admission(profile)
-    course = None
     center = None
     batch_name = 'N/A'
+    admission, course, course_fee = _resolve_student_course_and_fee(profile, admission)
 
     if admission:
-        course = admission.course
         center = admission.center
 
     if profile and profile.batch:
         batch_name = profile.batch.name
-        course = course or profile.batch.course
         center = center or profile.batch.center
 
-    course_fee = profile.course_fee_at_admission if (profile and profile.course_fee_at_admission is not None) else (course.fees if course else Decimal('0.00'))
     paid_amount = FeePayment.objects.filter(student=profile).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     pending_balance = course_fee - paid_amount
     if pending_balance < Decimal('0.00'):
@@ -396,11 +411,10 @@ def fees_list(request):
     if batch_id:
         students_qs = students_qs.filter(batch_id=batch_id)
 
-    # Build student table list — use ONLY the locked course_fee_at_admission
+    # Build student table list with admission fallback for students without a batch.
     student_list = []
     for student in students_qs.order_by('full_name'):
-        # Strictly use the locked historical fee; do NOT fall back to batch.course.fees
-        total_fee = student.course_fee_at_admission if student.course_fee_at_admission is not None else Decimal('0.00')
+        admission, course, total_fee = _resolve_student_course_and_fee(student)
         paid = student.paid_amount
         # Clamp pending to zero — overpayment is not shown as negative
         pending = max(total_fee - paid, Decimal('0.00'))
@@ -414,6 +428,8 @@ def fees_list(request):
 
         student_list.append({
             'student': student,
+            'admission': admission,
+            'course_name': course.name if course else '-',
             'course_fee': total_fee,
             'paid_amount': paid,
             'pending_amount': pending,
@@ -478,8 +494,7 @@ def fees_list(request):
     pending_students_count = 0
 
     for s in students_annotated:
-        # Use ONLY the locked historical fee — no runtime fallback to batch.course.fees
-        s_fee = s.course_fee_at_admission if s.course_fee_at_admission is not None else Decimal('0.00')
+        _, _, s_fee = _resolve_student_course_and_fee(s)
         total_course_fees += s_fee
         # Clamp: overpaying does not produce negative pending
         pending = max(s_fee - s.paid_amount, Decimal('0.00'))
@@ -595,13 +610,21 @@ def payment_create(request):
             pass
 
     if request.method == 'POST':
-        form = FeePaymentForm(request.POST, user=request.user)
+        form = FeePaymentForm(
+            request.POST,
+            user=request.user,
+            course_fee=fee_summary['total_fees'] if fee_summary else None,
+        )
         if form.is_valid():
             form.save()
             messages.success(request, "Fee payment recorded successfully.")
             return redirect('fees_list')
     else:
-        form = FeePaymentForm(initial={'student': selected_student_id}, user=request.user)
+        form = FeePaymentForm(
+            initial={'student': selected_student_id},
+            user=request.user,
+            course_fee=fee_summary['total_fees'] if fee_summary else None,
+        )
         
     return render(request, 'fees/fee_form.html', {
         'form': form,

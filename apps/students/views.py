@@ -894,14 +894,9 @@ def student_admission_view(request):
         return HttpResponseForbidden("Access Denied.")
 
     from django.db import transaction
-    from apps.centers.models import Center
-    from apps.fees.models import StudentPaymentSetting
-    from apps.fees.services import sync_student_payment_settings
-    from decimal import Decimal
+    from apps.fees.services import deduct_center_wallet_for_student_fee, get_student_payment_amount
 
-    sync_student_payment_settings()
-    admission_fee_setting = StudentPaymentSetting.objects.filter(title__iexact='Admission Fees').first()
-    admission_fee = admission_fee_setting.amount if (admission_fee_setting and admission_fee_setting.is_visible) else Decimal('0.00')
+    admission_fee = get_student_payment_amount('Admission Fees')
     center_context = request.user.center if request.user.role == 'center' else None
 
     if request.method == 'POST':
@@ -910,16 +905,15 @@ def student_admission_view(request):
             with transaction.atomic():
                 admission = form.save(commit=False)
                 if request.user.role == 'center':
-                    center = Center.objects.select_for_update().get(pk=request.user.center_id)
-                    if admission_fee > center.wallet_balance:
-                        form.add_error(None, f"Insufficient wallet balance. Student admission fee is ₹{admission_fee:.2f}, available balance is ₹{center.wallet_balance:.2f}.")
+                    center = request.user.center
+                    try:
+                        deduct_center_wallet_for_student_fee(center, 'Admission Fees')
+                    except ValueError as exc:
+                        form.add_error(None, str(exc))
                     else:
                         admission.center = center
                         admission.save()
-                        if admission_fee > 0:
-                            center.wallet_balance -= admission_fee
-                            center.save(update_fields=['wallet_balance'])
-                            center_context = center
+                        center_context = center
                         sync_student_admission_user(admission)
                         messages.success(request, f"Student Admission processed successfully. ₹{admission_fee:.2f} deducted from wallet.")
                         return redirect('student_admission')
@@ -1100,6 +1094,8 @@ def student_pending_list(request):
 def student_approve_action(request, pk):
     """Approve a pending or cancelled student admission."""
     from django.utils import timezone
+    from django.db import transaction
+    from apps.fees.services import deduct_center_wallet_for_student_fee
     
     redirect_url = request.META.get('HTTP_REFERER') or 'student_pending_list'
     
@@ -1109,25 +1105,37 @@ def student_approve_action(request, pk):
             return redirect(redirect_url)
             
         try:
-            admission = StudentAdmission.objects.get(pk=pk, status__in=['Pending', 'Cancelled'])
-            
-            # Center can only approve own students
-            if request.user.role == 'center' and admission.center and admission.center != request.user.center:
-                messages.error(request, 'Permission denied.')
-                return redirect(redirect_url)
+            with transaction.atomic():
+                admission = StudentAdmission.objects.select_for_update().get(pk=pk, status__in=['Pending', 'Cancelled'])
+                original_status = admission.status
+                deducted_amount = 0
 
-            admission.status = 'Approved'
-            admission.approved_by = request.user
-            admission.approved_at = timezone.now()
-            admission.cancelled_by = None
-            admission.cancelled_at = None
-            admission.cancel_reason = None
-            admission.save()
-            sync_student_admission_user(admission)
-            messages.success(request, 'Student Admission Approved Successfully.')
+                # Center can only approve own students
+                if request.user.role == 'center' and admission.center and admission.center != request.user.center:
+                    messages.error(request, 'Permission denied.')
+                    return redirect(redirect_url)
+
+                if request.user.role == 'center' and original_status == 'Cancelled':
+                    deducted_amount = deduct_center_wallet_for_student_fee(request.user.center, 'Re-Admission Fees')
+
+                admission.status = 'Approved'
+                admission.approved_by = request.user
+                admission.approved_at = timezone.now()
+                admission.cancelled_by = None
+                admission.cancelled_at = None
+                admission.cancel_reason = None
+                admission.save()
+                sync_student_admission_user(admission)
+
+            if deducted_amount:
+                messages.success(request, f'Student Admission Approved Successfully. Rs.{deducted_amount:.2f} deducted from wallet.')
+            else:
+                messages.success(request, 'Student Admission Approved Successfully.')
             
         except StudentAdmission.DoesNotExist:
             messages.error(request, 'Admission not found or is already Approved.')
+        except ValueError as exc:
+            messages.error(request, str(exc))
 
     return redirect(redirect_url)
 

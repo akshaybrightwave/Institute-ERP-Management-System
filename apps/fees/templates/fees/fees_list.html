@@ -300,7 +300,7 @@
                             {% for item in students_page_obj %}
                             <tr>
                                 <td class="ps-4 fw-semibold">{{ item.student.full_name }}</td>
-                                <td>{{ item.student.batch.course.name|default:"-" }}</td>
+                                <td>{{ item.course_name|default:"-" }}</td>
                                 <td class="fw-semibold">₹{{ item.course_fee }}</td>
                                 <td class="text-success fw-semibold">₹{{ item.paid_amount }}</td>
                                 <td class="text-danger fw-semibold">₹{{ item.pending_amount }}</td>

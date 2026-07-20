@@ -26,9 +26,8 @@ def center_list(request):
                 if not center.code:
                     center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
                 center.save()
-                create_center_certificate_for_center(center, created_by=request.user)
             messages.success(request, 'Center created successfully.')
-            return redirect('center_list')
+            return redirect('pending_centers')
 
     query = request.GET.get('q', '').strip()
     qs = Center.objects.all().order_by('-id')
@@ -55,6 +54,7 @@ def pending_centers(request):
             if hasattr(center, 'center_user') and center.center_user:
                 center.center_user.is_active = True
                 center.center_user.save()
+                create_center_certificate_for_center(center, created_by=request.user)
                 messages.success(request, f"{center.name} has been approved.")
             else:
                 messages.error(request, "Error: User account for this center not found.")
@@ -164,8 +164,6 @@ def center_create(request):
                 if not center.code:
                     center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
                 center.save()
-
-                create_center_certificate_for_center(center, created_by=request.user)
                 
                 # Create user for the center
                 email = form.cleaned_data.get('email')
@@ -183,7 +181,7 @@ def center_create(request):
                 user.save()
             
             messages.success(request, 'Center created successfully.')
-            return redirect('center_list')
+            return redirect('pending_centers')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -669,6 +667,8 @@ def _handle_center_cert_list_and_csv(request, is_center):
     qs = CenterCertificate.objects.select_related('center', 'created_by').all()
     if is_center:
         qs = qs.filter(center=request.user.center)
+    else:
+        qs = qs.filter(center__center_user__is_active=True)
 
     query = request.GET.get('q', '').strip()
     if query:

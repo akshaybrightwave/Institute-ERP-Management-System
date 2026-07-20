@@ -73,6 +73,10 @@ class StudentAdmissionForm(forms.ModelForm):
                 self.fields['center'].queryset = Center.objects.none()
                 from apps.courses.models import Course
                 self.fields['course'].queryset = Course.objects.none()
+        else:
+            self.fields['center'].queryset = Center.objects.filter(
+                center_user__is_active=True
+            ).order_by('name')
 
         self.fields['timetable_course'].widget = forms.Select(
             choices=[('', 'Select a Course')] + [(t.timetable_name, t.timetable_name) for t in TimeTable.objects.all()],

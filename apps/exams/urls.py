@@ -52,7 +52,6 @@ urlpatterns = [
 
     # ── Exam Centre — independent master module ──
     path('exam-centres/', views.exam_centre_list, name='exam_centre_list'),
-    path('centers/', views.exam_centre_list, name='center_list'),
     path('exam-centres/<int:pk>/edit/', views.exam_centre_edit, name='exam_centre_edit'),
     path('exam-centres/<int:pk>/delete/', views.exam_centre_delete, name='exam_centre_delete'),
 ]
