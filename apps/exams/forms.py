@@ -233,5 +233,15 @@ class ExamScheduleForm(forms.ModelForm):
         self.fields['exam_center'].empty_label = "Select Exam Centre"
         self.fields['session'].empty_label = "Select Session"
 
+        duration_value = None
+        if self.is_bound:
+            duration_value = self.data.get('duration')
+        elif self.instance and self.instance.pk:
+            duration_value = self.instance.duration
+        if duration_value:
+            existing_values = {value for value, _ in self.fields['duration'].choices}
+            if duration_value not in existing_values:
+                self.fields['duration'].choices = list(self.fields['duration'].choices) + [(duration_value, duration_value)]
+
     # NOTE: StudentProfileForm → apps/students/forms.py
     #       TeacherProfileForm → apps/teachers/forms.py

@@ -435,7 +435,19 @@
     }).join('');
   }
 
-  function loadSubjects(courseValue, durationValue, targetBody, existingRows) {
+  function setDurationOptions(selectEl, durations, selectedValue) {
+    if (!selectEl) return;
+    selectEl.innerHTML = '<option value="">Select duration</option>';
+    (durations || []).forEach(function (duration) {
+      const option = document.createElement('option');
+      option.value = duration;
+      option.textContent = duration;
+      if (duration === selectedValue) option.selected = true;
+      selectEl.appendChild(option);
+    });
+  }
+
+  function loadSubjects(courseValue, durationValue, targetBody, existingRows, durationSelect) {
     if (!courseValue) {
       subjectPlaceholder(targetBody, 'Select a course to load subjects.');
       return Promise.resolve();
@@ -448,6 +460,7 @@
     })
     .then(function (res) { return res.json(); })
     .then(function (data) {
+      setDurationOptions(durationSelect, data.durations || [], durationValue || '');
       renderSubjectRows(targetBody, data.subjects || [], existingRows || {});
     })
     .catch(function () {
@@ -464,9 +477,14 @@
       loadSubjects(addCourseSelect.value, addDurationSelect.value, addSubjectRows);
     }
 
-    addCourseSelect.addEventListener('change', refreshAddSubjects);
+    addCourseSelect.addEventListener('change', function () {
+      addDurationSelect.value = '';
+      loadSubjects(addCourseSelect.value, '', addSubjectRows, null, addDurationSelect);
+    });
     addDurationSelect.addEventListener('change', refreshAddSubjects);
-    if (addCourseSelect.value) refreshAddSubjects();
+    if (addCourseSelect.value) {
+      loadSubjects(addCourseSelect.value, addDurationSelect.value, addSubjectRows, null, addDurationSelect);
+    }
   }
 
   const editModal = document.getElementById('editScheduleModal');
@@ -508,7 +526,7 @@
         (data.subjects || []).forEach(function (row) {
           existingRows[String(row.id)] = { date: row.date, time: row.time };
         });
-        loadSubjects(data.course, data.duration, modalSubjectRows, existingRows).then(function () {
+        loadSubjects(data.course, data.duration, modalSubjectRows, existingRows, durationSelect).then(function () {
           bsModal.show();
         });
       })
@@ -527,7 +545,10 @@
     loadSubjects(courseSelect.value, durationSelect.value, modalSubjectRows);
   }
 
-  courseSelect.addEventListener('change', refreshModalSubjects);
+  courseSelect.addEventListener('change', function () {
+    durationSelect.value = '';
+    loadSubjects(courseSelect.value, '', modalSubjectRows, null, durationSelect);
+  });
   durationSelect.addEventListener('change', refreshModalSubjects);
 
   // Handle AJAX Update Submit

@@ -981,8 +981,17 @@ def ajax_exam_schedule_subjects(request):
     except (Course.DoesNotExist, TypeError, ValueError):
         return JsonResponse({'subjects': []})
 
+    all_subjects = _ordered_subjects_for_schedule(course)
+    durations = []
+    seen_durations = set()
+    for subject in all_subjects:
+        if subject.duration_offset and subject.duration_offset not in seen_durations:
+            seen_durations.add(subject.duration_offset)
+            durations.append(subject.duration_offset)
+
     subjects = _ordered_subjects_for_schedule(course, duration)
     return JsonResponse({
+        'durations': durations,
         'subjects': [
             {
                 'id': subject.id,
@@ -1102,7 +1111,7 @@ def exam_schedule_delete(request, pk):
 
 @user_passes_test(is_admin)
 def assign_exam_center_list(request):
-    exams = Exam.objects.select_related('course', 'center').prefetch_related('center_assignments__center').annotate(
+    exams = Exam.objects.filter(is_published=True).select_related('course', 'center').prefetch_related('center_assignments__center').annotate(
         active_center_count=Count(
             'center_assignments',
             filter=Q(center_assignments__status=True, center_assignments__is_deleted=False),
@@ -1188,6 +1197,9 @@ def ajax_save_center_assignments(request):
             return JsonResponse({'success': False, 'message': 'Missing exam.'}, status=400)
 
         exam = Exam.objects.get(id=exam_id)
+        if not exam.is_published:
+            return JsonResponse({'success': False, 'message': 'Only approved exams can be assigned to centers.'}, status=400)
+
         valid_center_ids = set(Center.objects.filter(id__in=center_ids).values_list('id', flat=True))
 
         with transaction.atomic():
@@ -1225,12 +1237,12 @@ def assign_exam_student_list(request):
     is_center = request.user.role == 'center'
 
     if is_center:
-        exams = Exam.objects.filter(
+        exams = Exam.objects.filter(is_published=True).filter(
             Q(center=request.user.center) |
             Q(center_assignments__center=request.user.center, center_assignments__status=True, center_assignments__is_deleted=False)
         ).distinct()
     else:
-        exams = Exam.objects.all()
+        exams = Exam.objects.filter(is_published=True)
 
     # Search filter
     q = request.GET.get('q', '').strip()
@@ -1282,6 +1294,9 @@ def ajax_get_eligible_students(request):
 
     try:
         exam = Exam.objects.get(id=exam_id)
+        if not exam.is_published:
+            return JsonResponse({'success': False, 'message': 'Only approved exams can be assigned to students.'}, status=400)
+
         # Verify access to exam
         if is_center and not (
             exam.center == request.user.center or
@@ -1345,6 +1360,9 @@ def ajax_save_student_assignments(request):
             return JsonResponse({'success': False, 'message': 'Missing exam or students.'}, status=400)
 
         exam = Exam.objects.get(id=exam_id)
+        if not exam.is_published:
+            return JsonResponse({'success': False, 'message': 'Only approved exams can be assigned to students.'}, status=400)
+
         if is_center and not (
             exam.center == request.user.center or
             ExamCenterAssignment.objects.filter(

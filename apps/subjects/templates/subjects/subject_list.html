@@ -1,4 +1,4 @@
-{% extends 'accounts/admin_dashboard.html' %}
+﻿{% extends 'accounts/admin_dashboard.html' %}
 
 {% block title %}Subject Management | Examly{% endblock %}
 
@@ -23,9 +23,9 @@
   <!-- Stacked Layout -->
   <div class="row g-4">
 
-    <!-- ══════════════════════════════════
-         TOP — Add Subject Form Card
-    ══════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         TOP â€” Add Subject Form Card
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="col-12">
       <div class="qa-card">
         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
@@ -151,9 +151,9 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════
-         MIDDLE — Active Subject Listing
-    ══════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         MIDDLE â€” Active Subject Listing
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="col-12">
       <div class="qa-card">
         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
@@ -220,7 +220,7 @@
                     {{ subject.course.name }}
                   </span>
                   <span class="badge bg-primary rounded-pill px-2 py-1" style="font-size: 0.7rem;">
-                    {{ subject.course.duration }}
+                    {{ subject.duration_offset }}
                   </span>
                 </td>
 
@@ -326,9 +326,9 @@
       </div>
     </div>
 
-    <!-- ══════════════════════════════════
-         BOTTOM — Deleted Subject Listing
-    ══════════════════════════════════ -->
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         BOTTOM â€” Deleted Subject Listing
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
     <div class="col-12">
       <div class="qa-card">
         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
@@ -379,7 +379,7 @@
                     {{ subject.course.name }}
                   </span>
                   <span class="badge bg-primary rounded-pill px-2 py-1" style="font-size: 0.7rem;">
-                    {{ subject.course.duration }}
+                    {{ subject.duration_offset }}
                   </span>
                 </td>
 
@@ -451,9 +451,9 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      EDIT SUBJECT MODAL
-══════════════════════════════════ -->
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
 <div class="modal fade" id="editSubjectModal" tabindex="-1" aria-labelledby="editSubjectModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
@@ -605,9 +605,9 @@
     }
   }
 
-  // ══════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // ADD FORM HANDLERS
-  // ══════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const addCourseSelect = document.getElementById('id_course');
   const addDurationOffset = document.getElementById('id_duration_offset');
 
@@ -638,9 +638,9 @@
     handleSubjectTypeToggles('id_', checkedAddRadio.value);
   }
 
-  // ══════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // EDIT MODAL HANDLERS
-  // ══════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const editModal      = document.getElementById('editSubjectModal');
   const editForm       = document.getElementById('editSubjectForm');
   const editCourse     = document.getElementById('edit_course');
@@ -665,7 +665,7 @@
     });
   });
 
-  // Click Edit button — load data via AJAX GET
+  // Click Edit button â€” load data via AJAX GET
   document.querySelectorAll('.btn-edit-subject').forEach(function (btn) {
     btn.addEventListener('click', function () {
       const url = btn.dataset.url;
@@ -711,7 +711,7 @@
     editError.style.display = 'none';
 
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Savingâ€¦';
 
     const formData = new FormData(editForm);
 
