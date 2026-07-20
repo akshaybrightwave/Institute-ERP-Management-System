@@ -1,0 +1,262 @@
+{% extends 'hr/base.html' %}
+{% block title %}{{ student.full_name }} | Lead History{% endblock %}
+{% block content %}
+<style>
+  .lead-history-page {
+    --lh-panel: rgba(15, 23, 42, .62);
+    --lh-border: rgba(96, 165, 250, .18);
+    --lh-muted: #98a6bf;
+    color: #eef4ff;
+  }
+  .lh-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  .lh-crumb {
+    margin-bottom: 12px;
+    color: var(--lh-muted);
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+  .lh-crumb a {
+    color: #38a3ff;
+    text-decoration: none;
+  }
+  .lh-title {
+    margin: 0;
+    color: #fff;
+    font-size: 24px;
+    line-height: 1.15;
+    font-weight: 780;
+    letter-spacing: 0;
+  }
+  .lh-subtitle {
+    margin: 7px 0 0;
+    color: var(--lh-muted);
+    font-size: 13.5px;
+    font-weight: 520;
+  }
+  .lh-back {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 13px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    background: rgba(15, 23, 42, .56);
+    color: #dbeafe;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .lh-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 160px;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .lh-student-card,
+  .lh-count-card,
+  .lh-table-card {
+    border: 1px solid var(--lh-border);
+    border-radius: 12px;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(37, 99, 235, .12), transparent 34%),
+      linear-gradient(135deg, rgba(15, 23, 42, .88), rgba(2, 8, 23, .94));
+    box-shadow: 0 18px 38px rgba(0, 0, 0, .26);
+  }
+  .lh-student-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px;
+    min-width: 0;
+  }
+  .lh-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 44px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+  }
+  .lh-name {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+  .lh-meta {
+    margin-top: 4px;
+    color: #aab8cd;
+    font-size: 12.5px;
+    overflow-wrap: anywhere;
+  }
+  .lh-count-card {
+    padding: 15px;
+  }
+  .lh-count-label {
+    color: #9fb1c8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .lh-count-value {
+    margin-top: 8px;
+    color: #fff;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 800;
+  }
+  .lh-table-card {
+    overflow: hidden;
+  }
+  .lh-table-head,
+  .lh-table-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.25fr) minmax(120px, .72fr) minmax(150px, .9fr) minmax(140px, .72fr);
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+  }
+  .lh-table-head {
+    color: #a9bad3;
+    background: rgba(15, 23, 42, .54);
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .lh-table-row {
+    border-bottom: 1px solid rgba(148, 163, 184, .1);
+    color: #e8eef8;
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .lh-table-row:last-child {
+    border-bottom: 0;
+  }
+  .lh-company,
+  .lh-role {
+    overflow-wrap: anywhere;
+  }
+  .lh-muted {
+    color: #94a3b8;
+  }
+  .lh-status {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    justify-content: center;
+    min-height: 26px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    border: 1px solid rgba(34, 211, 238, .34);
+    background: rgba(8, 145, 178, .14);
+    color: #67e8f9;
+  }
+  .lh-status.no {
+    border-color: rgba(148, 163, 184, .22);
+    background: rgba(148, 163, 184, .08);
+    color: #aab8cd;
+  }
+  .lh-empty {
+    padding: 34px 18px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+  }
+  @media (max-width: 820px) {
+    .lh-head,
+    .lh-summary {
+      grid-template-columns: 1fr;
+      flex-direction: column;
+    }
+    .lh-table-card {
+      overflow-x: auto;
+    }
+    .lh-table-head,
+    .lh-table-row {
+      min-width: 720px;
+    }
+  }
+</style>
+
+<div class="lead-history-page">
+  <div class="lh-head">
+    <div>
+      <div class="lh-crumb">
+        <a href="{% url 'hr:placement_batch_list' %}">Placement</a>
+        <span> / </span>
+        <a href="{% url 'hr:placement_batch_detail' batch.id %}">Batch</a>
+        <span> / Student Leads</span>
+      </div>
+      <h1 class="lh-title">Student Lead History</h1>
+      <p class="lh-subtitle">Companies and drives assigned to this student by HR</p>
+    </div>
+    <a class="lh-back" href="{% url 'hr:placement_batch_detail' batch.id %}">
+      <i class="bi bi-arrow-left"></i>
+      Back to Batch
+    </a>
+  </div>
+
+  <div class="lh-summary">
+    <section class="lh-student-card">
+      <span class="lh-avatar">{{ student.full_name|default:"S"|slice:":1"|upper }}</span>
+      <div>
+        <div class="lh-name">{{ student.full_name|default:"-" }}</div>
+        <div class="lh-meta">{{ student.email|default:"No email" }} · {{ student.mobile|default:"No contact" }}</div>
+        <div class="lh-meta">{{ batch.name }}{% if batch.academic_year %} · {{ batch.academic_year }}{% endif %}</div>
+      </div>
+    </section>
+    <section class="lh-count-card">
+      <div class="lh-count-label">Lead Given</div>
+      <div class="lh-count-value">{{ lead_count }}</div>
+    </section>
+  </div>
+
+  <section class="lh-table-card">
+    <div class="lh-table-head">
+      <div>Company Name</div>
+      <div>Date</div>
+      <div>Role</div>
+      <div>Shortlisted</div>
+    </div>
+    {% for lead in lead_history %}
+      <div class="lh-table-row">
+        <div class="lh-company">{{ lead.drive.company.name|default:lead.company.name|default:"-" }}</div>
+        <div>
+          {% if lead.drive.drive_date %}
+            {{ lead.drive.drive_date|date:"d M Y" }}
+          {% else %}
+            {{ lead.assigned_at|date:"d M Y" }}
+          {% endif %}
+        </div>
+        <div class="lh-role">{{ lead.drive.job_role|default:"-" }}</div>
+        <div>
+          {% if lead.is_shortlisted %}
+            <span class="lh-status">Shortlisted</span>
+          {% else %}
+            <span class="lh-status no">Not Shortlisted</span>
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="lh-empty">No lead history found for this student.</div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

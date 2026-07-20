@@ -707,17 +707,28 @@
                 <a class="sb-leaf" href="{% url 'hr:placement_dashboard' %}" data-href="{% url 'hr:placement_dashboard' %}">
                   <i class="bi bi-speedometer2"></i> Dashboard
                 </a>
+                <a class="sb-leaf" href="{% url 'hr:placement_batch_list' %}" data-href="{% url 'hr:placement_batch_list' %}">
+                  <i class="bi bi-collection"></i> Batches
+                </a>
                 <a class="sb-leaf" href="{% url 'hr:placement_company_list' %}" data-href="{% url 'hr:placement_company_list' %}">
                   <i class="bi bi-buildings"></i> Companies
                 </a>
                 <a class="sb-leaf" href="{% url 'hr:placement_drive_list' %}" data-href="{% url 'hr:placement_drive_list' %}">
                   <i class="bi bi-megaphone"></i> Drives
                 </a>
-                <a class="sb-leaf" href="{% url 'hr:placement_employee_list' %}" data-href="{% url 'hr:placement_employee_list' %}">
-                  <i class="bi bi-people"></i> Employees
-                </a>
-                <a class="sb-leaf" href="{% url 'hr:placement_offer_list' %}" data-href="{% url 'hr:placement_offer_list' %}">
-                  <i class="bi bi-envelope-check"></i> Offers
+              </div>
+            </div>
+          </div>
+          <!-- Settings -->
+          <div class="sb-group" id="sb-settings">
+            <button class="sb-group-hdr" type="button">
+              <i class="bi bi-gear"></i> Settings
+              <i class="bi bi-chevron-down sb-chevron"></i>
+            </button>
+            <div class="sb-group-body">
+              <div class="sb-group-body-inner">
+                <a class="sb-leaf" href="{% url 'hr:email_configuration' %}" data-href="{% url 'hr:email_configuration' %}">
+                  <i class="bi bi-envelope"></i> Email Configuration
                 </a>
               </div>
             </div>

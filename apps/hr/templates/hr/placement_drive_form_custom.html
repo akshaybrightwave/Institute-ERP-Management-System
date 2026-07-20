@@ -1,0 +1,597 @@
+{% extends 'hr/base.html' %}
+{% block title %}{{ title }} | Placement{% endblock %}
+{% block content %}
+<style>
+  .drive-create-page {
+    --dc-bg: #08111f;
+    --dc-panel: rgba(15, 23, 42, .66);
+    --dc-panel-soft: rgba(15, 23, 42, .44);
+    --dc-line: rgba(96, 165, 250, .18);
+    --dc-line-strong: rgba(96, 165, 250, .35);
+    --dc-text: #e8eef8;
+    --dc-muted: #9aa8bd;
+    --dc-blue: #3b82f6;
+    --dc-violet: #6d5dfc;
+    color: var(--dc-text);
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  .drive-create-head {
+    display: block;
+    margin-bottom: 16px;
+  }
+  .drive-crumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--dc-muted);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .drive-crumb a {
+    color: #38a3ff;
+    text-decoration: none;
+  }
+  .drive-page-title {
+    margin: 0;
+    color: #f8fbff;
+    font-size: 24px;
+    font-weight: 650;
+    line-height: 1.1;
+    letter-spacing: 0;
+  }
+  .drive-page-copy {
+    margin: 6px 0 0;
+    color: #aebbd0;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .drive-art {
+    display: none;
+  }
+  .drive-art::before {
+    content: "";
+    position: absolute;
+    inset: 22px 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59, 130, 246, .22), transparent 62%);
+    border: 1px solid rgba(59, 130, 246, .16);
+  }
+  .drive-clip {
+    position: relative;
+    width: 96px;
+    height: 122px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #dbeafe, #8da8ff);
+    box-shadow: 0 24px 44px rgba(37, 99, 235, .32);
+    transform: rotate(5deg);
+  }
+  .drive-clip::before {
+    content: "";
+    position: absolute;
+    top: -12px;
+    left: 28px;
+    width: 42px;
+    height: 24px;
+    border-radius: 8px 8px 5px 5px;
+    background: linear-gradient(145deg, #647cff, #2f44b5);
+  }
+  .drive-clip::after {
+    content: "";
+    position: absolute;
+    left: 22px;
+    right: 20px;
+    top: 38px;
+    height: 42px;
+    border-radius: 10px;
+    background:
+      linear-gradient(#4f63b8 0 0) 0 0 / 22px 9px no-repeat,
+      linear-gradient(#9eb3ff 0 0) 0 20px / 54px 7px no-repeat,
+      linear-gradient(#9eb3ff 0 0) 0 34px / 42px 7px no-repeat;
+  }
+  .drive-case {
+    position: absolute;
+    left: 28px;
+    bottom: 20px;
+    width: 74px;
+    height: 50px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #5b6df5, #2b3b9f);
+    box-shadow: 0 18px 34px rgba(79, 70, 229, .3);
+  }
+  .drive-card {
+    overflow: hidden;
+    border-radius: 13px;
+    border: 1px solid rgba(96, 165, 250, .22);
+    background:
+      radial-gradient(circle at 90% 10%, rgba(37, 99, 235, .13), transparent 30%),
+      linear-gradient(135deg, rgba(15, 23, 42, .9), rgba(15, 23, 42, .64));
+    box-shadow: 0 14px 32px rgba(0, 0, 0, .22);
+  }
+  .drive-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, .1);
+  }
+  .drive-card-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 18px;
+    background: linear-gradient(135deg, #2563eb, #6d5dfc);
+    box-shadow: 0 14px 28px rgba(37, 99, 235, .24);
+  }
+  .drive-card-title {
+    margin: 0 0 5px;
+    color: #f8fbff;
+    font-size: 17px;
+    font-weight: 680;
+  }
+  .drive-card-subtitle {
+    margin: 0;
+    color: var(--dc-muted);
+    font-size: 12.5px;
+  }
+  .drive-card-body {
+    padding: 14px;
+  }
+  .drive-section {
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, .1);
+    background: rgba(15, 23, 42, .34);
+    border-radius: 11px;
+  }
+  .drive-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .drive-field {
+    display: grid;
+    gap: 8px;
+  }
+  .drive-field.full {
+    grid-column: 1 / -1;
+  }
+  .drive-label {
+    color: #eef5ff;
+    font-size: 13px;
+    font-weight: 720;
+  }
+  .drive-required {
+    color: #fb7185;
+  }
+  .drive-control,
+  .drive-field select,
+  .drive-field input {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(96, 165, 250, .26);
+    background: linear-gradient(135deg, rgba(15, 23, 42, .88), rgba(15, 23, 42, .68));
+    color: #e8eef8;
+    padding: 0 12px;
+    font-size: 12.5px;
+    font-weight: 520;
+    outline: none;
+    box-shadow: none;
+    color-scheme: dark;
+  }
+  .drive-control::placeholder,
+  .drive-field input::placeholder {
+    color: #8391a8;
+  }
+  .drive-field select,
+  .drive-control select {
+    appearance: auto;
+  }
+  .drive-field select option,
+  .drive-control option {
+    background: #0f172a;
+    color: #e8eef8;
+  }
+  .drive-field input[type="date"] {
+    color-scheme: dark;
+    padding-right: 14px;
+  }
+  .drive-field input[type="date"]::-webkit-calendar-picker-indicator {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    opacity: 1;
+    filter: brightness(0) invert(1);
+  }
+  .drive-field select:focus,
+  .drive-field input:focus,
+  .drive-control:focus {
+    border-color: rgba(96, 165, 250, .5);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+  }
+  .drive-field select:disabled {
+    opacity: 1;
+    color: #9aa8bd;
+    background: linear-gradient(135deg, rgba(15, 23, 42, .8), rgba(15, 23, 42, .62));
+    cursor: not-allowed;
+  }
+  .drive-batch-picker {
+    border-radius: 11px;
+    border: 1px solid rgba(96, 165, 250, .16);
+    background: rgba(15, 23, 42, .3);
+    overflow: visible;
+  }
+  .drive-batch-tools {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 46px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 10px;
+  }
+  .drive-or {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    justify-self: center;
+    border-radius: 50%;
+    color: #c4cde0;
+    border: 1px solid rgba(148, 163, 184, .12);
+    background: rgba(15, 23, 42, .64);
+    font-size: 13px;
+  }
+  .drive-batch-list {
+    display: none;
+    max-height: 128px;
+    overflow: auto;
+    margin: 0 10px 10px;
+    padding: 6px;
+    border: 1px solid rgba(96, 165, 250, .2);
+    border-radius: 10px;
+    background: rgba(2, 6, 23, .42);
+    box-shadow: 0 16px 30px rgba(0,0,0,.18);
+  }
+  .drive-batch-list.is-open {
+    display: block;
+  }
+  .drive-batch-list::-webkit-scrollbar { width: 6px; }
+  .drive-batch-list::-webkit-scrollbar-track { background: rgba(15, 23, 42, .32); border-radius: 999px; }
+  .drive-batch-list::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, .42); border-radius: 999px; }
+  .drive-batch-list > div {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+  }
+  .drive-batch-list label {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 6px 8px;
+    border-radius: 9px;
+    color: #d9e5f5;
+    background: rgba(15, 23, 42, .36);
+    border: 1px solid rgba(148, 163, 184, .08);
+    font-size: 12px;
+    font-weight: 620;
+    cursor: pointer;
+  }
+  .drive-batch-list label.is-selected {
+    border-color: rgba(99, 102, 241, .44);
+    background: rgba(79, 70, 229, .16);
+  }
+  .drive-batch-list label:hover {
+    border-color: rgba(96, 165, 250, .28);
+    background: rgba(37, 99, 235, .1);
+  }
+  .drive-batch-list input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    min-height: 16px;
+    padding: 0;
+    accent-color: #4f46e5;
+    flex: 0 0 auto;
+  }
+  .drive-help {
+    margin-top: 8px;
+    color: #aab7ca;
+    font-size: 12px;
+  }
+  .drive-selected-batches {
+    display: none;
+    margin-top: 10px;
+    color: #93c5fd;
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+  .drive-selected-batches.is-visible {
+    display: block;
+  }
+  .drive-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 11px;
+    border: 1px solid rgba(59, 130, 246, .42);
+    background: rgba(37, 99, 235, .12);
+  }
+  .drive-note-icon {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    color: #60a5fa;
+    border: 1px solid rgba(96, 165, 250, .5);
+  }
+  .drive-note-title {
+    color: #60a5fa;
+    font-size: 15px;
+    font-weight: 760;
+    margin-bottom: 3px;
+  }
+  .drive-note-text {
+    color: #c2cce0;
+    font-size: 13px;
+  }
+  .drive-errors {
+    color: #fb7185;
+    font-size: 12px;
+  }
+  .drive-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px;
+    border-top: 1px solid rgba(148, 163, 184, .1);
+    background: rgba(2, 6, 23, .18);
+  }
+  .drive-action {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 10px;
+    padding: 0 18px;
+    font-size: 12.5px;
+    font-weight: 760;
+    text-decoration: none;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+  }
+  .drive-action:hover {
+    transform: translateY(-1px);
+  }
+  .drive-cancel {
+    color: #e2e8f0;
+    background: rgba(15, 23, 42, .46);
+    border: 1px solid rgba(148, 163, 184, .18);
+  }
+  .drive-submit {
+    min-width: 150px;
+    color: #fff;
+    border: 1px solid rgba(99, 102, 241, .38);
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    box-shadow: 0 16px 34px rgba(37, 99, 235, .22);
+  }
+  .drive-footer-note {
+    margin-top: 18px;
+    text-align: center;
+    color: #8f9fb5;
+    font-size: 13px;
+  }
+  .drive-footer-note span {
+    color: #38a3ff;
+  }
+  @media (max-width: 991px) {
+    .drive-create-head {
+      grid-template-columns: 1fr;
+    }
+    .drive-art {
+      display: none;
+    }
+    .drive-batch-tools,
+    .drive-grid {
+      grid-template-columns: 1fr;
+    }
+    .drive-or {
+      width: auto;
+      height: auto;
+      background: transparent;
+      border: 0;
+    }
+  }
+  @media (max-width: 640px) {
+    .drive-card-head,
+    .drive-card-footer {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .drive-submit {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="drive-create-page">
+  <div class="drive-create-head">
+    <div>
+      <div class="drive-crumb">
+        <a href="{% url 'hr:placement_dashboard' %}">Placement</a>
+        <i class="bi bi-chevron-right"></i>
+        <a href="{% url 'hr:placement_drive_list' %}">Drives</a>
+        <i class="bi bi-chevron-right"></i>
+        <span>{% if 'Edit' in title %}Edit Drive{% else %}Create Drive{% endif %}</span>
+      </div>
+      <h1 class="drive-page-title">{{ title }}</h1>
+      <p class="drive-page-copy">Fill in the details below to schedule a new placement drive.</p>
+    </div>
+    <div class="drive-art" aria-hidden="true">
+      <div class="drive-clip"></div>
+      <div class="drive-case"></div>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="drive-card">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="drive-card-head">
+      <div class="drive-card-icon"><i class="bi bi-clipboard2-data"></i></div>
+      <div>
+        <h2 class="drive-card-title">Drive Information</h2>
+        <p class="drive-card-subtitle">Provide essential details about the placement drive.</p>
+      </div>
+    </div>
+
+    <div class="drive-card-body">
+      <div class="drive-section">
+        <div class="drive-field full">
+          <label class="drive-label" for="{{ form.company.id_for_label }}">Company <span class="drive-required">*</span></label>
+          {{ form.company }}
+          <div class="drive-errors">{{ form.company.errors }}</div>
+        </div>
+
+        <div class="drive-grid">
+          <div class="drive-field">
+            <label class="drive-label" for="{{ form.job_role.id_for_label }}">Drive Role / Position <span class="drive-required">*</span></label>
+            {{ form.job_role }}
+            <div class="drive-errors">{{ form.job_role.errors }}</div>
+          </div>
+          <div class="drive-field">
+            <label class="drive-label" for="{{ form.drive_date.id_for_label }}">Drive Date <span class="drive-required">*</span></label>
+            {{ form.drive_date }}
+            <div class="drive-errors">{{ form.drive_date.errors }}</div>
+          </div>
+        </div>
+
+        <div class="drive-field full" style="margin-top: 16px;">
+          <label class="drive-label">Eligible Batch(es) <span class="drive-required">*</span></label>
+          <div class="drive-batch-picker">
+            <div class="drive-batch-tools">
+              <input class="drive-control" id="driveBatchSearch" type="search" placeholder="Search batch..." autocomplete="off">
+              <div class="drive-or">or</div>
+              <select class="drive-control" id="driveBatchSelect">
+                <option value="">Select batch</option>
+                {% for batch in form.batches.field.queryset %}
+                  <option value="{{ batch.id }}">{{ batch.name }}{% if batch.academic_year %} ({{ batch.academic_year }}){% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="drive-batch-list" id="driveBatchList">
+              {{ form.batches }}
+            </div>
+          </div>
+          <div class="drive-selected-batches" id="driveSelectedBatches"></div>
+          <div class="drive-help">Search by batch name or select from the list.</div>
+          <div class="drive-errors">{{ form.batches.errors }}</div>
+        </div>
+
+        <div class="drive-note">
+          <div class="drive-note-icon"><i class="bi bi-info-lg"></i></div>
+          <div>
+            <div class="drive-note-title">Note</div>
+            <div class="drive-note-text">Please verify all details before creating the drive.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="drive-card-footer">
+      <a class="drive-action drive-cancel" href="{{ cancel_url }}"><i class="bi bi-x-lg"></i>Cancel</a>
+      <button class="drive-action drive-submit" type="submit">
+        <span>{% if 'Edit' in title %}Save Drive{% else %}Create Drive{% endif %}</span>
+        <i class="bi bi-arrow-right"></i>
+      </button>
+    </div>
+  </form>
+
+  <div class="drive-footer-note">&copy; 2026 <span>Placement Portal.</span> All rights reserved.</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const batchSearch = document.getElementById('driveBatchSearch');
+    const batchSelect = document.getElementById('driveBatchSelect');
+    const batchList = document.getElementById('driveBatchList');
+    const selectedSummary = document.getElementById('driveSelectedBatches');
+    if (!batchList) return;
+
+    const labels = Array.from(batchList.querySelectorAll('label'));
+    labels.forEach(label => {
+      const input = label.querySelector('input[type="checkbox"]');
+      if (!input) return;
+      label.dataset.batchText = label.textContent.trim().toLowerCase();
+      label.dataset.batchValue = input.value;
+      input.addEventListener('change', updateSelectedSummary);
+    });
+
+    function updateSelectedSummary() {
+      const selectedLabels = labels
+        .filter(label => {
+          const input = label.querySelector('input[type="checkbox"]');
+          return input && input.checked;
+        })
+        .map(label => label.textContent.trim());
+
+      labels.forEach(label => {
+        const input = label.querySelector('input[type="checkbox"]');
+        label.classList.toggle('is-selected', Boolean(input && input.checked));
+      });
+
+      if (!selectedLabels.length) {
+        selectedSummary.textContent = '';
+        selectedSummary.classList.remove('is-visible');
+        return;
+      }
+      selectedSummary.textContent = `Selected: ${selectedLabels.join(', ')}`;
+      selectedSummary.classList.add('is-visible');
+    }
+
+    function filterBatches() {
+      const term = (batchSearch.value || '').trim().toLowerCase();
+      const hasSelected = labels.some(label => {
+        const input = label.querySelector('input[type="checkbox"]');
+        return input && input.checked;
+      });
+      batchList.classList.toggle('is-open', Boolean(term) || hasSelected);
+      labels.forEach(label => {
+        const input = label.querySelector('input[type="checkbox"]');
+        const selected = Boolean(input && input.checked);
+        label.classList.toggle('d-none', term ? !label.dataset.batchText.includes(term) : !selected);
+      });
+    }
+
+    batchSearch.addEventListener('input', filterBatches);
+    batchSelect.addEventListener('change', function () {
+      if (!this.value) return;
+      const match = labels.find(label => label.dataset.batchValue === this.value);
+      if (match) {
+        const input = match.querySelector('input[type="checkbox"]');
+        input.checked = true;
+        input.dispatchEvent(new Event('change'));
+        match.classList.remove('d-none');
+        batchSearch.value = '';
+        filterBatches();
+        match.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      this.value = '';
+    });
+    updateSelectedSummary();
+    filterBatches();
+  });
+</script>
+{% endblock %}

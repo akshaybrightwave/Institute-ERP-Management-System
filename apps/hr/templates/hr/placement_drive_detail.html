@@ -1,127 +1,269 @@
 {% extends 'hr/base.html' %}
-
-{% block title %}{{ drive }} | HR Portal{% endblock %}
-
+{% block title %}Placement Drive{% endblock %}
 {% block content %}
-<div class="hr-page-title">
-  <div>
-    <div class="small text-secondary mb-1 mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Drive Profile</div>
-    <h1 class="fw-bold mb-1">{{ drive.company|default:"Placement Drive" }}</h1>
-    <p class="hr-muted mb-0">{{ drive.job_role|default:"Role not set" }} · {{ drive.drive_date|date:"d M Y"|default:"Date not set" }}</p>
-  </div>
-  <div class="d-flex gap-2 flex-wrap">
-    <a class="btn" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);" href="{% url 'hr:placement_drive_edit' drive.id %}"><i class="bi bi-pencil me-1 text-warning"></i>Edit</a>
-    <a class="btn" style="background: rgba(220,53,69,0.1); color: #dc3545; border: 1px solid rgba(220,53,69,0.3);" href="{% url 'hr:placement_drive_delete' drive.id  %}"><i class="bi bi-trash me-1"></i>Delete</a>
-    <a class="btn text-white fw-bold shadow-sm" style="background: linear-gradient(to right, #4361ee, #3a0ca3);" href="{% url 'hr:placement_assign_students' drive.id %}"><i class="bi bi-people me-1"></i>Add Employees</a>
-    <a class="btn" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1);" href="{% url 'hr:placement_drive_interview_create' drive.id %}"><i class="bi bi-calendar-plus me-1 text-info"></i>Schedule Interviews</a>
-  </div>
-</div>
+<style>
+  .drive-page { color: #f8fafc; }
+  .drive-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .drive-breadcrumb {
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .drive-title {
+    font-size: 24px;
+    line-height: 1.12;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+  .drive-subtitle {
+    color: #c4c9d4;
+    font-size: 14px;
+    line-height: 1.35;
+    margin: 0;
+  }
+  .drive-edit {
+    min-width: 72px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .28);
+    background: rgba(18, 18, 18, .9);
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .drive-edit:hover { border-color: rgba(148, 163, 184, .45); color: #fff; }
+  .drive-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .drive-metric {
+    min-height: 78px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    background: linear-gradient(145deg, rgba(17, 24, 39, .38), rgba(17, 17, 17, .94));
+    box-shadow: 0 10px 24px rgba(0, 0, 0, .22), inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  .drive-metric i {
+    width: 34px;
+    text-align: center;
+    font-size: 25px;
+    line-height: 1;
+  }
+  .drive-metric .label {
+    color: #c1c7d0;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 3px;
+  }
+  .drive-metric .value {
+    display: block;
+    color: #fff;
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 800;
+  }
+  .metric-eligible i { color: #7c5cff; }
+  .metric-shortlisted i { color: #3b82f6; }
+  .metric-present i { color: #69d982; }
+  .metric-selected i { color: #f6aa13; }
+  .drive-panel {
+    border: 1px solid rgba(148, 163, 184, .22);
+    border-radius: 8px;
+    background: linear-gradient(145deg, rgba(24, 24, 24, .98), rgba(15, 15, 15, .98));
+    box-shadow: 0 12px 30px rgba(0,0,0,.26);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+  .drive-section-title {
+    font-size: 18px;
+    line-height: 1.2;
+    font-weight: 700;
+    margin: 0 0 14px;
+  }
+  .step-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .drive-action {
+    min-width: 164px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(17, 24, 39, .38);
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 600;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+  }
+  .drive-action:hover { transform: translateY(-2px); color: #fff; }
+  .drive-action i { font-size: 18px; line-height: 1; }
+  .action-email { border: 1px solid rgba(59, 130, 246, .55); }
+  .action-email i { color: #3b82f6; }
+  .action-shortlist { border: 1px solid rgba(59, 130, 246, .48); }
+  .action-shortlist i { color: #3b82f6; }
+  .action-attendance { border: 1px solid rgba(74, 222, 128, .48); }
+  .action-attendance i { color: #4ade80; }
+  .action-results { border: 1px solid rgba(124, 92, 255, .55); }
+  .action-results i { color: #7c5cff; }
+  .drive-table-wrap {
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .drive-table {
+    width: 100%;
+    margin: 0;
+    color: #e5e7eb;
+    border-collapse: collapse;
+  }
+  .drive-table thead { background: rgba(31, 41, 55, .72); }
+  .drive-table th {
+    padding: 11px 10px !important;
+    color: #aeb6c3 !important;
+    font-size: 12px !important;
+    letter-spacing: .06em;
+    font-weight: 800 !important;
+    border-bottom: 1px solid rgba(148, 163, 184, .16) !important;
+  }
+  .drive-table td {
+    padding: 12px 10px !important;
+    border-bottom: 1px solid rgba(148, 163, 184, .13) !important;
+    color: #f3f4f6 !important;
+    font-size: 14px !important;
+    vertical-align: middle;
+  }
+  .drive-table tbody tr {
+    background: rgba(20, 20, 20, .62) !important;
+    box-shadow: none !important;
+  }
+  .drive-table tbody tr:hover {
+    transform: none !important;
+    background: rgba(31, 41, 55, .4) !important;
+  }
+  .student-name {
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .student-course {
+    color: #b6bdc8;
+    font-size: 12px;
+    margin-top: 3px;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 78px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.1;
+    background: rgba(100, 116, 139, .14);
+    border: 1px solid rgba(148, 163, 184, .3);
+    color: #cbd5e1;
+  }
+  .status-requested { color: #4aa3ff; border-color: rgba(59, 130, 246, .76); background: rgba(30, 64, 175, .16); }
+  .status-submitted, .status-selected, .status-present { color: #5bdd78; border-color: rgba(34, 197, 94, .7); background: rgba(21, 128, 61, .16); }
+  .status-shortlisted { color: #19c7ee; border-color: rgba(6, 182, 212, .72); background: rgba(8, 145, 178, .15); }
+  .status-pending { color: #f5ad18; border-color: rgba(245, 158, 11, .74); background: rgba(146, 64, 14, .18); }
+  .offer-text { white-space: nowrap; }
+  @media (max-width: 1199px) {
+    .drive-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 767px) {
+    .drive-header { flex-direction: column; }
+    .drive-metrics { grid-template-columns: 1fr; }
+    .drive-action { width: 100%; min-width: 0; }
+    .drive-table { min-width: 980px; }
+  }
+</style>
 
-<div class="row g-3 mb-4">
-  <div class="col-md">
-    <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #00838f, #00acc1); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-      <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Employees Sent</div>
-      <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ drive.assignments_count }}</div>
+<div class="drive-page">
+  <div class="drive-header">
+    <div>
+      <div class="drive-breadcrumb">Placement / Drive</div>
+      <h1 class="drive-title">{{ drive.company.name|default:"Placement Drive" }}</h1>
+      <p class="drive-subtitle">{{ drive.job_role|default:"-" }} - Deadline {{ drive.resume_submission_deadline|date:"d M Y"|default:"-" }}</p>
     </div>
+    <a class="drive-edit" href="{% url 'hr:placement_drive_edit' drive.id %}">Edit</a>
   </div>
-  <div class="col-md">
-    <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #f57f17, #ffb300); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-      <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Appeared</div>
-      <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ drive.appeared_count }}</div>
-    </div>
-  </div>
-  <div class="col-md">
-    <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #1565c0, #1e88e5); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-      <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Selected</div>
-      <div class="fw-bold text-white mt-3" style="font-size: 2rem; line-height: 1;">{{ drive.selected_count }}</div>
-    </div>
-  </div>
-  <div class="col-md">
-    <div class="rounded p-3 h-100 d-flex flex-column justify-content-between shadow" style="background: linear-gradient(to right, #4a148c, #7b1fa2); transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)';" onmouseout="this.style.transform='translateY(0)';">
-      <div class="small text-white" style="font-size: 11px; text-transform: uppercase; font-weight: 700; opacity: 0.8; letter-spacing: 0.5px;">Status</div>
-      <div class="fw-bold text-white mt-3" style="font-size: 1.5rem; line-height: 1.2;">
-        {% if drive.status == 'active' %}
-          <span class="badge bg-success rounded-pill px-3">{{ drive.get_status_display }}</span>
-        {% elif drive.status == 'completed' %}
-          <span class="badge bg-primary rounded-pill px-3">{{ drive.get_status_display }}</span>
-        {% else %}
-          <span class="badge bg-secondary rounded-pill px-3">{{ drive.get_status_display }}</span>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
 
-<div class="hr-panel p-4 mb-4" style="border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
-  <h5 class="fw-bold mb-4 text-white" style="letter-spacing: 0.5px;">Drive Details</h5>
-  <div class="row g-3">
-    <div class="col-md-6">
-      <div class="d-flex justify-content-between align-items-center rounded px-3 py-2 h-100" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-        <span class="small hr-muted fw-semibold">Company</span>
-        <span class="small text-info fw-bold">{{ drive.company|default:"--" }}</span>
-      </div>
+  <div class="drive-metrics">
+    <div class="drive-metric metric-eligible">
+      <i class="bi bi-people-fill"></i>
+      <div><div class="label">Eligible</div><b class="value">{{ drive.eligible_count }}</b></div>
     </div>
-    <div class="col-md-6">
-      <div class="d-flex justify-content-between align-items-center rounded px-3 py-2 h-100" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-        <span class="small hr-muted fw-semibold">Package</span>
-        <span class="small text-success fw-bold">{{ drive.package|default:"--" }}</span>
-      </div>
+    <div class="drive-metric metric-shortlisted">
+      <i class="bi bi-clipboard2-check-fill"></i>
+      <div><div class="label">Shortlisted</div><b class="value">{{ drive.shortlisted_count }}</b></div>
     </div>
-    <div class="col-md-12">
-      <div class="d-flex justify-content-between align-items-center rounded px-3 py-2 h-100" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-        <span class="small hr-muted fw-semibold">Venue</span>
-        <span class="small text-white fw-bold text-end" style="max-width: 70%;">{{ drive.venue|default:"--" }}</span>
-      </div>
+    <div class="drive-metric metric-present">
+      <i class="bi bi-person-fill"></i>
+      <div><div class="label">Present</div><b class="value">{{ drive.appeared_count }}</b></div>
     </div>
-    <div class="col-md-12">
-      <div class="d-flex justify-content-between align-items-center rounded px-3 py-2 h-100" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-        <span class="small hr-muted fw-semibold">Eligibility</span>
-        <span class="small text-white fw-medium text-end" style="max-width: 70%;">{{ drive.eligibility_criteria|linebreaksbr|default:"--" }}</span>
-      </div>
-    </div>
-    <div class="col-md-12">
-      <div class="d-flex justify-content-between align-items-center rounded px-3 py-2 h-100" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-        <span class="small hr-muted fw-semibold">Remarks</span>
-        <span class="small text-white fw-medium text-end" style="max-width: 70%;">{{ drive.remarks|linebreaksbr|default:"--" }}</span>
-      </div>
+    <div class="drive-metric metric-selected">
+      <i class="bi bi-star-fill"></i>
+      <div><div class="label">Selected</div><b class="value">{{ drive.selected_count }}</b></div>
     </div>
   </div>
-</div>
 
-<div class="hr-panel p-4" style="border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.2);">
-  <h5 class="fw-bold mb-4 text-white" style="letter-spacing: 0.5px;">Assigned Employees</h5>
-  <div class="table-responsive">
-    <table class="table table-hover hr-table">
-      <thead>
-        <tr>
-          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">EMPLOYEE</th>
-          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">DESIGNATION</th>
-          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">SKILLS</th>
-          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">STATUS</th>
-          <th class="text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">ACTION</th>
-        </tr>
-      </thead>
-      <tbody>
+  <div class="drive-panel">
+    <h5 class="drive-section-title">Workflow Actions</h5>
+    <div class="step-btns">
+      <a class="drive-action action-email" href="{% url 'hr:placement_create_email' drive.id 'resume_request' %}"><i class="bi bi-envelope"></i> Create Email</a>
+      <a class="drive-action action-shortlist" href="{% url 'hr:placement_update_shortlist' drive.id %}"><i class="bi bi-person-plus"></i> Update Shortlist</a>
+      <a class="drive-action action-attendance" href="{% url 'hr:placement_update_attendance' drive.id %}"><i class="bi bi-calendar2-check"></i> Attendance</a>
+      <a class="drive-action action-results" href="{% url 'hr:placement_update_results' drive.id %}"><i class="bi bi-trophy"></i> Final Results</a>
+    </div>
+  </div>
+
+  <div class="drive-panel">
+    <h5 class="drive-section-title">Students</h5>
+    <div class="table-responsive drive-table-wrap">
+      <table class="drive-table align-middle">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Email</th>
+            <th>Resume</th>
+            <th>Shortlist</th>
+            <th>Attendance</th>
+            <th>Final</th>
+            <th>Offer</th>
+          </tr>
+        </thead>
+        <tbody>
         {% for item in assignments %}
-        <tr class="align-middle">
-          <td class="fw-bold text-white">{{ item.display_name|title }}</td>
-          <td class="text-muted">{{ item.display_course|default:"--" }}</td>
-          <td class="text-muted">{{ item.skills|truncatechars:50|default:"--" }}</td>
-          <td><span class="status-badge status-{{ item.assignment_status }}">{{ item.assignment_status_display }}</span></td>
-          <td>
-            <div class="d-flex align-items-center gap-2">
-              <a class="text-info" href="{% url 'hr:placement_assignment_detail' item.id %}" title="View" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(13,202,240,0.4);box-shadow:0 0 8px rgba(13,202,240,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(13,202,240,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-eye"></i></a>
-              <a class="text-warning" href="{% url 'hr:placement_assignment_edit' item.id %}" title="Edit" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(255,193,7,0.4);box-shadow:0 0 8px rgba(255,193,7,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(255,193,7,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-pencil"></i></a>
-              <a class="text-danger" href="{% url 'hr:placement_assignment_delete' item.id  %}" title="Delete" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(220,53,69,0.4);box-shadow:0 0 8px rgba(220,53,69,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(220,53,69,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-trash"></i></a>
-              <a class="text-success" href="{% url 'hr:placement_assignment_offer_create' item.id %}" title="Add Offer" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1px solid rgba(25,135,84,0.4);box-shadow:0 0 8px rgba(25,135,84,0.2);background:transparent;transition:all 0.2s;" onmouseover="this.style.background='rgba(25,135,84,0.1)';" onmouseout="this.style.background='transparent';"><i class="bi bi-envelope-check"></i></a>
-            </div>
-          </td>
-        </tr>
+          <tr>
+            <td><div class="student-name">{{ item.display_name }}</div><div class="student-course">{{ item.display_course }}</div></td>
+            <td>{{ item.batch_student.email|default:item.student.email|default:"-" }}</td>
+            <td><span class="status-pill status-{{ item.resume_status }}">{{ item.get_resume_status_display }}</span></td>
+            <td>{% if item.is_shortlisted %}<span class="status-pill status-shortlisted">Shortlisted</span>{% else %}-{% endif %}</td>
+            <td><span class="status-pill status-{{ item.interview_attendance }}">{{ item.get_interview_attendance_display }}</span></td>
+            <td><span class="status-pill status-{{ item.final_status }}">{{ item.get_final_status_display }}</span></td>
+            <td class="offer-text">{% if item.offered_ctc %}{{ item.offered_role }} &middot; {{ item.offered_ctc }}{% else %}-{% endif %}</td>
+          </tr>
         {% empty %}
-        <tr><td colspan="5" class="text-center py-5 hr-muted">No employees assigned yet.</td></tr>
+          <tr><td colspan="7" class="text-center hr-muted py-4">No eligible students fetched.</td></tr>
         {% endfor %}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -98,6 +98,10 @@
               <i class="bi bi-journal-bookmark text-info"></i>
               <span>{{ lead.inquiry.course_interest }}</span>
             </div>
+            <div class="col-md-6 d-flex align-items-center gap-2">
+              <i class="bi bi-building text-info"></i>
+              <span>{{ lead.inquiry.college_name|default:"-" }}</span>
+            </div>
           </div>
         </div>
 

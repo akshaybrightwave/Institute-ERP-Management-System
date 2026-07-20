@@ -1,0 +1,277 @@
+{% extends 'hr/base.html' %}
+{% block title %}{{ title }} | Placement{% endblock %}
+{% block content %}
+<style>
+  .placement-form-page {
+    color: #eef4ff;
+  }
+
+  .placement-form-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 22px 0 22px;
+  }
+
+  .placement-form-crumb {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+    color: #94a3b8;
+    font-size: 12.5px;
+    font-weight: 650;
+  }
+
+  .placement-form-crumb span:first-child {
+    color: #38a3ff;
+  }
+
+  .placement-form-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .placement-form-icon {
+    width: 46px;
+    height: 46px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 46px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #2563eb, #6d28d9);
+    color: #fff;
+    font-size: 20px;
+    box-shadow: 0 16px 34px rgba(37, 99, 235, .26);
+  }
+
+  .placement-form-title {
+    margin: 0;
+    color: #fff;
+    font-size: 25px;
+    line-height: 1.12;
+    font-weight: 780;
+    letter-spacing: 0;
+  }
+
+  .placement-form-subtitle {
+    margin: 6px 0 0;
+    color: #9aa8bd;
+    font-size: 13.5px;
+  }
+
+  .placement-form-card {
+    max-width: 980px;
+    border: 1px solid rgba(96, 165, 250, .22);
+    border-radius: 14px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(37, 99, 235, .14), transparent 34%),
+      linear-gradient(135deg, rgba(15, 23, 42, .9), rgba(2, 8, 23, .95));
+    box-shadow: 0 22px 48px rgba(0, 0, 0, .28);
+  }
+
+  .placement-form-card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+  }
+
+  .placement-form-card-head h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 780;
+  }
+
+  .placement-form-card-head p {
+    margin: 3px 0 0;
+    color: #9aa8bd;
+    font-size: 12.5px;
+  }
+
+  .placement-form-body {
+    padding: 20px;
+  }
+
+  .placement-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .placement-form-field {
+    min-width: 0;
+  }
+
+  .placement-form-field.wide {
+    grid-column: 1 / -1;
+  }
+
+  .placement-form-label {
+    display: block;
+    margin-bottom: 8px;
+    color: #d9e4f4;
+    font-size: 12.5px;
+    font-weight: 750;
+  }
+
+  .placement-form-field input,
+  .placement-form-field select,
+  .placement-form-field textarea {
+    width: 100%;
+    min-height: 40px;
+    border-radius: 9px;
+    border: 1px solid rgba(148, 163, 184, .2) !important;
+    background: rgba(15, 23, 42, .62) !important;
+    color: #eef4ff !important;
+    box-shadow: none !important;
+    font-size: 13px;
+    font-weight: 550;
+  }
+
+  .placement-form-field input:focus,
+  .placement-form-field select:focus,
+  .placement-form-field textarea:focus {
+    border-color: rgba(96, 165, 250, .58) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .13) !important;
+  }
+
+  .placement-form-field textarea {
+    min-height: 96px;
+    resize: vertical;
+  }
+
+  .placement-form-error {
+    margin-top: 6px;
+    color: #fb7185;
+    font-size: 12px;
+    font-weight: 650;
+  }
+
+  .placement-form-help {
+    margin-top: 6px;
+    color: #8ea0b8;
+    font-size: 12px;
+  }
+
+  .placement-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid rgba(148, 163, 184, .12);
+    background: rgba(2, 8, 23, .26);
+  }
+
+  .placement-form-btn {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 750;
+    text-decoration: none;
+    border: 1px solid rgba(148, 163, 184, .2);
+  }
+
+  .placement-form-btn.cancel {
+    color: #dbeafe;
+    background: rgba(15, 23, 42, .52);
+  }
+
+  .placement-form-btn.save {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #6d28d9);
+    border-color: rgba(96, 165, 250, .35);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, .22);
+  }
+
+  @media (max-width: 760px) {
+    .placement-form-title-row {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .placement-form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .placement-form-actions {
+      flex-direction: column-reverse;
+    }
+
+    .placement-form-btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="placement-form-page">
+  <div class="placement-form-head">
+    <div>
+      <div class="placement-form-crumb">
+        <span>Placement</span>
+        <span>/</span>
+        <span>{{ title }}</span>
+      </div>
+      <div class="placement-form-title-row">
+        <span class="placement-form-icon">
+          {% if 'Company' in title %}
+            <i class="bi bi-building"></i>
+          {% else %}
+            <i class="bi bi-collection"></i>
+          {% endif %}
+        </span>
+        <div>
+          <h1 class="placement-form-title">{{ title }}</h1>
+          <p class="placement-form-subtitle">Fill the required details and save the record.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="placement-form-card">
+    {% csrf_token %}
+    <div class="placement-form-card-head">
+      <span class="placement-form-icon">
+        {% if 'Company' in title %}
+          <i class="bi bi-buildings"></i>
+        {% else %}
+          <i class="bi bi-folder2-open"></i>
+        {% endif %}
+      </span>
+      <div>
+        <h2>{{ title }}</h2>
+        <p>Keep information accurate for placement workflow tracking.</p>
+      </div>
+    </div>
+
+    <div class="placement-form-body">
+      {{ form.non_field_errors }}
+      <div class="placement-form-grid">
+        {% for field in form %}
+          <div class="placement-form-field {% if field.name == 'batches' or field.field.widget.input_type == 'textarea' %}wide{% endif %}">
+            <label class="placement-form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="placement-form-help">{{ field.help_text }}</div>{% endif %}
+            {% if field.errors %}<div class="placement-form-error">{{ field.errors }}</div>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="placement-form-actions">
+      <a class="placement-form-btn cancel" href="{{ cancel_url }}"><i class="bi bi-x-lg"></i>Cancel</a>
+      <button class="placement-form-btn save" type="submit"><i class="bi bi-check2"></i>Save</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

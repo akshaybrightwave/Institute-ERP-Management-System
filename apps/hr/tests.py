@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 from datetime import date
 
 from .models import Candidate
@@ -122,6 +123,57 @@ class HRCandidateImportTests(TestCase):
         self.assertEqual(candidate.status, 'selected')
         self.assertEqual(candidate.notice_period, 'Immediate')
         self.assertTrue(candidate.activities.filter(title='Candidate Import Updated').exists())
+
+    def test_candidate_import_uses_selected_added_date(self):
+        upload = self.make_workbook_file([
+            1,
+            '15-07-2026',
+            'Imported Date Candidate',
+            'Counsellor',
+            '9000005555',
+            '1 Year',
+            'added-date@example.com',
+            '',
+            '',
+            '',
+            'Mumbai',
+            'Applied',
+            '',
+            'Walk In',
+        ])
+
+        response = self.client.post(
+            reverse('hr:candidate_import'),
+            {'date_added': '2026-05-04', 'candidates_file': upload},
+        )
+
+        self.assertRedirects(response, reverse('hr:candidate_list'))
+        candidate = Candidate.objects.get(mobile='9000005555')
+        self.assertEqual(candidate.date_added, date(2026, 5, 4))
+
+    def test_candidate_import_defaults_added_date_to_today(self):
+        upload = self.make_workbook_file([
+            1,
+            '15-07-2026',
+            'Default Date Candidate',
+            'Recruiter',
+            '9000006666',
+            '2 Years',
+            'default-date@example.com',
+            '',
+            '',
+            '',
+            'Pune',
+            'Applied',
+            '',
+            'Referral',
+        ])
+
+        response = self.client.post(reverse('hr:candidate_import'), {'candidates_file': upload})
+
+        self.assertRedirects(response, reverse('hr:candidate_list'))
+        candidate = Candidate.objects.get(mobile='9000006666')
+        self.assertEqual(candidate.date_added, timezone.localdate())
 
     def test_candidate_import_handles_exported_date_and_header_variants(self):
         workbook = openpyxl.Workbook()
@@ -256,3 +308,41 @@ class HRCandidateImportTests(TestCase):
         candidate = Candidate.objects.get(mobile='9000004444')
         self.assertEqual(candidate.interview_date, date(2026, 5, 4))
         self.assertEqual(candidate.experience, '5 Years')
+
+    def test_candidate_edit_updates_added_date(self):
+        candidate = Candidate.objects.create(
+            full_name='Editable Date Candidate',
+            mobile='9000007777',
+            email='edit-date@example.com',
+            applying_position='Counsellor',
+            status='new',
+            source='Indeed',
+            assigned_hr=self.hr_user,
+            created_by=self.hr_user,
+            date_added=date(2026, 7, 15),
+        )
+
+        response = self.client.post(
+            reverse('hr:candidate_edit', args=[candidate.id]),
+            {
+                'full_name': 'Editable Date Candidate',
+                'mobile': '9000007777',
+                'email': 'edit-date@example.com',
+                'location': 'Mumbai',
+                'experience': '2 Years',
+                'current_salary': '3 LPA',
+                'expected_salary': '5 LPA',
+                'notice_period': 'Immediate',
+                'applying_position': 'Counsellor',
+                'date_added': '2026-05-04',
+                'interview_date': '',
+                'source': 'Indeed',
+                'assigned_hr': self.hr_user.id,
+                'status': 'selected',
+                'remarks': 'Updated added date',
+            },
+        )
+
+        self.assertRedirects(response, reverse('hr:candidate_detail', args=[candidate.id]))
+        candidate.refresh_from_db()
+        self.assertEqual(candidate.date_added, date(2026, 5, 4))

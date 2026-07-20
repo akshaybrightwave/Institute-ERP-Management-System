@@ -1,63 +1,465 @@
 {% extends 'hr/base.html' %}
-
-{% block title %}Placement Drives | HR Portal{% endblock %}
-
+{% block title %}Placement Drives{% endblock %}
 {% block content %}
-<div class="hr-page-title">
-  <div>
-    <div class="small hr-muted mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Drives</div>
-    <h1 class="fw-bold mb-1">Placement Drive Management</h1>
-    <p class="hr-muted mb-0">Schedule, track and publish placement drive outcomes.</p>
-  </div>
-  <a class="btn btn-hr-primary" href="{% url 'hr:placement_drive_create' %}"><i class="bi bi-calendar-plus me-1"></i>Schedule Drive</a>
-</div>
+<style>
+  .drive-page {
+    color: #eef4ff;
+  }
 
-<div class="hr-panel p-3 mb-4">
-  <form class="row g-3 align-items-end" method="get">
-    <div class="col-md-7">
-      <label class="form-label small fw-semibold">Search</label>
-      <input class="form-control" name="q" value="{{ query }}" placeholder="Company, role, venue">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label small fw-semibold">Status</label>
-      <select class="form-select" name="status">
-        <option value="">All Status</option>
-        {% for value, label in status_choices %}
-        <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-2">
-      <button class="btn btn-hr-primary w-100" type="submit">Filter</button>
-    </div>
-  </form>
-</div>
+  .drive-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+    margin: 24px 0 34px;
+  }
 
-<div class="hr-panel p-3">
-  <div class="table-responsive">
-    <table class="table hr-table">
-      <thead><tr><th>Company</th><th>Drive Date</th><th>Role</th><th>Sent</th><th>Appeared</th><th>Selected</th><th>Status</th><th>Action</th></tr></thead>
-      <tbody>
-        {% for drive in page_obj %}
-        <tr>
-          <td>{{ drive.company|default:"--" }}</td>
-          <td>{{ drive.drive_date|date:"d M Y"|default:"--" }}</td>
-          <td>{{ drive.job_role|default:"--" }}</td>
-          <td>{{ drive.assignments_count }}</td>
-          <td>{{ drive.appeared_count }}</td>
-          <td>{{ drive.selected_count }}</td>
-          <td><span class="status-badge status-{{ drive.status }}">{{ drive.get_status_display }}</span></td>
-          <td>
-            <a class="action-btn" href="{% url 'hr:placement_drive_detail' drive.id %}"><i class="bi bi-eye"></i></a>
-            <a class="action-btn" href="{% url 'hr:placement_drive_edit' drive.id %}"><i class="bi bi-pencil"></i></a>
-            <a class="action-btn text-danger" href="{% url 'hr:placement_drive_delete' drive.id  %}"><i class="bi bi-trash"></i></a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="8" class="text-center py-5 hr-muted">No placement drives found.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  .drive-crumb {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 18px;
+    color: #a7b4ce;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .drive-crumb span:first-child {
+    color: #2f8dff;
+  }
+
+  .drive-heading {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .drive-subtitle {
+    margin: 12px 0 0;
+    color: #98a6bf;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .drive-create-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 0 18px;
+    border-radius: 8px;
+    border: 1px solid rgba(96, 165, 250, .32);
+    background: linear-gradient(135deg, #2563eb 0%, #6d28d9 100%);
+    box-shadow: 0 18px 42px rgba(37, 99, 235, .25);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .drive-shell {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    border: 1px solid rgba(96, 165, 250, .18);
+    border-radius: 10px;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(37, 99, 235, .14), transparent 32%),
+      linear-gradient(135deg, rgba(15, 23, 42, .92), rgba(2, 8, 23, .96));
+    box-shadow: 0 24px 54px rgba(0, 0, 0, .36);
+    padding: 18px 18px 20px;
+  }
+
+  .drive-table {
+    display: grid;
+    gap: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .drive-row {
+    display: grid;
+    grid-template-columns: minmax(160px, 1.25fr) minmax(86px, .7fr) minmax(110px, .9fr) minmax(78px, .6fr) minmax(112px, .75fr) minmax(100px, .68fr) minmax(96px, .62fr);
+    align-items: center;
+    column-gap: 14px;
+    min-width: 0;
+  }
+
+  .drive-head {
+    min-height: 52px;
+    padding: 0 12px;
+    border-bottom: 1px solid rgba(148, 163, 184, .14);
+    color: #b7c6df;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  .drive-body-row {
+    min-height: 78px;
+    padding: 12px;
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+    transition: background .18s ease, transform .18s ease, border-color .18s ease;
+  }
+
+  .drive-body-row:hover {
+    background: rgba(15, 23, 42, .62);
+    border-color: rgba(96, 165, 250, .22);
+  }
+
+  .drive-company-cell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .drive-body-row > div,
+  .drive-head > div {
+    min-width: 0;
+  }
+
+  .drive-avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, .22);
+  }
+
+  .drive-company-name,
+  .drive-role {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #f8fafc;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .drive-role {
+    color: #e5e7eb;
+    font-weight: 650;
+  }
+
+  .drive-batch-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  .drive-batch-pill,
+  .drive-metric-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    min-height: 24px;
+    padding: 4px 9px;
+    border-radius: 7px;
+    overflow-wrap: anywhere;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.15;
+    font-weight: 800;
+  }
+
+  .drive-batch-pill {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+  }
+
+  .drive-metric-pill {
+    min-width: 70px;
+    border: 1px solid rgba(59, 130, 246, .48);
+    background: rgba(37, 99, 235, .18);
+    color: #bfdbfe;
+  }
+
+  .drive-metric-pill.shortlisted {
+    min-width: 98px;
+    border-color: rgba(6, 182, 212, .42);
+    background: rgba(8, 145, 178, .18);
+    color: #67e8f9;
+  }
+
+  .drive-metric-pill.selected {
+    min-width: 88px;
+    border-color: rgba(34, 197, 94, .42);
+    background: rgba(22, 163, 74, .17);
+    color: #86efac;
+  }
+
+  .drive-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .drive-open {
+    min-width: 54px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    background: rgba(15, 23, 42, .52);
+    color: #e5e7eb;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .drive-dots {
+    color: #a9b7ce;
+    font-size: 17px;
+    line-height: 1;
+  }
+
+  .drive-empty {
+    padding: 44px 18px;
+    color: #94a3b8;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .drive-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 10px 4px;
+    color: #a8b6ce;
+    font-size: 13px;
+  }
+
+  .drive-pagination {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .drive-page-link,
+  .drive-current-page {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .16);
+    color: #cbd5e1;
+    text-decoration: none;
+    background: rgba(15, 23, 42, .54);
+  }
+
+  .drive-current-page {
+    border-color: rgba(99, 102, 241, .72);
+    background: linear-gradient(135deg, #2563eb, #6d28d9);
+    color: #fff;
+    font-weight: 800;
+  }
+
+  .drive-page-link.disabled {
+    opacity: .42;
+    pointer-events: none;
+  }
+
+  @media (max-width: 1100px) {
+    .drive-row {
+      grid-template-columns: minmax(145px, 1.15fr) minmax(74px, .62fr) minmax(96px, .82fr) minmax(68px, .54fr) minmax(100px, .7fr) minmax(88px, .62fr) minmax(84px, .58fr);
+      column-gap: 10px;
+    }
+
+    .drive-company-cell {
+      gap: 10px;
+    }
+
+    .drive-company-name,
+    .drive-role {
+      font-size: 13px;
+    }
+
+    .drive-metric-pill {
+      min-width: 64px;
+      padding-inline: 7px;
+      font-size: 11px;
+    }
+
+    .drive-metric-pill.shortlisted {
+      min-width: 88px;
+    }
+
+    .drive-metric-pill.selected {
+      min-width: 78px;
+    }
+
+    .drive-open {
+      min-width: 48px;
+      padding-inline: 8px;
+    }
+  }
+
+  @media (max-width: 860px) {
+    .drive-top {
+      flex-direction: column;
+      margin-top: 18px;
+    }
+
+    .drive-create-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .drive-head {
+      display: none;
+    }
+
+    .drive-body-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      min-height: 0;
+      padding: 16px;
+    }
+
+    .drive-body-row > div {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .drive-body-row > div::before {
+      content: attr(data-label);
+      color: #93a4bf;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .drive-company-cell {
+      justify-content: flex-start !important;
+    }
+
+    .drive-company-cell::before {
+      display: none;
+    }
+
+    .drive-actions {
+      justify-content: space-between;
+    }
+
+    .drive-footer {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+
+<div class="drive-page">
+  <div class="drive-top">
+    <div>
+      <div class="drive-crumb">
+        <span>Placement</span>
+        <span>/</span>
+        <span>Drives</span>
+      </div>
+      <h1 class="drive-heading">Drives</h1>
+      <p class="drive-subtitle">Manage all placement drives and track progress</p>
+    </div>
+    <a class="drive-create-btn" href="{% url 'hr:placement_drive_create' %}">
+      <i class="bi bi-plus-lg"></i>
+      <span>Create Drive</span>
+    </a>
   </div>
+
+  <section class="drive-shell">
+    <div class="drive-table">
+      <div class="drive-row drive-head">
+        <div>Company</div>
+        <div>Role</div>
+        <div>Batches</div>
+        <div>Sent</div>
+        <div>Shortlisted</div>
+        <div>Selected</div>
+        <div class="text-end">Actions</div>
+      </div>
+
+      {% for drive in drives %}
+        <div class="drive-row drive-body-row">
+          <div class="drive-company-cell" data-label="Company">
+            <span class="drive-avatar">{{ drive.company.name|default:"DR"|slice:":2"|upper }}</span>
+            <span class="drive-company-name">{{ drive.company.name|default:"-" }}</span>
+          </div>
+          <div data-label="Role">
+            <span class="drive-role">{{ drive.job_role|default:"-"|title }}</span>
+          </div>
+          <div data-label="Batches">
+            <div class="drive-batch-stack">
+              {% for batch in drive.batches.all %}
+                <span class="drive-batch-pill">{{ batch.name }}</span>
+              {% empty %}
+                <span class="hr-muted">-</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div data-label="Sent">
+            <span class="drive-metric-pill">Sent {{ drive.eligible_count }}</span>
+          </div>
+          <div data-label="Shortlisted">
+            <span class="drive-metric-pill shortlisted">Shortlisted {{ drive.shortlisted_count }}</span>
+          </div>
+          <div data-label="Selected">
+            <span class="drive-metric-pill selected">Selected {{ drive.selected_count }}</span>
+          </div>
+          <div class="drive-actions" data-label="Actions">
+            <a class="drive-open" href="{% url 'hr:placement_drive_detail' drive.id %}">Open</a>
+            <span class="drive-dots" aria-hidden="true"><i class="bi bi-three-dots-vertical"></i></span>
+          </div>
+        </div>
+      {% empty %}
+        <div class="drive-empty">No drives created.</div>
+      {% endfor %}
+    </div>
+
+    {% if paginator %}
+      <div class="drive-footer">
+        <div>
+          {% if paginator.count %}
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} drives
+          {% else %}
+            Showing 0 to 0 of 0 drives
+          {% endif %}
+        </div>
+        <div class="drive-pagination">
+          {% if page_obj.has_previous %}
+            <a class="drive-page-link" href="?page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+          {% else %}
+            <span class="drive-page-link disabled"><i class="bi bi-chevron-left"></i></span>
+          {% endif %}
+          <span class="drive-current-page">{{ page_obj.number }}</span>
+          {% if page_obj.has_next %}
+            <a class="drive-page-link" href="?page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+          {% else %}
+            <span class="drive-page-link disabled"><i class="bi bi-chevron-right"></i></span>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </section>
 </div>
 {% endblock %}

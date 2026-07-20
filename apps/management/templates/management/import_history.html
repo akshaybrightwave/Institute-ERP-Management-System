@@ -4,6 +4,13 @@
 
 {% block extra_style %}
 {% include 'management/premium_theme_css.html' %}
+<style>
+  .import-fail-cell{min-width:220px}
+  .import-error-reasons{margin-top:7px;text-align:left;color:#fca5a5;font-size:11px;line-height:1.35}
+  .import-error-reasons div{white-space:normal}
+  .import-error-actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+  .import-error-actions .btn{font-size:11px;padding:4px 8px;border-radius:7px}
+</style>
 {% endblock %}
 
 {% block management_content %}
@@ -66,7 +73,28 @@
               <td class="text-center fw-bold text-white">{{ imp.total_records }}</td>
               <td class="text-center"><span class="badge bg-success">{{ imp.successful_records }}</span></td>
               <td class="text-center"><span class="badge bg-warning text-dark">{{ imp.duplicate_records }}</span></td>
-              <td class="text-center"><span class="badge bg-danger">{{ imp.failed_records }}</span></td>
+              <td class="text-center import-fail-cell">
+                {% if imp.failed_records %}
+                  <span class="badge bg-danger">{{ imp.failed_records }}</span>
+                  {% if imp.error_summary_items %}
+                    <div class="import-error-reasons">
+                      {% for reason in imp.error_summary_items %}
+                        <div>{{ reason.error_message }}: {{ reason.count }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                  <div class="import-error-actions">
+                    <a class="btn btn-outline-danger btn-sm fw-bold" href="{% url 'import_errors' %}?import_id={{ imp.pk }}">
+                      <i class="bi bi-list-ul me-1"></i> View Errors
+                    </a>
+                    <a class="btn btn-outline-info btn-sm fw-bold" href="{% url 'import_errors' %}?import_id={{ imp.pk }}&export=csv">
+                      <i class="bi bi-filetype-csv me-1"></i> CSV
+                    </a>
+                  </div>
+                {% else %}
+                  <span class="badge bg-success">0</span>
+                {% endif %}
+              </td>
               {% if can_delete_imports %}
               <td class="text-end">
                 <form method="POST" action="{% url 'import_history_delete' imp.pk %}" class="d-inline">

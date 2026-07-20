@@ -4,14 +4,17 @@ from django.db import IntegrityError
 from django.db.models import Q
 
 from apps.accounts.models import User
+from apps.courses.models import Course
 from apps.students.models import StudentProfile
 from .models import (
     Candidate,
     CandidateNote,
+    EmailConfiguration,
     ExternalAttendanceLog,
     ExternalEmployee,
     FollowUp,
     Interview,
+    PlacementBatch,
     PlacementCompany,
     PlacementDrive,
     PlacementInterview,
@@ -23,6 +26,7 @@ from .models import (
     ProjectEmployeeAssignment,
     ProjectInterview,
 )
+from .email_crypto import encrypt_app_password, normalize_app_password
 
 
 CANDIDATE_DASHBOARD_STATUS_CHOICES = (
@@ -183,6 +187,15 @@ class CandidateDocumentsForm(HRModelFormMixin, forms.ModelForm):
 
 
 class CandidateImportForm(forms.Form):
+    date_added = forms.DateField(
+        required=False,
+        label='Added Date',
+        help_text='Leave blank to use today.',
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+        }),
+    )
     candidates_file = forms.FileField(
         label='Upload Excel / CSV',
         help_text='Accepted columns: Interview Date, Candidate Name, Position, Contact No, Year of Experience, Mail Id, Current CTC, Expected CTC, Notice Period, Location, Interview Status, Remark, Source.',
@@ -217,6 +230,7 @@ class CandidateQuickForm(
             'expected_salary',
             'notice_period',
             'applying_position',
+            'date_added',
             'interview_date',
             'source',
             'assigned_hr',
@@ -235,6 +249,7 @@ class CandidateQuickForm(
             'expected_salary': 'Expected CTC',
             'notice_period': 'Notice Period',
             'applying_position': 'Position',
+            'date_added': 'Added Date',
             'interview_date': 'Interview Date',
             'status': 'Interview Status',
             'remarks': 'Remark',
@@ -244,6 +259,7 @@ class CandidateQuickForm(
             'current_salary': forms.TextInput(attrs={'placeholder': 'e.g. 3 LPA, 25000, Negotiable'}),
             'expected_salary': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 35000, Negotiable'}),
             'notice_period': forms.TextInput(attrs={'placeholder': 'e.g. Immediate, 15 days, 30 days'}),
+            'date_added': forms.DateInput(attrs={'type': 'date'}),
             'interview_date': forms.DateInput(attrs={'type': 'date'}),
             'remarks': forms.Textarea(attrs={'rows': 3}),
         }
@@ -507,54 +523,169 @@ class ExternalAttendanceForm(HRModelFormMixin, forms.ModelForm):
         self.apply_control_styles()
 
 
+class PlacementBatchForm(HRModelFormMixin, forms.ModelForm):
+    course = forms.CharField(
+        label='Course',
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'Enter course name'}),
+    )
+
+    class Meta:
+        model = PlacementBatch
+        fields = ['name', 'course', 'academic_year']
+        labels = {
+            'name': 'Batch Name',
+            'academic_year': 'Academic Year',
+        }
+        widgets = {
+            'academic_year': forms.TextInput(attrs={'placeholder': 'e.g. 2026-2027'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.course:
+            self.fields['course'].initial = self.instance.course.name
+        self.apply_control_styles()
+
+    def clean_course(self):
+        course_name = (self.cleaned_data.get('course') or '').strip()
+        if not course_name:
+            return None
+        course = Course.objects.filter(name__iexact=course_name).first()
+        if course:
+            return course
+        return Course.objects.create(name=course_name, duration='', fees=0)
+
+
+class PlacementBatchImportForm(forms.Form):
+    students_file = forms.FileField(
+        label='Student Excel File',
+        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': '.xlsx,.csv'}),
+    )
+
+
+class PlacementEmailForm(forms.Form):
+    subject = forms.CharField(max_length=220, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    body = forms.CharField(widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 8}))
+
+
+class EmailConfigurationForm(HRModelFormMixin, forms.ModelForm):
+    google_app_password = forms.CharField(
+        label='Google App Password',
+        required=False,
+        widget=forms.PasswordInput(attrs={'autocomplete': 'new-password'}, render_value=False),
+    )
+
+    class Meta:
+        model = EmailConfiguration
+        fields = ['email_address', 'google_app_password', 'smtp_host', 'smtp_port', 'use_tls', 'from_name', 'is_active']
+        labels = {
+            'email_address': 'Email Address',
+            'smtp_host': 'SMTP Host',
+            'smtp_port': 'SMTP Port',
+            'use_tls': 'Use TLS',
+            'from_name': 'From Name',
+            'is_active': 'Active Configuration',
+        }
+        widgets = {
+            'smtp_port': forms.NumberInput(attrs={'min': 1, 'max': 65535}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_control_styles()
+        self.fields['email_address'].required = True
+        self.fields['smtp_host'].required = True
+        self.fields['smtp_port'].required = True
+        self.fields['from_name'].required = True
+        self.fields['is_active'].initial = True
+        if not self.instance.pk:
+            self.fields['google_app_password'].required = True
+            self.fields['google_app_password'].widget.attrs.setdefault('placeholder', '16-character Google App Password')
+        else:
+            self.fields['google_app_password'].help_text = 'Leave blank to keep the existing encrypted app password.'
+            self.fields['google_app_password'].widget.attrs.setdefault('placeholder', 'Saved securely - leave blank to keep current password')
+
+    def clean_smtp_port(self):
+        port = self.cleaned_data.get('smtp_port')
+        if port is None:
+            raise forms.ValidationError('SMTP port is required.')
+        if port < 1 or port > 65535:
+            raise forms.ValidationError('SMTP port must be between 1 and 65535.')
+        return port
+
+    def clean_google_app_password(self):
+        password = normalize_app_password(self.cleaned_data.get('google_app_password'))
+        if not password and not self.instance.pk:
+            raise forms.ValidationError('Google App Password is required.')
+        if password and len(password) != 16:
+            raise forms.ValidationError('Google App Password must be 16 characters after removing spaces.')
+        return password
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        raw_password = self.cleaned_data.get('google_app_password')
+        if raw_password:
+            instance.google_app_password = encrypt_app_password(raw_password)
+        elif self.instance.pk:
+            instance.google_app_password = self.instance.google_app_password
+        instance.is_active = True
+        if commit:
+            instance.save()
+        return instance
+
+
 class PlacementCompanyForm(HRModelFormMixin, forms.ModelForm):
     class Meta:
         model = PlacementCompany
         fields = [
             'name',
-            'industry',
             'contact_person',
-            'designation',
-            'mobile',
             'email',
-            'website',
-            'address',
-            'city',
-            'package_offered',
-            'logo',
-            'notes',
+            'mobile',
+            'job_role',
+            'location',
         ]
-        widgets = {
-            'address': forms.Textarea(attrs={'rows': 3}),
-            'notes': forms.Textarea(attrs={'rows': 3}),
-            'package_offered': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
-            'project_value': forms.TextInput(attrs={'placeholder': 'e.g. 5 LPA, 3-6 LPA'}),
+        labels = {
+            'name': 'Company Name',
+            'email': 'Contact Email',
+            'mobile': 'Contact Number',
+            'job_role': 'Job Role',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
-            field.required = False
         self.apply_control_styles()
 
 
 class PlacementDriveForm(HRModelFormMixin, forms.ModelForm):
     class Meta:
         model = PlacementDrive
-        fields = ['company', 'job_role', 'drive_date', 'package', 'eligibility_criteria', 'venue', 'remarks', 'status']
+        fields = ['company', 'batches', 'job_role', 'drive_date']
+        labels = {
+            'batches': 'Eligible Batch(es)',
+            'job_role': 'Drive Role / Position',
+            'drive_date': 'Drive Date',
+        }
         widgets = {
+            'job_role': forms.TextInput(attrs={'placeholder': 'e.g. Python Developer, Software Engineer'}),
             'drive_date': forms.DateInput(attrs={'type': 'date'}),
-            'eligibility_criteria': forms.Textarea(attrs={'rows': 3}),
-            'remarks': forms.Textarea(attrs={'rows': 3}),
+            'batches': forms.CheckboxSelectMultiple,
         }
 
     def __init__(self, *args, **kwargs):
         company = kwargs.pop('company', None)
         super().__init__(*args, **kwargs)
         self.fields['company'].queryset = PlacementCompany.objects.order_by('name', '-updated_at')
+        self.fields['batches'].queryset = PlacementBatch.objects.select_related('course').order_by('-created_at')
         if company:
             self.fields['company'].initial = company
             self.fields['company'].disabled = True
+        self.fields['company'].required = True
+        self.fields['batches'].required = True
+        self.fields['job_role'].required = True
+        self.fields['drive_date'].required = True
+        self.apply_control_styles()
 
 
 class PlacementCompanyForm(HRModelFormMixin, forms.ModelForm):
@@ -658,6 +789,59 @@ class PlacementDriveForm(HRModelFormMixin, forms.ModelForm):
             drive.save()
             self.save_m2m()
         return drive
+
+
+class PlacementCompanyForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = PlacementCompany
+        fields = [
+            'name',
+            'contact_person',
+            'email',
+            'mobile',
+            'job_role',
+            'location',
+        ]
+        labels = {
+            'name': 'Company Name',
+            'email': 'Contact Email',
+            'mobile': 'Contact Number',
+            'job_role': 'Job Role',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_control_styles()
+
+
+class PlacementDriveForm(HRModelFormMixin, forms.ModelForm):
+    class Meta:
+        model = PlacementDrive
+        fields = ['company', 'batches', 'job_role', 'drive_date']
+        labels = {
+            'batches': 'Eligible Batch(es)',
+            'job_role': 'Drive Role / Position',
+            'drive_date': 'Drive Date',
+        }
+        widgets = {
+            'job_role': forms.TextInput(attrs={'placeholder': 'e.g. Python Developer, Software Engineer'}),
+            'drive_date': forms.DateInput(attrs={'type': 'date'}),
+            'batches': forms.CheckboxSelectMultiple,
+        }
+
+    def __init__(self, *args, **kwargs):
+        company = kwargs.pop('company', None)
+        super().__init__(*args, **kwargs)
+        self.fields['company'].queryset = PlacementCompany.objects.order_by('name', '-updated_at')
+        self.fields['batches'].queryset = PlacementBatch.objects.select_related('course').order_by('-created_at')
+        if company:
+            self.fields['company'].initial = company
+            self.fields['company'].disabled = True
+        self.fields['company'].required = True
+        self.fields['batches'].required = True
+        self.fields['job_role'].required = True
+        self.fields['drive_date'].required = True
+        self.apply_control_styles()
 
 
 class PlacementAssignmentForm(HRModelFormMixin, forms.ModelForm):

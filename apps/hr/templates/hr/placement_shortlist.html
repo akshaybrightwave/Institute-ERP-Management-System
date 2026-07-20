@@ -1,0 +1,58 @@
+{% extends 'hr/base.html' %}
+{% block title %}Shortlist Students{% endblock %}
+{% block content %}
+<style>
+  .shortlist-status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 96px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(6, 182, 212, .44);
+    background: rgba(6, 182, 212, .14);
+    color: #67e8f9;
+  }
+  .shortlist-status-pill.pending {
+    border-color: rgba(148, 163, 184, .22);
+    background: rgba(148, 163, 184, .08);
+    color: #94a3b8;
+  }
+</style>
+<div class="hr-page-title">
+  <div><div class="small hr-muted mb-2">Placement / {{ drive.company.name|default:"Drive" }}</div><h1 class="fw-semibold mb-1">Update Shortlisted Students</h1></div>
+</div>
+<form method="post" class="hr-panel p-3">
+  {% csrf_token %}
+  <div class="table-responsive">
+    <table class="table table-dark table-borderless align-middle mb-0">
+      <thead><tr><th></th><th>Student</th><th>Email</th><th>Resume</th><th>Shortlist Status</th></tr></thead>
+      <tbody>
+      {% for item in assignments %}
+        <tr>
+          <td><input class="form-check-input" type="checkbox" name="shortlisted" value="{{ item.id }}" {% if item.is_shortlisted %}checked{% endif %}></td>
+          <td>{{ item.display_name }}</td>
+          <td>{{ item.batch_student.email|default:item.student.email|default:"-" }}</td>
+          <td>{{ item.get_resume_status_display }}</td>
+          <td>
+            {% if item.is_shortlisted %}
+              <span class="shortlist-status-pill">Shortlisted</span>
+            {% else %}
+              <span class="shortlist-status-pill pending">Not Shortlisted</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="text-center hr-muted py-4">No students available.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex justify-content-end gap-2 mt-3">
+    <a class="btn btn-soft" href="{% url 'hr:placement_drive_detail' drive.id %}">Cancel</a>
+    <button class="btn btn-hr-primary" type="submit">Save</button>
+  </div>
+</form>
+{% endblock %}

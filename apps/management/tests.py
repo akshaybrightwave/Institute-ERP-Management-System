@@ -217,11 +217,11 @@ class TelecallerModuleTests(TestCase):
     def test_csv_import_workflow(self):
         # Create in-memory CSV file
         from io import BytesIO
-        csv_data = "full_name,mobile_number,email,city,course_interest,source,remarks\n" \
-                   "Bob CSV,9876500001,bob@csv.com,Thane,Java,Website,CSV remark\n" \
-                   "Duplicate Name,1234567890,dup@csv.com,Mumbai,Python,Other,Duplicate mobile\n" \
-                   "Invalid Row,,empty@csv.com,Pune,Java,Other,\n" \
-                   "Bad Mobile,Too Short,invalid@csv.com,Pune,Java,Other,"
+        csv_data = "full_name,mobile_number,email,city,college_name,course_interest,source,remarks\n" \
+                   "Bob CSV,9876500001,bob@csv.com,Thane,Brightwave College,Java,Website,CSV remark\n" \
+                   "Duplicate Name,1234567890,dup@csv.com,Mumbai,,Python,Other,Duplicate mobile\n" \
+                   "Invalid Row,,empty@csv.com,Pune,Test College,Java,Other,\n" \
+                   "Bad Mobile,Too Short,invalid@csv.com,Pune,Test College,Java,Other,"
         csv_file = BytesIO(csv_data.encode('utf-8'))
         csv_file.name = 'test.csv'
 
@@ -235,20 +235,25 @@ class TelecallerModuleTests(TestCase):
         self.assertEqual(imports.count(), 1)
         imp = imports.first()
         self.assertEqual(imp.total_records, 4)
-        self.assertEqual(imp.successful_records, 1) # Only Bob CSV is successfully imported
-        self.assertEqual(imp.duplicate_records, 1)  # Duplicate mobile (matching John Doe's 1234567890)
+        self.assertEqual(imp.successful_records, 2) # Bob CSV and duplicate mobile row both import
+        self.assertEqual(imp.duplicate_records, 0)
         self.assertEqual(imp.failed_records, 2)     # Invalid Row and Bad Mobile
 
-        # Verify Bob CSV is in database
-        self.assertTrue(Inquiry.objects.filter(full_name='Bob CSV', created_by=self.tele1).exists())
+        # Verify imported rows are in database
+        bob = Inquiry.objects.get(full_name='Bob CSV', created_by=self.tele1)
+        blank_college = Inquiry.objects.get(full_name='Duplicate Name', mobile_number='1234567890', created_by=self.tele1)
+        self.assertEqual(bob.college_name, 'Brightwave College')
+        self.assertEqual(bob.import_batch, imp)
+        self.assertEqual(blank_college.college_name, '')
+        self.assertEqual(blank_college.import_batch, imp)
 
     def test_xlsx_import_workflow(self):
         import openpyxl
         from io import BytesIO
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.append(['full_name', 'mobile_number', 'email', 'city', 'course_interest', 'source', 'remarks'])
-        ws.append(['Alice Excel', '9876500002', 'alice@excel.com', 'Pune', 'Python', 'Website', 'Excel test remark'])
+        ws.append(['full_name', 'mobile_number', 'email', 'city', 'college_name', 'course_interest', 'source', 'remarks'])
+        ws.append(['Alice Excel', '9876500002', 'alice@excel.com', 'Pune', 'Excel College', 'Python', 'Website', 'Excel test remark'])
         excel_file = BytesIO()
         wb.save(excel_file)
         excel_file.seek(0)
@@ -264,7 +269,9 @@ class TelecallerModuleTests(TestCase):
         self.assertEqual(imports.first().successful_records, 1)
 
         # Verify Alice is in database
-        self.assertTrue(Inquiry.objects.filter(full_name='Alice Excel', created_by=self.tele1).exists())
+        alice = Inquiry.objects.get(full_name='Alice Excel', created_by=self.tele1)
+        self.assertEqual(alice.college_name, 'Excel College')
+        self.assertEqual(alice.import_batch, imports.first())
 
     def test_invalid_file_rejection(self):
         from io import BytesIO
@@ -612,7 +619,7 @@ class TelecallerModuleTests(TestCase):
 
     def test_import_error_logging_and_csv_export(self):
         from io import BytesIO
-        # Uploading file with validation issues (Missing Name, Missing Mobile, Duplicate, Invalid Email)
+        # Blank name should import as "-" when the phone number is valid.
         csv_data = "Name,Phone,Email,Company,City\n" \
                    ",9876599999,test@example.com,,Mumbai\n" \
                    "John Doe,1234567890,john@example.com,,Thane\n" \
@@ -626,23 +633,25 @@ class TelecallerModuleTests(TestCase):
 
         from apps.management.models import LeadImport, ImportErrorLog
         imp = LeadImport.objects.filter(uploaded_by=self.tele1).first()
-        self.assertEqual(imp.failed_records, 3) 
-        self.assertEqual(imp.duplicate_records, 1) 
-        self.assertEqual(imp.successful_records, 0)
+        self.assertEqual(imp.failed_records, 2)
+        self.assertEqual(imp.duplicate_records, 0)
+        self.assertEqual(imp.successful_records, 2)
+        self.assertTrue(Inquiry.objects.filter(full_name='-', mobile_number='9876599999').exists())
+        self.assertTrue(Inquiry.objects.filter(full_name='John Doe', mobile_number='1234567890', created_by=self.tele1).exists())
 
         errors = ImportErrorLog.objects.filter(lead_import=imp)
-        self.assertEqual(errors.count(), 4)
+        self.assertEqual(errors.count(), 2)
         
-        self.assertTrue(errors.filter(error_message="Missing Full Name").exists())
-        self.assertTrue(errors.filter(error_message="Duplicate Mobile Number").exists())
+        self.assertFalse(errors.filter(error_message="Missing Full Name").exists())
+        self.assertFalse(errors.filter(error_message="Duplicate Mobile Number").exists())
         self.assertTrue(errors.filter(error_message="Invalid Mobile Number").exists())
         self.assertTrue(errors.filter(error_message="Invalid Email").exists())
 
         response = self.client_tele1.get(reverse('import_errors'), {'import_id': imp.id, 'export': 'csv'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'text/csv')
-        self.assertContains(response, "Missing Full Name")
-        self.assertContains(response, "Duplicate Mobile Number")
+        self.assertNotContains(response, "Missing Full Name")
+        self.assertNotContains(response, "Duplicate Mobile Number")
 
     def test_admin_can_delete_import_history_record(self):
         from apps.management.models import LeadImport, ImportErrorLog
@@ -849,6 +858,70 @@ class TelecallerModuleTests(TestCase):
         self.assertIn(queue_lead.pk, unassigned_ids)
         self.assertNotIn(assigned_admin_lead.pk, unassigned_ids)
         self.assertNotIn(telecaller_lead.pk, unassigned_ids)
+
+    def test_telecaller_assignment_can_filter_by_uploaded_file(self):
+        from apps.management.models import LeadImport
+
+        import_one = LeadImport.objects.create(uploaded_by=self.admin, file='lead_imports/telecaller_one.csv', successful_records=1)
+        import_two = LeadImport.objects.create(uploaded_by=self.admin, file='lead_imports/telecaller_two.csv', successful_records=1)
+        first_inquiry = Inquiry.objects.create(
+            full_name='Telecaller File Contact',
+            mobile_number='8888888811',
+            email='tele-file@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            created_by=self.admin,
+            import_batch=import_one,
+        )
+        first_lead = Lead.objects.create(inquiry=first_inquiry, status='New')
+        second_inquiry = Inquiry.objects.create(
+            full_name='Different Upload Contact',
+            mobile_number='8888888812',
+            email='different-upload@example.com',
+            city='Pune',
+            course_interest='Java',
+            source='Website',
+            status='New',
+            created_by=self.admin,
+            import_batch=import_two,
+        )
+        second_lead = Lead.objects.create(inquiry=second_inquiry, status='New')
+
+        response = self.client_admin.get(reverse('lead_assign'), {
+            'assigned': 'no',
+            'import_id': import_one.pk,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        lead_ids = {lead.pk for lead in response.context['page_obj'].object_list}
+        self.assertIn(first_lead.pk, lead_ids)
+        self.assertNotIn(second_lead.pk, lead_ids)
+        self.assertContains(response, 'telecaller_one.csv')
+        self.assertContains(response, 'telecaller_two.csv')
+
+    def test_telecaller_assignment_filters_legacy_uploaded_file_contacts(self):
+        from io import BytesIO
+        from apps.management.models import LeadImport
+
+        csv_data = "full_name,mobile_number,email,city,course_interest,source,remarks\n" \
+                   "Legacy Telecaller File Contact,7777777711,legacy-tele@example.com,Mumbai,Python,Website,\n"
+        csv_file = BytesIO(csv_data.encode('utf-8'))
+        csv_file.name = 'legacy_telecaller_filter.csv'
+        self.client_tele1.post(reverse('inquiry_import'), {'file': csv_file})
+        lead_import = LeadImport.objects.filter(uploaded_by=self.tele1).latest('id')
+
+        # Simulate contacts imported before Inquiry.import_batch existed.
+        Inquiry.objects.filter(import_batch=lead_import).update(import_batch=None)
+
+        response = self.client_admin.get(reverse('lead_assign'), {
+            'assigned': 'no',
+            'import_id': lead_import.pk,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Legacy Telecaller File Contact')
 
     def test_bulk_lead_actions_and_isolation(self):
         lead1 = Lead.objects.create(inquiry=self.inquiry1, assigned_telecaller=self.tele1, status='New')
@@ -1195,6 +1268,72 @@ class CounselorModuleTests(TestCase):
             for lead in response.context['page_obj'].object_list
         ))
 
+    def test_counselor_assignment_can_filter_by_uploaded_file(self):
+        from apps.management.models import LeadImport
+
+        import_one = LeadImport.objects.create(uploaded_by=self.admin, file='lead_imports/pradip.csv', successful_records=1)
+        import_two = LeadImport.objects.create(uploaded_by=self.admin, file='lead_imports/other.csv', successful_records=1)
+        first_inquiry = Inquiry.objects.create(
+            full_name='Pradip File Contact',
+            mobile_number='8888888801',
+            email='pradip-file@example.com',
+            city='Mumbai',
+            course_interest='Python',
+            source='Website',
+            status='New',
+            created_by=self.admin,
+            import_batch=import_one,
+        )
+        first_lead = Lead.objects.create(inquiry=first_inquiry, status='New')
+        second_inquiry = Inquiry.objects.create(
+            full_name='Other File Contact',
+            mobile_number='8888888802',
+            email='other-file@example.com',
+            city='Pune',
+            course_interest='Java',
+            source='Website',
+            status='New',
+            created_by=self.admin,
+            import_batch=import_two,
+        )
+        second_lead = Lead.objects.create(inquiry=second_inquiry, status='New')
+
+        response = self.client_admin.get(reverse('lead_assign_counselor'), {
+            'assignment_type': 'telecalling',
+            'assigned': 'no',
+            'import_id': import_one.pk,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        lead_ids = {lead.pk for lead in response.context['page_obj'].object_list}
+        self.assertIn(first_lead.pk, lead_ids)
+        self.assertNotIn(second_lead.pk, lead_ids)
+        self.assertContains(response, 'pradip.csv')
+        self.assertContains(response, 'other.csv')
+
+    def test_counselor_assignment_filters_legacy_uploaded_file_contacts(self):
+        from io import BytesIO
+        from apps.management.models import LeadImport
+
+        csv_data = "full_name,mobile_number,email,city,course_interest,source,remarks\n" \
+                   "Legacy File Contact,7777777701,legacy@example.com,Mumbai,Python,Website,\n"
+        csv_file = BytesIO(csv_data.encode('utf-8'))
+        csv_file.name = 'legacy_filter.csv'
+        self.client_tele.post(reverse('inquiry_import'), {'file': csv_file})
+        lead_import = LeadImport.objects.filter(uploaded_by=self.telecaller).latest('id')
+
+        # Simulate contacts imported before Inquiry.import_batch existed.
+        Inquiry.objects.filter(import_batch=lead_import).update(import_batch=None)
+
+        response = self.client_admin.get(reverse('lead_assign_counselor'), {
+            'assignment_type': 'telecalling',
+            'assigned': 'no',
+            'import_id': lead_import.pk,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Legacy File Contact')
+
     def test_counselor_telecalling_grouped_call_status_cards_and_filter(self):
         busy_contact = Inquiry.objects.create(
             full_name='Busy Group Contact',
@@ -1254,6 +1393,54 @@ class CounselorModuleTests(TestCase):
         self.assertIn(ringing_contact.pk, inquiry_ids)
         self.assertNotIn(other_contact.pk, inquiry_ids)
         self.assertEqual(response.context['call_status_group'], 'busy_callback_not_connected')
+
+    def test_counselor_manual_inquiry_flows_from_new_card_to_status_card(self):
+        response = self.client_counselor1.post(reverse('inquiry_add'), {
+            'full_name': 'Manual Counselor Contact',
+            'mobile_number': '9999999911',
+            'email': 'manual.counselor@example.com',
+            'city': 'Mumbai',
+            'course_interest': 'Python',
+            'source': 'Website',
+            'status': 'New',
+            'remarks': 'Created by counselor',
+        })
+        self.assertEqual(response.status_code, 302)
+
+        inquiry = Inquiry.objects.get(mobile_number='9999999911')
+        self.assertEqual(inquiry.created_by, self.counselor1)
+        self.assertFalse(hasattr(inquiry, 'lead'))
+
+        dashboard = self.client_counselor1.get(reverse('counselor_telecalling_dashboard'))
+        self.assertEqual(dashboard.status_code, 200)
+        self.assertEqual(dashboard.context['manual_inquiries']['total'], 1)
+        self.assertEqual(dashboard.context['assigned_inquiries']['total'], 0)
+
+        manual_list = self.client_counselor1.get(reverse('inquiry_list'), {
+            'scope': 'counselor_telecalling',
+            'source': 'manual',
+            'call_status': 'NEW',
+        })
+        manual_ids = {item.pk for item in manual_list.context['page_obj'].object_list}
+        self.assertIn(inquiry.pk, manual_ids)
+
+        status_response = self.client_counselor1.post(
+            reverse('update_call_status', kwargs={'pk': inquiry.pk}),
+            data='{"call_status":"BUSY","remarks":"Call was busy"}',
+            content_type='application/json',
+        )
+        self.assertEqual(status_response.status_code, 200)
+
+        dashboard = self.client_counselor1.get(reverse('counselor_telecalling_dashboard'))
+        self.assertEqual(dashboard.context['manual_inquiries']['total'], 0)
+        self.assertEqual(dashboard.context['call_outcomes']['busy_callback_not_connected'], 1)
+
+        grouped_list = self.client_counselor1.get(reverse('inquiry_list'), {
+            'scope': 'counselor_telecalling',
+            'call_status_group': 'busy_callback_not_connected',
+        })
+        grouped_ids = {item.pk for item in grouped_list.context['page_obj'].object_list}
+        self.assertIn(inquiry.pk, grouped_ids)
 
     def test_counselor_telecalling_exports_use_current_grouped_statuses(self):
         contact = Inquiry.objects.create(
