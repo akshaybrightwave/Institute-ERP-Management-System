@@ -136,7 +136,7 @@
 
   <!-- 1. Assigned Enquiries -->
   <div class="col">
-    <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status=NEW" class="text-decoration-none">
+    <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&source=assigned&call_status=NEW" class="text-decoration-none">
       <div style="cursor:pointer;" class="erp-card bg-g-blue h-100">
       <div class="erp-card-body">
         <div class="erp-card-title text-truncate">Assigned Enquiries</div>
@@ -151,7 +151,40 @@
       </a>
   </div>
 
-  <!-- 2. Busy / Call Back / Not Connected -->
+  <!-- 2. New Enquiry -->
+  <div class="col">
+    <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&source=manual&call_status=NEW" class="text-decoration-none">
+      <div style="cursor:pointer;" class="erp-card bg-g-magenta h-100">
+      <div class="erp-card-body">
+        <div class="erp-card-title text-truncate">New Enquiry</div>
+        <div class="erp-card-number">{{ manual_inquiries.total }}</div>
+        <div class="text-white-50 small mt-1">Today: <strong>{{ manual_inquiries.today }}</strong></div>
+        <div class="erp-card-bg-icon"><i class="bi bi-person-plus-fill"></i></div>
+      </div>
+      <div class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View new
+      </div>
+    </div>
+      </a>
+  </div>
+
+  <!-- 3. Ringing -->
+  <div class="col">
+    <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status_group=ringing" class="text-decoration-none">
+      <div style="cursor:pointer;" class="erp-card bg-g-cyan h-100">
+      <div class="erp-card-body">
+        <div class="erp-card-title text-truncate">Ringing</div>
+        <div class="erp-card-number">{{ call_outcomes.ringing }}</div>
+        <div class="erp-card-bg-icon"><i class="bi bi-telephone-inbound-fill"></i></div>
+      </div>
+      <div class="erp-card-footer">
+        <i class="bi bi-list-ul"></i> View all
+      </div>
+    </div>
+      </a>
+  </div>
+
+  <!-- 4. Busy / Call Back / Not Connected -->
   <div class="col">
     <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status_group=busy_callback_not_connected" class="text-decoration-none">
       <div style="cursor:pointer;" class="erp-card bg-g-orange h-100">
@@ -167,7 +200,7 @@
       </a>
   </div>
 
-  <!-- 3. Switch Off / Wrong Number / Invalid Number -->
+  <!-- 5. Switch Off / Wrong Number / Invalid Number -->
   <div class="col">
     <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status_group=switch_wrong_invalid" class="text-decoration-none">
       <div style="cursor:pointer;" class="erp-card bg-g-burgundy h-100">
@@ -183,7 +216,7 @@
       </a>
   </div>
 
-  <!-- 4. Not Interested / Call Disconnected -->
+  <!-- 6. Not Interested / Call Disconnected -->
   <div class="col">
     <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status_group=not_interested_disconnected" class="text-decoration-none">
       <div style="cursor:pointer;" class="erp-card bg-g-brown h-100">
@@ -199,7 +232,7 @@
       </a>
   </div>
 
-  <!-- 5. Call Connected -->
+  <!-- 7. Call Connected -->
   <div class="col">
     <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status_group=call_connected" class="text-decoration-none">
       <div style="cursor:pointer;" class="erp-card bg-g-cyan h-100">
@@ -215,7 +248,7 @@
       </a>
   </div>
 
-  <!-- 6. Other -->
+  <!-- 8. Other -->
   <div class="col">
     <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&call_status_group=other" class="text-decoration-none">
       <div style="cursor:pointer;" class="erp-card bg-g-slate h-100">
@@ -231,7 +264,7 @@
       </a>
   </div>
 
-  <!-- 7. Convert to Lead -->
+  <!-- 9. Convert to Lead -->
   <div class="col">
     <a href="{% url 'inquiry_list' %}?scope=counselor_telecalling&converted=yes" class="text-decoration-none">
       <div style="cursor:pointer;" class="erp-card bg-g-emerald border border-success h-100">

@@ -1,99 +1,483 @@
 {% extends 'hr/base.html' %}
-
-{% block title %}Companies | HR Portal{% endblock %}
-
+{% block title %}Placement Companies{% endblock %}
 {% block content %}
-<div class="hr-page-title">
-  <div>
-    <div class="small text-secondary mb-1 mb-2">Placement <i class="bi bi-chevron-right mx-1"></i> Companies</div>
-    <h1 class="fw-bold mb-1">Company Management</h1>
-    <p class="hr-muted mb-0">Manage recruiting companies and placement outcomes.</p>
+<style>
+  .company-page {
+    color: #f8fafc;
+  }
+  .company-crumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #8ea4c7;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 22px;
+  }
+  .company-crumb a {
+    color: #4f7dff;
+    text-decoration: none;
+  }
+  .company-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+  .company-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+  .company-title-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 21px;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 18px 36px rgba(37, 99, 235, .24);
+    flex: 0 0 auto;
+  }
+  .company-title {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.08;
+    font-weight: 650;
+    letter-spacing: 0;
+    text-shadow: none !important;
+  }
+  .company-subtitle {
+    margin: 6px 0 0;
+    color: #b1bed1;
+    font-size: 13px;
+    font-weight: 500;
+    text-shadow: none !important;
+  }
+  .company-create-btn {
+    min-height: 38px;
+    padding: 0 17px;
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 16px 32px rgba(37, 99, 235, .22);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 650;
+    white-space: nowrap;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .company-create-btn:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 18px 38px rgba(37, 99, 235, .3);
+  }
+  .company-filter-card,
+  .company-card,
+  .company-footer-card {
+    background:
+      radial-gradient(circle at 16% 0%, rgba(37, 99, 235, .08), transparent 32%),
+      linear-gradient(135deg, rgba(17, 24, 39, .96), rgba(15, 23, 42, .88));
+    border: 1px solid rgba(148, 163, 184, .14);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, .18);
+  }
+  .company-filter-card {
+    border-radius: 9px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    animation: companyIn .28s ease both;
+  }
+  .company-filter-form {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(160px, 220px) 124px;
+    gap: 12px;
+    align-items: center;
+  }
+  .company-search-wrap,
+  .company-select-wrap {
+    position: relative;
+    min-width: 0;
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    background: rgba(15, 23, 42, .62);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 11px;
+    transition: border-color .18s ease, background .18s ease;
+  }
+  .company-search-wrap:focus-within,
+  .company-select-wrap:focus-within {
+    border-color: rgba(96, 165, 250, .48);
+    background: rgba(15, 23, 42, .82);
+  }
+  .company-search-wrap > i,
+  .company-select-wrap > i {
+    position: static;
+    transform: none;
+    color: #91a3bd;
+    font-size: 14px;
+    pointer-events: none;
+    flex: 0 0 auto;
+  }
+  .company-search,
+  .company-select {
+    width: 100%;
+    height: 36px;
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #f8fafc;
+    outline: 0;
+    font-size: 12.5px;
+    font-weight: 520;
+  }
+  .company-search {
+    padding: 0;
+  }
+  .company-select {
+    padding: 0 22px 0 0;
+  }
+  .company-search::placeholder {
+    color: #7f8da3;
+  }
+  .company-filter-btn,
+  .company-clear-btn {
+    height: 38px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .company-filter-btn {
+    border: 1px solid rgba(148, 163, 184, .2);
+    color: #f8fafc;
+    background: rgba(255, 255, 255, .04);
+  }
+  .company-filter-btn:hover {
+    border-color: rgba(59, 130, 246, .48);
+    background: rgba(37, 99, 235, .08);
+  }
+  .company-clear-btn {
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, .18);
+    background: rgba(255, 255, 255, .04);
+  }
+  .company-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 13px;
+  }
+  .company-card {
+    min-height: 206px;
+    border-radius: 9px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: companyIn .34s ease both;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .company-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(59, 130, 246, .38);
+    box-shadow: 0 20px 44px rgba(15, 23, 42, .34);
+  }
+  .company-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+  }
+  .company-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 750;
+    letter-spacing: 0;
+    flex: 0 0 auto;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .company-avatar.blue { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+  .company-avatar.purple { background: linear-gradient(135deg, #7c3aed, #4f46e5); }
+  .company-avatar.teal { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+  .company-avatar.orange { background: linear-gradient(135deg, #f97316, #b45309); }
+  .company-avatar.slate { background: linear-gradient(135deg, #475569, #1e293b); }
+  .company-card-heading {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .company-name {
+    color: #fff;
+    font-size: 15px;
+    line-height: 1.18;
+    font-weight: 700;
+    margin: 1px 0 6px;
+    text-shadow: none !important;
+    overflow-wrap: anywhere;
+  }
+  .company-role {
+    color: #5d7cff;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .company-more {
+    color: #aebbd0;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px;
+  }
+  .company-details {
+    display: grid;
+    gap: 9px;
+    margin-top: 2px;
+  }
+  .company-detail {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #c7d2e4;
+    font-size: 12.5px;
+    font-weight: 520;
+    min-width: 0;
+  }
+  .company-detail i {
+    color: #b7c6da;
+    font-size: 14px;
+    width: 18px;
+    flex: 0 0 auto;
+  }
+  .company-detail span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .company-card-bottom {
+    border-top: 1px solid rgba(148, 163, 184, .12);
+    padding-top: 12px;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .company-location {
+    color: #c7d2e4;
+    font-size: 12.5px;
+    font-weight: 520;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .company-location i {
+    color: #b7c6da;
+  }
+  .company-location span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .company-open-btn {
+    min-width: 70px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    background: rgba(15, 23, 42, .5);
+    color: #5d7cff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 650;
+    transition: border-color .18s ease, background .18s ease, color .18s ease;
+    flex: 0 0 auto;
+  }
+  .company-open-btn:hover {
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, .45);
+    background: rgba(37, 99, 235, .08);
+  }
+  .company-empty {
+    grid-column: 1 / -1;
+    border-radius: 10px;
+    padding: 42px 18px;
+    text-align: center;
+    color: #9aa8bd;
+    background: rgba(15, 23, 42, .58);
+    border: 1px solid rgba(148, 163, 184, .16);
+  }
+  .company-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+    color: #aab5c7;
+    font-size: 13px;
+  }
+  .company-pages {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .company-page-btn,
+  .company-page-current {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    text-decoration: none;
+    border: 1px solid rgba(148, 163, 184, .18);
+    color: #dbeafe;
+    background: rgba(255, 255, 255, .05);
+  }
+  .company-page-current {
+    border-color: transparent;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    font-weight: 700;
+  }
+  .company-page-btn:hover {
+    color: #fff;
+    border-color: rgba(59, 130, 246, .45);
+  }
+  @keyframes companyIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 1200px) {
+    .company-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .company-filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 767px) {
+    .company-hero { align-items: flex-start; flex-direction: column; }
+    .company-title { font-size: 24px; }
+    .company-grid,
+    .company-filter-form { grid-template-columns: 1fr; }
+    .company-footer { align-items: flex-start; flex-direction: column; }
+  }
+</style>
+
+<div class="company-page">
+  <div class="company-crumb">
+    <a href="{% url 'hr:placement_dashboard' %}">Placement</a>
+    <i class="bi bi-chevron-right"></i>
+    <span>Companies</span>
   </div>
-  <a class="btn btn-hr-primary" href="{% url 'hr:placement_company_create' %}"><i class="bi bi-plus-lg me-1"></i>Add Company</a>
-</div>
 
-<div class="hr-panel p-4 mb-4" style="border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-  <form class="row g-3 align-items-end" method="get">
-    <div class="col-md-10">
-      <label class="form-label small hr-muted fw-bold text-uppercase" style="letter-spacing: 0.5px;">Search Companies</label>
-      <div class="position-relative">
-        <input class="form-control text-white" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding-left: 15px; height: 48px; border-radius: 8px;" name="q" value="{{ query }}" placeholder="Company, industry, contact, city...">
-      </div>
-    </div>
-    <div class="col-md-2">
-      <button class="btn w-100 fw-bold text-white shadow" style="background: linear-gradient(to right, #4a148c, #7b1fa2); height: 48px; border: none; border-radius: 8px;" type="submit">Search</button>
-    </div>
-  </form>
-</div>
-
-<div class="row g-4">
-  {% for company in page_obj %}
-  <div class="col-md-6 col-xl-4">
-    <div class="hr-panel p-3 h-100" style="position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255,255,255,0.05)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.3)';">
+  <div class="company-hero">
+    <div class="company-title-wrap">
+      <div class="company-title-icon"><i class="bi bi-building"></i></div>
       <div>
-        <div class="d-flex align-items-center gap-3 mb-3 pb-3 border-bottom" style="border-color: rgba(255,255,255,0.05) !important;">
-          {% if company.logo %}<img class="candidate-avatar shadow" style="width: 54px; height:54px; border: 2px solid rgba(255,255,255,0.1);" src="{{ company.logo.url }}" alt="{{ company }}">{% else %}<span class="candidate-avatar shadow d-inline-grid align-items-center text-center" style="width: 54px; height:54px; border: 2px solid rgba(255,255,255,0.1); background: #1a1a1a;"><i class="bi bi-building fs-4"></i></span>{% endif %}
-          <div class="flex-grow-1">
-            <h5 class="fw-bold mb-1 text-white" style="text-shadow: 0 0 10px rgba(255,255,255,0.3);">{{ company }}</h5>
-            <div class="small hr-muted fw-semibold">{{ company.industry|default:"Industry not set" }}</div>
-          </div>
-        </div>
-        
-        <div class="d-flex flex-column gap-2 mb-3">
-          <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-            <span class="small hr-muted fw-semibold">Contact</span>
-            <span class="small text-white fw-bold">{{ company.contact_person|default:"--" }}</span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-            <span class="small hr-muted fw-semibold">Phone</span>
-            <span class="small text-white fw-bold">{{ company.mobile|default:"--" }}</span>
-          </div>
-          <div class="d-flex justify-content-between align-items-center rounded px-3 py-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.02);">
-            <span class="small hr-muted fw-semibold">Package</span>
-            <span class="small text-white fw-bold text-success">{{ company.package_offered|default:"--" }}</span>
-          </div>
-        </div>
-        
-        <div class="row g-2 mb-3 text-center">
-          <div class="col-4">
-            <div class="rounded py-2 border" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05) !important;">
-              <div class="small hr-muted mb-1" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Sent</div>
-              <div class="fw-bold text-white fs-5" style="line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.4);">{{ company.students_sent_count }}</div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="rounded py-2 border" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05) !important;">
-              <div class="small hr-muted mb-1" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Selected</div>
-              <div class="fw-bold text-white fs-5" style="line-height: 1; text-shadow: 0 0 10px rgba(255,255,255,0.4);">{{ company.selected_count }}</div>
-            </div>
-          </div>
-          <div class="col-4">
-            <div class="rounded py-2 border" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.05) !important;">
-              <div class="small hr-muted mb-1" style="font-size: 11px; text-transform: uppercase; font-weight: 700;">Rate</div>
-              <div class="fw-bold text-info fs-5" style="line-height: 1; text-shadow: 0 0 10px rgba(13, 202, 240, 0.5);">{{ company.placement_rate }}%</div>
-            </div>
-          </div>
-        </div>
+        <h1 class="company-title">Companies</h1>
+        <p class="company-subtitle">Manage all companies for placement drives</p>
       </div>
+    </div>
+    <a class="company-create-btn" href="{% url 'hr:placement_company_create' %}">
+      <i class="bi bi-plus-lg"></i>
+      <span>Create Company</span>
+    </a>
+  </div>
 
-      <div class="d-flex align-items-center justify-content-between mt-auto pt-3 border-top" style="border-color: rgba(255,255,255,0.05) !important;">
-        <div class="d-flex gap-2">
-          <a class="text-info" href="{% url 'hr:placement_company_detail' company.id %}" title="View" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(13, 202, 240, 0.4); box-shadow: 0 0 8px rgba(13, 202, 240, 0.2); background: transparent; transition: all 0.2s;" onmouseover="this.style.background='rgba(13,202,240,0.1)'; this.style.boxShadow='0 0 15px rgba(13,202,240,0.4)';" onmouseout="this.style.background='transparent'; this.style.boxShadow='0 0 8px rgba(13,202,240,0.2)';"><i class="bi bi-eye"></i></a>
-          <a class="text-warning" href="{% url 'hr:placement_company_edit' company.id %}" title="Edit" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(255, 193, 7, 0.4); box-shadow: 0 0 8px rgba(255, 193, 7, 0.2); background: transparent; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,193,7,0.1)'; this.style.boxShadow='0 0 15px rgba(255,193,7,0.4)';" onmouseout="this.style.background='transparent'; this.style.boxShadow='0 0 8px rgba(255,193,7,0.2)';"><i class="bi bi-pencil-square"></i></a>
-          <a class="text-danger" href="{% url 'hr:placement_company_delete' company.id  %}" title="Delete" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(220, 53, 69, 0.4); box-shadow: 0 0 8px rgba(220, 53, 69, 0.2); background: transparent; transition: all 0.2s;" onmouseover="this.style.background='rgba(220,53,69,0.1)'; this.style.boxShadow='0 0 15px rgba(220,53,69,0.4)';" onmouseout="this.style.background='transparent'; this.style.boxShadow='0 0 8px rgba(220,53,69,0.2)';"><i class="bi bi-trash-fill"></i></a>
-        </div>
-        <a class="btn btn-sm px-3 rounded-pill fw-bold text-white shadow" style="background: linear-gradient(to right, #1565c0, #1e88e5); border: none; box-shadow: 0 4px 10px rgba(21,101,192,0.4) !important; text-shadow: 0 2px 4px rgba(0,0,0,0.3);" href="{% url 'hr:placement_company_drive_create' company.id %}"><i class="bi bi-calendar-plus me-1"></i> Add Drive</a>
+  <div class="company-filter-card">
+    <form class="company-filter-form" method="get">
+      <div class="company-search-wrap">
+        <i class="bi bi-search"></i>
+        <input class="company-search" type="search" name="q" value="{{ query }}" placeholder="Search companies by name, contact person, email...">
       </div>
-    </div>
+      <div class="company-select-wrap">
+        <i class="bi bi-geo-alt"></i>
+        <select class="company-select" name="location">
+          <option value="">All Locations</option>
+          {% for location in location_options %}
+            <option value="{{ location }}" {% if selected_location == location %}selected{% endif %}>{{ location }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="company-filter-btn" type="submit"><i class="bi bi-funnel"></i>Filter</button>
+      {% if query or selected_location %}
+        <a class="company-clear-btn" href="{% url 'hr:placement_company_list' %}"><i class="bi bi-x-lg"></i>Clear</a>
+      {% endif %}
+    </form>
   </div>
-  {% empty %}
-  <div class="col-12">
-    <div class="hr-panel p-5 text-center">
-      <i class="bi bi-buildings fs-1 text-primary"></i>
-      <h4 class="fw-bold mt-3">No companies yet</h4>
-      <a class="btn btn-hr-primary mt-2" href="{% url 'hr:placement_company_create' %}">Add Company</a>
-    </div>
+
+  <div class="company-grid">
+    {% for company in companies %}
+      <article class="company-card">
+        <div class="company-card-top">
+          <div class="company-avatar {% cycle 'purple' 'teal' 'orange' 'blue' 'slate' %}">{{ company.name|default:"CO"|slice:":2"|upper }}</div>
+          <div class="company-card-heading">
+            <h2 class="company-name">{{ company.name|default:"Role not set" }}</h2>
+            <div class="company-role">{{ company.job_role|default:"Role not set" }}</div>
+          </div>
+          <span class="company-more"><i class="bi bi-three-dots-vertical"></i></span>
+        </div>
+
+        <div class="company-details">
+          <div class="company-detail"><i class="bi bi-person"></i><span>{{ company.contact_person|default:"Hiring Manager" }}</span></div>
+          <div class="company-detail"><i class="bi bi-envelope"></i><span>{{ company.email|default:"company@example.com" }}</span></div>
+          <div class="company-detail"><i class="bi bi-telephone"></i><span>{{ company.mobile|default:"-" }}</span></div>
+        </div>
+
+        <div class="company-card-bottom">
+          <div class="company-location"><i class="bi bi-geo-alt"></i><span>{{ company.location|default:company.city|default:"Remote" }}</span></div>
+          <a class="company-open-btn" href="{% url 'hr:placement_company_detail' company.id %}">Open</a>
+        </div>
+      </article>
+    {% empty %}
+      <div class="company-empty">
+        <i class="bi bi-buildings fs-2 d-block mb-2"></i>
+        No companies found.
+      </div>
+    {% endfor %}
   </div>
-  {% endfor %}
+
+  <div class="company-footer">
+    <div>
+      {% if page_obj.paginator.count %}
+        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} companies
+      {% else %}
+        Showing 0 companies
+      {% endif %}
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+      <div class="company-pages">
+        {% if page_obj.has_previous %}
+          <a class="company-page-btn" href="?{{ page_query }}{% if page_query %}&{% endif %}page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+        {% else %}
+          <span class="company-page-btn"><i class="bi bi-chevron-left"></i></span>
+        {% endif %}
+        <span class="company-page-current">{{ page_obj.number }}</span>
+        {% if page_obj.has_next %}
+          <a class="company-page-btn" href="?{{ page_query }}{% if page_query %}&{% endif %}page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+        {% else %}
+          <span class="company-page-btn"><i class="bi bi-chevron-right"></i></span>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

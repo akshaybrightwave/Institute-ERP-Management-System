@@ -25,7 +25,11 @@ ADMIN_ROLES = ('admin', 'superadmin', 'SUPER_ADMIN')
 COUNSELOR_TELECALLING_STATUS_GROUPS = {
     'busy_callback_not_connected': {
         'label': 'Busy / Call Back / Not Connected',
-        'statuses': ['BUSY', 'CALL_BACK', 'NO_ANSWER'],
+        'statuses': ['BUSY', 'CALL_BACK'],
+    },
+    'ringing': {
+        'label': 'Ringing',
+        'statuses': ['NO_ANSWER'],
     },
     'switch_wrong_invalid': {
         'label': 'Switch Off / Wrong No. / Invalid No.',
@@ -47,6 +51,7 @@ COUNSELOR_TELECALLING_STATUS_GROUPS = {
 
 COUNSELOR_TELECALLING_UPDATE_CHOICES = [
     ('BUSY', 'Busy / Call Back / Not Connected'),
+    ('NO_ANSWER', 'Ringing'),
     ('SWITCHED_OFF', 'Switch Off / Wrong No. / Invalid No.'),
     ('NOT_INTERESTED', 'Not Interested / Call Disc.'),
     ('CALL_CONNECTED', 'Call Connected'),
@@ -103,6 +108,14 @@ def counselor_telecalling_inquiry_q(counselor_lookup):
                 & Q(lead__assigned_counselor__in=counselor_lookup)
             )
         )
+    )
+
+def counselor_telecalling_manual_inquiry_q(counselor_lookup):
+    """Manual inquiries created by counselors inside the telecalling flow."""
+    return (
+        Q(created_by__in=counselor_lookup)
+        & Q(lead__isnull=True)
+        & ~Q(status='Qualified')
     )
 
 def counselor_telecalling_converted_inquiry_q(counselor_lookup):
@@ -1012,6 +1025,7 @@ def management_super_admin_dashboard(request):
 def inquiry_list(request):
     scope = request.GET.get('scope', '').strip()
     converted = request.GET.get('converted', '').strip()
+    source_filter = request.GET.get('source', '').strip()
 
     if request.user.role == 'telecaller':
         inquiries = Inquiry.objects.filter(
@@ -1023,14 +1037,21 @@ def inquiry_list(request):
             inquiries = inquiries.filter(lead__converted_at__isnull=True)
     elif request.user.role == 'counselor':
         scope = 'counselor_telecalling'
+        counselor_lookup = [request.user]
         if converted == 'yes':
             inquiries = Inquiry.objects.filter(
-                counselor_telecalling_converted_inquiry_q([request.user])
+                counselor_telecalling_converted_inquiry_q(counselor_lookup)
             ).distinct()
         else:
-            inquiries = Inquiry.objects.filter(
-                counselor_telecalling_inquiry_q([request.user])
-            ).exclude(status='Qualified').distinct()
+            assigned_q = counselor_telecalling_inquiry_q(counselor_lookup)
+            manual_q = counselor_telecalling_manual_inquiry_q(counselor_lookup)
+            if source_filter == 'manual':
+                base_q = manual_q
+            elif source_filter == 'assigned':
+                base_q = assigned_q
+            else:
+                base_q = assigned_q | manual_q
+            inquiries = Inquiry.objects.filter(base_q).exclude(status='Qualified').distinct()
     else:
         inquiries = Inquiry.objects.filter(status='Qualified')
 
@@ -1038,7 +1059,7 @@ def inquiry_list(request):
     q = request.GET.get('q', '').strip()
     if q:
         inquiries = inquiries.filter(
-            Q(full_name__icontains=q) | Q(mobile_number__icontains=q) | Q(city__icontains=q)
+            Q(full_name__icontains=q) | Q(mobile_number__icontains=q) | Q(city__icontains=q) | Q(college_name__icontains=q)
         )
 
     # Filters
@@ -1161,6 +1182,7 @@ def inquiry_list(request):
         'call_status': call_status,
         'call_status_group': call_status_group,
         'scope': scope,
+        'source_filter': source_filter,
         'converted': converted,
         'overdue': overdue,
         'date_filter': date_filter,
@@ -1197,6 +1219,8 @@ def inquiry_add(request):
                 if is_admin_user(request.user):
                     Lead.objects.create(inquiry=inquiry, assigned_by=request.user)
             messages.success(request, f"Inquiry for {inquiry.full_name} created successfully.")
+            if request.user.role == 'counselor':
+                return redirect(f"{reverse('inquiry_list')}?scope=counselor_telecalling&source=manual&call_status=NEW")
             return redirect('inquiry_list')
     else:
         form = InquiryForm()
@@ -1221,6 +1245,54 @@ def inquiry_edit(request, pk):
         return HttpResponseForbidden("Access Denied: You do not own this record.")
 
     if request.method == 'POST':
+        if request.POST.get('inline_modal') == '1':
+            full_name = request.POST.get('full_name', '').strip()
+            mobile_number = request.POST.get('mobile_number', '').strip()
+            course_interest = request.POST.get('course_interest', '').strip()
+            status = request.POST.get('status', '').strip()
+
+            valid_statuses = {choice[0] for choice in Inquiry.STATUS_CHOICES}
+            errors = {}
+            if not full_name:
+                errors['full_name'] = 'Full name is required.'
+            if not mobile_number:
+                errors['mobile_number'] = 'Mobile number is required.'
+            if not course_interest:
+                errors['course_interest'] = 'Course of interest is required.'
+            if status not in valid_statuses:
+                errors['status'] = 'Please select a valid inquiry status.'
+
+            if errors:
+                message = next(iter(errors.values()))
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': message, 'errors': errors}, status=400)
+                messages.error(request, message)
+                referer = request.META.get('HTTP_REFERER')
+                return redirect(referer or 'inquiry_list')
+
+            inquiry.full_name = full_name
+            inquiry.mobile_number = mobile_number
+            inquiry.course_interest = course_interest
+            inquiry.status = status
+            inquiry.save(update_fields=['full_name', 'mobile_number', 'course_interest', 'status', 'updated_at'])
+
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f"Inquiry for {inquiry.full_name} updated successfully.",
+                    'inquiry': {
+                        'id': inquiry.pk,
+                        'full_name': inquiry.full_name,
+                        'mobile_number': inquiry.mobile_number,
+                        'course_interest': inquiry.course_interest,
+                        'status': inquiry.status,
+                    },
+                })
+
+            messages.success(request, f"Inquiry for {inquiry.full_name} updated successfully.")
+            referer = request.META.get('HTTP_REFERER')
+            return redirect(referer or 'inquiry_list')
+
         post_data = request.POST.copy()
         new_remarks = post_data.get('remarks', '').strip()
         
@@ -1544,7 +1616,7 @@ def lead_list(request):
     q = request.GET.get('q', '').strip()
     if q:
         leads = leads.filter(
-            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
+            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q) | Q(inquiry__college_name__icontains=q)
         )
 
     # Filters
@@ -1863,6 +1935,10 @@ def map_header(raw_header):
     if h in ['city', 'location']:
         return 'city'
 
+    # College name mapping
+    if h in ['college', 'college name', 'college_name', 'institute', 'institute name', 'institute_name']:
+        return 'college_name'
+
     # Course interest mapping
     if h in ['course_interest', 'course interest', 'course']:
         return 'course_interest'
@@ -1888,6 +1964,50 @@ def format_cell_value(val):
     if isinstance(val, int):
         return str(val)
     return str(val).strip()
+
+
+def normalize_mobile_number(raw_value):
+    raw = format_cell_value(raw_value).strip()
+    if not raw:
+        return ''
+    digits = ''.join(ch for ch in raw if ch.isdigit())
+    if len(digits) == 12 and digits.startswith('91'):
+        digits = digits[2:]
+    return digits
+
+
+def add_import_result_message(request, lead_import, total, success, duplicates, failed):
+    lines = [
+        "Import summary:",
+        f"Total Records: {total}",
+        f"Imported Successfully: {success}",
+        f"Duplicate Records: {duplicates}",
+        f"Failed Records: {failed}",
+    ]
+
+    if failed or duplicates:
+        reason_rows = (
+            ImportErrorLog.objects
+            .filter(lead_import=lead_import)
+            .values('error_message')
+            .annotate(count=Count('id'))
+            .order_by('-count', 'error_message')[:5]
+        )
+        if reason_rows:
+            lines.append("")
+            lines.append("Top reasons:")
+            for reason in reason_rows:
+                lines.append(f"- {reason['error_message']}: {reason['count']}")
+        lines.append("")
+        lines.append("Open Import History and click View Errors for row-wise details.")
+
+    message = "\n".join(lines)
+    if failed and success == 0:
+        messages.error(request, message)
+    elif failed or duplicates:
+        messages.warning(request, message)
+    else:
+        messages.success(request, message)
 
 
 def log_lead_activity(lead, activity_type, description, user):
@@ -1928,13 +2048,19 @@ def inquiry_import(request):
 
                 mapped_headers = [map_header(h) for h in header_row]
                 if 'full_name' not in mapped_headers or 'mobile_number' not in mapped_headers:
-                    messages.error(request, "Missing required columns: full_name and mobile_number.")
+                    detected_headers = ', '.join(str(h).strip() for h in header_row if h) or 'none'
+                    messages.error(
+                        request,
+                        "Missing required columns: full_name/name and mobile_number/mobile/contact number. "
+                        f"Detected headers: {detected_headers}"
+                    )
                     return render(request, 'management/import.html')
 
                 name_idx = mapped_headers.index('full_name')
                 mobile_idx = mapped_headers.index('mobile_number')
                 email_idx = mapped_headers.index('email') if 'email' in mapped_headers else -1
                 city_idx = mapped_headers.index('city') if 'city' in mapped_headers else -1
+                college_idx = mapped_headers.index('college_name') if 'college_name' in mapped_headers else -1
                 course_idx = mapped_headers.index('course_interest') if 'course_interest' in mapped_headers else -1
                 source_idx = mapped_headers.index('source') if 'source' in mapped_headers else -1
                 remarks_idx = mapped_headers.index('remarks') if 'remarks' in mapped_headers else -1
@@ -1963,18 +2089,11 @@ def inquiry_import(request):
                     row_idx += 1
                     total += 1
                     full_name = format_cell_value(row[name_idx]).strip() if name_idx != -1 else ''
-                    mobile_number = format_cell_value(row[mobile_idx]).strip() if mobile_idx != -1 else ''
+                    full_name = full_name or '-'
+                    raw_mobile_number = format_cell_value(row[mobile_idx]).strip() if mobile_idx != -1 else ''
+                    mobile_number = normalize_mobile_number(raw_mobile_number) if mobile_idx != -1 else ''
 
-                    if not full_name:
-                        failed += 1
-                        ImportErrorLog.objects.create(
-                            lead_import=lead_import,
-                            row_number=row_idx,
-                            error_message="Missing Full Name"
-                        )
-                        continue
-
-                    if not mobile_number:
+                    if not raw_mobile_number:
                         failed += 1
                         ImportErrorLog.objects.create(
                             lead_import=lead_import,
@@ -1992,17 +2111,9 @@ def inquiry_import(request):
                         )
                         continue
 
-                    if Inquiry.objects.filter(mobile_number=mobile_number).exists():
-                        duplicates += 1
-                        ImportErrorLog.objects.create(
-                            lead_import=lead_import,
-                            row_number=row_idx,
-                            error_message="Duplicate Mobile Number"
-                        )
-                        continue
-
                     email = format_cell_value(row[email_idx]).strip() if email_idx != -1 else ''
                     city = format_cell_value(row[city_idx]).strip() if city_idx != -1 else ''
+                    college_name = format_cell_value(row[college_idx]).strip() if college_idx != -1 else ''
                     course_interest = format_cell_value(row[course_idx]).strip() if course_idx != -1 else ''
                     source = format_cell_value(row[source_idx]).strip() if source_idx != -1 else ''
                     remarks = format_cell_value(row[remarks_idx]).strip() if remarks_idx != -1 else ''
@@ -2031,11 +2142,13 @@ def inquiry_import(request):
                             mobile_number=mobile_number,
                             email=email or None,
                             city=city,
+                            college_name=college_name,
                             course_interest=course_interest,
                             source=matched_source,
                             remarks=remarks,
                             status='New',
-                            created_by=request.user
+                            created_by=request.user,
+                            import_batch=lead_import
                         )
                         Lead.objects.create(
                             inquiry=inq,
@@ -2049,13 +2162,7 @@ def inquiry_import(request):
                 lead_import.failed_records = failed
                 lead_import.save()
 
-                messages.success(request, (
-                    f"Import summary:\n"
-                    f"Total Records: {total}\n\n"
-                    f"Imported Successfully: {success}\n\n"
-                    f"Duplicate Records: {duplicates}\n\n"
-                    f"Failed Records: {failed}"
-                ))
+                add_import_result_message(request, lead_import, total, success, duplicates, failed)
                 return redirect('import_history')
             except Exception as e:
                 messages.error(request, f"Failed to process CSV file: {str(e)}")
@@ -2074,13 +2181,19 @@ def inquiry_import(request):
 
                 mapped_headers = [map_header(h) for h in header_row]
                 if 'full_name' not in mapped_headers or 'mobile_number' not in mapped_headers:
-                    messages.error(request, "Missing required columns: full_name and mobile_number.")
+                    detected_headers = ', '.join(str(h).strip() for h in header_row if h) or 'none'
+                    messages.error(
+                        request,
+                        "Missing required columns: full_name/name and mobile_number/mobile/contact number. "
+                        f"Detected headers: {detected_headers}"
+                    )
                     return render(request, 'management/import.html')
 
                 name_idx = mapped_headers.index('full_name')
                 mobile_idx = mapped_headers.index('mobile_number')
                 email_idx = mapped_headers.index('email') if 'email' in mapped_headers else -1
                 city_idx = mapped_headers.index('city') if 'city' in mapped_headers else -1
+                college_idx = mapped_headers.index('college_name') if 'college_name' in mapped_headers else -1
                 course_idx = mapped_headers.index('course_interest') if 'course_interest' in mapped_headers else -1
                 source_idx = mapped_headers.index('source') if 'source' in mapped_headers else -1
                 remarks_idx = mapped_headers.index('remarks') if 'remarks' in mapped_headers else -1
@@ -2107,18 +2220,11 @@ def inquiry_import(request):
                     total += 1
 
                     full_name = format_cell_value(row[name_idx]).strip() if name_idx != -1 else ''
-                    mobile_number = format_cell_value(row[mobile_idx]).strip() if mobile_idx != -1 else ''
+                    full_name = full_name or '-'
+                    raw_mobile_number = format_cell_value(row[mobile_idx]).strip() if mobile_idx != -1 else ''
+                    mobile_number = normalize_mobile_number(raw_mobile_number) if mobile_idx != -1 else ''
 
-                    if not full_name:
-                        failed += 1
-                        ImportErrorLog.objects.create(
-                            lead_import=lead_import,
-                            row_number=row_idx,
-                            error_message="Missing Full Name"
-                        )
-                        continue
-
-                    if not mobile_number:
+                    if not raw_mobile_number:
                         failed += 1
                         ImportErrorLog.objects.create(
                             lead_import=lead_import,
@@ -2136,17 +2242,9 @@ def inquiry_import(request):
                         )
                         continue
 
-                    if Inquiry.objects.filter(mobile_number=mobile_number).exists():
-                        duplicates += 1
-                        ImportErrorLog.objects.create(
-                            lead_import=lead_import,
-                            row_number=row_idx,
-                            error_message="Duplicate Mobile Number"
-                        )
-                        continue
-
                     email = format_cell_value(row[email_idx]).strip() if email_idx != -1 else ''
                     city = format_cell_value(row[city_idx]).strip() if city_idx != -1 else ''
+                    college_name = format_cell_value(row[college_idx]).strip() if college_idx != -1 else ''
                     course_interest = format_cell_value(row[course_idx]).strip() if course_idx != -1 else ''
                     source = format_cell_value(row[source_idx]).strip() if source_idx != -1 else ''
                     remarks = format_cell_value(row[remarks_idx]).strip() if remarks_idx != -1 else ''
@@ -2175,11 +2273,13 @@ def inquiry_import(request):
                             mobile_number=mobile_number,
                             email=email or None,
                             city=city,
+                            college_name=college_name,
                             course_interest=course_interest,
                             source=matched_source,
                             remarks=remarks,
                             status='New',
-                            created_by=request.user
+                            created_by=request.user,
+                            import_batch=lead_import
                         )
                         Lead.objects.create(
                             inquiry=inq,
@@ -2193,13 +2293,7 @@ def inquiry_import(request):
                 lead_import.failed_records = failed
                 lead_import.save()
 
-                messages.success(request, (
-                    f"Import summary:\n"
-                    f"Total Records: {total}\n\n"
-                    f"Imported Successfully: {success}\n\n"
-                    f"Duplicate Records: {duplicates}\n\n"
-                    f"Failed Records: {failed}"
-                ))
+                add_import_result_message(request, lead_import, total, success, duplicates, failed)
                 return redirect('import_history')
             except Exception as e:
                 messages.error(request, f"Failed to process Excel file: {str(e)}")
@@ -2216,9 +2310,9 @@ def download_sample_csv(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="sample_inquiries.csv"'
     writer = csv.writer(response)
-    writer.writerow(['full_name', 'mobile_number', 'email', 'city', 'course_interest', 'source', 'remarks'])
-    writer.writerow(['Rahul Sharma', '9876543210', 'rahul.sharma@example.com', 'Thane', 'Java', 'Website', ''])
-    writer.writerow(['Priya Patel', '9123456780', 'priya.patel@example.com', 'Mumbai', 'Python', 'Walk-In', ''])
+    writer.writerow(['full_name', 'mobile_number', 'email', 'city', 'college_name', 'course_interest', 'source', 'remarks'])
+    writer.writerow(['Rahul Sharma', '9876543210', 'rahul.sharma@example.com', 'Thane', 'Brightwave College', 'Java', 'Website', ''])
+    writer.writerow(['Priya Patel', '9123456780', 'priya.patel@example.com', 'Mumbai', '', 'Python', 'Walk-In', ''])
     return response
 
 
@@ -2232,9 +2326,9 @@ def download_sample_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Sample Inquiries"
-    ws.append(['full_name', 'mobile_number', 'email', 'city', 'course_interest', 'source', 'remarks'])
-    ws.append(['Rahul Sharma', '9876543210', 'rahul.sharma@example.com', 'Thane', 'Java', 'Website', ''])
-    ws.append(['Priya Patel', '9123456780', 'priya.patel@example.com', 'Mumbai', 'Python', 'Walk-In', ''])
+    ws.append(['full_name', 'mobile_number', 'email', 'city', 'college_name', 'course_interest', 'source', 'remarks'])
+    ws.append(['Rahul Sharma', '9876543210', 'rahul.sharma@example.com', 'Thane', 'Brightwave College', 'Java', 'Website', ''])
+    ws.append(['Priya Patel', '9123456780', 'priya.patel@example.com', 'Mumbai', '', 'Python', 'Walk-In', ''])
     wb.save(response)
     return response
 
@@ -2243,13 +2337,28 @@ def download_sample_excel(request):
 @telecaller_required
 def import_history(request):
     if is_admin_user(request.user):
-        imports = LeadImport.objects.all()
+        imports = LeadImport.objects.select_related('uploaded_by').all()
     else:
-        imports = LeadImport.objects.filter(uploaded_by=request.user)
+        imports = LeadImport.objects.select_related('uploaded_by').filter(uploaded_by=request.user)
 
     paginator = Paginator(imports, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    import_ids = [imp.pk for imp in page_obj.object_list]
+    reason_rows = (
+        ImportErrorLog.objects
+        .filter(lead_import_id__in=import_ids)
+        .values('lead_import_id', 'error_message')
+        .annotate(count=Count('id'))
+        .order_by('lead_import_id', '-count', 'error_message')
+    )
+    reason_map = {}
+    for row in reason_rows:
+        current = reason_map.setdefault(row['lead_import_id'], [])
+        if len(current) < 3:
+            current.append(row)
+    for imp in page_obj.object_list:
+        imp.error_summary_items = reason_map.get(imp.pk, [])
 
     return render(request, 'management/import_history.html', {
         'page_obj': page_obj,
@@ -2481,6 +2590,7 @@ def lead_assign(request):
     from django.contrib.auth import get_user_model
     User = get_user_model()
     telecallers = User.objects.filter(role='telecaller', is_deleted=False, is_active=True)
+    import_id = (request.POST.get('import_id') or request.GET.get('import_id') or '').strip()
 
     # Calculate workload for dashboard
     from datetime import date
@@ -2506,22 +2616,116 @@ def lead_assign(request):
             'total': stats['total'],
         })
 
+    import_batches = LeadImport.objects.select_related('uploaded_by').order_by('-created_at')
+    selected_import = None
+    if import_id:
+        selected_import = import_batches.filter(pk=import_id).first()
+        if not selected_import:
+            import_id = ''
+
+    legacy_import_mobile_numbers = None
+
+    def get_import_mobile_numbers():
+        nonlocal legacy_import_mobile_numbers
+        if legacy_import_mobile_numbers is not None:
+            return legacy_import_mobile_numbers
+
+        legacy_import_mobile_numbers = set()
+        if not selected_import or not selected_import.file:
+            return legacy_import_mobile_numbers
+
+        file_name = selected_import.file.name.lower()
+        try:
+            selected_import.file.open('rb')
+            try:
+                if file_name.endswith('.csv'):
+                    import csv
+                    import io
+                    decoded_file = selected_import.file.read().decode('utf-8-sig')
+                    reader = csv.reader(io.StringIO(decoded_file))
+                    header_row = next(reader, None)
+                    if not header_row:
+                        return legacy_import_mobile_numbers
+                    mapped_headers = [map_header(h) for h in header_row]
+                    if 'mobile_number' not in mapped_headers:
+                        return legacy_import_mobile_numbers
+                    mobile_idx = mapped_headers.index('mobile_number')
+                    for row in reader:
+                        if len(row) > mobile_idx:
+                            mobile_number = normalize_mobile_number(row[mobile_idx])
+                            if mobile_number:
+                                legacy_import_mobile_numbers.add(mobile_number)
+                elif file_name.endswith('.xlsx'):
+                    import openpyxl
+                    wb = openpyxl.load_workbook(selected_import.file, read_only=True, data_only=True)
+                    sheet = wb.active
+                    rows_iter = sheet.iter_rows(values_only=True)
+                    header_row = next(rows_iter, None)
+                    if not header_row:
+                        return legacy_import_mobile_numbers
+                    mapped_headers = [map_header(h) for h in header_row]
+                    if 'mobile_number' not in mapped_headers:
+                        return legacy_import_mobile_numbers
+                    mobile_idx = mapped_headers.index('mobile_number')
+                    for row in rows_iter:
+                        if len(row) > mobile_idx:
+                            mobile_number = normalize_mobile_number(row[mobile_idx])
+                            if mobile_number:
+                                legacy_import_mobile_numbers.add(mobile_number)
+            finally:
+                selected_import.file.close()
+        except Exception:
+            legacy_import_mobile_numbers = set()
+        return legacy_import_mobile_numbers
+
+    def apply_import_batch_filter(queryset):
+        if selected_import:
+            import_filter = Q(inquiry__import_batch=selected_import)
+            mobile_numbers = get_import_mobile_numbers()
+            if mobile_numbers:
+                legacy_filter = Q(
+                    inquiry__import_batch__isnull=True,
+                    inquiry__mobile_number__in=mobile_numbers,
+                )
+                if selected_import.uploaded_by_id:
+                    legacy_filter &= Q(inquiry__created_by=selected_import.uploaded_by)
+
+                next_import = import_batches.filter(created_at__gt=selected_import.created_at).order_by('created_at').first()
+                legacy_filter &= Q(inquiry__created_at__gte=selected_import.created_at)
+                if next_import:
+                    legacy_filter &= Q(inquiry__created_at__lt=next_import.created_at)
+                import_filter |= legacy_filter
+            return queryset.filter(import_filter)
+        return queryset
+
+    import_batch_options = []
+    for item in import_batches[:200]:
+        file_name = item.file.name.rsplit('/', 1)[-1].rsplit('\\', 1)[-1] if item.file else 'Uploaded file'
+        import_batch_options.append({
+            'id': str(item.id),
+            'label': file_name,
+            'date': item.created_at,
+            'successful_records': item.successful_records,
+        })
+
     # Telecaller Assignment base queryset:
     # Base queryset includes all leads so we can see assigned records even if converted.
     leads = Lead.objects.select_related('inquiry', 'assigned_telecaller', 'assigned_counselor').all()
 
-    q = request.GET.get('q', '').strip()
+    leads = apply_import_batch_filter(leads)
+
+    q = (request.POST.get('q') or request.GET.get('q') or '').strip()
     if q:
         leads = leads.filter(
-            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
+            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q) | Q(inquiry__college_name__icontains=q)
         )
 
-    status = request.GET.get('status', '').strip()
+    status = (request.POST.get('status') or request.GET.get('status') or '').strip()
     if status:
         leads = leads.filter(status=status)
 
     # Default: show all (both assigned and unassigned) so admin can see the full picture
-    assigned_status = request.GET.get('assigned', 'all').strip()
+    assigned_status = (request.POST.get('assigned') or request.GET.get('assigned') or 'all').strip()
     if assigned_status == 'yes':
         leads = leads.filter(Q(assigned_telecaller__isnull=False) | Q(assigned_counselor__isnull=False))
     elif assigned_status == 'no':
@@ -2546,11 +2750,11 @@ def lead_assign(request):
 
             target_leads = leads
             if assign_source == 'unassigned':
-                target_leads = Lead.objects.filter(
+                target_leads = apply_import_batch_filter(Lead.objects.filter(
                     converted_at__isnull=True,
                     assigned_telecaller__isnull=True,
                     assigned_counselor__isnull=True,
-                )
+                ))
 
             if mode == 'quantity':
                 available = target_leads.count()
@@ -2669,7 +2873,7 @@ def lead_assign(request):
                 messages.error(request, "Invalid counselor or quantity.")
             else:
                 counselor = get_object_or_404(User, pk=counselor_id, role='counselor', is_deleted=False, is_active=True)
-                target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True)
+                target_leads = leads if assign_source == 'filtered' else apply_import_batch_filter(Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True))
 
                 with transaction.atomic():
                     lead_ids = list(target_leads.select_for_update().values_list('id', flat=True)[:quantity])
@@ -2740,7 +2944,7 @@ def lead_assign(request):
                 if not selected_users:
                     messages.error(request, "Invalid counselors selected.")
                 else:
-                    target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True)
+                    target_leads = leads if assign_source == 'filtered' else apply_import_batch_filter(Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True))
 
                     with transaction.atomic():
                         lead_ids = list(target_leads.select_for_update().values_list('id', flat=True))
@@ -2792,7 +2996,7 @@ def lead_assign(request):
                 messages.error(request, "Invalid telecaller or quantity.")
             else:
                 telecaller = get_object_or_404(User, pk=telecaller_id, is_deleted=False, is_active=True)
-                target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True)
+                target_leads = leads if assign_source == 'filtered' else apply_import_batch_filter(Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True))
 
                 with transaction.atomic():
                     lead_ids = list(target_leads.select_for_update().values_list('id', flat=True)[:quantity])
@@ -2863,7 +3067,7 @@ def lead_assign(request):
                 if not selected_users:
                     messages.error(request, "Invalid telecallers selected.")
                 else:
-                    target_leads = leads if assign_source == 'filtered' else Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True)
+                    target_leads = leads if assign_source == 'filtered' else apply_import_batch_filter(Lead.objects.filter(converted_at__isnull=True, assigned_telecaller__isnull=True, assigned_counselor__isnull=True))
 
                     with transaction.atomic():
                         lead_ids = list(target_leads.select_for_update().values_list('id', flat=True))
@@ -2921,6 +3125,8 @@ def lead_assign(request):
         'status': status,
         'assigned': assigned_status,
         'status_choices': Lead.STATUS_CHOICES,
+        'import_id': import_id,
+        'import_batch_options': import_batch_options,
     })
 
 
@@ -3399,7 +3605,7 @@ def counselor_lead_list(request):
     q = request.GET.get('q', '').strip()
     if q:
         leads = leads.filter(
-            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
+            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q) | Q(inquiry__college_name__icontains=q)
         )
 
     # Filters
@@ -4127,6 +4333,7 @@ def lead_assign_counselor(request):
     if assignment_type not in ('telecalling', 'counseling'):
         assignment_type = 'telecalling'
     is_telecalling_assignment = assignment_type == 'telecalling'
+    import_id = (request.POST.get('import_id') or request.GET.get('import_id') or '').strip()
 
     # Calculate workload for dashboard
     from datetime import date
@@ -4158,6 +4365,98 @@ def lead_assign_counselor(request):
             'total': stats['total'],
         })
 
+    import_batches = LeadImport.objects.select_related('uploaded_by').order_by('-created_at')
+    selected_import = None
+    if import_id:
+        selected_import = import_batches.filter(pk=import_id).first()
+        if not selected_import:
+            import_id = ''
+
+    legacy_import_mobile_numbers = None
+
+    def get_import_mobile_numbers():
+        nonlocal legacy_import_mobile_numbers
+        if legacy_import_mobile_numbers is not None:
+            return legacy_import_mobile_numbers
+
+        legacy_import_mobile_numbers = set()
+        if not selected_import or not selected_import.file:
+            return legacy_import_mobile_numbers
+
+        file_name = selected_import.file.name.lower()
+        try:
+            selected_import.file.open('rb')
+            try:
+                if file_name.endswith('.csv'):
+                    import csv
+                    import io
+                    decoded_file = selected_import.file.read().decode('utf-8-sig')
+                    reader = csv.reader(io.StringIO(decoded_file))
+                    header_row = next(reader, None)
+                    if not header_row:
+                        return legacy_import_mobile_numbers
+                    mapped_headers = [map_header(h) for h in header_row]
+                    if 'mobile_number' not in mapped_headers:
+                        return legacy_import_mobile_numbers
+                    mobile_idx = mapped_headers.index('mobile_number')
+                    for row in reader:
+                        if len(row) > mobile_idx:
+                            mobile_number = normalize_mobile_number(row[mobile_idx])
+                            if mobile_number:
+                                legacy_import_mobile_numbers.add(mobile_number)
+                elif file_name.endswith('.xlsx'):
+                    import openpyxl
+                    wb = openpyxl.load_workbook(selected_import.file, read_only=True, data_only=True)
+                    sheet = wb.active
+                    rows_iter = sheet.iter_rows(values_only=True)
+                    header_row = next(rows_iter, None)
+                    if not header_row:
+                        return legacy_import_mobile_numbers
+                    mapped_headers = [map_header(h) for h in header_row]
+                    if 'mobile_number' not in mapped_headers:
+                        return legacy_import_mobile_numbers
+                    mobile_idx = mapped_headers.index('mobile_number')
+                    for row in rows_iter:
+                        if len(row) > mobile_idx:
+                            mobile_number = normalize_mobile_number(row[mobile_idx])
+                            if mobile_number:
+                                legacy_import_mobile_numbers.add(mobile_number)
+            finally:
+                selected_import.file.close()
+        except Exception:
+            legacy_import_mobile_numbers = set()
+        return legacy_import_mobile_numbers
+
+    def apply_import_batch_filter(queryset):
+        if selected_import:
+            import_filter = Q(inquiry__import_batch=selected_import)
+            mobile_numbers = get_import_mobile_numbers()
+            if mobile_numbers:
+                legacy_filter = Q(
+                    inquiry__import_batch__isnull=True,
+                    inquiry__mobile_number__in=mobile_numbers,
+                )
+                if selected_import.uploaded_by_id:
+                    legacy_filter &= Q(inquiry__created_by=selected_import.uploaded_by)
+
+                next_import = import_batches.filter(created_at__gt=selected_import.created_at).order_by('created_at').first()
+                legacy_filter &= Q(inquiry__created_at__gte=selected_import.created_at)
+                if next_import:
+                    legacy_filter &= Q(inquiry__created_at__lt=next_import.created_at)
+                import_filter |= legacy_filter
+            return queryset.filter(import_filter)
+        return queryset
+
+    import_batch_options = []
+    for item in import_batches[:200]:
+        file_name = item.file.name.rsplit('/', 1)[-1].rsplit('\\', 1)[-1] if item.file else 'Uploaded file'
+        import_batch_options.append({
+            'id': str(item.id),
+            'label': file_name,
+            'date': item.created_at,
+            'successful_records': item.successful_records,
+        })
+
     if is_telecalling_assignment:
         # Counselor Telecalling Assignment:
         # Base queryset includes all leads so we can see assigned records even if converted.
@@ -4170,14 +4469,15 @@ def lead_assign_counselor(request):
         )
 
     override_ready = request.GET.get('all_leads', 'no') == 'yes'
+    leads = apply_import_batch_filter(leads)
 
-    q = request.GET.get('q', '').strip()
+    q = (request.POST.get('q') or request.GET.get('q') or '').strip()
     if q:
         leads = leads.filter(
-            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q)
+            Q(inquiry__full_name__icontains=q) | Q(inquiry__mobile_number__icontains=q) | Q(inquiry__college_name__icontains=q)
         )
 
-    status = request.GET.get('status', '').strip()
+    status = (request.POST.get('status') or request.GET.get('status') or '').strip()
     if status:
         if is_telecalling_assignment:
             leads = leads.filter(status=status)
@@ -4185,7 +4485,7 @@ def lead_assign_counselor(request):
             leads = leads.filter(counselor_status=status)
 
     # Default: show leads WITHOUT a counselor (the actual Admin Queue)
-    assigned_status = request.GET.get('assigned', 'no').strip()
+    assigned_status = (request.POST.get('assigned') or request.GET.get('assigned') or 'no').strip()
     if assigned_status == 'yes':
         if is_telecalling_assignment:
             leads = leads.filter(Q(assigned_counselor__isnull=False) | Q(assigned_telecaller__isnull=False))
@@ -4218,16 +4518,16 @@ def lead_assign_counselor(request):
             target_leads = leads
             if assign_source == 'unassigned':
                 if is_telecalling_assignment:
-                    target_leads = Lead.objects.filter(
+                    target_leads = apply_import_batch_filter(Lead.objects.filter(
                         converted_at__isnull=True,
                         assigned_counselor__isnull=True,
                         assigned_telecaller__isnull=True,
-                    )
+                    ))
                 else:
-                    target_leads = Lead.objects.filter(
+                    target_leads = apply_import_batch_filter(Lead.objects.filter(
                         converted_at__isnull=False,
                         assigned_counselor__isnull=True,
-                    )
+                    ))
 
             if mode == 'quantity':
                 available = target_leads.count()
@@ -4318,13 +4618,13 @@ def lead_assign_counselor(request):
                 if assign_source == 'filtered':
                     target_leads = leads
                 elif is_telecalling_assignment:
-                    target_leads = Lead.objects.filter(
+                    target_leads = apply_import_batch_filter(Lead.objects.filter(
                         converted_at__isnull=True,
                         assigned_telecaller__isnull=True,
                         assigned_counselor__isnull=True,
-                    )
+                    ))
                 else:
-                    target_leads = Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True)
+                    target_leads = apply_import_batch_filter(Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True))
 
                 with transaction.atomic():
                     lead_ids = list(target_leads.select_for_update().values_list('id', flat=True)[:quantity])
@@ -4414,13 +4714,13 @@ def lead_assign_counselor(request):
                     if assign_source == 'filtered':
                         target_leads = leads
                     elif is_telecalling_assignment:
-                        target_leads = Lead.objects.filter(
+                        target_leads = apply_import_batch_filter(Lead.objects.filter(
                             converted_at__isnull=True,
                             assigned_telecaller__isnull=True,
                             assigned_counselor__isnull=True,
-                        )
+                        ))
                     else:
-                        target_leads = Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True)
+                        target_leads = apply_import_batch_filter(Lead.objects.filter(converted_at__isnull=False, assigned_counselor__isnull=True))
 
                     with transaction.atomic():
                         lead_ids = list(target_leads.select_for_update().values_list('id', flat=True))
@@ -4483,6 +4783,8 @@ def lead_assign_counselor(request):
         'q': q,
         'status': status,
         'assigned': assigned_status,
+        'import_id': import_id,
+        'import_batch_options': import_batch_options,
         'assignment_type': assignment_type,
         'all_leads': 'yes' if override_ready else 'no',
         'status_choices': Lead.STATUS_CHOICES if is_telecalling_assignment else Lead.COUNSELOR_STATUS_CHOICES,
@@ -4505,6 +4807,7 @@ def counselor_visit_list(request):
         visits = visits.filter(
             Q(lead__inquiry__full_name__icontains=q) |
             Q(lead__inquiry__mobile_number__icontains=q) |
+            Q(lead__inquiry__college_name__icontains=q) |
             Q(lead__inquiry__course_interest__icontains=q)
         )
 
@@ -4710,7 +5013,7 @@ def admission_create(request, lead_pk):
             'student_name': inquiry.full_name,
             'mobile_number': inquiry.mobile_number,
             'email_id': inquiry.email or '',
-            'college_name': '',
+            'college_name': inquiry.college_name or '',
             'department': '',
             'course_name': inquiry.course_interest or '',
             'admission_date': date.today(),
@@ -5266,6 +5569,7 @@ def admin_counselor_updates(request):
         leads = leads.filter(
             Q(inquiry__full_name__icontains=q) |
             Q(inquiry__mobile_number__icontains=q) |
+            Q(inquiry__college_name__icontains=q) |
             Q(assigned_counselor__first_name__icontains=q) |
             Q(assigned_counselor__username__icontains=q)
         )
@@ -5416,11 +5720,12 @@ def export_counselor_telecalling_csv(request):
 
     active_contacts_qs = Inquiry.objects.filter(
         counselor_telecalling_inquiry_q(counselor_users)
+        | counselor_telecalling_manual_inquiry_q(counselor_users)
     ).exclude(status='Qualified').distinct()
 
     # Only status-card contacts — exclude NEW (Assigned Enquiries)
     active_status_contacts_qs = active_contacts_qs.filter(
-        lead__converted_at__isnull=True,
+        Q(lead__converted_at__isnull=True) | Q(lead__isnull=True),
         call_status__in=GROUPED_CALL_STATUS_CODES
     )
     converted_from_telecalling_qs = Lead.objects.filter(
@@ -5492,8 +5797,9 @@ def export_message_numbers_csv(request):
     message_statuses = COUNSELOR_TELECALLING_STATUS_GROUPS['busy_callback_not_connected']['statuses']
     qs = Inquiry.objects.filter(
         counselor_telecalling_inquiry_q(counselor_users)
+        | counselor_telecalling_manual_inquiry_q(counselor_users)
     ).exclude(status='Qualified').filter(
-        lead__converted_at__isnull=True,
+        Q(lead__converted_at__isnull=True) | Q(lead__isnull=True),
         call_status__in=message_statuses
     ).distinct()
 
@@ -5580,13 +5886,26 @@ def counselor_telecalling_dashboard(request):
     from django.db.models import Q
 
     # COUNSELOR TELECALLING DASHBOARD:
-    # Shows only contacts originally assigned by admin for counselor telecalling.
-    # Leads assigned later for counseling stay on the Counselor Dashboard / Assigned Leads flow.
-    active_contacts_qs = Inquiry.objects.filter(
+    # Admin-assigned contacts stay in Assigned Enquiries. Counselor-created manual
+    # inquiries start in New Enquiry, then flow into the same status cards after calls.
+    assigned_contacts_qs = Inquiry.objects.filter(
         counselor_telecalling_inquiry_q(counselor_users)
     ).exclude(status='Qualified').distinct()
-    active_status_contacts_qs = active_contacts_qs.filter(
+    manual_contacts_qs = Inquiry.objects.filter(
+        counselor_telecalling_manual_inquiry_q(counselor_users)
+    ).exclude(status='Qualified').distinct()
+    active_contacts_qs = Inquiry.objects.filter(
+        counselor_telecalling_inquiry_q(counselor_users)
+        | counselor_telecalling_manual_inquiry_q(counselor_users)
+    ).exclude(status='Qualified').distinct()
+    assigned_status_contacts_qs = assigned_contacts_qs.filter(
         lead__converted_at__isnull=True
+    )
+    manual_status_contacts_qs = manual_contacts_qs.filter(
+        lead__isnull=True
+    )
+    active_status_contacts_qs = active_contacts_qs.filter(
+        Q(lead__converted_at__isnull=True) | Q(lead__isnull=True)
     )
 
     # Leads converted from telecalling by this counselor (historical, for stats)
@@ -5598,11 +5917,15 @@ def counselor_telecalling_dashboard(request):
     followups_qs = FollowUp.objects.filter(created_by__in=counselor_users)
 
     if start_date:
+        assigned_status_contacts_qs = assigned_status_contacts_qs.filter(updated_at__date__gte=start_date)
+        manual_status_contacts_qs = manual_status_contacts_qs.filter(updated_at__date__gte=start_date)
         active_status_contacts_qs = active_status_contacts_qs.filter(updated_at__date__gte=start_date)
         converted_from_telecalling_qs = converted_from_telecalling_qs.filter(converted_at__date__gte=start_date)
         calls_qs = calls_qs.filter(call_date__date__gte=start_date)
         followups_qs = followups_qs.filter(followup_date__gte=start_date)
     if end_date and date_filter not in ('all', ''):
+        assigned_status_contacts_qs = assigned_status_contacts_qs.filter(updated_at__date__lte=end_date)
+        manual_status_contacts_qs = manual_status_contacts_qs.filter(updated_at__date__lte=end_date)
         active_status_contacts_qs = active_status_contacts_qs.filter(updated_at__date__lte=end_date)
         converted_from_telecalling_qs = converted_from_telecalling_qs.filter(converted_at__date__lte=end_date)
         calls_qs = calls_qs.filter(call_date__date__lte=end_date)
@@ -5610,8 +5933,12 @@ def counselor_telecalling_dashboard(request):
 
     # Statistics: based on active telecalling contacts
     assigned_inquiries = {
-        'today': active_status_contacts_qs.filter(call_status='NEW', lead__assigned_at__date=today).count(),
-        'total': active_status_contacts_qs.filter(call_status='NEW').count()
+        'today': assigned_status_contacts_qs.filter(call_status='NEW', lead__assigned_at__date=today).count(),
+        'total': assigned_status_contacts_qs.filter(call_status='NEW').count()
+    }
+    manual_inquiries = {
+        'today': manual_status_contacts_qs.filter(call_status='NEW', created_at__date=today).count(),
+        'total': manual_status_contacts_qs.filter(call_status='NEW').count()
     }
     total_leads = {
         'today': converted_from_telecalling_qs.filter(converted_at__date=today).count(),
@@ -5668,6 +5995,7 @@ def counselor_telecalling_dashboard(request):
 
     context = {
         'assigned_inquiries': assigned_inquiries,
+        'manual_inquiries': manual_inquiries,
         'converted_to_lead': total_leads,
         'total_leads': total_leads,
         'assigned_leads': assigned_leads,

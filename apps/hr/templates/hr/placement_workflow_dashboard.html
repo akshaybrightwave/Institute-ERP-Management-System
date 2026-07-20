@@ -1,0 +1,175 @@
+{% extends 'hr/base.html' %}
+{% block title %}Placement Dashboard | HR Portal{% endblock %}
+{% block content %}
+<style>
+  .hr-content{
+    background:
+      radial-gradient(circle at 18% 0%, rgba(37,99,235,.16), transparent 34%),
+      radial-gradient(circle at 90% 18%, rgba(124,58,237,.13), transparent 30%),
+      linear-gradient(135deg,#050b14 0%,#08111d 46%,#05070b 100%);
+    min-height:calc(100vh - 76px);
+  }
+  .pl-workflow{max-width:1180px;margin:0 auto;color:#f8fafc}
+  .pl-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:28px}
+  .pl-crumb{display:flex;align-items:center;gap:9px;color:#8fb6ff;font-size:13px;font-weight:500;margin-bottom:14px}
+  .pl-crumb span:last-child{color:#cbd5e1}
+  .pl-title{font-size:28px;line-height:1.15;font-weight:700;margin:0 0 8px;letter-spacing:0}
+  .pl-subtitle{color:#9caec8;font-size:15px;margin:0}
+  .pl-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .pl-btn{min-height:42px;border-radius:9px;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;text-decoration:none;transition:.18s ease}
+  .pl-btn-primary{background:linear-gradient(135deg,#246bff,#6d35ff);border:1px solid rgba(96,165,250,.3);color:#fff;box-shadow:0 16px 34px rgba(37,99,235,.22)}
+  .pl-btn-primary:hover{color:#fff;transform:translateY(-1px);box-shadow:0 18px 38px rgba(37,99,235,.3)}
+  .pl-btn-soft{background:rgba(15,23,42,.46);border:1px solid rgba(148,163,184,.22);color:#e2e8f0}
+  .pl-btn-soft:hover{background:rgba(30,41,59,.74);color:#fff;border-color:rgba(148,163,184,.36)}
+  .pl-kpis{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:18px;margin-bottom:26px}
+  .pl-kpi{position:relative;overflow:hidden;border-radius:12px;padding:22px 24px;min-height:136px;border:1px solid rgba(96,165,250,.22);background:linear-gradient(145deg,rgba(15,23,42,.82),rgba(2,6,23,.72));box-shadow:0 20px 44px rgba(0,0,0,.26);animation:plIn .28s ease both}
+  .pl-kpi::before{content:"";position:absolute;inset:-45% -20% auto auto;width:160px;height:160px;border-radius:999px;opacity:.18;background:var(--tone,#6366f1);filter:blur(4px)}
+  .pl-kpi::after{content:"";position:absolute;right:18px;bottom:14px;font-family:"bootstrap-icons";font-size:58px;line-height:1;color:rgba(148,163,184,.08)}
+  .pl-kpi.batch{--tone:#7c3aed;border-color:rgba(124,58,237,.42)}.pl-kpi.batch::after{content:"\F4CF"}
+  .pl-kpi.company{--tone:#0ea5e9;border-color:rgba(14,165,233,.36)}.pl-kpi.company::after{content:"\F1DD"}
+  .pl-kpi.drive{--tone:#22c55e;border-color:rgba(34,197,94,.34)}.pl-kpi.drive::after{content:"\F1E2"}
+  .pl-kpi.selected{--tone:#f59e0b;border-color:rgba(245,158,11,.35)}.pl-kpi.selected::after{content:"\F26A"}
+  .pl-kpi-main{display:flex;align-items:center;gap:18px;position:relative;z-index:1}
+  .pl-kpi-icon{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--tone,#6366f1) 30%,transparent);box-shadow:0 10px 22px color-mix(in srgb,var(--tone,#6366f1) 24%,transparent);color:#fff;font-size:23px}
+  .pl-kpi-label{font-size:14px;color:#cbd5e1;font-weight:600;margin-bottom:6px}
+  .pl-kpi-value{font-size:31px;font-weight:750;line-height:1;color:#fff}
+  .pl-kpi-caption{position:relative;z-index:1;color:#cbd5e1;font-size:13px;margin:18px 0 0 72px}
+  .pl-panel{border:1px solid rgba(96,165,250,.22);border-radius:13px;background:linear-gradient(145deg,rgba(15,23,42,.76),rgba(2,6,23,.64));box-shadow:0 22px 50px rgba(0,0,0,.28);overflow:hidden}
+  .pl-panel-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:22px 28px;border-bottom:1px solid rgba(148,163,184,.16)}
+  .pl-panel-title{display:flex;align-items:center;gap:12px;font-size:20px;font-weight:700;margin:0;color:#fff}
+  .pl-panel-title i{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:rgba(79,70,229,.2);color:#705cff;font-size:15px}
+  .pl-view{height:36px;border-radius:9px;border:1px solid rgba(99,102,241,.44);background:rgba(79,70,229,.12);color:#a78bfa;padding:7px 14px;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+  .pl-view:hover{color:#c4b5fd;background:rgba(79,70,229,.2)}
+  .pl-table-wrap{padding:0 28px 22px}
+  .pl-table{width:100%;border-collapse:collapse;table-layout:fixed}
+  .pl-table th{padding:18px 8px 15px;border-bottom:1px solid rgba(148,163,184,.15);color:#a9b7cc;text-transform:uppercase;font-size:11px;font-weight:800;letter-spacing:.05em}
+  .pl-table td{padding:18px 8px;border-bottom:1px solid rgba(148,163,184,.13);font-size:13px;vertical-align:middle;color:#f8fafc}
+  .pl-table tr:last-child td{border-bottom:0}
+  .pl-table th:nth-child(1){width:25%;text-align:left}.pl-table th:nth-child(2){width:16%;text-align:left}
+  .pl-table th:nth-child(3),.pl-table th:nth-child(4),.pl-table th:nth-child(5),.pl-table td:nth-child(3),.pl-table td:nth-child(4),.pl-table td:nth-child(5){text-align:center}
+  .pl-table th:nth-child(6),.pl-table td:nth-child(6){width:14%;text-align:right}
+  .pl-company{display:flex;align-items:center;gap:12px;min-width:0}
+  .pl-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;flex:0 0 38px;background:linear-gradient(135deg,#2563eb,#7c3aed);box-shadow:0 10px 22px rgba(79,70,229,.24);font-size:13px;font-weight:800;color:#fff;text-transform:uppercase}
+  .pl-company-name{font-size:13px;font-weight:700;color:#f8fafc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pl-role{font-size:13px;font-weight:650;color:#f8fafc;line-height:1.35;word-break:break-word}
+  .pl-pill{display:inline-flex;align-items:center;justify-content:center;min-width:74px;padding:7px 12px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid rgba(59,130,246,.34);background:rgba(37,99,235,.18);color:#7dd3fc}
+  .pl-pill.shortlisted{border-color:rgba(6,182,212,.32);background:rgba(6,182,212,.16);color:#67e8f9}
+  .pl-pill.selected{border-color:rgba(34,197,94,.33);background:rgba(34,197,94,.16);color:#86efac}
+  .pl-row-actions{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+  .pl-open{height:36px;border-radius:9px;padding:7px 16px;border:1px solid rgba(148,163,184,.22);background:rgba(15,23,42,.55);color:#f8fafc;font-size:13px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center}
+  .pl-open:hover{background:rgba(30,41,59,.85);color:#fff}
+  .pl-delete{width:36px;height:36px;border-radius:10px;border:1px solid rgba(244,63,94,.32);background:rgba(244,63,94,.12);color:#fb7185;display:inline-grid;place-items:center;text-decoration:none;font-size:14px;transition:.18s ease}
+  .pl-delete:hover{background:rgba(244,63,94,.2);color:#fecdd3;border-color:rgba(244,63,94,.6)}
+  @keyframes plIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(max-width:1100px){.pl-kpis{grid-template-columns:repeat(2,1fr)}.pl-table{min-width:860px}.pl-table-wrap{overflow-x:auto}}
+  @media(max-width:720px){.pl-head{align-items:flex-start;flex-direction:column}.pl-kpis{grid-template-columns:1fr}.pl-title{font-size:24px}.pl-actions{width:100%}.pl-btn{flex:1;justify-content:center}}
+</style>
+
+<section class="pl-workflow">
+  <div class="pl-head">
+    <div>
+      <div class="pl-crumb">
+        <span>Placement</span>
+        <i class="bi bi-chevron-right"></i>
+        <span>Drives</span>
+      </div>
+      <h1 class="pl-title">Placement Workflow</h1>
+      <p class="pl-subtitle">Batch to final result tracking</p>
+    </div>
+    <div class="pl-actions">
+      <a class="pl-btn pl-btn-primary" href="{% url 'hr:placement_batch_create' %}"><i class="bi bi-plus-lg"></i>Create Batch</a>
+      <a class="pl-btn pl-btn-soft" href="{% url 'hr:placement_company_create' %}"><i class="bi bi-buildings"></i>Create Company</a>
+    </div>
+  </div>
+
+  <div class="pl-kpis">
+    <div class="pl-kpi batch">
+      <div class="pl-kpi-main">
+        <div class="pl-kpi-icon"><i class="bi bi-people-fill"></i></div>
+        <div>
+          <div class="pl-kpi-label">Batches</div>
+          <div class="pl-kpi-value">{{ batches_count }}</div>
+        </div>
+      </div>
+      <div class="pl-kpi-caption">Total Batches</div>
+    </div>
+    <div class="pl-kpi company">
+      <div class="pl-kpi-main">
+        <div class="pl-kpi-icon"><i class="bi bi-building-fill"></i></div>
+        <div>
+          <div class="pl-kpi-label">Companies</div>
+          <div class="pl-kpi-value">{{ companies_count }}</div>
+        </div>
+      </div>
+      <div class="pl-kpi-caption">Total Companies</div>
+    </div>
+    <div class="pl-kpi drive">
+      <div class="pl-kpi-main">
+        <div class="pl-kpi-icon"><i class="bi bi-calendar-check-fill"></i></div>
+        <div>
+          <div class="pl-kpi-label">Drives</div>
+          <div class="pl-kpi-value">{{ drives_count }}</div>
+        </div>
+      </div>
+      <div class="pl-kpi-caption">Total Drives</div>
+    </div>
+    <div class="pl-kpi selected">
+      <div class="pl-kpi-main">
+        <div class="pl-kpi-icon"><i class="bi bi-patch-check-fill"></i></div>
+        <div>
+          <div class="pl-kpi-label">Selected</div>
+          <div class="pl-kpi-value">{{ selected_count }}</div>
+        </div>
+      </div>
+      <div class="pl-kpi-caption">Selected Drives</div>
+    </div>
+  </div>
+
+  <div class="pl-panel">
+    <div class="pl-panel-head">
+      <h2 class="pl-panel-title"><i class="bi bi-calendar2-week"></i>Active Drives</h2>
+      <a class="pl-view" href="{% url 'hr:placement_drive_list' %}"><i class="bi bi-eye"></i>View All</a>
+    </div>
+    <div class="pl-table-wrap">
+      <table class="pl-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Role</th>
+            <th>Sent</th>
+            <th>Shortlisted</th>
+            <th>Selected</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for drive in drives %}
+          <tr>
+            <td>
+              <div class="pl-company">
+                <span class="pl-avatar">{{ drive.company.name|default:"-"|slice:":2"|upper }}</span>
+                <span class="pl-company-name">{{ drive.company.name|default:"-" }}</span>
+              </div>
+            </td>
+            <td class="pl-role">{{ drive.job_role|default:"-" }}</td>
+            <td><span class="pl-pill">Sent {{ drive.eligible_count }}</span></td>
+            <td><span class="pl-pill shortlisted">Shortlisted {{ drive.shortlisted_count }}</span></td>
+            <td><span class="pl-pill selected">Selected {{ drive.selected_count }}</span></td>
+            <td>
+              <div class="pl-row-actions">
+                <a class="pl-open" href="{% url 'hr:placement_drive_detail' drive.id %}">Open</a>
+                <a class="pl-delete" href="{% url 'hr:placement_drive_delete' drive.id %}" title="Delete" aria-label="Delete {{ drive }}">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center hr-muted py-4">No placement drives yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock %}

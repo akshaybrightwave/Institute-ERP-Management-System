@@ -205,6 +205,45 @@
     flex: 1;
     background: rgba(100, 116, 139, 0.22);
   }
+  .import-date-row {
+    width: min(390px, 100%);
+    margin: 0 auto 12px;
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+  }
+  .import-date-row label {
+    color: #e5e7eb;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .import-date-row input {
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(99, 102, 241, 0.32);
+    background: rgba(15, 23, 42, 0.82);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 11px;
+    box-shadow: none;
+  }
+  .import-date-row input:focus {
+    border-color: rgba(129, 140, 248, 0.86);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    background: rgba(15, 23, 42, 0.95);
+    color: #ffffff;
+  }
+  .import-date-help {
+    grid-column: 2;
+    color: #8f9ab0;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: -5px;
+  }
   .import-file-input {
     position: absolute;
     width: 1px;
@@ -316,6 +355,12 @@
           <h2>Upload your recruitment sheet</h2>
           <p>Drag & drop your Excel or CSV file here</p>
           <div class="import-choice-divider">or</div>
+          <div class="import-date-row">
+            <label for="{{ form.date_added.id_for_label }}">{{ form.date_added.label }}</label>
+            {{ form.date_added }}
+            <div class="import-date-help">{{ form.date_added.help_text }}</div>
+          </div>
+          <div class="text-danger small mb-2">{{ form.date_added.errors }}</div>
           <input class="import-file-input" type="file" name="{{ form.candidates_file.html_name }}" id="{{ form.candidates_file.id_for_label }}" accept=".xlsx,.csv" required>
           <div class="import-action-row">
             <label class="import-choose-btn" for="{{ form.candidates_file.id_for_label }}"><i class="bi bi-upload"></i>Choose File</label>

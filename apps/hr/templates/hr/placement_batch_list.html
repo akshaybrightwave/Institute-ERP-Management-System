@@ -1,0 +1,500 @@
+{% extends 'hr/base.html' %}
+{% block title %}Placement Batches{% endblock %}
+{% block content %}
+<style>
+  .batch-page {
+    color: #f8fafc;
+  }
+  .batch-crumb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #8ea4c7;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+  .batch-crumb a {
+    color: #3578ff;
+    text-decoration: none;
+  }
+  .batch-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .batch-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .batch-title-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+    color: #fff;
+    font-size: 20px;
+    flex: 0 0 auto;
+  }
+  .batch-title {
+    font-size: 20px;
+    line-height: 1.12;
+    font-weight: 520;
+    margin: 0;
+    letter-spacing: 0;
+  }
+  .batch-subtitle {
+    color: #b3bdd1;
+    font-size: 12.5px;
+    margin: 4px 0 0;
+    font-weight: 500;
+  }
+  .batch-create-btn {
+    min-height: 38px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 9px;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    font-weight: 650;
+    font-size: 12.5px;
+    text-decoration: none;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    transition: transform .18s ease, box-shadow .18s ease;
+    white-space: nowrap;
+  }
+  .batch-create-btn:hover {
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.22);
+  }
+  .batch-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    background: linear-gradient(135deg, rgba(18, 27, 43, 0.96), rgba(15, 23, 42, 0.84));
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.18);
+    animation: batchIn .28s ease both;
+  }
+  .batch-stat {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 18px;
+    border-right: 1px solid rgba(148, 163, 184, 0.14);
+  }
+  .batch-stat:first-child { padding-left: 0; }
+  .batch-stat:last-child { border-right: 0; padding-right: 0; }
+  .batch-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+  }
+  .batch-stat-icon.purple { color: #c084fc; background: rgba(126, 34, 206, .24); }
+  .batch-stat-icon.green { color: #22c55e; background: rgba(16, 185, 129, .18); }
+  .batch-stat-icon.amber { color: #f59e0b; background: rgba(217, 119, 6, .2); }
+  .batch-stat-icon.blue { color: #0ea5e9; background: rgba(14, 165, 233, .18); }
+  .batch-stat-label {
+    color: #b6c0d2;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .batch-stat-value {
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 650;
+    color: #fff;
+  }
+  .batch-filter-card,
+  .batch-table-card {
+    background: linear-gradient(135deg, rgba(18, 27, 43, 0.92), rgba(15, 23, 42, 0.82));
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0,0,0,.16);
+    animation: batchIn .32s ease both;
+  }
+  .batch-filter-card {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .batch-filter-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .batch-search,
+  .batch-select {
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid rgba(96, 165, 250, .22);
+    background: rgba(15, 23, 42, .78);
+    color: #e8eef8;
+    font-size: 12.5px;
+    font-weight: 500;
+    outline: 0;
+  }
+  .batch-search:focus,
+  .batch-select:focus {
+    border-color: rgba(96, 165, 250, .48);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+  }
+  .batch-search-wrap {
+    position: relative;
+    width: min(280px, 100%);
+  }
+  .batch-search {
+    width: 100%;
+    padding: 0 13px;
+  }
+  .batch-search::placeholder { color: #7f8da3; }
+  .batch-select {
+    width: 220px;
+    padding: 0 34px 0 13px;
+  }
+  .batch-select-wrap { position: relative; }
+  .batch-filter-submit,
+  .batch-clear {
+    height: 36px;
+    border-radius: 8px;
+    padding: 0 12px;
+    border: 1px solid rgba(148, 163, 184, .22);
+    color: #fff;
+    background: rgba(255, 255, 255, .06);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .batch-filter-submit {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    border-color: transparent;
+  }
+  .batch-table-card {
+    overflow: hidden;
+  }
+  .batch-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .batch-table th {
+    color: #aab7ca;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 700;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(148, 163, 184, .13);
+  }
+  .batch-table td {
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(148, 163, 184, .11);
+    vertical-align: middle;
+    color: #f8fafc;
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .batch-table tr {
+    transition: background .18s ease;
+  }
+  .batch-table tbody tr:hover {
+    background: rgba(37, 99, 235, .06);
+  }
+  .batch-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    flex: 0 0 auto;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .batch-avatar.blue { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+  .batch-avatar.purple { background: linear-gradient(135deg, #9333ea, #4f46e5); }
+  .batch-avatar.orange { background: linear-gradient(135deg, #f97316, #b45309); }
+  .batch-avatar.teal { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+  .batch-row-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+  }
+  .batch-table th:first-child,
+  .batch-table td:first-child {
+    width: 30%;
+  }
+  .batch-table th:nth-child(2),
+  .batch-table td:nth-child(2) {
+    width: 20%;
+  }
+  .batch-table th:nth-child(3),
+  .batch-table td:nth-child(3) {
+    width: 14%;
+    transform: translateX(-32px);
+  }
+  .batch-name {
+    font-size: 12.5px;
+    font-weight: 650;
+    color: #fff;
+    margin-bottom: 3px;
+  }
+  .batch-code {
+    color: #9aa8bd;
+    font-size: 10.5px;
+    font-weight: 500;
+  }
+  .batch-student-count {
+    color: #3b82f6;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 650;
+  }
+  .batch-open-btn {
+    min-width: 60px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .2);
+    background: rgba(15, 23, 42, .5);
+    color: #3b82f6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 650;
+    transition: background .18s ease, border-color .18s ease;
+  }
+  .batch-open-btn:hover {
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, .45);
+    background: rgba(37, 99, 235, .08);
+  }
+  .batch-delete-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid rgba(244, 63, 94, .26);
+    background: rgba(244, 63, 94, .08);
+    color: #fb7185;
+    display: inline-grid;
+    place-items: center;
+    text-decoration: none;
+    font-size: 12px;
+    transition: background .18s ease, border-color .18s ease, color .18s ease;
+  }
+  .batch-delete-btn:hover {
+    color: #fecdd3;
+    border-color: rgba(244, 63, 94, .48);
+    background: rgba(244, 63, 94, .16);
+  }
+  .batch-more {
+    color: #99a8bd;
+    font-size: 15px;
+    padding: 3px;
+  }
+  .batch-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 11px 16px;
+    color: #aab5c7;
+    font-size: 12px;
+  }
+  .batch-pages {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .batch-page-btn,
+  .batch-page-current {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    text-decoration: none;
+    border: 1px solid rgba(148, 163, 184, .18);
+    color: #dbeafe;
+    background: rgba(255,255,255,.05);
+  }
+  .batch-page-current {
+    border-color: transparent;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    font-weight: 700;
+  }
+  .batch-empty {
+    text-align: center;
+    color: #9aa8bd;
+    padding: 44px 16px !important;
+  }
+  @keyframes batchIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 1100px) {
+    .batch-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .batch-stat { border-right: 0; padding: 0; }
+  }
+  @media (max-width: 767px) {
+    .batch-hero { align-items: flex-start; flex-direction: column; }
+    .batch-title { font-size: 24px; }
+    .batch-stats { grid-template-columns: 1fr; }
+    .batch-filter-form { align-items: stretch; flex-direction: column; }
+    .batch-search-wrap, .batch-select { width: 100%; }
+    .batch-table-card { overflow-x: auto; }
+    .batch-table { min-width: 820px; }
+  }
+</style>
+
+<div class="batch-page">
+  <div class="batch-crumb">
+    <a href="{% url 'hr:placement_dashboard' %}">Placement</a>
+    <i class="bi bi-chevron-right"></i>
+    <span>Batches</span>
+  </div>
+
+  <div class="batch-hero">
+    <div class="batch-title-wrap">
+      <div class="batch-title-icon"><i class="bi bi-people"></i></div>
+      <div>
+        <h1 class="batch-title">Batches</h1>
+        <p class="batch-subtitle">Manage all placement batches and their students</p>
+      </div>
+    </div>
+    <a class="batch-create-btn" href="{% url 'hr:placement_batch_create' %}">
+      <i class="bi bi-plus-lg"></i>
+      <span>Create Batch</span>
+    </a>
+  </div>
+
+  <div class="batch-stats">
+    <div class="batch-stat">
+      <div class="batch-stat-icon purple"><i class="bi bi-stack"></i></div>
+      <div><div class="batch-stat-label">Total Batches</div><div class="batch-stat-value">{{ total_batches }}</div></div>
+    </div>
+    <div class="batch-stat">
+      <div class="batch-stat-icon green"><i class="bi bi-people"></i></div>
+      <div><div class="batch-stat-label">Total Students</div><div class="batch-stat-value">{{ total_students }}</div></div>
+    </div>
+    <div class="batch-stat">
+      <div class="batch-stat-icon amber"><i class="bi bi-calendar3"></i></div>
+      <div><div class="batch-stat-label">Academic Years</div><div class="batch-stat-value">{{ academic_years_count }}</div></div>
+    </div>
+    <div class="batch-stat">
+      <div class="batch-stat-icon blue"><i class="bi bi-graph-up-arrow"></i></div>
+      <div><div class="batch-stat-label">Active Batches</div><div class="batch-stat-value">{{ active_batches }}</div></div>
+    </div>
+  </div>
+
+  <div class="batch-filter-card">
+    <form class="batch-filter-form" method="get">
+      <div class="batch-search-wrap">
+        <input class="batch-search" type="search" name="q" value="{{ query }}" placeholder="Search batches...">
+      </div>
+      <div class="batch-select-wrap">
+        <select class="batch-select" name="year">
+          <option value="">All Academic Years</option>
+          {% for option in year_options %}
+            <option value="{{ option }}" {% if selected_year == option %}selected{% endif %}>{{ option }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="batch-filter-submit" type="submit"><i class="bi bi-sliders"></i>Filter</button>
+      {% if query or selected_year %}
+        <a class="batch-clear" href="{% url 'hr:placement_batch_list' %}"><i class="bi bi-x-lg"></i>Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div class="batch-table-card">
+    <table class="batch-table">
+      <thead>
+        <tr>
+          <th>Batch</th>
+          <th>Course</th>
+          <th>Academic Year</th>
+          <th>Students</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for batch in batches %}
+        <tr>
+          <td>
+            <div class="batch-row-title">
+              <div class="batch-avatar {% cycle 'blue' 'purple' 'orange' 'teal' %}">{{ batch.name|slice:":2"|upper }}</div>
+              <div>
+                <div class="batch-name">{{ batch.name }}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{ batch.course.name|default:"-" }}</td>
+          <td>{{ batch.academic_year }}</td>
+          <td><span class="batch-student-count"><i class="bi bi-people"></i>{{ batch.student_total }}</span></td>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <a class="batch-open-btn" href="{% url 'hr:placement_batch_detail' batch.id %}">Open</a>
+              <a class="batch-delete-btn" href="{% url 'hr:placement_batch_delete' batch.id %}" aria-label="Delete {{ batch.name }}" title="Delete">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="batch-empty">No batches found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="batch-footer">
+      <div>
+        {% if page_obj.paginator.count %}
+          Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} batches
+        {% else %}
+          Showing 0 batches
+        {% endif %}
+      </div>
+      {% if page_obj.paginator.num_pages > 1 %}
+      <div class="batch-pages">
+        {% if page_obj.has_previous %}
+          <a class="batch-page-btn" href="?q={{ query }}&year={{ selected_year }}&page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+        {% else %}
+          <span class="batch-page-btn"><i class="bi bi-chevron-left"></i></span>
+        {% endif %}
+        <span class="batch-page-current">{{ page_obj.number }}</span>
+        {% if page_obj.has_next %}
+          <a class="batch-page-btn" href="?q={{ query }}&year={{ selected_year }}&page={{ page_obj.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+        {% else %}
+          <span class="batch-page-btn"><i class="bi bi-chevron-right"></i></span>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

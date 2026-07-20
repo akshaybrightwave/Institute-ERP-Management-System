@@ -1,0 +1,552 @@
+{% extends 'hr/base.html' %}
+{% block title %}{{ batch.name }} | Placement Batch{% endblock %}
+{% block content %}
+<style>
+  .placement-batch-page {
+    --pb-panel: rgba(15, 23, 42, .62);
+    --pb-panel-strong: rgba(17, 24, 39, .82);
+    --pb-line: rgba(96, 165, 250, .18);
+    --pb-text: #e5edf9;
+    --pb-muted: #9aa8bd;
+    --pb-blue: #3b82f6;
+    --pb-violet: #6d5dfc;
+    color: var(--pb-text);
+  }
+  .pb-page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .pb-crumb {
+    color: var(--pb-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pb-crumb span {
+    color: #38a3ff;
+  }
+  .pb-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .pb-btn {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform .16s ease, border-color .16s ease, background .16s ease;
+  }
+  .pb-btn:hover {
+    transform: translateY(-1px);
+  }
+  .pb-btn-soft {
+    color: #d8e2f2;
+    background: rgba(15, 23, 42, .58);
+    border: 1px solid rgba(148, 163, 184, .2);
+  }
+  .pb-btn-primary {
+    color: #fff;
+    border: 1px solid rgba(99, 102, 241, .38);
+    background: linear-gradient(135deg, #2563eb, #6d5dfc);
+    box-shadow: 0 12px 30px rgba(37, 99, 235, .22);
+  }
+  .pb-hero {
+    position: relative;
+    min-height: 150px;
+    display: grid;
+    grid-template-columns: minmax(0, .9fr) minmax(260px, .8fr);
+    align-items: center;
+    gap: 28px;
+    padding: 22px 34px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    border-radius: 13px;
+    border: 1px solid rgba(59, 130, 246, .52);
+    background:
+      radial-gradient(circle at 80% 48%, rgba(37, 99, 235, .2), transparent 38%),
+      radial-gradient(circle at 28% 24%, rgba(79, 70, 229, .14), transparent 34%),
+      linear-gradient(135deg, rgba(2, 6, 23, .98), rgba(15, 23, 42, .72));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 42px rgba(0,0,0,.28);
+  }
+  .pb-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle, rgba(59, 130, 246, .8) 0 1px, transparent 1.5px),
+      radial-gradient(circle, rgba(109, 93, 252, .72) 0 1px, transparent 1.4px);
+    background-size: 190px 120px, 260px 150px;
+    background-position: 58% 18%, 88% 30%;
+    opacity: .45;
+    pointer-events: none;
+  }
+  .pb-hero-copy,
+  .pb-orbit {
+    position: relative;
+    z-index: 1;
+  }
+  .pb-eyebrow {
+    margin-bottom: 10px;
+    color: #60a5fa;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .pb-total {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(38px, 4.8vw, 56px);
+    font-weight: 800;
+    line-height: .95;
+    letter-spacing: 0;
+  }
+  .pb-meta {
+    margin-top: 10px;
+    color: #aebbd0;
+    font-size: 17px;
+    font-weight: 650;
+  }
+  .pb-meta strong {
+    color: #4f73ff;
+  }
+  .pb-orbit {
+    min-height: 116px;
+    display: grid;
+    place-items: center;
+  }
+  .pb-orbit-rings {
+    position: absolute;
+    width: min(100%, 330px);
+    aspect-ratio: 2.25 / 1;
+    border: 1px solid rgba(59, 130, 246, .32);
+    border-radius: 50%;
+    transform: perspective(600px) rotateX(64deg);
+    box-shadow: 0 0 42px rgba(37, 99, 235, .18);
+  }
+  .pb-orbit-rings::before,
+  .pb-orbit-rings::after {
+    content: "";
+    position: absolute;
+    inset: 18%;
+    border: 1px solid rgba(99, 102, 241, .26);
+    border-radius: inherit;
+  }
+  .pb-orbit-rings::after {
+    inset: 34%;
+  }
+  .pb-people {
+    position: relative;
+    width: 142px;
+    height: 110px;
+    filter: drop-shadow(0 24px 32px rgba(79, 70, 229, .38));
+  }
+  .pb-person {
+    position: absolute;
+    border-radius: 999px;
+    background: linear-gradient(145deg, #3b82f6, #7138ff 72%);
+    box-shadow: inset 10px 10px 22px rgba(255,255,255,.16), inset -16px -18px 28px rgba(30, 41, 59, .34);
+  }
+  .pb-person.main {
+    left: 45px;
+    bottom: 12px;
+    width: 56px;
+    height: 66px;
+  }
+  .pb-person.main::before {
+    content: "";
+    position: absolute;
+    top: -36px;
+    left: 9px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: inherit;
+  }
+  .pb-person.side-left {
+    left: 8px;
+    bottom: 32px;
+    width: 42px;
+    height: 40px;
+    opacity: .9;
+  }
+  .pb-person.side-left::before,
+  .pb-person.side-right::before {
+    content: "";
+    position: absolute;
+    top: -28px;
+    left: 7px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: inherit;
+  }
+  .pb-person.side-right {
+    right: 8px;
+    bottom: 31px;
+    width: 42px;
+    height: 40px;
+    opacity: .82;
+  }
+  .pb-list-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .pb-list-title h2 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 750;
+  }
+  .pb-list-title p {
+    margin: 0;
+    color: var(--pb-muted);
+    font-size: 14px;
+  }
+  .pb-search {
+    position: relative;
+    width: min(100%, 330px);
+  }
+  .pb-search input {
+    width: 100%;
+    height: 40px;
+    border-radius: 11px;
+    border: 1px solid rgba(96, 165, 250, .22);
+    background: rgba(15, 23, 42, .78);
+    color: #e8eef8;
+    padding: 0 13px;
+    font-size: 12.5px;
+    font-weight: 500;
+    outline: none;
+  }
+  .pb-search input:focus {
+    border-color: rgba(96, 165, 250, .48);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+  }
+  .pb-search input::placeholder {
+    color: #7f8da3;
+  }
+  .pb-table-card {
+    border-radius: 13px;
+    border: 1px solid rgba(148, 163, 184, .16);
+    background:
+      radial-gradient(circle at 84% 16%, rgba(37, 99, 235, .12), transparent 30%),
+      rgba(15, 23, 42, .48);
+    overflow: hidden;
+    box-shadow: 0 18px 42px rgba(0,0,0,.26);
+  }
+  .pb-table {
+    width: 100%;
+  }
+  .pb-row {
+    display: grid;
+    grid-template-columns: 52px minmax(140px, 1fr) minmax(210px, 1.25fr) minmax(130px, .72fr) minmax(130px, .72fr) minmax(86px, .44fr);
+    align-items: center;
+    gap: 12px;
+    min-width: 940px;
+  }
+  .pb-thead {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, .12);
+    background: rgba(15, 23, 42, .52);
+    color: #aac0dd;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .pb-tbody-wrap {
+    overflow-x: auto;
+  }
+  .pb-tbody {
+    min-width: 940px;
+  }
+  .pb-open-btn {
+    min-height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 13px;
+    border-radius: 8px;
+    border: 1px solid rgba(96, 165, 250, .28);
+    background: rgba(37, 99, 235, .12);
+    color: #93c5fd;
+    font-size: 12px;
+    font-weight: 750;
+    text-decoration: none;
+    transition: border-color .16s ease, background .16s ease, color .16s ease;
+  }
+  .pb-open-btn:hover {
+    border-color: rgba(96, 165, 250, .52);
+    background: rgba(37, 99, 235, .2);
+    color: #fff;
+  }
+  .pb-student-row {
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(148, 163, 184, .1);
+    color: #e8eef8;
+    background: rgba(15, 23, 42, .18);
+    transition: background .16s ease, transform .16s ease;
+  }
+  .pb-student-row:hover {
+    background: rgba(30, 41, 59, .42);
+  }
+  .pb-avatar {
+    width: 38px;
+    height: 38px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: linear-gradient(145deg, #2563eb, #7c3aed);
+    font-size: 14px;
+    font-weight: 800;
+    box-shadow: 0 10px 24px rgba(79, 70, 229, .28);
+  }
+  .pb-cell-main {
+    font-size: 14px;
+    font-weight: 750;
+    color: #f8fbff;
+    overflow-wrap: anywhere;
+  }
+  .pb-cell {
+    font-size: 13.5px;
+    font-weight: 650;
+    color: #d8e2f2;
+    overflow-wrap: anywhere;
+  }
+  .pb-empty {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--pb-muted);
+    font-size: 14px;
+  }
+  .pb-table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 20px;
+    color: #9fb1c8;
+    font-size: 13px;
+  }
+  .pb-pages {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pb-page-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .16);
+    background: rgba(15, 23, 42, .62);
+    color: #cbd7ea;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .pb-page-btn.active {
+    color: #fff;
+    border-color: rgba(99, 102, 241, .4);
+    background: linear-gradient(135deg, #2563eb, #6d5dfc);
+  }
+  .pb-page-btn:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+  }
+  .pb-footer-note {
+    margin-top: 36px;
+    text-align: center;
+    color: #8f9fb5;
+    font-size: 13px;
+  }
+  .pb-footer-note span {
+    color: #38a3ff;
+  }
+  @media (max-width: 991px) {
+    .pb-hero {
+      grid-template-columns: 1fr;
+      padding: 28px;
+    }
+    .pb-list-head {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .pb-search {
+      width: 100%;
+    }
+  }
+  @media (max-width: 640px) {
+    .pb-page-head,
+    .pb-table-footer {
+      align-items: stretch;
+      flex-direction: column;
+    }
+    .pb-actions {
+      justify-content: flex-start;
+    }
+    .pb-hero {
+      min-height: 190px;
+      padding: 22px;
+    }
+    .pb-orbit {
+      display: none;
+    }
+  }
+</style>
+
+<div class="placement-batch-page">
+  <div class="pb-page-head">
+    <div class="pb-crumb"><span>Placement</span> / Batch</div>
+    <div class="pb-actions">
+      <a class="pb-btn pb-btn-soft" href="{% url 'hr:placement_student_template' batch.id %}">
+        <i class="bi bi-download"></i>
+        <span>Download Template</span>
+      </a>
+      <a class="pb-btn pb-btn-primary" href="{% url 'hr:placement_import_students' batch.id %}">
+        <i class="bi bi-upload"></i>
+        <span>Import Students</span>
+      </a>
+    </div>
+  </div>
+
+  <section class="pb-hero">
+    <div class="pb-hero-copy">
+      <div class="pb-eyebrow">Total Students</div>
+      <h1 class="pb-total">{{ students|length }}</h1>
+      <div class="pb-meta">
+        <strong>{{ batch.course.name|default:"Course not set" }}</strong>
+        <span> - {{ batch.academic_year|default:"Year not set" }}</span>
+      </div>
+    </div>
+    <div class="pb-orbit" aria-hidden="true">
+      <div class="pb-orbit-rings"></div>
+      <div class="pb-people">
+        <span class="pb-person side-left"></span>
+        <span class="pb-person main"></span>
+        <span class="pb-person side-right"></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="pb-list-head">
+    <div class="pb-list-title">
+      <h2>Students List</h2>
+      <p>All students in this batch</p>
+    </div>
+    <label class="pb-search" for="batchStudentSearch">
+      <input id="batchStudentSearch" type="search" placeholder="Search student..." autocomplete="off">
+    </label>
+  </div>
+
+  <section class="pb-table-card">
+    <div class="pb-tbody-wrap">
+      <div class="pb-table">
+        <div class="pb-row pb-thead">
+          <div><i class="bi bi-people-fill"></i></div>
+          <div>Name</div>
+          <div>Email ID</div>
+          <div>Contact No 1</div>
+          <div>Contact No 2</div>
+          <div>Action</div>
+        </div>
+        <div class="pb-tbody" id="batchStudentsTable">
+          {% for row in students %}
+            <div class="pb-row pb-student-row" data-student-row data-search="{{ row.full_name|default:''|lower }} {{ row.email|default:''|lower }} {{ row.mobile|default:''|lower }} {{ row.alternate_mobile|default:''|lower }}">
+              <div><span class="pb-avatar">{{ row.full_name|default:"S"|slice:":1"|upper }}</span></div>
+              <div class="pb-cell-main">{{ row.full_name|default:"-" }}</div>
+              <div class="pb-cell">{{ row.email|default:"-" }}</div>
+              <div class="pb-cell">{{ row.mobile|default:"-" }}</div>
+              <div class="pb-cell">{{ row.alternate_mobile|default:"-" }}</div>
+              <div class="pb-cell">
+                <a class="pb-open-btn" href="{% url 'hr:placement_batch_student_history' batch.id row.id %}">Open</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="pb-empty d-none" id="batchStudentsEmpty">No students found.</div>
+      </div>
+    </div>
+    <div class="pb-table-footer">
+      <div id="batchStudentsShowing">Showing 0 to 0 of 0</div>
+      <div class="pb-pages">
+        <button class="pb-page-btn" id="batchPrevPage" type="button" aria-label="Previous page"><i class="bi bi-chevron-left"></i></button>
+        <span class="pb-page-btn active" id="batchCurrentPage">1</span>
+        <button class="pb-page-btn" id="batchNextPage" type="button" aria-label="Next page"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+  </section>
+
+  <div class="pb-footer-note">&copy; 2026 <span>Placement Portal.</span> All rights reserved.</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const rows = Array.from(document.querySelectorAll('[data-student-row]'));
+    const searchInput = document.getElementById('batchStudentSearch');
+    const emptyState = document.getElementById('batchStudentsEmpty');
+    const showing = document.getElementById('batchStudentsShowing');
+    const prevBtn = document.getElementById('batchPrevPage');
+    const nextBtn = document.getElementById('batchNextPage');
+    const currentPageEl = document.getElementById('batchCurrentPage');
+    const pageSize = 10;
+    let currentPage = 1;
+
+    function filteredRows() {
+      const term = (searchInput.value || '').trim().toLowerCase();
+      if (!term) return rows;
+      return rows.filter(row => (row.dataset.search || '').includes(term));
+    }
+
+    function renderTable() {
+      const visibleRows = filteredRows();
+      const totalPages = Math.max(1, Math.ceil(visibleRows.length / pageSize));
+      currentPage = Math.min(currentPage, totalPages);
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+
+      rows.forEach(row => row.classList.add('d-none'));
+      visibleRows.slice(start, end).forEach(row => row.classList.remove('d-none'));
+
+      const showingStart = visibleRows.length ? start + 1 : 0;
+      const showingEnd = Math.min(end, visibleRows.length);
+      showing.textContent = `Showing ${showingStart} to ${showingEnd} of ${visibleRows.length}`;
+      currentPageEl.textContent = currentPage;
+      emptyState.classList.toggle('d-none', visibleRows.length !== 0);
+      prevBtn.disabled = currentPage <= 1;
+      nextBtn.disabled = currentPage >= totalPages;
+    }
+
+    searchInput.addEventListener('input', function () {
+      currentPage = 1;
+      renderTable();
+    });
+    prevBtn.addEventListener('click', function () {
+      currentPage = Math.max(1, currentPage - 1);
+      renderTable();
+    });
+    nextBtn.addEventListener('click', function () {
+      currentPage += 1;
+      renderTable();
+    });
+    renderTable();
+  });
+</script>
+{% endblock %}

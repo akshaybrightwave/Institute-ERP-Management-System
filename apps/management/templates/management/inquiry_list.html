@@ -1138,6 +1138,9 @@
       {% if converted %}
         <input type="hidden" name="converted" value="{{ converted }}">
       {% endif %}
+      {% if source_filter %}
+        <input type="hidden" name="source" value="{{ source_filter }}">
+      {% endif %}
       {% if overdue %}
         <input type="hidden" name="overdue" value="{{ overdue }}">
       {% endif %}
@@ -1215,7 +1218,7 @@
         <input type="date" name="date_to" value="{{ date_to }}" class="form-control">
       </div>
 
-      {% if q or status or course or call_status or call_status_group or date_filter or date_from or date_to or queue or converted or overdue %}
+      {% if q or status or course or call_status or call_status_group or source_filter or date_filter or date_from or date_to or queue or converted or overdue %}
         <div class="col-12 mt-2">
           <a href="{% url 'inquiry_list' %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-x-circle me-1"></i> Clear filters
@@ -1289,7 +1292,7 @@
           </thead>
           <tbody>
             {% for inquiry in page_obj %}
-              <tr>
+              <tr data-inquiry-row="{{ inquiry.pk }}">
                 {% if can_delete_inquiries %}
                   <td class="inquiry-select-cell" data-label="Select">
                     <input type="checkbox" name="inquiries" value="{{ inquiry.pk }}" class="form-check-input m-0 inquiry-row-checkbox" data-assignable="{% if inquiry.status == 'Qualified' and inquiry.lead and inquiry.lead.converted_at %}1{% else %}0{% endif %}" aria-label="Select {{ inquiry.full_name }}">
@@ -1297,29 +1300,34 @@
                 {% endif %}
 
                 <td data-label="Student">
-                  <div class="candidate-name">{{ inquiry.full_name }}</div>
+                  <div class="candidate-name" data-inquiry-name="{{ inquiry.pk }}">{{ inquiry.full_name }}</div>
                 </td>
                 <td data-label="Contact">
                   <div class="d-flex flex-column justify-content-center gap-2">
                     {% if inquiry.mobile_number %}
                       <span class="d-flex align-items-center gap-2" style="color:#ffffff; font-size:0.85rem; font-weight:600; user-select:text;">
                         <i class="bi bi-telephone-fill" style="color:#38bdf8;"></i>
-                        {{ inquiry.mobile_number }}
+                        <span data-inquiry-mobile="{{ inquiry.pk }}">{{ inquiry.mobile_number }}</span>
                       </span>
                     {% else %}
                       <span class="text-muted" style="font-size:0.8rem;">—</span>
                     {% endif %}
-                    {% if inquiry.course_interest == 'Cyber Security' or inquiry.course_interest == 'Data Scientist' or inquiry.course_interest == 'Development' or inquiry.course_interest == 'Data Analyst' or inquiry.course_interest == 'Other' %}
+                    {% if inquiry.course_interest %}
                       <div>
-                        <span class="badge bg-dark border border-secondary text-light fw-normal d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding: 0.35em 0.65em;">
+                        <span class="badge bg-dark border border-secondary text-light fw-normal d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding: 0.35em 0.65em;" data-inquiry-course="{{ inquiry.pk }}">
                           <i class="bi bi-book text-info"></i> {{ inquiry.course_interest }}
                         </span>
                       </div>
                     {% endif %}
+                    <div>
+                      <span class="badge bg-dark border border-secondary text-light fw-normal d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding: 0.35em 0.65em;">
+                        <i class="bi bi-building text-info"></i> {{ inquiry.college_name|default:"-" }}
+                      </span>
+                    </div>
                     <input type="text" class="call-remark-inline" data-inquiry-remark="{{ inquiry.pk }}" placeholder="Remark for this call">
                   </div>
                 </td>
-                <td data-label="Status">
+                <td data-label="Status" data-inquiry-status-cell="{{ inquiry.pk }}">
                   {% if inquiry.status == 'New' %}
                     <span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>
                   {% elif inquiry.status == 'Contacted' %}
@@ -1444,17 +1452,17 @@
           <ul class="pagination justify-content-center flex-wrap gap-1">
             {% if page_obj.has_previous %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous page">&laquo;</a>
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Previous page">&laquo;</a>
               </li>
             {% endif %}
             {% for i in page_obj.paginator.page_range %}
               <li class="page-item {% if page_obj.number == i %}active{% endif %}">
-                <a class="page-link" href="?page={{ i }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a>
+                <a class="page-link" href="?page={{ i }}{% if scope %}&scope={{ scope }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">{{ i }}</a>
               </li>
             {% endfor %}
             {% if page_obj.has_next %}
               <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next page">&raquo;</a>
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if scope %}&scope={{ scope }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if course %}&course={{ course }}{% endif %}{% if call_status %}&call_status={{ call_status }}{% endif %}{% if call_status_group %}&call_status_group={{ call_status_group }}{% endif %}{% if queue %}&queue={{ queue }}{% endif %}{% if converted %}&converted={{ converted }}{% endif %}{% if overdue %}&overdue={{ overdue }}{% endif %}{% if date_filter %}&date_filter={{ date_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Next page">&raquo;</a>
               </li>
             {% endif %}
           </ul>
@@ -1465,7 +1473,7 @@
         <h4>No Inquiries Found</h4>
         <p class="text-muted">No records match your search or filters.</p>
         <div class="d-flex justify-content-center gap-2 flex-wrap">
-          {% if q or status or course or call_status or call_status_group or date_filter or date_from or date_to or queue or converted or overdue %}
+          {% if q or status or course or call_status or call_status_group or source_filter or date_filter or date_from or date_to or queue or converted or overdue %}
             <a href="{% url 'inquiry_list' %}" class="btn btn-outline-secondary">Clear filters</a>
           {% endif %}
           <button type="button" class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#addInquiryModal">Add Inquiry</button>
@@ -1519,10 +1527,6 @@
               <label class="form-label">Inquiry Status <span class="text-danger">*</span></label>
               {{ inquiry_form.status }}
             </div>
-            <div class="col-12">
-              <label class="form-label">Remarks / Notes</label>
-              {{ inquiry_form.remarks }}
-            </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -1561,6 +1565,9 @@
                 </div>
                 <div class="col-6">
                   <div class="inquiry-detail-field"><span class="inquiry-detail-label">City</span><span class="inquiry-detail-value">{{ inquiry.city|default:"—" }}</span></div>
+                </div>
+                <div class="col-6">
+                  <div class="inquiry-detail-field"><span class="inquiry-detail-label">College</span><span class="inquiry-detail-value">{{ inquiry.college_name|default:"-" }}</span></div>
                 </div>
                 <div class="col-6">
                   <div class="inquiry-detail-field"><span class="inquiry-detail-label">Course Interest</span><span class="inquiry-detail-value">{{ inquiry.course_interest|default:"—" }}</span></div>
@@ -1629,8 +1636,9 @@
 {% for inquiry in page_obj %}
 <div class="modal fade inquiry-modal" id="editInquiryModal{{ inquiry.pk }}" tabindex="-1" aria-labelledby="editInquiryModalLabel{{ inquiry.pk }}" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg">
-    <form method="POST" action="{% url 'inquiry_edit' inquiry.pk %}" class="modal-content">
+    <form method="POST" action="{% url 'inquiry_edit' inquiry.pk %}" class="modal-content inquiry-inline-edit-form no-loader" data-inquiry-id="{{ inquiry.pk }}">
         {% csrf_token %}
+        <input type="hidden" name="inline_modal" value="1">
         <div class="modal-header">
           <div>
             <h5 class="modal-title fw-bold text-white" id="editInquiryModalLabel{{ inquiry.pk }}">
@@ -1641,6 +1649,7 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
+          <div class="alert alert-danger d-none inquiry-inline-error" role="alert"></div>
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label" for="edit-full-name-{{ inquiry.pk }}">Full Name <span class="text-danger">*</span></label>
@@ -1859,6 +1868,150 @@ if (bulkAssignCounselor) {
   bulkAssignCounselor.addEventListener('change', updateBulkDeleteState);
 }
 updateBulkDeleteState();
+
+function escapeInquiryHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function inquiryStatusMarkup(status) {
+  if (status === 'New') {
+    return '<span class="status-pill status-new"><i class="bi bi-stars"></i>New</span>';
+  }
+  if (status === 'Contacted') {
+    return '<span class="status-pill status-contacted"><i class="bi bi-telephone-outbound"></i>Contacted</span>';
+  }
+  if (status === 'Qualified') {
+    return '<span class="status-pill status-qualified"><i class="bi bi-check-circle"></i>Qualified</span>';
+  }
+  return '<span class="status-pill status-rejected"><i class="bi bi-x-circle"></i>' + escapeInquiryHtml(status || 'Rejected') + '</span>';
+}
+
+function hideGlobalPageLoader() {
+  const loader = document.getElementById('page-loader');
+  if (loader) loader.classList.remove('show');
+}
+
+function applyInquiryRowUpdate(inquiryId, inquiry) {
+  const row = document.querySelector('[data-inquiry-row="' + inquiryId + '"]');
+  const nameEl = document.querySelector('[data-inquiry-name="' + inquiryId + '"]');
+  const mobileEl = document.querySelector('[data-inquiry-mobile="' + inquiryId + '"]');
+  let courseEl = document.querySelector('[data-inquiry-course="' + inquiryId + '"]');
+  const statusCell = document.querySelector('[data-inquiry-status-cell="' + inquiryId + '"]');
+
+  if (nameEl) nameEl.textContent = inquiry.full_name || '-';
+  if (mobileEl) mobileEl.textContent = inquiry.mobile_number || '-';
+  if (!courseEl && row) {
+    const contactStack = row.querySelector('[data-label="Contact"] .d-flex');
+    if (contactStack) {
+      const courseWrap = document.createElement('div');
+      courseWrap.innerHTML = '<span class="badge bg-dark border border-secondary text-light fw-normal d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding: 0.35em 0.65em;" data-inquiry-course="' + inquiryId + '"><i class="bi bi-book text-info"></i> </span>';
+      contactStack.insertBefore(courseWrap, contactStack.querySelector('[data-inquiry-remark]') || null);
+      courseEl = courseWrap.querySelector('[data-inquiry-course]');
+    }
+  }
+  if (courseEl) {
+    courseEl.innerHTML = '<i class="bi bi-book text-info"></i> ' + escapeInquiryHtml(inquiry.course_interest || '-');
+  }
+  if (statusCell) {
+    statusCell.innerHTML = inquiryStatusMarkup(inquiry.status);
+  }
+}
+
+document.querySelectorAll('.inquiry-inline-edit-form').forEach(function(form) {
+  form.addEventListener('submit', function(event) {
+    const submitter = event.submitter;
+    if (submitter && submitter.getAttribute('formaction')) {
+      return;
+    }
+
+    event.preventDefault();
+    hideGlobalPageLoader();
+    if (!form.reportValidity()) {
+      return;
+    }
+    const inquiryId = form.dataset.inquiryId;
+    const errorBox = form.querySelector('.inquiry-inline-error');
+    const submitButton = submitter || form.querySelector('button[type="submit"]');
+    const originalButtonHtml = submitButton ? submitButton.innerHTML : '';
+    const currentStatusCell = document.querySelector('[data-inquiry-status-cell="' + inquiryId + '"]');
+    const previousInquiry = {
+      full_name: ((document.querySelector('[data-inquiry-name="' + inquiryId + '"]') || {}).textContent || '').trim(),
+      mobile_number: ((document.querySelector('[data-inquiry-mobile="' + inquiryId + '"]') || {}).textContent || '').trim(),
+      course_interest: ((document.querySelector('[data-inquiry-course="' + inquiryId + '"]') || {}).textContent || '').trim(),
+      status: (currentStatusCell ? currentStatusCell.textContent : '').trim()
+    };
+    const optimisticInquiry = {
+      full_name: (form.querySelector('[name="full_name"]') || {}).value || '',
+      mobile_number: (form.querySelector('[name="mobile_number"]') || {}).value || '',
+      course_interest: (form.querySelector('[name="course_interest"]') || {}).value || '',
+      status: (form.querySelector('[name="status"]') || {}).value || ''
+    };
+
+    if (errorBox) {
+      errorBox.classList.add('d-none');
+      errorBox.textContent = '';
+    }
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.innerHTML = 'Saved';
+    }
+
+    applyInquiryRowUpdate(inquiryId, optimisticInquiry);
+    const modalEl = form.closest('.modal');
+    if (modalEl && window.bootstrap && bootstrap.Modal) {
+      const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+      modal.hide();
+    }
+
+    fetch(form.action, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: new FormData(form),
+      credentials: 'same-origin'
+    })
+      .then(function(response) {
+        return response.json().then(function(payload) {
+          if (!response.ok) {
+            throw payload;
+          }
+          return payload;
+        });
+      })
+      .then(function(data) {
+        if (!data.success || !data.inquiry) {
+          throw { message: data.message || 'Unable to update inquiry.' };
+        }
+
+        const inquiry = data.inquiry;
+        applyInquiryRowUpdate(inquiryId, inquiry);
+        showToast(data.message || 'Inquiry updated successfully.', false);
+      })
+      .catch(function(error) {
+        const message = error && error.message ? error.message : 'Unable to update inquiry.';
+        applyInquiryRowUpdate(inquiryId, previousInquiry);
+        hideGlobalPageLoader();
+        if (errorBox) {
+          errorBox.textContent = message;
+          errorBox.classList.remove('d-none');
+        }
+        showToast(message, true);
+      })
+      .finally(function() {
+        hideGlobalPageLoader();
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.innerHTML = originalButtonHtml;
+        }
+      });
+  });
+});
 
 function updateCallStatus(selectEl) {
   const inquiryId = selectEl.dataset.inquiryId;

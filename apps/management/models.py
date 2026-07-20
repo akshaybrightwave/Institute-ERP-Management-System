@@ -41,6 +41,7 @@ class Inquiry(SoftDeleteModel):
     mobile_number = models.CharField(max_length=15, db_index=True)
     email = models.EmailField(blank=True, null=True)
     city = models.CharField(max_length=100)
+    college_name = models.CharField(max_length=200, blank=True)
     course_interest = models.CharField(max_length=100)
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='Website')
     remarks = models.TextField(blank=True)
@@ -52,6 +53,13 @@ class Inquiry(SoftDeleteModel):
         null=True,
         blank=True,
         related_name='created_inquiries'
+    )
+    import_batch = models.ForeignKey(
+        'LeadImport',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inquiries'
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

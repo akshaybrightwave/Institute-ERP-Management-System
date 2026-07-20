@@ -252,6 +252,7 @@
           <tr>
             <th>Name</th>
             <th>Mobile</th>
+            <th>College</th>
             <th>Course</th>
             <th>Lead Converted Date</th>
             <th>Priority</th>
@@ -264,6 +265,7 @@
             <tr>
               <td class="fw-bold text-white">{{ lead.inquiry.full_name }}</td>
               <td>{{ lead.inquiry.mobile_number }}</td>
+              <td>{{ lead.inquiry.college_name|default:"-" }}</td>
               <td>
                 {% if lead.inquiry.course_interest == 'Cyber Security' or lead.inquiry.course_interest == 'Data Scientist' or lead.inquiry.course_interest == 'Development' or lead.inquiry.course_interest == 'Data Analyst' or lead.inquiry.course_interest == 'Other' %}
                   <span class="badge bg-dark border border-secondary text-light fw-normal d-inline-flex align-items-center gap-1" style="font-size:0.75rem; padding: 0.35em 0.65em;">
@@ -457,6 +459,7 @@
         <div class="row g-3">
           <div class="col-md-6"><div class="lead-modal-info"><small>Mobile</small><div class="fw-bold">{{ lead.inquiry.mobile_number }}</div></div></div>
           <div class="col-md-6"><div class="lead-modal-info"><small>Email</small><div class="fw-bold">{{ lead.inquiry.email|default:"-" }}</div></div></div>
+          <div class="col-md-6"><div class="lead-modal-info"><small>College</small><div class="fw-bold">{{ lead.inquiry.college_name|default:"-" }}</div></div></div>
           <div class="col-md-6"><div class="lead-modal-info"><small>Course Interest</small><div class="fw-bold">{{ lead.inquiry.course_interest }}</div></div></div>
           <div class="col-md-6"><div class="lead-modal-info"><small>City</small><div class="fw-bold">{{ lead.inquiry.city }}</div></div></div>
           <div class="col-md-4"><div class="lead-modal-info"><small>Status</small><div class="fw-bold">{{ lead.status }}</div></div></div>

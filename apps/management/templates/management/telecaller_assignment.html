@@ -51,11 +51,11 @@
 
 <div class="m-card mb-4">
   <form method="GET" class="row g-3 align-items-end" id="filter-form">
-    <div class="col-md-4">
+    <div class="col-lg-3 col-md-6">
       <label class="form-label text-muted small fw-bold">Search Candidate</label>
       <input type="text" name="q" value="{{ q }}" class="form-control bg-dark border-secondary text-white form-control-sm" placeholder="Name or Mobile...">
     </div>
-    <div class="col-md-3">
+    <div class="col-lg-2 col-md-6">
       <label class="form-label text-muted small fw-bold">Status</label>
       <select name="status" class="form-select bg-dark border-secondary text-white form-select-sm">
         <option value="">All Statuses</option>
@@ -64,7 +64,18 @@
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-3">
+    <div class="col-lg-3 col-md-6">
+      <label class="form-label text-muted small fw-bold">Uploaded File</label>
+      <select name="import_id" class="form-select bg-dark border-secondary text-white form-select-sm">
+        <option value="">All Uploaded Files</option>
+        {% for item in import_batch_options %}
+        <option value="{{ item.id }}" {% if import_id == item.id %}selected{% endif %}>
+          {{ item.label }} ({{ item.successful_records }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-2 col-md-6">
       <label class="form-label text-muted small fw-bold">Assignment Status</label>
       <select name="assigned" class="form-select bg-dark border-secondary text-white form-select-sm">
         <option value="all" {% if assigned == 'all' %}selected{% endif %}>All Contacts</option>
@@ -72,7 +83,7 @@
         <option value="no" {% if assigned == 'no' %}selected{% endif %}>Unassigned Only</option>
       </select>
     </div>
-    <div class="col-md-2">
+    <div class="col-lg-2 col-md-6">
       <button type="submit" class="btn btn-info text-white w-100 fw-bold btn-sm"><i class="bi bi-funnel"></i> Apply Filter</button>
     </div>
   </form>
@@ -204,8 +215,7 @@
         <tr>
           <th>Lead / Candidate</th>
           <th>Mobile</th>
-          <th>City</th>
-          <th>Source</th>
+          <th>College</th>
           <th>Status</th>
           <th>Current Owner</th>
           <th>Assigned Date</th>
@@ -220,8 +230,7 @@
             </a>
           </td>
           <td>{{ lead.inquiry.mobile_number }}</td>
-          <td>{{ lead.inquiry.city }}</td>
-          <td><span class="badge bg-secondary">{{ lead.inquiry.source }}</span></td>
+          <td>{{ lead.inquiry.college_name|default:"-" }}</td>
           <td>
             <span class="badge {% if lead.status == 'Qualified' %}bg-success{% elif lead.status == 'Rejected' %}bg-danger{% else %}bg-primary{% endif %}">
               {{ lead.status }}
@@ -264,10 +273,10 @@
     <ul class="pagination pagination-sm justify-content-center">
       {% if page_obj.has_previous %}
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">&laquo; First</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page=1{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if import_id %}&import_id={{ import_id }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">&laquo; First</a>
       </li>
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Previous</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if import_id %}&import_id={{ import_id }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Previous</a>
       </li>
       {% endif %}
 
@@ -277,10 +286,10 @@
 
       {% if page_obj.has_next %}
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Next</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if import_id %}&import_id={{ import_id }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Next</a>
       </li>
       <li class="page-item">
-        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Last &raquo;</a>
+        <a class="page-link bg-dark border-secondary text-info" href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if import_id %}&import_id={{ import_id }}{% endif %}{% if assigned %}&assigned={{ assigned }}{% endif %}">Last &raquo;</a>
       </li>
       {% endif %}
     </ul>

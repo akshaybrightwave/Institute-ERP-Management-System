@@ -1,0 +1,159 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Email Configuration | HR Portal{% endblock %}
+
+{% block content %}
+<style>
+  .email-config-shell { max-width: 1120px; margin: 0 auto; }
+  .email-config-hero {
+    display: flex; justify-content: space-between; gap: 18px; align-items: center;
+    margin-bottom: 18px; padding: 20px 22px; border: 1px solid rgba(91,95,239,.28);
+    background: radial-gradient(circle at 12% 0%, rgba(91,95,239,.18), transparent 34%), #171717;
+    border-radius: 14px;
+  }
+  .email-config-icon {
+    width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center;
+    background: linear-gradient(135deg, #2563eb, #6d5dfc); color: #fff; font-size: 24px;
+    box-shadow: 0 12px 28px rgba(91,95,239,.28);
+  }
+  .email-config-card { background: #1b1b1b; border: 1px solid #303042; border-radius: 14px; overflow: hidden; }
+  .email-config-card__head {
+    padding: 18px 20px; border-bottom: 1px solid #303042; display: flex;
+    justify-content: space-between; gap: 14px; align-items: center;
+  }
+  .email-config-card__body { padding: 20px; }
+  .email-config-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .email-config-grid .span-2 { grid-column: 1 / -1; }
+  .email-field label { font-size: 13px; font-weight: 700; color: #cbd5e1 !important; margin-bottom: 7px; }
+  .email-field .form-control, .email-field .form-select {
+    min-height: 46px; background: #151528; border-color: #343452; color: #fff; border-radius: 9px;
+  }
+  .email-password-wrap { position: relative; }
+  .email-password-toggle {
+    position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+    border: 0; background: transparent; color: #a5b4fc; width: 34px; height: 34px;
+  }
+  .email-config-actions {
+    display: flex; justify-content: flex-end; gap: 10px; padding-top: 18px;
+    margin-top: 18px; border-top: 1px solid #303042;
+  }
+  .email-status-pill {
+    display: inline-flex; align-items: center; gap: 8px; border-radius: 999px;
+    padding: 7px 11px; font-size: 12px; font-weight: 800;
+  }
+  .email-status-pill.active { color: #34d399; background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.28); }
+  .email-status-pill.empty { color: #fbbf24; background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.28); }
+  .email-secure-note {
+    margin-top: 16px; padding: 13px 14px; border: 1px solid rgba(91,95,239,.22);
+    background: rgba(91,95,239,.08); border-radius: 10px; color: #b8c2d8; font-size: 13px;
+  }
+  @media (max-width: 767px) {
+    .email-config-hero, .email-config-card__head, .email-config-actions { flex-direction: column; align-items: stretch; }
+    .email-config-grid { grid-template-columns: 1fr; }
+    .email-config-grid .span-2 { grid-column: auto; }
+  }
+</style>
+
+<div class="email-config-shell">
+  <div class="email-config-hero">
+    <div class="d-flex align-items-center gap-3">
+      <div class="email-config-icon"><i class="bi bi-envelope-lock"></i></div>
+      <div>
+        <div class="small text-primary fw-semibold mb-1">Settings</div>
+        <h1 class="h3 mb-1">Email Configuration</h1>
+        <p class="hr-muted mb-0">Configure the active Gmail SMTP account used for placement emails.</p>
+      </div>
+    </div>
+    {% if config and config.is_active %}
+      <span class="email-status-pill active"><i class="bi bi-check-circle-fill"></i> Active</span>
+    {% else %}
+      <span class="email-status-pill empty"><i class="bi bi-exclamation-triangle-fill"></i> Not Configured</span>
+    {% endif %}
+  </div>
+
+  <form method="post" class="email-config-card" novalidate>
+    {% csrf_token %}
+    <div class="email-config-card__head">
+      <div>
+        <h2 class="h5 mb-1">SMTP Details</h2>
+        <p class="hr-muted mb-0 small">The app password is encrypted before it is saved.</p>
+      </div>
+      {% if has_password %}
+        <span class="badge text-bg-success">Password saved securely</span>
+      {% endif %}
+    </div>
+    <div class="email-config-card__body">
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="email-config-grid">
+        <div class="email-field">
+          <label for="{{ form.email_address.id_for_label }}">{{ form.email_address.label }} *</label>
+          {{ form.email_address }}
+          {% for error in form.email_address.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="email-field">
+          <label for="{{ form.from_name.id_for_label }}">{{ form.from_name.label }} *</label>
+          {{ form.from_name }}
+          {% for error in form.from_name.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="email-field span-2">
+          <label for="{{ form.google_app_password.id_for_label }}">{{ form.google_app_password.label }} {% if not has_password %}*{% endif %}</label>
+          <div class="email-password-wrap">
+            {{ form.google_app_password }}
+            <button class="email-password-toggle" type="button" data-password-toggle aria-label="Show or hide app password">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          {% if form.google_app_password.help_text %}<div class="hr-muted small mt-1">{{ form.google_app_password.help_text }}</div>{% endif %}
+          {% for error in form.google_app_password.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="email-field">
+          <label for="{{ form.smtp_host.id_for_label }}">{{ form.smtp_host.label }} *</label>
+          {{ form.smtp_host }}
+          {% for error in form.smtp_host.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="email-field">
+          <label for="{{ form.smtp_port.id_for_label }}">{{ form.smtp_port.label }} *</label>
+          {{ form.smtp_port }}
+          {% for error in form.smtp_port.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="form-check d-flex align-items-center gap-2">
+          {{ form.use_tls }}
+          <label class="form-check-label" for="{{ form.use_tls.id_for_label }}">{{ form.use_tls.label }}</label>
+        </div>
+        <div class="form-check d-flex align-items-center gap-2">
+          {{ form.is_active }}
+          <label class="form-check-label" for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+        </div>
+      </div>
+
+      <div class="email-secure-note">
+        <i class="bi bi-shield-check text-primary me-1"></i>
+        The decrypted Google App Password is used only while creating the SMTP connection and is never rendered back in this page.
+      </div>
+
+      <div class="email-config-actions">
+        <button class="btn btn-soft" type="submit" name="action" value="test">
+          <i class="bi bi-send me-1"></i> Test Email
+        </button>
+        <button class="btn btn-hr-primary" type="submit" name="action" value="save">
+          <i class="bi bi-save me-1"></i> Save Configuration
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  document.querySelectorAll('[data-password-toggle]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var input = button.closest('.email-password-wrap').querySelector('input');
+      var icon = button.querySelector('i');
+      input.type = input.type === 'password' ? 'text' : 'password';
+      icon.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+  });
+</script>
+{% endblock %}

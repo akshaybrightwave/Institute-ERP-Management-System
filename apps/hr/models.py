@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -227,6 +227,64 @@ class CandidateActivity(models.Model):
         return self.title
 
 
+class PlacementBatch(models.Model):
+    name = models.CharField(max_length=180)
+    course = models.ForeignKey('courses.Course', on_delete=models.SET_NULL, null=True, blank=True, related_name='placement_batches')
+    academic_year = models.CharField(max_length=20)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='placement_batches_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at', 'name']
+        unique_together = (('name', 'academic_year'),)
+
+    def __str__(self):
+        return f"{self.name} ({self.academic_year})"
+
+    @property
+    def student_count(self):
+        return self.students.count()
+
+
+class PlacementBatchStudent(models.Model):
+    batch = models.ForeignKey(PlacementBatch, on_delete=models.CASCADE, related_name='students')
+    student = models.ForeignKey('students.StudentProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='placement_batch_links')
+    enrollment_no = models.CharField(max_length=100)
+    full_name = models.CharField(max_length=160)
+    email = models.EmailField(blank=True)
+    mobile = models.CharField(max_length=20, blank=True)
+    alternate_mobile = models.CharField(max_length=20, blank=True)
+    course_name = models.CharField(max_length=160, blank=True)
+    imported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='placement_students_imported')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['full_name']
+        unique_together = (('batch', 'enrollment_no'),)
+
+    def __str__(self):
+        return f"{self.full_name} ({self.enrollment_no})"
+
+
+class PlacementBatchImport(models.Model):
+    batch = models.ForeignKey(PlacementBatch, on_delete=models.CASCADE, related_name='imports')
+    imported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    imported_count = models.PositiveIntegerField(default=0)
+    skipped_count = models.PositiveIntegerField(default=0)
+    failed_count = models.PositiveIntegerField(default=0)
+    summary = models.TextField(blank=True)
+    errors = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.batch} import on {self.created_at:%d %b %Y}"
+
+
 class PlacementCompany(models.Model):
     name = models.CharField(max_length=180, blank=True)
     industry = models.CharField(max_length=140, blank=True)
@@ -234,6 +292,10 @@ class PlacementCompany(models.Model):
     designation = models.CharField(max_length=140, blank=True)
     mobile = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
+    job_role = models.CharField(max_length=160, blank=True)
+    required_skills = models.TextField(blank=True)
+    location = models.CharField(max_length=160, blank=True)
+    additional_job_details = models.TextField(blank=True)
     website = models.URLField(blank=True)
     address = models.TextField(blank=True)
     city = models.CharField(max_length=100, blank=True)
@@ -282,6 +344,9 @@ class PlacementDrive(models.Model):
     STATUS_CHOICES = (
         ('upcoming', 'Upcoming'),
         ('scheduled', 'Scheduled'),
+        ('resume_requested', 'Resume Requested'),
+        ('resumes_sent', 'Resumes Sent'),
+        ('interviewing', 'Interviewing'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
     )
@@ -294,7 +359,9 @@ class PlacementDrive(models.Model):
         blank=True,
     )
     job_role = models.CharField(max_length=160, blank=True)
+    batches = models.ManyToManyField(PlacementBatch, related_name='drives', blank=True)
     drive_date = models.DateField(null=True, blank=True)
+    resume_submission_deadline = models.DateField(null=True, blank=True)
     package = models.CharField(max_length=100, blank=True)
     eligibility_criteria = models.TextField(blank=True)
     venue = models.CharField(max_length=220, blank=True)
@@ -319,11 +386,26 @@ class PlacementDrive(models.Model):
 
     @property
     def assignments_count(self):
-        return self.assignments.count()
+        return self.eligible_count
+
+    @property
+    def eligible_count(self):
+        assignment_count = self.assignments.count()
+        if assignment_count:
+            return assignment_count
+        return PlacementBatchStudent.objects.filter(batch__drives=self).distinct().count()
+
+    @property
+    def resume_submitted_count(self):
+        return self.assignments.filter(resume_status='submitted').count()
+
+    @property
+    def shortlisted_count(self):
+        return self.assignments.filter(is_shortlisted=True).count()
 
     @property
     def appeared_count(self):
-        return self.assignments.filter(interview_status__in=['appeared', 'selected', 'rejected', 'joined']).count()
+        return self.assignments.filter(interview_attendance='present').count()
 
     @property
     def selected_count(self):
@@ -342,7 +424,18 @@ class PlacementStudentAssignment(models.Model):
         ('pending', 'Pending'),
         ('selected', 'Selected'),
         ('rejected', 'Rejected'),
+        ('on_hold', 'On Hold'),
         ('joined', 'Joined'),
+    )
+    RESUME_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('requested', 'Requested'),
+        ('submitted', 'Submitted'),
+    )
+    INTERVIEW_ATTENDANCE_CHOICES = (
+        ('pending', 'Pending'),
+        ('present', 'Present'),
+        ('absent', 'Absent'),
     )
     ASSIGNMENT_STATUS_CHOICES = (
         ('scheduled', 'Scheduled'),
@@ -358,10 +451,18 @@ class PlacementStudentAssignment(models.Model):
     company = models.ForeignKey(PlacementCompany, on_delete=models.CASCADE, related_name='placement_assignments', null=True, blank=True)
     drive = models.ForeignKey(PlacementDrive, on_delete=models.SET_NULL, related_name='assignments', null=True, blank=True)
     student = models.ForeignKey('students.StudentProfile', on_delete=models.SET_NULL, related_name='placement_assignments', null=True, blank=True)
+    batch_student = models.ForeignKey(PlacementBatchStudent, on_delete=models.SET_NULL, related_name='assignments', null=True, blank=True)
     student_name = models.CharField(max_length=160, blank=True)
     course_name = models.CharField(max_length=160, blank=True)
     percentage_or_cgpa = models.CharField(max_length=40, blank=True)
     skills = models.TextField(blank=True)
+    resume = models.FileField(upload_to='hr/placement/resumes/', blank=True)
+    resume_status = models.CharField(max_length=20, choices=RESUME_STATUS_CHOICES, default='pending')
+    resume_submitted_at = models.DateTimeField(null=True, blank=True)
+    is_shortlisted = models.BooleanField(default=False)
+    interview_attendance = models.CharField(max_length=20, choices=INTERVIEW_ATTENDANCE_CHOICES, default='pending')
+    offered_role = models.CharField(max_length=160, blank=True)
+    offered_ctc = models.CharField(max_length=100, blank=True)
     interview_status = models.CharField(max_length=20, choices=INTERVIEW_STATUS_CHOICES, default='scheduled')
     final_status = models.CharField(max_length=20, choices=FINAL_STATUS_CHOICES, default='pending')
     assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='placement_assignments_created')
@@ -370,6 +471,7 @@ class PlacementStudentAssignment(models.Model):
 
     class Meta:
         ordering = ['-assigned_at']
+        unique_together = (('drive', 'batch_student'),)
 
     def __str__(self):
         return self.display_name
@@ -378,12 +480,16 @@ class PlacementStudentAssignment(models.Model):
     def display_name(self):
         if self.student:
             return self.student.full_name
+        if self.batch_student:
+            return self.batch_student.full_name
         return self.student_name or f"Student #{self.pk}"
 
     @property
     def display_course(self):
         if self.student and self.student.batch and self.student.batch.course:
             return self.student.batch.course.name
+        if self.batch_student:
+            return self.batch_student.course_name
         return self.course_name
 
     @property
@@ -464,6 +570,9 @@ class PlacementActivity(models.Model):
         ('interview', 'Interview Scheduled'),
         ('offer', 'Offer Updated'),
         ('result', 'Result Published'),
+        ('batch', 'Batch Updated'),
+        ('email', 'Email Sent'),
+        ('resume', 'Resume Updated'),
     )
 
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_CHOICES)
@@ -479,6 +588,75 @@ class PlacementActivity(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class PlacementEmailLog(models.Model):
+    EMAIL_TYPE_CHOICES = (
+        ('resume_request', 'Resume Request'),
+        ('company_resumes', 'Resumes To Company'),
+        ('interview', 'Interview Notification'),
+        ('final_result', 'Final Result'),
+    )
+    STATUS_CHOICES = (
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+        ('skipped', 'Skipped'),
+    )
+
+    drive = models.ForeignKey(PlacementDrive, on_delete=models.CASCADE, related_name='email_logs')
+    assignment = models.ForeignKey(PlacementStudentAssignment, on_delete=models.SET_NULL, null=True, blank=True, related_name='email_logs')
+    email_type = models.CharField(max_length=30, choices=EMAIL_TYPE_CHOICES)
+    recipient_email = models.EmailField(blank=True)
+    subject = models.CharField(max_length=220)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='skipped')
+    error_message = models.TextField(blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_email_type_display()} - {self.recipient_email or 'No recipient'}"
+
+
+class EmailConfiguration(models.Model):
+    email_address = models.EmailField(unique=True)
+    google_app_password = models.TextField()
+    smtp_host = models.CharField(max_length=120, default='smtp.gmail.com')
+    smtp_port = models.PositiveIntegerField(default=587)
+    use_tls = models.BooleanField(default=True)
+    from_name = models.CharField(max_length=160)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_active', '-updated_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['is_active'],
+                condition=Q(is_active=True),
+                name='hr_single_active_email_configuration',
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            if self.is_active:
+                active_configs = EmailConfiguration.objects.filter(is_active=True)
+                if self.pk:
+                    active_configs = active_configs.exclude(pk=self.pk)
+                active_configs.update(is_active=False)
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.from_name} <{self.email_address}>"
+
+    @classmethod
+    def active(cls):
+        return cls.objects.filter(is_active=True).order_by('-updated_at').first()
 
 
 class ProjectCompany(models.Model):

@@ -1,0 +1,725 @@
+{% extends 'hr/base.html' %}
+{% block title %}Create Email Template | Placement{% endblock %}
+{% block content %}
+<style>
+  .email-page {
+    color: #f8fafc;
+  }
+  .email-crumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    color: #9fb0c8;
+    font-size: 12.5px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .email-crumb a {
+    color: #5d7cff;
+    text-decoration: none;
+  }
+  .email-shell {
+    background:
+      radial-gradient(circle at 16% 0%, rgba(37, 99, 235, .10), transparent 34%),
+      linear-gradient(135deg, rgba(17, 24, 39, .97), rgba(15, 23, 42, .88));
+    border: 1px solid rgba(148, 163, 184, .15);
+    border-radius: 10px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, .28);
+    padding: 18px;
+    animation: emailIn .28s ease both;
+  }
+  .email-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .email-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .email-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #fff;
+    font-size: 16px;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .2);
+    flex: 0 0 auto;
+  }
+  .email-title {
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    line-height: 1.15;
+    font-weight: 650;
+    letter-spacing: 0;
+    text-shadow: none !important;
+  }
+  .email-subtitle {
+    margin: 6px 0 0;
+    color: #aebbd0;
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+  .email-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .email-step {
+    appearance: none;
+    border: 1px solid rgba(148, 163, 184, .18);
+    background: rgba(15, 23, 42, .42);
+    border-radius: 8px;
+    min-height: 54px;
+    padding: 7px 8px;
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    color: #b7c5da;
+    font-size: 10.5px;
+    font-weight: 650;
+    position: relative;
+    box-shadow: none !important;
+  }
+  .email-step:not(:last-child)::after {
+    display: none;
+  }
+  .email-step-no {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    border: 1px solid rgba(148, 163, 184, .28);
+    background: rgba(15, 23, 42, .55);
+    display: grid;
+    place-items: center;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+  }
+  .email-step.active .email-step-no {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, .2);
+  }
+  .email-step.active {
+    color: #c7d2fe;
+    border-color: rgba(99, 102, 241, .38);
+    background: rgba(79, 70, 229, .1);
+  }
+  .email-field {
+    margin-bottom: 14px;
+  }
+  .email-label {
+    display: inline-flex;
+    gap: 4px;
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 650;
+    margin-bottom: 8px;
+  }
+  .email-required {
+    color: #fb7185;
+  }
+  .email-input,
+  .email-textarea {
+    width: 100%;
+    border: 1px solid rgba(148, 163, 184, .25);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, .52);
+    color: #f8fafc;
+    outline: 0;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .email-input {
+    height: 40px;
+    padding: 0 12px;
+  }
+  .email-textarea {
+    height: 520px !important;
+    min-height: 520px !important;
+    padding: 14px;
+    line-height: 1.58;
+    resize: vertical;
+    display: block;
+    overflow: auto;
+  }
+  .email-input:focus,
+  .email-textarea:focus {
+    border-color: rgba(96, 165, 250, .58);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .13);
+  }
+  .email-compose-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px;
+    align-items: start;
+  }
+  .email-compose-card {
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 0 0, rgba(59, 130, 246, .08), transparent 30%),
+      rgba(15, 23, 42, .28);
+    padding: 18px;
+    min-height: 665px;
+  }
+  .email-editor {
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 8px;
+    overflow: visible;
+    background: rgba(15, 23, 42, .35);
+    display: flex;
+    flex-direction: column;
+    min-height: 575px;
+  }
+  .email-toolbar {
+    min-height: 44px;
+    padding: 7px 8px;
+    border-bottom: 1px solid rgba(148, 163, 184, .14);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: rgba(15, 23, 42, .34);
+  }
+  .email-tool,
+  .email-style-select {
+    height: 31px;
+    border-radius: 7px;
+    border: 1px solid rgba(148, 163, 184, .14);
+    background: rgba(15, 23, 42, .55);
+    color: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 9px;
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .email-tool.icon {
+    width: 32px;
+    padding: 0;
+  }
+  .email-tool:hover {
+    border-color: rgba(96, 165, 250, .42);
+    background: rgba(37, 99, 235, .10);
+  }
+  .email-side-card,
+  .email-supported,
+  .email-preview,
+  .email-recipients,
+  .email-confirm {
+    border: 1px solid rgba(148, 163, 184, .16);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, .36);
+  }
+  .email-side-card {
+    padding: 16px;
+    min-height: 100%;
+  }
+  .email-side-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  .email-side-help {
+    color: #9fb0c8;
+    font-size: 12px;
+    margin-bottom: 13px;
+  }
+  .email-insert-list {
+    display: grid;
+    gap: 8px;
+  }
+  .email-insert {
+    min-height: 36px;
+    width: 100%;
+    border-radius: 7px;
+    border: 1px solid rgba(148, 163, 184, .13);
+    background: rgba(15, 23, 42, .46);
+    color: #c7d2fe;
+    text-align: left;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 650;
+  }
+  .email-insert:hover {
+    border-color: rgba(99, 102, 241, .42);
+    background: rgba(79, 70, 229, .12);
+  }
+  .email-supported {
+    margin-top: 14px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .email-supported-title {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 7px;
+  }
+  .email-supported-help {
+    color: #9fb0c8;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .email-chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .email-chip {
+    border: 0;
+    border-radius: 8px;
+    min-height: 30px;
+    padding: 0 10px;
+    color: #c7d2fe;
+    background: rgba(79, 70, 229, .2);
+    font-size: 11.5px;
+    font-weight: 650;
+  }
+  .email-section {
+    display: none;
+  }
+  .email-section.active {
+    display: block;
+    animation: emailIn .2s ease both;
+  }
+  .email-preview,
+  .email-recipients,
+  .email-confirm {
+    padding: 18px;
+    min-height: 360px;
+  }
+  .email-preview-subject {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 650;
+    margin-bottom: 14px;
+  }
+  .email-preview-body {
+    color: #dbeafe;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    background: rgba(15, 23, 42, .45);
+    border: 1px solid rgba(148, 163, 184, .13);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .email-recipient-list {
+    display: grid;
+    gap: 9px;
+    max-height: 420px;
+    overflow: auto;
+    padding-right: 4px;
+  }
+  .email-recipient-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(150px, .7fr) 90px;
+    gap: 12px;
+    align-items: center;
+    border: 1px solid rgba(148, 163, 184, .12);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, .42);
+    padding: 11px 12px;
+  }
+  .email-recipient-name {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .email-recipient-meta {
+    color: #98a9c2;
+    font-size: 11.5px;
+    margin-top: 3px;
+    overflow-wrap: anywhere;
+  }
+  .email-recipient-status {
+    justify-self: end;
+    border-radius: 999px;
+    color: #93c5fd;
+    background: rgba(37, 99, 235, .14);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 9px;
+    white-space: nowrap;
+  }
+  .email-confirm-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .email-confirm-card {
+    border: 1px solid rgba(148, 163, 184, .12);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, .42);
+    padding: 14px;
+  }
+  .email-confirm-label {
+    color: #9fb0c8;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 8px;
+  }
+  .email-confirm-value {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .email-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+    border: 1px solid rgba(148, 163, 184, .13);
+    border-radius: 8px;
+    background: rgba(15, 23, 42, .24);
+    padding: 12px;
+  }
+  .email-btn {
+    height: 38px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, .18);
+    background: rgba(15, 23, 42, .48);
+    color: #f8fafc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .email-btn.primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, .24);
+  }
+  .email-btn.outline {
+    color: #c7d2fe;
+    border-color: rgba(99, 102, 241, .42);
+  }
+  .email-btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+  }
+  .email-error {
+    color: #fb7185;
+    font-size: 12px;
+    margin-top: 7px;
+  }
+  .email-config-alert {
+    border: 1px solid rgba(251, 113, 133, .45);
+    background: rgba(127, 29, 29, .25);
+    color: #fecdd3;
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    line-height: 1.45;
+    margin-bottom: 18px;
+  }
+  .email-config-alert i {
+    color: #fb7185;
+    margin-top: 2px;
+  }
+  @keyframes emailIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 1180px) {
+    .email-head,
+    .email-compose-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 767px) {
+    .email-shell { padding: 16px; }
+    .email-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .email-step::after { display: none; }
+    .email-recipient-row,
+    .email-confirm-grid {
+      grid-template-columns: 1fr;
+    }
+    .email-recipient-status { justify-self: start; }
+    .email-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+</style>
+
+<div class="email-page">
+  <div class="email-crumb">
+    <a href="{% url 'hr:placement_dashboard' %}">Placement</a>
+    <i class="bi bi-chevron-right"></i>
+    <a href="{% url 'hr:placement_drive_list' %}">Drives</a>
+    <i class="bi bi-chevron-right"></i>
+    <a href="{% url 'hr:placement_drive_detail' drive.id %}">{{ drive.company.name|default:"Drive" }}</a>
+    <i class="bi bi-chevron-right"></i>
+    <span>Email</span>
+    <i class="bi bi-chevron-right"></i>
+    <span>{{ email_type|title }}</span>
+  </div>
+
+  <form method="post" class="email-shell" id="placementEmailForm">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="emailAction" value="send">
+
+    <div class="email-head">
+      <div class="email-title-wrap">
+        <div class="email-icon"><i class="bi bi-envelope"></i></div>
+        <div>
+          <h1 class="email-title">Create Email Template</h1>
+          <p class="email-subtitle">Design and send placement email to {{ recipient_count }} eligible student{{ recipient_count|pluralize }}</p>
+        </div>
+      </div>
+      <div class="email-stepper" aria-label="Email workflow">
+        <button type="button" class="email-step active" data-step-button="1"><span class="email-step-no">1</span><span>Compose</span></button>
+        <button type="button" class="email-step" data-step-button="2"><span class="email-step-no">2</span><span>Preview</span></button>
+        <button type="button" class="email-step" data-step-button="3"><span class="email-step-no">3</span><span>Recipients</span></button>
+        <button type="button" class="email-step" data-step-button="4"><span class="email-step-no">4</span><span>Confirm</span></button>
+      </div>
+    </div>
+
+    {{ form.non_field_errors }}
+
+    {% if email_config_error %}
+      <div class="email-config-alert">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>
+          <div>Email delivery is not configured for real inboxes.</div>
+          <div>{{ email_config_error }}</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <section class="email-section active" data-step-panel="1">
+      <div class="email-compose-grid">
+        <div class="email-compose-card">
+          <div class="email-field">
+            <label class="email-label" for="{{ form.subject.id_for_label }}">Email Subject <span class="email-required">*</span></label>
+            <input class="email-input" type="text" name="{{ form.subject.name }}" id="{{ form.subject.id_for_label }}" value="{{ form.subject.value|default_if_none:'' }}" maxlength="220" required>
+            <div class="email-error">{{ form.subject.errors }}</div>
+          </div>
+
+          <div class="email-field mb-0">
+            <label class="email-label" for="{{ form.body.id_for_label }}">Email Body <span class="email-required">*</span></label>
+            <div class="email-editor">
+              <div class="email-toolbar">
+                <select class="email-style-select" aria-label="Text style">
+                  <option>Paragraph</option>
+                  <option>Heading</option>
+                </select>
+                <button type="button" class="email-tool icon" data-wrap="**" title="Bold"><i class="bi bi-type-bold"></i></button>
+                <button type="button" class="email-tool icon" data-wrap="*" title="Italic"><i class="bi bi-type-italic"></i></button>
+                <button type="button" class="email-tool icon" data-wrap="__" title="Underline"><i class="bi bi-type-underline"></i></button>
+                <button type="button" class="email-tool icon" data-prefix="- " title="Bullet list"><i class="bi bi-list-ul"></i></button>
+                <button type="button" class="email-tool icon" data-prefix="1. " title="Number list"><i class="bi bi-list-ol"></i></button>
+                <button type="button" class="email-tool icon" data-field="{% templatetag openvariable %}resume_upload_link{% templatetag closevariable %}" title="Resume link"><i class="bi bi-link-45deg"></i></button>
+                <button type="button" class="email-tool icon" data-field="{% templatetag openvariable %}company_name{% templatetag closevariable %}" title="Company"><i class="bi bi-buildings"></i></button>
+                <button type="button" class="email-tool icon" data-field="{% templatetag openvariable %}job_role{% templatetag closevariable %}" title="Job role"><i class="bi bi-code"></i></button>
+                <button type="button" class="email-tool" data-field="{% templatetag openvariable %}student_name{% templatetag closevariable %}"><i class="bi bi-braces"></i>Insert Field</button>
+              </div>
+              <textarea class="email-textarea" name="{{ form.body.name }}" id="{{ form.body.id_for_label }}" rows="22" style="height:520px;min-height:520px;" required>{{ form.body.value|default_if_none:'' }}</textarea>
+            </div>
+            <div class="email-error">{{ form.body.errors }}</div>
+          </div>
+
+        </div>
+
+        <aside class="email-side-card">
+          <div class="email-side-title">Insert Fields</div>
+          <div class="email-side-help">Click any field to insert in content</div>
+          <div class="email-insert-list">
+            <button type="button" class="email-insert" data-field="{% templatetag openvariable %}student_name{% templatetag closevariable %}"><i class="bi bi-braces me-2"></i>{% templatetag openvariable %}student_name{% templatetag closevariable %}</button>
+            <button type="button" class="email-insert" data-field="{% templatetag openvariable %}company_name{% templatetag closevariable %}"><i class="bi bi-braces me-2"></i>{% templatetag openvariable %}company_name{% templatetag closevariable %}</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="email-section" data-step-panel="2">
+      <div class="email-preview">
+        <div class="email-preview-subject" id="emailPreviewSubject"></div>
+        <div class="email-preview-body" id="emailPreviewBody">{{ preview_body }}</div>
+      </div>
+    </section>
+
+    <section class="email-section" data-step-panel="3">
+      <div class="email-recipients">
+        <div class="email-side-title mb-2">Recipients</div>
+        <div class="email-side-help">{{ recipient_count }} student{{ recipient_count|pluralize }} will receive this email.</div>
+        <div class="email-recipient-list">
+          {% for recipient in recipient_rows %}
+            <div class="email-recipient-row">
+              <div>
+                <div class="email-recipient-name">{{ recipient.name }}</div>
+                <div class="email-recipient-meta">{{ recipient.email|default:"Missing email" }}</div>
+              </div>
+              <div class="email-recipient-meta">{{ recipient.course|default:"Course not set" }}</div>
+              <div class="email-recipient-status">{{ recipient.status }}</div>
+            </div>
+          {% empty %}
+            <div class="email-preview-body">No recipients found for this email type.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="email-section" data-step-panel="4">
+      <div class="email-confirm">
+        <div class="email-confirm-grid">
+          <div class="email-confirm-card">
+            <div class="email-confirm-label">Company</div>
+            <div class="email-confirm-value">{{ drive.company.name|default:"-" }}</div>
+          </div>
+          <div class="email-confirm-card">
+            <div class="email-confirm-label">Job Role</div>
+            <div class="email-confirm-value">{{ drive.job_role|default:"-" }}</div>
+          </div>
+          <div class="email-confirm-card">
+            <div class="email-confirm-label">Recipients</div>
+            <div class="email-confirm-value">{{ recipient_count }}</div>
+          </div>
+        </div>
+        <div class="email-preview-subject" id="emailConfirmSubject"></div>
+        <div class="email-preview-body" id="emailConfirmBody"></div>
+      </div>
+    </section>
+
+    <div class="email-actions">
+      <a class="email-btn" href="{% url 'hr:placement_drive_detail' drive.id %}">Cancel</a>
+      <button class="email-btn outline" type="submit" data-draft-submit><i class="bi bi-floppy"></i>Save as Draft</button>
+      <button class="email-btn" type="button" data-prev-step style="display:none;"><i class="bi bi-chevron-left"></i>Back</button>
+      <button class="email-btn primary" type="button" data-next-step>Next: Preview <i class="bi bi-chevron-right"></i></button>
+      <button class="email-btn primary" type="submit" data-send-submit style="display:none;" {% if not recipient_count %}disabled{% endif %}><i class="bi bi-send"></i>Send Email</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (() => {
+    const form = document.getElementById('placementEmailForm');
+    const actionInput = document.getElementById('emailAction');
+    const subject = document.getElementById('{{ form.subject.id_for_label }}');
+    const body = document.getElementById('{{ form.body.id_for_label }}');
+    const panels = [...document.querySelectorAll('[data-step-panel]')];
+    const stepButtons = [...document.querySelectorAll('[data-step-button]')];
+    const next = document.querySelector('[data-next-step]');
+    const prev = document.querySelector('[data-prev-step]');
+    const send = document.querySelector('[data-send-submit]');
+    const draft = document.querySelector('[data-draft-submit]');
+    let step = 1;
+
+    const labels = {1: 'Next: Preview', 2: 'Next: Recipients', 3: 'Next: Confirm'};
+    const replacements = {
+      '{% templatetag openvariable %}student_name{% templatetag closevariable %}': '{{ recipient_rows.0.name|default:"Student Name"|escapejs }}',
+      '{% templatetag openvariable %}company_name{% templatetag closevariable %}': '{{ drive.company.name|default:"Company"|escapejs }}',
+      '{% templatetag openvariable %}job_role{% templatetag closevariable %}': '{{ drive.job_role|default:"Job Role"|escapejs }}',
+      '{% templatetag openvariable %}resume_upload_link{% templatetag closevariable %}': 'https://example.com/resume-upload-link',
+      '{% templatetag openvariable %}final_status{% templatetag closevariable %}': 'Selected',
+      '{% templatetag openvariable %}offered_role{% templatetag closevariable %}': '{{ drive.job_role|default:"Offered Role"|escapejs }}',
+      '{% templatetag openvariable %}offered_ctc{% templatetag closevariable %}': 'As per company policy'
+    };
+
+    function renderText(text) {
+      let output = text || '';
+      Object.entries(replacements).forEach(([key, value]) => {
+        output = output.split(key).join(value);
+      });
+      return output;
+    }
+
+    function refreshPreview() {
+      document.getElementById('emailPreviewSubject').textContent = subject.value || 'Email subject';
+      document.getElementById('emailPreviewBody').textContent = renderText(body.value);
+      document.getElementById('emailConfirmSubject').textContent = subject.value || 'Email subject';
+      document.getElementById('emailConfirmBody').textContent = renderText(body.value);
+    }
+
+    function setStep(nextStep) {
+      step = Math.max(1, Math.min(4, nextStep));
+      panels.forEach(panel => panel.classList.toggle('active', Number(panel.dataset.stepPanel) === step));
+      stepButtons.forEach(button => button.classList.toggle('active', Number(button.dataset.stepButton) === step));
+      prev.style.display = step === 1 ? 'none' : 'inline-flex';
+      next.style.display = step === 4 ? 'none' : 'inline-flex';
+      send.style.display = step === 4 ? 'inline-flex' : 'none';
+      next.innerHTML = `${labels[step] || 'Next'} <i class="bi bi-chevron-right"></i>`;
+      refreshPreview();
+    }
+
+    function insertAtCursor(text) {
+      body.focus();
+      const start = body.selectionStart || 0;
+      const end = body.selectionEnd || 0;
+      body.value = `${body.value.slice(0, start)}${text}${body.value.slice(end)}`;
+      body.selectionStart = body.selectionEnd = start + text.length;
+      refreshPreview();
+    }
+
+    document.querySelectorAll('[data-field]').forEach(button => {
+      button.addEventListener('click', () => insertAtCursor(button.dataset.field));
+    });
+
+    document.querySelectorAll('[data-wrap]').forEach(button => {
+      button.addEventListener('click', () => {
+        const wrap = button.dataset.wrap;
+        const start = body.selectionStart || 0;
+        const end = body.selectionEnd || 0;
+        const selected = body.value.slice(start, end) || 'text';
+        body.value = `${body.value.slice(0, start)}${wrap}${selected}${wrap}${body.value.slice(end)}`;
+        body.focus();
+        body.selectionStart = start + wrap.length;
+        body.selectionEnd = start + wrap.length + selected.length;
+        refreshPreview();
+      });
+    });
+
+    document.querySelectorAll('[data-prefix]').forEach(button => {
+      button.addEventListener('click', () => insertAtCursor(`\n${button.dataset.prefix}`));
+    });
+
+    stepButtons.forEach(button => button.addEventListener('click', () => setStep(Number(button.dataset.stepButton))));
+    next.addEventListener('click', () => setStep(step + 1));
+    prev.addEventListener('click', () => setStep(step - 1));
+    subject.addEventListener('input', refreshPreview);
+    body.addEventListener('input', refreshPreview);
+
+    draft.addEventListener('click', () => {
+      actionInput.value = 'draft';
+    });
+    send.addEventListener('click', () => {
+      actionInput.value = 'send';
+    });
+    form.addEventListener('submit', () => {
+      if (document.activeElement !== draft) actionInput.value = 'send';
+    });
+    setStep(1);
+  })();
+</script>
+{% endblock %}
