@@ -26,9 +26,8 @@ def center_list(request):
                 if not center.code:
                     center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
                 center.save()
-                create_center_certificate_for_center(center, created_by=request.user)
             messages.success(request, 'Center created successfully.')
-            return redirect('center_list')
+            return redirect('pending_centers')
 
     query = request.GET.get('q', '').strip()
     qs = Center.objects.all().order_by('-id')
@@ -47,6 +46,20 @@ def center_list(request):
 
 @admin_required
 def pending_centers(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        center_id = request.POST.get('center_id')
+        if action == 'approve' and center_id:
+            center = get_object_or_404(Center, id=center_id)
+            if hasattr(center, 'center_user') and center.center_user:
+                center.center_user.is_active = True
+                center.center_user.save()
+                create_center_certificate_for_center(center, created_by=request.user)
+                messages.success(request, f"{center.name} has been approved.")
+            else:
+                messages.error(request, "Error: User account for this center not found.")
+            return redirect('pending_centers')
+
     query = request.GET.get('q', '').strip()
     name_filter = request.GET.get('name', '').strip()
     state_filter = request.GET.get('state', '').strip()
@@ -78,7 +91,7 @@ def center_info_list(request):
     query = request.GET.get('q', '').strip()
     
     # Base queryset for all active centers (not soft-deleted)
-    qs = Center.objects.prefetch_related('course_assignments').order_by('-id')
+    qs = Center.objects.filter(center_user__is_active=True).prefetch_related('course_assignments').order_by('-id')
     
     if query:
         qs = qs.filter(name__icontains=query)
@@ -151,24 +164,24 @@ def center_create(request):
                 if not center.code:
                     center.code = f"CTR-{uuid.uuid4().hex[:6].upper()}"
                 center.save()
-
-                create_center_certificate_for_center(center, created_by=request.user)
                 
                 # Create user for the center
                 email = form.cleaned_data.get('email')
                 password = form.cleaned_data.get('password')
                 
                 # Use email as username if not provided
-                User.objects.create_user(
+                user = User.objects.create_user(
                     username=email,
                     email=email,
                     password=password,
                     role='center',
                     center=center
                 )
+                user.is_active = False
+                user.save()
             
             messages.success(request, 'Center created successfully.')
-            return redirect('center_list')
+            return redirect('pending_centers')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -269,6 +282,34 @@ def center_delete(request, pk):
 def center_dashboard(request):
     if request.user.role != 'center':
         return redirect('login')
+        
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.GET.get('action') == 'admission_trend':
+        from django.http import JsonResponse
+        from django.db.models.functions import ExtractMonth, Cast
+        from django.db.models import Count, DateField
+        from apps.students.models import StudentAdmission
+        import datetime
+        
+        year_str = request.GET.get('year')
+        try:
+            year = int(year_str)
+        except (TypeError, ValueError):
+            year = datetime.date.today().year
+
+        qs = StudentAdmission.objects.filter(center=request.user.center, created_at__year=year)
+        trend = qs.annotate(
+            created_date=Cast('created_at', DateField())
+        ).annotate(
+            month=ExtractMonth('created_date')
+        ).values('month').annotate(count=Count('id')).order_by('month')
+        
+        data = [0] * 12
+        for item in trend:
+            if item['month']:
+                month_index = item['month'] - 1
+                data[month_index] = item['count']
+                
+        return JsonResponse({'data': data})
     
     from apps.batches.models import Batch
     from apps.students.models import StudentProfile
@@ -357,7 +398,17 @@ def center_dashboard(request):
     total_admit_cards = AdmitCard.objects.filter(student__center=center).count()
     total_results = Result.objects.filter(student__center=center).count()
     total_id_cards = approved_admissions
-    total_fee_collection = FeePayment.objects.filter(student__batch__center=center).aggregate(
+    admission_emails = admissions.exclude(email__isnull=True).exclude(email='').values_list('email', flat=True)
+    admission_phones = admissions.exclude(whatsapp_no__isnull=True).exclude(whatsapp_no='').values_list('whatsapp_no', flat=True)
+    center_student_filter = (
+        Q(student__batch__center=center) |
+        Q(student__user_id__in=admissions.exclude(user__isnull=True).values_list('user_id', flat=True)) |
+        Q(student__user__username__in=admissions.values_list('enrollment_no', flat=True)) |
+        Q(student__email__in=admission_emails) |
+        Q(student__phone__in=admission_phones) |
+        Q(student__full_name__in=admissions.values_list('student_name', flat=True))
+    )
+    total_fee_collection = FeePayment.objects.filter(center_student_filter).aggregate(
         total=Coalesce(Sum('amount'), Value(Decimal('0.00')), output_field=DecimalField(max_digits=12, decimal_places=2))
     )['total']
     total_exams = Exam.objects.filter(
@@ -385,7 +436,7 @@ def center_dashboard(request):
 
     dashboard_cards = [
         {'label': 'Active Students', 'value': active_students, 'icon': 'bi-mortarboard-fill', 'class': 'bg-g-purple', 'url': reverse('student_list_by_center'), 'action': 'View List'},
-        {'label': 'Passout Students', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-teal', 'url': reverse('passout_student_list'), 'action': 'View List'},
+        {'label': 'Passout Students', 'value': passout_students, 'icon': 'bi-award-fill', 'class': 'bg-g-cyan', 'url': reverse('passout_student_list'), 'action': 'View List'},
         {'label': 'Course Categories', 'value': total_course_categories, 'icon': 'bi-tags-fill', 'class': 'bg-g-green', 'url': reverse('course_list'), 'action': 'View Courses'},
         {'label': 'Assigned Courses', 'value': total_assigned_courses, 'icon': 'bi-journal-bookmark-fill', 'class': 'bg-g-pink', 'url': reverse('course_list'), 'action': 'View Courses'},
         {'label': 'Admissions', 'value': total_admissions, 'icon': 'bi-person-plus-fill', 'class': 'bg-g-blue', 'url': reverse('student_list_by_center'), 'action': 'View List'},
@@ -526,6 +577,7 @@ def center_profile(request, pk):
         .prefetch_related('admissions', 'course_assignments'),
         pk=pk
     )
+    is_admin = getattr(request.user, 'role', None) == 'admin'
     total_students = center.admissions.count()
     total_courses = center.course_assignments.count()
     registration_date = center.center_user.date_joined if hasattr(center, 'center_user') and center.center_user else None
@@ -568,6 +620,14 @@ def center_profile(request, pk):
 
 @admin_required
 def deleted_centers(request):
+    if request.method == 'POST' and request.POST.get('action') == 'hard_delete':
+        center_id = request.POST.get('center_id')
+        if center_id:
+            center = get_object_or_404(Center.all_objects, pk=center_id)
+            center.hard_delete()
+            messages.success(request, f"Center '{center.name}' has been permanently deleted.")
+            return redirect('deleted_centers')
+
     query = request.GET.get('q', '').strip()
     
     # Base queryset for all soft-deleted centers
@@ -607,6 +667,8 @@ def _handle_center_cert_list_and_csv(request, is_center):
     qs = CenterCertificate.objects.select_related('center', 'created_by').all()
     if is_center:
         qs = qs.filter(center=request.user.center)
+    else:
+        qs = qs.filter(center__center_user__is_active=True)
 
     query = request.GET.get('q', '').strip()
     if query:

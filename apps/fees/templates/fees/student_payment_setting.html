@@ -14,77 +14,68 @@
       <ol class="breadcrumb mb-0" style="font-size:0.82rem;">
         <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none" style="color:#888;">Home</a></li>
         <li class="breadcrumb-item" style="color:#888;">Payment</li>
-        <li class="breadcrumb-item active" style="color:#888;">Student Payment Setting</li>
+        <li class="breadcrumb-item active" style="color:#fff;">Student-payment-setting</li>
       </ol>
     </nav>
   </div>
 
-  <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 24px;">
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-3 flex-wrap gap-3">
-      <h5 class="fw-bold mb-0 text-white">Student Payment Setting</h5>
-      <form method="POST" class="m-0">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="sync">
-        <button type="submit" class="btn btn-outline-secondary px-4 py-2 rounded-3 text-white-50" style="border-color: rgba(255,255,255,0.15);">
-          <i class="bi bi-arrow-repeat me-1"></i> Sync Fee Data
-        </button>
-      </form>
+  <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid #3b82f6; border-radius: 8px; padding: 24px;">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 flex-wrap gap-3" style="border-color: rgba(255,255,255,0.1) !important;">
+      <h6 class="fw-bold mb-0 text-white">Student Fix Amount Setting</h6>
+      <i class="bi bi-chevron-up text-muted"></i>
     </div>
 
     <form method="POST" id="studentPaymentSettingForm" novalidate>
       {% csrf_token %}
 
       <div class="table-responsive">
-        <table class="table table-examly table-hover align-middle mb-0">
+        <table class="table table-borderless align-middle mb-0">
           <thead>
-            <tr style="border-bottom: 2px solid rgba(255,255,255,0.15);">
-              <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem;">#</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Title</th>
-              <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Amount</th>
-              <th class="pe-4 text-uppercase text-muted" style="font-size: 0.8rem;">Status</th>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <th class="text-white" style="font-size: 0.9rem; font-weight: 600; width: 50px;">#. <i class="bi bi-chevron-down ms-1" style="font-size: 0.7rem; color: #888;"></i></th>
+              <th class="text-white" style="font-size: 0.9rem; font-weight: 600;">Title</th>
+              <th class="text-white" style="font-size: 0.9rem; font-weight: 600; width: 30%;">Amount</th>
+              <th class="text-white" style="font-size: 0.9rem; font-weight: 600; width: 25%;">Status</th>
             </tr>
           </thead>
           <tbody>
             {% for setting, form in rows %}
-            <tr style="border-color: rgba(255,255,255,0.05) !important;">
-              <td class="ps-4 text-white-50" style="font-size: 0.9rem;">{{ forloop.counter }}</td>
-              <td class="fw-semibold text-white" style="font-size: 0.9rem;">{{ setting.title }}</td>
-              <td style="max-width: 220px;">
-                <div class="input-group input-group-sm">
-                  <span class="input-group-text fw-bold" style="background: var(--erp-bg-input); border-color: var(--erp-border-input); color:#aaa;">₹</span>
-                  <input type="number"
-                         name="amount_{{ setting.pk }}"
-                         class="form-control dark-input text-white student-payment-amount"
-                         value="{{ form.amount.value|default_if_none:'' }}"
-                         min="0"
-                         step="0.01"
-                         required
-                         style="background-color: var(--erp-bg-input); border: 1px solid var(--erp-border-input); border-radius: 0 6px 6px 0;">
-                </div>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <td class="text-white" style="font-size: 0.9rem;">{{ forloop.counter }}.</td>
+              <td class="fw-semibold text-white" style="font-size: 0.9rem;">
+                {{ setting.title }}
+                <span class="badge ms-2" style="background-color: #8b5cf6; color: #fff; font-size: 0.7rem; padding: 0.3rem 0.5rem; border-radius: 4px; font-weight: 500;">One Time</span>
+              </td>
+              <td>
+                <input type="number"
+                       name="amount_{{ setting.pk }}"
+                       class="form-control text-white student-payment-amount shadow-none"
+                       value="{{ form.amount.value|default_if_none:''|floatformat:0 }}"
+                       min="0"
+                       step="1"
+                       required
+                       style="background-color: transparent; border: 1px solid #3b82f6; border-radius: 6px; font-size: 0.9rem; padding: 0.5rem 0.75rem;">
                 {% if form.amount.errors %}
                   <div class="text-danger small mt-1">{{ form.amount.errors.0 }}</div>
                 {% endif %}
               </td>
-              <td class="pe-4">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="form-check form-switch m-0">
-                    <input class="form-check-input student-payment-status"
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="form-check form-switch m-0 custom-switch">
+                    <input class="form-check-input shadow-none"
                            type="checkbox"
                            role="switch"
                            id="status_{{ setting.pk }}"
                            name="is_visible_{{ setting.pk }}"
                            {% if form.is_visible.value %}checked{% endif %}>
                   </div>
-                  <span class="badge rounded-pill px-3 py-2 status-label {% if form.is_visible.value %}bg-success bg-opacity-10 text-success{% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}" style="font-size: 0.75rem; font-weight: 500;">
-                    {% if form.is_visible.value %}Show{% else %}Hide{% endif %}
-                  </span>
+                  <span class="text-muted" style="font-size: 0.85rem;">Show / Hide</span>
                 </div>
               </td>
             </tr>
             {% empty %}
             <tr>
               <td colspan="4" class="text-center py-5 text-muted">
-                <i class="bi bi-wallet2 text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
                 No student payment settings found. Use Sync Fee Data.
               </td>
             </tr>
@@ -93,9 +84,12 @@
         </table>
       </div>
 
-      <div class="d-flex justify-content-end gap-2 border-top border-secondary pt-3 mt-4">
-        <button type="submit" id="saveStudentPaymentSettings" class="btn btn-publish px-4 py-2 rounded-3">
-          <i class="bi bi-save me-1"></i> Save
+      <div class="d-flex align-items-center gap-2 pt-4 mt-2">
+        <button type="submit" id="saveStudentPaymentSettings" class="btn px-4 py-2 rounded-2" style="background-color: transparent; border: 1px dashed #10b981; color: #10b981; font-weight: 500;">
+          <i class="bi bi-bookmark-fill me-1"></i> Save
+        </button>
+        <button type="submit" name="action" value="sync" class="btn px-4 py-2 rounded-2 text-white" style="background-color: #8b5cf6; border: none; font-weight: 500;">
+          Sync Fee Data
         </button>
       </div>
     </form>
@@ -110,38 +104,32 @@
     border: 1px solid rgba(255,255,255,0.1) !important;
     color: #fff !important;
   }
-  .btn-publish {
-    background-color: #10b981 !important;
+  
+  /* Custom Switch Styling to match image */
+  .custom-switch .form-check-input {
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: #3f3f46; /* Dark gray for unchecked */
     border: none;
-    color: #fff;
-    transition: all 0.2s ease-in-out;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    transition: background-color 0.15s ease-in-out;
   }
-  .btn-publish:hover {
-    background-color: #059669 !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  .custom-switch .form-check-input:checked {
+    background-color: #22c55e; /* Bright green for checked */
   }
-  .student-payment-status {
-    cursor: pointer;
+  .custom-switch .form-check-input:focus {
+    box-shadow: none;
+    border-color: transparent;
   }
 </style>
 
 <script>
 $(function() {
-  $('.student-payment-status').on('change', function() {
-    const label = $(this).closest('td').find('.status-label');
-    if (this.checked) {
-      label.text('Show')
-        .removeClass('bg-secondary text-secondary')
-        .addClass('bg-success text-success');
-    } else {
-      label.text('Hide')
-        .removeClass('bg-success text-success')
-        .addClass('bg-secondary text-secondary');
-    }
-  });
-
   $('#studentPaymentSettingForm').on('submit', function(e) {
+    if (e.originalEvent && e.originalEvent.submitter && e.originalEvent.submitter.value === 'sync') {
+        return; // skip validation on sync
+    }
+    
     let hasError = false;
     $('.student-payment-amount').each(function() {
       const value = $(this).val().trim();
@@ -149,8 +137,10 @@ $(function() {
       if (value === '' || Number.isNaN(numberValue) || numberValue < 0) {
         hasError = true;
         $(this).addClass('is-invalid');
+        $(this).css('border-color', '#dc3545');
       } else {
         $(this).removeClass('is-invalid');
+        $(this).css('border-color', '#3b82f6');
       }
     });
 

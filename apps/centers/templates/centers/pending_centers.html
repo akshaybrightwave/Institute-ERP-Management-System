@@ -8,7 +8,7 @@
 
   <!-- Breadcrumbs & Title -->
   <div class="mb-4">
-    <h2 class="fw-bold text-white mb-1"><i class="bi bi-building text-warning me-2"></i>List Pedning Center(s)</h2>
+    <h2 class="fw-bold text-white mb-1"><i class="bi bi-building text-warning me-2"></i>List Pending Center(s)</h2>
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb mb-0" style="font-size: 0.85rem;">
         <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none text-muted">Home</a></li>
@@ -23,7 +23,7 @@
       <!-- TABLE -->
       <div class="qa-card" style="background-color: var(--erp-bg-card); border: 1px solid var(--erp-border-color); border-radius: 12px; padding: 1.5rem;">
         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
-          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">List Center(s)</h6>
+          <h6 class="fw-bold mb-0" style="color: #f6f4ff;">List Pending Center(s)</h6>
           <i class="bi bi-chevron-up text-muted"></i>
         </div>
         
@@ -69,7 +69,7 @@
               <tbody>
                 {% for center in page_obj %}
                 <tr>
-                  <td class="ps-4 fw-semibold text-white">#{{ center.id }}</td>
+                  <td class="ps-4 fw-semibold text-white">{{ center.code|default:"-" }}</td>
                   <td class="fw-semibold text-white">{{ center.name }}</td>
                   <td class="text-white-50">{{ center.owner_name|default:"-" }}</td>
                   <td class="text-white-50">{{ center.email|default:"-" }}</td>
@@ -77,16 +77,17 @@
                   <td class="text-white-50 text-truncate" style="max-width: 200px;">{{ center.address|default:"-" }}</td>
                   <td class="pe-4 text-end">
                     <div class="d-flex gap-2 justify-content-end">
-                      <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-2" title="View"><i class="bi bi-eye"></i></button>
-                      <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2" title="Approve"><i class="bi bi-check-circle"></i></button>
-                      <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-2" title="Reject"><i class="bi bi-x-circle"></i></button>
-                      <button type="button"
-                              class="btn btn-sm btn-action-edit btn-edit-center rounded-pill px-2"
-                              data-pk="{{ center.pk }}"
-                              data-url="{% url 'center_edit' center.pk %}"
-                              title="Edit">
-                        <i class="bi bi-pencil-square"></i>
-                      </button>
+                      <a href="{% url 'center_profile' center.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-3 text-decoration-none" title="View">
+                        <i class="bi bi-eye me-1"></i> View
+                      </a>
+                      <form method="POST" class="d-inline m-0">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <input type="hidden" name="center_id" value="{{ center.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3" title="Approve">
+                          <i class="bi bi-check-circle me-1"></i> Approve
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>

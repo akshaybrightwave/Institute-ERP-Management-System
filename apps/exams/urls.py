@@ -32,9 +32,15 @@ urlpatterns = [
     path('reports/exams/student-performance/export/', views.export_student_performance_csv, name='export_student_performance_csv'),
     path('reports/exams/batch-performance/export/', views.export_batch_performance_csv, name='export_batch_performance_csv'),
     path('schedules/', views.exam_schedule_list, name='exam_schedule_list'),
+    path('schedules/ajax/subjects/', views.ajax_exam_schedule_subjects, name='ajax_exam_schedule_subjects'),
     path('schedules/<int:pk>/edit/', views.exam_schedule_edit, name='exam_schedule_edit'),
     path('schedules/<int:pk>/delete/', views.exam_schedule_delete, name='exam_schedule_delete'),
     
+    # Assign Exam To Center
+    path('assign/center/', views.assign_exam_center_list, name='assign_exam_center'),
+    path('ajax/get-exam-centers/', views.ajax_get_exam_centers, name='ajax_get_exam_centers'),
+    path('ajax/save-center-assignments/', views.ajax_save_center_assignments, name='ajax_save_center_assignments'),
+
     # Assign Exam To Student
     path('assign/student/', views.assign_exam_student_list, name='assign_exam_student'),
     path('ajax/get-eligible-students/', views.ajax_get_eligible_students, name='ajax_get_eligible_students'),
@@ -46,7 +52,6 @@ urlpatterns = [
 
     # ── Exam Centre — independent master module ──
     path('exam-centres/', views.exam_centre_list, name='exam_centre_list'),
-    path('centers/', views.exam_centre_list, name='center_list'),
     path('exam-centres/<int:pk>/edit/', views.exam_centre_edit, name='exam_centre_edit'),
     path('exam-centres/<int:pk>/delete/', views.exam_centre_delete, name='exam_centre_delete'),
 ]

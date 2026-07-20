@@ -13,13 +13,13 @@ from .forms import BatchForm
 
 def _center_manages_course(user_center, course):
     """Return True if the user's center has this course assigned via CenterCourseAssignment."""
-    return CenterCourseAssignment.objects.filter(center=user_center, course=course).exists()
+    return CenterCourseAssignment.objects.filter(center=user_center, course=course, is_active=True).exists()
 
 
 def _center_course_qs(user_center):
     """Queryset of courses assigned to the given center."""
     assigned_ids = CenterCourseAssignment.objects.filter(
-        center=user_center
+        center=user_center, is_active=True
     ).values_list('course_id', flat=True)
     return Course.objects.filter(id__in=assigned_ids)
 

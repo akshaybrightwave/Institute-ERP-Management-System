@@ -69,7 +69,6 @@
                 <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course</th>
                 <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course Duration</th>
                 <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Institute</th>
-                <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Result Type</th>
                 <th class="pe-4 text-end text-uppercase text-muted" style="font-size: 0.8rem;">Actions</th>
               </tr>
             </thead>
@@ -94,9 +93,6 @@
                 <td class="text-white-50" style="font-size: 0.9rem;">
                   {{ item.student.center.name|default:"—" }}
                 </td>
-                <td class="text-white-50" style="font-size: 0.9rem;">
-                  {{ item.result_type }}
-                </td>
                 <td class="pe-4 text-end">
                   <div class="d-flex gap-2 justify-content-end">
                     {% if is_admin or is_center %}
@@ -117,7 +113,7 @@
               </tr>
               {% empty %}
               <tr>
-                <td colspan="8" class="text-center py-5 text-muted">
+                <td colspan="7" class="text-center py-5 text-muted">
                   <i class="bi bi-file-earmark-x text-primary mb-2 d-block" style="font-size: 3rem; opacity: 0.5;"></i>
                   No results found.
                 </td>

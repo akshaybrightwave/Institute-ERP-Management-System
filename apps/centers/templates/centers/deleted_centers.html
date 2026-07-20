@@ -92,6 +92,14 @@
                          title="Restore">
                         <i class="bi bi-arrow-counterclockwise"></i>
                       </a>
+                      <a href="{% url 'deleted_centers' %}"
+                         class="btn btn-sm btn-action-delete btn-hard-delete-center rounded-1 px-2 text-white text-decoration-none"
+                         style="background-color: #dc3545; border-color: #dc3545;"
+                         data-name="{{ center.name }}"
+                         data-id="{{ center.id }}"
+                         title="Delete Permanently">
+                        <i class="bi bi-trash"></i>
+                      </a>
                     </div>
                   </td>
                 </tr>
@@ -201,6 +209,59 @@
           csrfInput.name = 'csrfmiddlewaretoken';
           csrfInput.value = csrfToken;
           form.appendChild(csrfInput);
+
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    });
+  });
+
+  // Hard Delete Action via SweetAlert
+  document.querySelectorAll('.btn-hard-delete-center').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const url = btn.getAttribute('href');
+      const name = btn.dataset.name;
+      const centerId = btn.dataset.id;
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Delete Permanently',
+        text: 'Are you sure you want to permanently delete "' + name + '"? This action cannot be undone.',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No, cancel',
+        customClass: {
+          popup: 'dark-modal-swal',
+          confirmButton: 'btn btn-danger px-4 py-2 me-2',
+          cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+        },
+        buttonsStyling: false
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = url;
+
+          const csrfToken = getCookie('csrftoken');
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'csrfmiddlewaretoken';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+
+          const actionInput = document.createElement('input');
+          actionInput.type = 'hidden';
+          actionInput.name = 'action';
+          actionInput.value = 'hard_delete';
+          form.appendChild(actionInput);
+
+          const idInput = document.createElement('input');
+          idInput.type = 'hidden';
+          idInput.name = 'center_id';
+          idInput.value = centerId;
+          form.appendChild(idInput);
 
           document.body.appendChild(form);
           form.submit();

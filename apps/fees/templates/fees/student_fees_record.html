@@ -6,7 +6,6 @@
 {% block erp_content %}
 <div class="student-fee-page">
   <header class="fee-page-title">
-    <h1>{{ admission.center.name|default:"Bengal Vocational College And Technical Foundation" }}</h1>
     <div class="fee-heading-line">
       <i class="bi bi-calendar2-week"></i>
       <div>
@@ -346,21 +345,11 @@
 <style>
   .student-fee-page {
     min-height: calc(100vh - var(--app-navbar-height, 68px));
-    color: #fff;
-    background:
-      linear-gradient(135deg, transparent 0 70%, rgba(76, 23, 61, 0.22) 70% 100%),
-      #111;
+    color: var(--erp-text-primary);
   }
 
   .fee-page-title {
-    margin-bottom: 20px;
-  }
-
-  .fee-page-title h1 {
-    color: #ff3030;
-    font-size: 24px;
-    font-weight: 900;
-    margin: 0 0 38px;
+    margin-bottom: 1.35rem;
   }
 
   .fee-heading-line {
@@ -370,67 +359,70 @@
   }
 
   .fee-heading-line > i {
-    color: #6670a4;
-    font-size: 20px;
+    color: #4a6cf7;
+    font-size: 1.35rem;
   }
 
   .fee-heading-line h2 {
-    font-size: 25px;
+    font-size: 1.9rem;
     margin: 0 0 3px;
-    font-weight: 900;
+    font-weight: 800;
+    line-height: 1.15;
   }
 
   .fee-heading-line nav {
-    color: #5d638e;
+    color: var(--erp-text-muted);
     display: flex;
     gap: 7px;
     align-items: center;
-    font-size: 13px;
+    font-size: 0.82rem;
   }
 
   .fee-heading-line nav a {
-    color: #5d638e;
+    color: var(--erp-text-muted);
     text-decoration: none;
   }
 
   .fee-heading-line nav strong {
-    color: #fff;
+    color: #c0c0e0;
   }
 
   .fee-profile-card,
   .fee-section-card {
-    background: #1a1a1a;
-    border: 1px solid #292b3d;
-    border-radius: 7px;
+    background: var(--erp-bg-card);
+    border: 1px solid var(--erp-border-color);
+    border-radius: 14px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
   }
 
   .fee-profile-card {
-    margin-bottom: 34px;
+    margin-bottom: 1.35rem;
     overflow: hidden;
   }
 
   .fee-profile-body {
-    padding: 29px 29px 0;
+    padding: 1.45rem 1.55rem 0;
     display: flex;
-    gap: 23px;
+    gap: 1.35rem;
     align-items: flex-start;
   }
 
   .student-photo-wrap img,
   .photo-fallback {
-    width: 125px;
-    height: 125px;
-    border-radius: 5px;
+    width: 96px;
+    height: 96px;
+    border-radius: 8px;
     object-fit: cover;
-    background: #eee;
+    background: #1e2332;
+    border: 1px solid var(--erp-border-input);
   }
 
   .photo-fallback {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #777;
-    font-size: 54px;
+    color: #9aa7c7;
+    font-size: 2.45rem;
   }
 
   .student-summary {
@@ -442,13 +434,13 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    margin: 2px 0 8px;
+    margin: 0.2rem 0 0.45rem;
   }
 
   .student-name-row h3 {
-    font-size: 20px;
+    font-size: 1.35rem;
     margin: 0;
-    font-weight: 900;
+    font-weight: 800;
   }
 
   .verified-blue {
@@ -465,9 +457,9 @@
     display: flex;
     gap: 18px;
     flex-wrap: wrap;
-    color: #62679b;
-    font-size: 14px;
-    margin-bottom: 29px;
+    color: var(--erp-text-muted);
+    font-size: 0.86rem;
+    margin-bottom: 1.5rem;
   }
 
   .student-meta i {
@@ -475,35 +467,37 @@
   }
 
   .fee-stat-grid {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-    max-width: 760px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(128px, 1fr));
+    gap: 0.55rem;
+    width: 100%;
+    max-width: none;
   }
 
   .fee-stat {
-    min-width: 134px;
-    min-height: 76px;
-    padding: 14px 38px 11px 13px;
-    border: 1px dashed #2d3048;
-    border-radius: 6px;
+    min-width: 0;
+    min-height: 72px;
+    padding: 0.8rem 2.55rem 0.75rem 0.9rem;
+    border: 1px solid var(--erp-border-color);
+    border-radius: 8px;
     position: relative;
-    background: #1a1a1a;
+    background: var(--erp-bg-input);
   }
 
   .fee-stat strong {
     display: block;
-    font-size: 20px;
+    font-size: 1.05rem;
     line-height: 1.15;
-    color: #fff;
+    color: var(--erp-text-primary);
     white-space: nowrap;
   }
 
   .fee-stat span {
     display: block;
-    color: #62679b;
-    margin-top: 5px;
-    font-size: 14px;
+    color: var(--erp-text-muted);
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
   }
 
   .fee-stat-danger {
@@ -531,37 +525,40 @@
     width: 34px;
     height: 34px;
     border: 0;
-    border-radius: 6px;
-    background: #35314f;
-    color: #8d88bd;
+    border-radius: 8px;
+    background: rgba(74, 108, 247, 0.16);
+    color: #b6b6ff;
   }
 
   .fee-tabs {
     display: flex;
-    gap: 30px;
-    padding: 28px 29px 0;
+    gap: 1.25rem;
+    padding: 1.3rem 1.55rem 0;
     overflow-x: auto;
+    border-top: 1px solid var(--erp-border-color);
+    margin-top: 1.35rem;
   }
 
   .fee-tabs a {
-    min-height: 48px;
+    min-height: 42px;
     display: inline-flex;
     align-items: flex-start;
-    gap: 9px;
-    color: #55598a;
+    gap: 0.45rem;
+    color: var(--erp-text-muted);
     text-decoration: none;
-    font-weight: 800;
+    font-weight: 700;
     border-bottom: 2px solid transparent;
     white-space: nowrap;
+    font-size: 0.88rem;
   }
 
   .fee-tabs a.active {
-    color: #1d8cff;
-    border-bottom-color: #1d8cff;
+    color: #4a9eff;
+    border-bottom-color: #4a9eff;
   }
 
   .fee-tabs i {
-    font-size: 19px;
+    font-size: 1rem;
   }
 
   .fee-section-card {
@@ -570,11 +567,11 @@
   }
 
   .fee-section-card h3 {
-    padding: 25px 30px;
+    padding: 1.25rem 1.55rem;
     margin: 0;
-    font-size: 18px;
-    font-weight: 900;
-    border-bottom: 1px solid #292b3d;
+    font-size: 1rem;
+    font-weight: 800;
+    border-bottom: 1px solid var(--erp-border-color);
   }
 
   .overview-table-wrap,
@@ -587,26 +584,29 @@
     width: 100%;
     min-width: 760px;
     border-collapse: collapse;
-    color: #fff;
+    color: var(--erp-text-primary);
   }
 
   .overview-table th,
   .overview-table td,
   .fee-ledger-table th,
   .fee-ledger-table td {
-    border: 1px solid #2b2d40;
-    padding: 12px 11px;
-    font-size: 14px;
+    border: 0;
+    border-bottom: 1px solid var(--erp-border-color);
+    padding: 0.9rem 0.8rem;
+    font-size: 0.88rem;
   }
 
   .overview-table th,
   .fee-ledger-table th {
-    font-weight: 900;
+    color: var(--erp-text-muted);
+    font-weight: 800;
     text-align: left;
+    text-transform: none;
   }
 
   .overview-table a {
-    color: #208fff;
+    color: #4a9eff;
     text-decoration: none;
   }
 
@@ -622,12 +622,12 @@
   }
 
   .fee-table-toolbar {
-    padding: 18px 27px 13px;
+    padding: 1rem 1.55rem;
     display: grid;
     grid-template-columns: auto minmax(240px, 1fr) auto;
     align-items: center;
-    gap: 22px;
-    border-bottom: 1px solid #292b3d;
+    gap: 1.25rem;
+    border-bottom: 1px solid var(--erp-border-color);
   }
 
   .show-form,
@@ -640,18 +640,18 @@
 
   .show-form label,
   .search-form label {
-    font-size: 14px;
-    color: #fff;
-    font-weight: 800;
+    font-size: 0.82rem;
+    color: var(--erp-text-muted);
+    font-weight: 700;
   }
 
   .show-form select,
   .search-form input {
     height: 35px;
-    background: #18182c;
-    border: 1px solid #18182c;
-    color: #dce4ff;
-    border-radius: 4px;
+    background: var(--erp-bg-input);
+    border: 1px solid var(--erp-border-input);
+    color: var(--erp-text-primary);
+    border-radius: 8px;
     padding: 0 10px;
   }
 
@@ -664,7 +664,7 @@
   }
 
   .export-actions {
-    background: #171719;
+    background: transparent;
     padding: 0 12px;
     min-height: 43px;
   }
@@ -672,8 +672,9 @@
   .export-actions button {
     border: 0;
     background: transparent;
-    color: #a8adbd;
+    color: #b6c2d2;
     padding: 0 12px;
+    font-weight: 600;
   }
 
   .student-table-name {
@@ -697,7 +698,7 @@
     gap: 8px;
     color: #32d484;
     border: 1px dashed #32d484;
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 10px 15px;
     text-decoration: none;
     font-weight: 900;
@@ -705,7 +706,7 @@
 
   .empty-ledger {
     text-align: center;
-    color: #fff;
+    color: var(--erp-text-primary);
     padding: 55px 10px !important;
     font-weight: 900;
   }
@@ -723,12 +724,12 @@
   }
 
   .fee-pagination {
-    padding: 16px 27px;
+    padding: 1rem 1.55rem;
     display: flex;
     justify-content: space-between;
     gap: 14px;
     flex-wrap: wrap;
-    color: #747b98;
+    color: var(--erp-text-muted);
     font-size: 13px;
   }
 
@@ -740,9 +741,9 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    color: #fff;
-    background: #161922;
-    border: 1px solid #2b2d40;
+    color: var(--erp-text-primary);
+    background: var(--erp-bg-input);
+    border: 1px solid var(--erp-border-input);
     text-decoration: none;
     margin-left: 4px;
   }
@@ -782,13 +783,13 @@
   }
 
   .password-head {
-    padding: 13px 30px;
+    padding: 0.9rem 1.55rem;
     min-height: 69px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    border-bottom: 1px solid #292b3d;
+    border-bottom: 1px solid var(--erp-border-color);
   }
 
   .password-head h3 {
@@ -806,7 +807,7 @@
   }
 
   .password-grid {
-    padding: 27px 30px;
+    padding: 1.55rem;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 19px;
@@ -814,8 +815,8 @@
 
   .password-field label {
     display: block;
-    color: #dce4ff;
-    font-weight: 900;
+    color: var(--erp-text-primary);
+    font-weight: 800;
     margin-bottom: 8px;
   }
 
@@ -828,9 +829,9 @@
     height: 45px;
     padding: 0 47px 0 12px;
     border: 0;
-    border-radius: 6px;
-    background: #18182c;
-    color: #fff;
+    border-radius: 8px;
+    background: var(--erp-bg-input);
+    color: var(--erp-text-primary);
   }
 
   .toggle-password {
@@ -858,7 +859,7 @@
   }
 
   .password-field small {
-    color: #62679b;
+    color: var(--erp-text-muted);
   }
 
   .field-error {
@@ -872,11 +873,9 @@
   }
 
   .notification-list {
-    padding: 27px 30px 39px;
+    padding: 1.55rem;
     min-height: 113px;
-    background:
-      linear-gradient(135deg, transparent 0 68%, rgba(77, 20, 64, 0.24) 68% 100%),
-      radial-gradient(circle at 27% 110%, rgba(24, 77, 54, 0.32) 0 115px, transparent 116px);
+    background: transparent;
   }
 
   .notification-empty,
@@ -897,6 +896,10 @@
       flex-direction: column;
     }
 
+    .fee-stat-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .fee-table-toolbar {
       grid-template-columns: 1fr;
       align-items: flex-start;
@@ -908,9 +911,8 @@
   }
 
   @media (max-width: 560px) {
-    .fee-page-title h1 {
-      font-size: 19px;
-      margin-bottom: 24px;
+    .fee-stat-grid {
+      grid-template-columns: 1fr;
     }
 
     .fee-profile-body,

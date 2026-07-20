@@ -263,6 +263,34 @@ def superadmin_activity_logs(request):
 
 @admin_required
 def admin_dashboard(request):
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.GET.get('action') == 'admission_trend':
+        from django.http import JsonResponse
+        from django.db.models.functions import ExtractMonth, Cast
+        from django.db.models import Count, DateField
+        from apps.students.models import StudentAdmission
+        import datetime
+        
+        year_str = request.GET.get('year')
+        try:
+            year = int(year_str)
+        except (TypeError, ValueError):
+            year = datetime.date.today().year
+
+        qs = StudentAdmission.objects.filter(created_at__year=year)
+        trend = qs.annotate(
+            created_date=Cast('created_at', DateField())
+        ).annotate(
+            month=ExtractMonth('created_date')
+        ).values('month').annotate(count=Count('id')).order_by('month')
+        
+        data = [0] * 12
+        for item in trend:
+            if item['month']:
+                month_index = item['month'] - 1
+                data[month_index] = item['count']
+                
+        return JsonResponse({'data': data})
+
     from apps.centers.models import Center
     from apps.courses.models import Course
     from apps.batches.models import Batch
@@ -286,7 +314,7 @@ def admin_dashboard(request):
     total_fee_collection = fee_agg['total']
 
     course_fee_agg = StudentProfile.objects.aggregate(
-        total=Coalesce(Sum('batch__course__fees'), Decimal('0.00'))
+        total=Coalesce(Sum('course_fee_at_admission'), Decimal('0.00'))
     )
     total_course_fees = course_fee_agg['total']
     total_pending_fees = total_course_fees - total_fee_collection
@@ -295,7 +323,7 @@ def admin_dashboard(request):
         paid_amount=Coalesce(Sum('feepayment__amount'), Decimal('0.00'))
     ).filter(
         batch__course__isnull=False,
-        paid_amount__lt=F('batch__course__fees')
+        paid_amount__lt=F('course_fee_at_admission')
     ).count()
 
     # ── Certificate & Exam metrics ─────────────────────────────────────────────
@@ -327,7 +355,7 @@ def admin_dashboard(request):
     ).select_related('batch__course', 'user')
     for student in eligible_students:
         paid = paid_map.get(student.id, Decimal('0.00'))
-        course_fee = Decimal(str(student.batch.course.fees))
+        course_fee = Decimal(str(student.course_fee_at_admission or '0.00'))
         total_att, present_att = att_map.get(student.user_id, (0, 0))
         attendance_pct = (present_att / total_att) * 100 if total_att else 0.0
         if paid >= course_fee and attendance_pct >= 75.0:
@@ -338,7 +366,7 @@ def admin_dashboard(request):
         active_students=Count('id', filter=Q(role='student', is_active=True, is_deleted=False)),
         active_teachers=Count('id', filter=Q(role='teacher', is_active=True, is_deleted=False)),
     )
-    active_students = user_counts['active_students']
+    active_students = StudentAdmission.objects.filter(status='Approved').count()
     active_teachers = user_counts['active_teachers']
 
     active_batches = Batch.objects.filter(start_date__lte=today, end_date__gte=today).count()

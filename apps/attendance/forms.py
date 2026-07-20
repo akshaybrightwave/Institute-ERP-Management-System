@@ -1,6 +1,6 @@
 from django import forms
 from .models import Attendance
-from apps.students.models import StudentProfile
+from apps.students.models import StudentAdmission
 from apps.batches.models import Batch
 
 class AttendanceForm(forms.ModelForm):
@@ -25,14 +25,15 @@ class AttendanceForm(forms.ModelForm):
             
         if self.user and self.user.role == 'center':
             center = self.user.center
-            self.fields['student'].queryset = StudentProfile.objects.filter(
-                batch__center=center
-            ).order_by('full_name')
+            self.fields['student'].queryset = StudentAdmission.objects.filter(
+                center=center,
+                status='Approved'
+            ).order_by('student_name')
             self.fields['batch'].queryset = Batch.objects.filter(
                 course__assignments__center=center, course__assignments__is_active=True
             ).order_by('name')
         else:
-            self.fields['student'].queryset = StudentProfile.objects.all().order_by('full_name')
+            self.fields['student'].queryset = StudentAdmission.objects.filter(status='Approved').order_by('student_name')
             self.fields['batch'].queryset = Batch.objects.all().order_by('name')
 
     def clean(self):
@@ -43,16 +44,16 @@ class AttendanceForm(forms.ModelForm):
         status = cleaned_data.get('status')
 
         if student and batch:
-            # Check student belongs to selected batch
-            if student.batch != batch:
-                raise forms.ValidationError("Selected student does not belong to the selected batch.")
+            # Check student course matches selected batch where both are available.
+            if student.course and batch.course and student.course != batch.course:
+                raise forms.ValidationError("Selected student does not belong to the selected batch course.")
                 
             # Check center isolation
             if self.user and self.user.role == 'center':
                 center = self.user.center
                 if not batch.course or batch.center != center:
                     raise forms.ValidationError("Batch does not belong to your assigned center.")
-                if not student.batch or student.batch.center != center:
+                if student.center != center:
                     raise forms.ValidationError("Student does not belong to your assigned center.")
 
         if student and date:

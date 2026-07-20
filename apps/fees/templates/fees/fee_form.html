@@ -401,8 +401,15 @@ $(function () {
     $('#collectFeeBtn').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Processing…');
   });
 
-  /* ── Re-init if POST returned form errors ── */
-  {% if form.errors %}
+  /* ── Re-init if POST returned form errors or student_profile is passed from GET ── */
+  {% if student_profile %}
+  (function(){
+    const pk = '{{ student_profile.pk }}';
+    const opt = new Option('{{ student_profile.full_name|escapejs }}', pk, true, true);
+    $('#feeStudentSelect').append(opt).trigger('change');
+    loadFeeSummary(pk);
+  })();
+  {% elif form.errors %}
   {% with sv=form.student.value %}{% if sv %}
   (function(){
     const pk = '{{ sv }}';

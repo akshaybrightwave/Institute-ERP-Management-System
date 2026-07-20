@@ -99,41 +99,6 @@ class StudentAnswer(models.Model):
         return f"Answer to {self.question.id} by {self.attempt.student.username}"
 
 
-class ExamSchedule(SoftDeleteModel):
-    center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_center')
-    course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='exam_schedules')
-    duration = models.CharField(max_length=100)
-    exam_center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_exam_center')
-    session = models.ForeignKey('academics.AcademicSession', on_delete=models.CASCADE, related_name='exam_schedules')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-id']
-
-    def __str__(self):
-        return f"{self.course.name} - {self.session.session_name}"
-
-    # NOTE: StudentProfile and TeacherProfile have been moved to:
-    #   apps/students/models.py  →  StudentProfile
-    #   apps/teachers/models.py  →  TeacherProfile
-
-
-class ExamStudentAssignment(SoftDeleteModel):
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='student_assignments')
-    student = models.ForeignKey('students.StudentAdmission', on_delete=models.CASCADE, related_name='exam_assignments')
-    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    assigned_date = models.DateTimeField(auto_now_add=True)
-    status = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('exam', 'student')
-
-    def __str__(self):
-        return f"{self.exam.title} - {self.student.student_name}"
-
-
 # ---------------------------------------------------------------------------
 # Exam Centre — Independent master module (NOT related to Center Information)
 # ---------------------------------------------------------------------------
@@ -158,3 +123,68 @@ class ExamCentre(SoftDeleteModel):
 
     def __str__(self):
         return f"{self.centre_name} ({self.centre_code})"
+
+
+class ExamSchedule(SoftDeleteModel):
+    center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_schedules_center')
+    course = models.ForeignKey('courses.Course', on_delete=models.CASCADE, related_name='exam_schedules')
+    duration = models.CharField(max_length=100)
+    exam_center = models.ForeignKey(ExamCentre, on_delete=models.CASCADE, related_name='exam_schedules_exam_center')
+    session = models.ForeignKey('academics.AcademicSession', on_delete=models.CASCADE, related_name='exam_schedules')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-id']
+
+    def __str__(self):
+        return f"{self.course.name} - {self.session.session_name}"
+
+    # NOTE: StudentProfile and TeacherProfile have been moved to:
+    #   apps/students/models.py  →  StudentProfile
+    #   apps/teachers/models.py  →  TeacherProfile
+
+
+class ExamScheduleSubject(models.Model):
+    schedule = models.ForeignKey(ExamSchedule, on_delete=models.CASCADE, related_name='subject_schedules')
+    subject = models.ForeignKey('subjects.Subject', on_delete=models.CASCADE, related_name='exam_schedule_rows')
+    exam_date = models.DateField()
+    exam_time = models.TimeField()
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+        unique_together = ('schedule', 'subject')
+
+    def __str__(self):
+        return f"{self.schedule} - {self.subject.name}"
+
+
+class ExamStudentAssignment(SoftDeleteModel):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='student_assignments')
+    student = models.ForeignKey('students.StudentAdmission', on_delete=models.CASCADE, related_name='exam_assignments')
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('exam', 'student')
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.student.student_name}"
+
+
+class ExamCenterAssignment(SoftDeleteModel):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='center_assignments')
+    center = models.ForeignKey('centers.Center', on_delete=models.CASCADE, related_name='exam_assignments')
+    assigned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    assigned_date = models.DateTimeField(auto_now_add=True)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('exam', 'center')
+
+    def __str__(self):
+        return f"{self.exam.title} - {self.center.name}"

@@ -66,7 +66,8 @@ class CourseForm(forms.ModelForm):
             # already assigned to their center so we don't block globally-named courses.
             if self.user and self.user.role == 'center' and self.user.center:
                 center_course_ids = CenterCourseAssignment.objects.filter(
-                    center=self.user.center
+                    center=self.user.center,
+                    is_active=True
                 ).values_list('course_id', flat=True)
                 qs = qs.filter(id__in=center_course_ids)
             if qs.exists():

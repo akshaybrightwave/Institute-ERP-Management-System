@@ -1,5 +1,5 @@
 from django import forms
-from .models import Exam, Option, Question, ExamSchedule
+from .models import Exam, ExamCentre, Option, Question, ExamSchedule
 
 
 from django.db.models import Q
@@ -222,6 +222,12 @@ class ExamScheduleForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['center'].queryset = Center.objects.filter(
+            center_user__is_active=True
+        ).order_by('name')
+        self.fields['exam_center'].queryset = ExamCentre.objects.filter(
+            is_active=True
+        ).order_by('centre_name')
         self.fields['center'].empty_label = "Select a Center"
         self.fields['course'].empty_label = "Select a Course"
         self.fields['exam_center'].empty_label = "Select Exam Centre"

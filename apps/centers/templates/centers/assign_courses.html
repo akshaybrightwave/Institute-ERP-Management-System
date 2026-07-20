@@ -192,10 +192,10 @@
                         <tr>
                             <th class="ps-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 60px;">#</th>
                             <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course Name</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Course Fee</th>
                             <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Duration</th>
-                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Fees</th>
-                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Assigned Date</th>
-                            <th class="pe-4 text-uppercase text-muted" style="font-size: 0.8rem; width: 120px;">Status</th>
+                            <th class="text-uppercase text-muted" style="font-size: 0.8rem;">Status</th>
+                            <th class="pe-4 text-uppercase text-muted text-center" style="font-size: 0.8rem; width: 100px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="assignedCoursesTableBody">
@@ -290,16 +290,8 @@ $(document).ready(function() {
         });
     });
     
-    // When a Course Toggle is Clicked
-    $('.course-toggle').on('change', function() {
-        if (!currentCenterId) return;
-        
-        const $toggle = $(this);
-        const courseId = $toggle.data('course-id');
-        const isChecked = $toggle.is(':checked');
-        const action = isChecked ? 'assign' : 'remove';
-        
-        // Disable switch temporarily to prevent duplicate requests
+    // Reusable function to execute AJAX toggle
+    function executeToggle($toggle, courseId, action, finalCheckedState) {
         $toggle.prop('disabled', true);
         
         $.ajax({
@@ -318,7 +310,8 @@ $(document).ready(function() {
                 $toggle.prop('disabled', false);
                 
                 if (response.success) {
-                    // Show Toast Notification
+                    $toggle.prop('checked', finalCheckedState);
+                    
                     const Toast = Swal.mixin({
                         toast: true,
                         position: 'top-end',
@@ -333,12 +326,11 @@ $(document).ready(function() {
                         title: response.message
                     });
                     
-                    // Re-fetch and update table quietly
                     $.get(`/centers/api/center-courses/${currentCenterId}/`, function(res) {
                         updateAssignedTable(res.assigned_courses);
                     });
                 } else {
-                    $toggle.prop('checked', !isChecked); // Revert switch state
+                    $toggle.prop('checked', !finalCheckedState);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
@@ -352,7 +344,7 @@ $(document).ready(function() {
                 }
             },
             error: function(err) {
-                $toggle.prop('checked', !isChecked); // Revert switch state
+                $toggle.prop('checked', !finalCheckedState);
                 $toggle.prop('disabled', false);
                 Swal.fire({
                     icon: 'error',
@@ -364,6 +356,67 @@ $(document).ready(function() {
                         popup: 'dark-modal-swal'
                     }
                 });
+            }
+        });
+    }
+
+    // When a Course Toggle is Clicked
+    $('.course-toggle').on('change', function() {
+        if (!currentCenterId) return;
+        
+        const $toggle = $(this);
+        const courseId = $toggle.data('course-id');
+        const isChecked = $toggle.is(':checked');
+        
+        if (!isChecked) {
+            $toggle.prop('checked', true); // revert visually while asking
+            
+            Swal.fire({
+                title: 'Notice',
+                text: 'Are you sure you want to remove this course from the selected center?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Cancel',
+                background: '#12141c',
+                color: '#fff',
+                customClass: {
+                    popup: 'dark-modal-swal'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executeToggle($toggle, courseId, 'remove', false);
+                }
+            });
+        } else {
+            executeToggle($toggle, courseId, 'assign', true);
+        }
+    });
+
+    // When Remove Button in Table is Clicked
+    $(document).on('click', '.remove-course-btn', function() {
+        const courseId = $(this).data('course-id');
+        const $toggle = $(`.course-toggle[data-course-id="${courseId}"]`);
+        
+        Swal.fire({
+            title: 'Notice',
+            text: 'Are you sure you want to remove this course from the selected center?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'OK',
+            cancelButtonText: 'Cancel',
+            background: '#12141c',
+            color: '#fff',
+            customClass: {
+                popup: 'dark-modal-swal'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                executeToggle($toggle, courseId, 'remove', false);
             }
         });
     });
@@ -387,10 +440,14 @@ $(document).ready(function() {
                 <tr>
                     <td class="ps-4 fw-semibold text-muted">${index + 1}</td>
                     <td class="fw-semibold text-white">${course.name}</td>
-                    <td><span class="badge bg-soft-info text-info rounded-pill px-2 py-1" style="background: rgba(13, 202, 240, 0.12);">${course.duration}</span></td>
                     <td class="text-white-50">₹ ${course.fees}</td>
-                    <td class="text-muted small">${course.assigned_date}</td>
-                    <td class="pe-4">${statusBadge}</td>
+                    <td><span class="badge bg-soft-info text-info rounded-pill px-2 py-1" style="background: rgba(13, 202, 240, 0.12);">${course.duration}</span></td>
+                    <td>${statusBadge}</td>
+                    <td class="pe-4 text-center">
+                        <button class="btn btn-sm btn-outline-danger remove-course-btn" data-course-id="${course.id}" title="Remove Course">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
                 </tr>
             `;
             $tbody.append(row);

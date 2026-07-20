@@ -20,3 +20,100 @@ h3,
   font-family: var(--examly-title-font) !important;
   letter-spacing: 0 !important;
 }
+
+/* ══════════════════════════════════════
+   ERP STAT CARDS (Standardized for Admin & Center Dashboard)
+══════════════════════════════════════ */
+.erp-shell .erp-card {
+  border-radius: 12px;
+  overflow: hidden;
+  color: var(--erp-text-primary);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--erp-border-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.erp-shell .erp-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--erp-border-glow);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.25);
+}
+
+.erp-shell .erp-card-body {
+  padding: 1.25rem 1.25rem 1rem;
+  position: relative;
+  flex: 1;
+}
+
+.erp-shell .erp-card-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.5rem;
+}
+
+.erp-shell .erp-card-number {
+  font-size: 2.3rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.38);
+}
+
+.erp-shell .erp-card-number.sm {
+  font-size: 1.65rem;
+}
+
+.erp-shell .erp-card-bg-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 4rem;
+  opacity: 0.25;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.erp-shell .erp-card-footer {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 1.25rem;
+  background: rgba(5, 5, 18, 0.25);
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.25s ease, color 0.25s ease;
+  gap: 8px;
+}
+
+.erp-shell .erp-card-footer:hover {
+  background: rgba(5, 5, 18, 0.45);
+  color: #fff;
+}
+
+/* ── Gradients ── */
+.erp-shell .bg-g-purple { background: linear-gradient(145deg, #27185f 0%, #4a32a1 100%); }
+.erp-shell .bg-g-cyan { background: linear-gradient(145deg, #005a70 0%, #009eb5 100%); }
+.erp-shell .bg-g-teal { background: linear-gradient(145deg, #075766 0%, #1592a4 100%); }
+.erp-shell .bg-g-green { background: linear-gradient(145deg, #0d5a33 0%, #1b8f53 100%); }
+.erp-shell .bg-g-pink { background: linear-gradient(145deg, #89105d 0%, #c31782 100%); }
+.erp-shell .bg-g-blue { background: linear-gradient(145deg, #123a82 0%, #2459bd 100%); }
+.erp-shell .bg-g-orange { background: linear-gradient(145deg, #7b3f00 0%, #b86708 100%); }
+.erp-shell .bg-g-red { background: linear-gradient(145deg, #7a0e1d 0%, #b0152e 100%); }
+.erp-shell .bg-g-violet { background: linear-gradient(145deg, #54106a 0%, #80209a 100%); }
+.erp-shell .bg-g-crimson { background: linear-gradient(145deg, #880b23 0%, #b71634 100%); }
+.erp-shell .bg-g-amber { background: linear-gradient(145deg, #623000 0%, #884300 100%); }
+.erp-shell .bg-g-olive { background: linear-gradient(145deg, #2a4115 0%, #4b6a22 100%); }
+.erp-shell .bg-g-slate { background: linear-gradient(145deg, #1e2634 0%, #354256 100%); }
+.erp-shell .bg-g-dred { background: linear-gradient(145deg, #4f0310 0%, #8a0c21 100%); }
+.erp-shell .bg-g-dgreen { background: linear-gradient(145deg, #07381d 0%, #106c3a 100%); }
+.erp-shell .bg-g-dteal { background: linear-gradient(145deg, #023640 0%, #066576 100%); }
+.erp-shell .bg-g-navy { background: linear-gradient(145deg, #08112a 0%, #162a5b 100%); }

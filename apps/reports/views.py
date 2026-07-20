@@ -62,7 +62,7 @@ def reports_dashboard(request):
             total_students = StudentProfile.objects.filter(batch__center=center).count()
             total_teachers = User.objects.filter(role='teacher', is_deleted=False, teacherprofile__batch__center=center).distinct().count()
             total_batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
-            total_courses = Course.objects.filter(center=center).count()
+            total_courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct().count()
             total_centers = 1
             total_exams = Exam.objects.filter(batches__course__assignments__center=center, course__assignments__is_active=True).distinct().count()
             total_certificates = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True).count()
@@ -108,7 +108,7 @@ def student_report(request):
             batches = Batch.objects.none()
         else:
             students = StudentProfile.objects.filter(batch__center=center)
-            courses = Course.objects.filter(center=center)
+            courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct()
             batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
@@ -180,7 +180,7 @@ def student_report(request):
         attendance_pct = round((present_att / total_att * 100), 1) if total_att > 0 else 0.0
 
         paid_amount = fee_map.get(s.id, Decimal('0.00'))
-        course_fee = Decimal(str(s.batch.course.fees)) if (s.batch and s.batch.course) else Decimal('0.00')
+        course_fee = Decimal(str(s.course_fee_at_admission or '0.00'))
         pending_amount = course_fee - paid_amount
         if paid_amount == 0:
             fee_status = 'PENDING'
@@ -508,7 +508,7 @@ def fee_report(request):
         else:
             students = StudentProfile.objects.filter(batch__center=center)
             batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
-            courses = Course.objects.filter(center=center)
+            courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct()
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
         if not teacher_profile:
@@ -538,7 +538,7 @@ def fee_report(request):
     payments = FeePayment.objects.filter(student__in=students)
     total_fees_collected = payments.aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
     
-    total_course_fees = students.aggregate(total=Sum('batch__course__fees'))['total'] or Decimal('0.00')
+    total_course_fees = students.aggregate(total=Sum('course_fee_at_admission'))['total'] or Decimal('0.00')
     total_pending_fees = Decimal(str(total_course_fees)) - Decimal(str(total_fees_collected))
 
     paid_map = {p['student_id']: p['total'] or Decimal('0.00') for p in FeePayment.objects.filter(student__in=students).values('student_id').annotate(total=Sum('amount'))}
@@ -549,7 +549,7 @@ def fee_report(request):
 
     for s in students:
         paid = paid_map.get(s.id, Decimal('0.00'))
-        course_fee = Decimal(str(s.batch.course.fees)) if (s.batch and s.batch.course) else Decimal('0.00')
+        course_fee = Decimal(str(s.course_fee_at_admission or '0.00'))
         pending = course_fee - paid
         if paid >= course_fee:
             paid_count += 1
@@ -754,7 +754,7 @@ def certificate_report(request):
         else:
             certs = Certificate.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
             batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
-            courses = Course.objects.filter(center=center)
+            courses = Course.objects.filter(assignments__center=center, assignments__is_active=True).distinct()
             student_qs = StudentProfile.objects.filter(batch__center=center)
     elif is_teacher:
         teacher_profile = get_teacher_profile(request.user)
@@ -811,7 +811,7 @@ def certificate_report(request):
 
     eligible_students_count = 0
     for student in students_stats:
-        course_fee = Decimal(str(student.batch.course.fees)) if (student.batch and student.batch.course) else Decimal('0.00')
+        course_fee = Decimal(str(student.course_fee_at_admission or '0.00'))
         fee_eligible = student.paid_amount >= course_fee
         
         total_att, present_att = att_map.get(student.id, (0, 0))

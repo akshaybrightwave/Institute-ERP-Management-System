@@ -2,6 +2,172 @@
 
 {% block title %}Fees Management | Examly{% endblock %}
 
+{% block style %}
+{{ block.super }}
+<style>
+    #feeLedgerReceiptModal.modal {
+        top: var(--app-navbar-height, 68px);
+        height: calc(100vh - var(--app-navbar-height, 68px));
+    }
+
+    #feeLedgerReceiptModal .fee-receipt-dialog {
+        margin-top: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    #feeLedgerReceiptModal .fee-receipt-dialog .modal-content {
+        max-height: calc(100vh - var(--app-navbar-height, 68px) - 2.5rem);
+        overflow: hidden;
+    }
+
+    .fee-receipt-modal .modal-body {
+        padding: 0;
+        background: var(--erp-bg-card);
+    }
+
+    .fee-receipt-sheet {
+        min-height: 620px;
+        padding: 1.8rem;
+        background: var(--erp-bg-card);
+        color: var(--erp-text-primary);
+    }
+
+    .fee-receipt-top,
+    .fee-receipt-title-row,
+    .fee-receipt-party-grid,
+    .fee-receipt-summary {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .fee-receipt-top {
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .fee-receipt-seal {
+        width: 76px;
+        height: 76px;
+        border: 1px solid var(--erp-border-color);
+        border-radius: 50%;
+        background: var(--erp-bg-input);
+        color: #3b82f6;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.25rem;
+    }
+
+    .fee-receipt-print {
+        justify-self: end;
+    }
+
+    .fee-receipt-title-row {
+        margin-bottom: 2rem;
+    }
+
+    .fee-receipt-title-row h5 {
+        margin: 0;
+        color: var(--erp-text-primary);
+        font-weight: 800;
+    }
+
+    .fee-receipt-label,
+    .fee-receipt-party-grid span,
+    .fee-receipt-party-grid small,
+    .fee-receipt-summary span {
+        display: block;
+        color: var(--erp-text-muted);
+        font-size: 0.82rem;
+        line-height: 1.45;
+    }
+
+    .fee-receipt-party-grid {
+        margin-bottom: 2rem;
+    }
+
+    .fee-receipt-party-grid strong,
+    .fee-receipt-title-row strong,
+    .fee-receipt-summary strong {
+        display: block;
+        color: var(--erp-text-primary);
+        font-size: 0.92rem;
+        font-weight: 800;
+        line-height: 1.45;
+    }
+
+    .fee-receipt-table {
+        margin-bottom: 1.5rem !important;
+    }
+
+    .fee-receipt-table th,
+    .fee-receipt-table td {
+        text-align: center;
+        border-color: var(--erp-border-color) !important;
+    }
+
+    .fee-receipt-summary {
+        border-top: 1px solid var(--erp-border-color);
+        padding-top: 1.3rem;
+    }
+
+    .fee-receipt-summary > div:last-child {
+        justify-self: end;
+        min-width: 300px;
+    }
+
+    .fee-receipt-print-host {
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        #feeLedgerReceiptModal .fee-receipt-dialog {
+            margin: 0.75rem;
+        }
+
+        #feeLedgerReceiptModal .fee-receipt-dialog .modal-content {
+            max-height: calc(100vh - var(--app-navbar-height, 68px) - 1.5rem);
+        }
+
+        .fee-receipt-top,
+        .fee-receipt-title-row,
+        .fee-receipt-party-grid,
+        .fee-receipt-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .fee-receipt-print,
+        .fee-receipt-summary > div:last-child {
+            justify-self: start;
+        }
+    }
+
+    @media print {
+        body.fee-receipt-printing > *:not(.fee-receipt-print-host) {
+            display: none !important;
+        }
+
+        .fee-receipt-print-host {
+            display: block !important;
+            background: #fff !important;
+            color: #111 !important;
+            padding: 24px !important;
+        }
+
+        .fee-receipt-print-host .fee-receipt-sheet {
+            background: #fff !important;
+            color: #111 !important;
+        }
+
+        .fee-receipt-print-host .fee-receipt-print {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block erp_content %}
 <div class="container py-2">
     <div class="page-header">
@@ -9,13 +175,6 @@
             <h2><i class="bi bi-wallet2 text-primary me-2"></i>Fees Management</h2>
             <p>Track student course fees, payments, and outstanding balances.</p>
         </div>
-        {% if is_admin or is_center %}
-        <div>
-            <a href="{% url 'payment_create' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle-fill me-1"></i> Record Fee Payment
-            </a>
-        </div>
-        {% endif %}
     </div>
 
     <!-- Dashboard Metrics Row -->
@@ -105,15 +264,6 @@
                     <label for="searchInput" class="form-label fw-semibold small">Search</label>
                     <input type="text" name="q" id="searchInput" class="form-control" placeholder="Search by name, email..." value="{{ query }}">
                 </div>
-                <div class="col-md-4">
-                    <label for="batchFilter" class="form-label fw-semibold small">Filter by Batch</label>
-                    <select name="batch" id="batchFilter" class="form-select">
-                        <option value="">All Batches</option>
-                        {% for b in batches %}
-                        <option value="{{ b.id }}" {% if selected_batch == b.id|stringformat:"s" %}selected{% endif %}>{{ b.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <div class="col-md-4 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1">
                         <i class="bi bi-filter me-1"></i> Filter / Search
@@ -137,12 +287,10 @@
                         <thead>
                             <tr>
                                 <th class="ps-4">Student</th>
-                                <th>Batch</th>
                                 <th>Course</th>
                                 <th>Course Fee</th>
                                 <th>Paid Amount</th>
                                 <th>Pending Amount</th>
-                                <th>Status</th>
                                 {% if is_admin or is_center %}
                                 <th class="pe-4 text-end">Actions</th>
                                 {% endif %}
@@ -152,23 +300,13 @@
                             {% for item in students_page_obj %}
                             <tr>
                                 <td class="ps-4 fw-semibold">{{ item.student.full_name }}</td>
-                                <td><span class="badge bg-light text-dark border">{{ item.student.batch.name|default:"No Batch" }}</span></td>
-                                <td>{{ item.student.batch.course.name|default:"-" }}</td>
+                                <td>{{ item.course_name|default:"-" }}</td>
                                 <td class="fw-semibold">₹{{ item.course_fee }}</td>
                                 <td class="text-success fw-semibold">₹{{ item.paid_amount }}</td>
                                 <td class="text-danger fw-semibold">₹{{ item.pending_amount }}</td>
-                                <td>
-                                    {% if item.status == 'PAID' %}
-                                    <span class="badge-soft-success"><i class="bi bi-check-circle me-1"></i>PAID</span>
-                                    {% elif item.status == 'PARTIAL' %}
-                                    <span class="badge-soft-warning"><i class="bi bi-exclamation-circle me-1"></i>PARTIAL</span>
-                                    {% else %}
-                                    <span class="badge-soft-danger"><i class="bi bi-x-circle me-1"></i>PENDING</span>
-                                    {% endif %}
-                                </td>
                                 {% if is_admin or is_center %}
                                 <td class="pe-4 text-end">
-                                    <a href="{% url 'payment_create' %}?student={{ item.student.id }}" class="btn btn-sm btn-outline-success">
+                                    <a href="{% url 'payment_create' %}?student={{ item.student.id }}" class="btn btn-sm btn-outline-success me-1">
                                         <i class="bi bi-plus-circle me-1"></i>Collect Fee
                                     </a>
                                 </td>
@@ -249,15 +387,29 @@
                                 <td><code>{{ payment.reference_number|default:"-" }}</code></td>
                                 <td class="text-muted small">{{ payment.remarks|default:"-" }}</td>
                                 <td class="pe-4 text-end">
-                                    <a href="{% url 'payment_receipt' payment.id %}" class="btn btn-sm btn-outline-success me-1">
+                                    <a href="{% url 'payment_receipt' payment.id %}"
+                                       class="btn btn-sm btn-outline-success me-1 js-fee-ledger-receipt"
+                                       data-transaction="{% if payment.reference_number %}{{ payment.reference_number }}{% else %}{{ payment.id }}{% endif %}"
+                                       data-date="{{ payment.payment_date|date:'d-m-Y' }}"
+                                       data-month="{{ payment.payment_date|date:'d-M-Y' }}"
+                                       data-amount="{{ payment.amount|floatformat:0 }}"
+                                       data-method="{{ payment.get_payment_method_display }}"
+                                       data-student="{{ payment.student.full_name }}"
+                                       data-enrollment="{{ payment.student.phone|default:'N/A' }}"
+                                       data-address="{{ payment.student.email|default:'Address' }}"
+                                       data-course="{{ payment.student.batch.course.name|default:'Course' }}"
+                                       data-duration="{{ payment.student.batch.course.duration|default:'0 Year' }}"
+                                       data-center="{{ payment.student.batch.center.name|default:'Institute' }}"
+                                       data-center-code="{{ payment.student.batch.center.code|default:'N0088' }}"
+                                       data-course-fee="{{ payment.student.course_fee_at_admission|default:'0'|floatformat:0 }}">
                                         <i class="bi bi-receipt"></i> Receipt
                                     </a>
                                     <a href="{% url 'payment_edit' payment.id %}" class="btn btn-sm btn-outline-primary me-1">
                                         <i class="bi bi-pencil-square"></i> Edit
                                     </a>
-                                    <a href="{% url 'payment_delete' payment.id %}" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </a>
+                                      <a href="{% url 'payment_delete' payment.id %}" class="btn btn-sm btn-outline-danger btn-delete-payment" data-name="payment of ₹{{ payment.amount }} for {{ payment.student.full_name }}">
+                                          <i class="bi bi-trash"></i> Delete
+                                      </a>
                                 </td>
                             </tr>
                             {% empty %}
@@ -309,4 +461,255 @@
         {% endif %}
     </div>
 </div>
+
+<div class="modal fade" id="feeLedgerReceiptModal" tabindex="-1" aria-labelledby="feeLedgerReceiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable fee-receipt-dialog">
+        <div class="modal-content fee-receipt-modal">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title fw-bold text-white" id="feeLedgerReceiptModalLabel">Fee Receipt</h5>
+                <button type="button" class="btn btn-close-modal px-3 py-2" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="fee-receipt-sheet">
+                    <div class="fee-receipt-top">
+                        <div class="fee-receipt-seal">
+                            <i class="bi bi-bank2"></i>
+                        </div>
+                        <button type="button" class="btn btn-save-modal px-4 py-2 fee-receipt-print">
+                            Print
+                        </button>
+                    </div>
+
+                    <div class="fee-receipt-title-row">
+                        <h5>Trancation ID #<span data-receipt-field="transaction"></span></h5>
+                        <div>
+                            <span class="fee-receipt-label">Date:</span>
+                            <strong data-receipt-field="date"></strong>
+                        </div>
+                    </div>
+
+                    <div class="fee-receipt-party-grid">
+                        <div>
+                            <span class="fee-receipt-label">Issue For:</span>
+                            <strong data-receipt-field="student"></strong>
+                            <span>Address</span>
+                            <small data-receipt-field="address"></small>
+                            <span>Course : <small data-receipt-field="course"></small> <small data-receipt-field="duration"></small></span>
+                        </div>
+                        <div>
+                            <span class="fee-receipt-label">Issued By:</span>
+                            <strong data-receipt-field="center"></strong>
+                            <span>Centre Code : <small data-receipt-field="centerCode"></small></span>
+                            <small>ADDRESS</small>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-examly fee-receipt-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td data-receipt-field="month"></td>
+                                    <td data-receipt-field="method"></td>
+                                    <td>₹ <span data-receipt-field="amount"></span></td>
+                                    <td class="text-white fw-bold">₹ <span data-receipt-field="total"></span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="fee-receipt-summary">
+                        <div>
+                            <span>Total Course Fee</span>
+                            <strong>₹ <span data-receipt-field="courseFee"></span></strong>
+                        </div>
+                        <div>
+                            <span>Total Payable Amount:</span>
+                            <strong>₹ <span data-receipt-field="payable"></span></strong>
+                            <span>Total Paid Amount:</span>
+                            <strong>₹ <span data-receipt-field="paid"></span></strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    const feeLedgerReceiptModalEl = document.getElementById('feeLedgerReceiptModal');
+    if (feeLedgerReceiptModalEl) {
+      const erpShell = document.querySelector('.erp-shell');
+      if (erpShell && feeLedgerReceiptModalEl.parentElement !== erpShell) {
+        erpShell.appendChild(feeLedgerReceiptModalEl);
+      }
+
+      document.querySelectorAll('.js-fee-ledger-receipt').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+
+          const fields = {
+            transaction: btn.dataset.transaction || '',
+            date: btn.dataset.date || '',
+            month: btn.dataset.month || '',
+            amount: btn.dataset.amount || '0',
+            total: btn.dataset.amount || '0',
+            payable: btn.dataset.amount || '0',
+            paid: btn.dataset.amount || '0',
+            method: btn.dataset.method || '',
+            student: `${btn.dataset.student || ''} - ${btn.dataset.enrollment || ''}`,
+            address: btn.dataset.address || '',
+            course: btn.dataset.course || '',
+            duration: btn.dataset.duration || '',
+            center: btn.dataset.center || '',
+            centerCode: btn.dataset.centerCode || '',
+            courseFee: btn.dataset.courseFee || '0'
+          };
+
+          Object.entries(fields).forEach(function ([name, value]) {
+            feeLedgerReceiptModalEl.querySelectorAll(`[data-receipt-field="${name}"]`).forEach(function (node) {
+              node.textContent = value;
+            });
+          });
+
+          bootstrap.Modal.getOrCreateInstance(feeLedgerReceiptModalEl).show();
+        });
+      });
+
+      const printBtn = feeLedgerReceiptModalEl.querySelector('.fee-receipt-print');
+      if (printBtn) {
+        printBtn.addEventListener('click', function () {
+          const sheet = feeLedgerReceiptModalEl.querySelector('.fee-receipt-sheet');
+          if (!sheet) return;
+
+          const host = document.createElement('div');
+          host.className = 'fee-receipt-print-host';
+          host.appendChild(sheet.cloneNode(true));
+          document.body.appendChild(host);
+          document.body.classList.add('fee-receipt-printing');
+          window.print();
+          document.body.classList.remove('fee-receipt-printing');
+          host.remove();
+        });
+      }
+    }
+
+    // Delete Student All Fees Action via SweetAlert
+    document.querySelectorAll('.btn-delete-student-fee').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        const studentId = btn.dataset.studentId;
+        const name = btn.dataset.name;
+        
+        Swal.fire({
+          icon: 'warning',
+          title: 'Are you sure you want to delete ' + name + '?',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete!',
+          cancelButtonText: 'No, cancel',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-danger px-4 py-2 me-2',
+            cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+          },
+          buttonsStyling: false
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = window.location.href; // Submit to same view
+            
+            const csrfToken = getCookie('csrftoken');
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            actionInput.value = 'delete_student_fee';
+            form.appendChild(actionInput);
+            
+            const studentIdInput = document.createElement('input');
+            studentIdInput.type = 'hidden';
+            studentIdInput.name = 'student_id';
+            studentIdInput.value = studentId;
+            form.appendChild(studentIdInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+          }
+        });
+      });
+    });
+
+    // Delete Single Payment Action via SweetAlert
+    document.querySelectorAll('.btn-delete-payment').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        const url = btn.getAttribute('href');
+        const name = btn.dataset.name;
+        
+        Swal.fire({
+          icon: 'warning',
+          title: 'Are you sure you want to delete ' + name + '?',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete!',
+          cancelButtonText: 'No, cancel',
+          customClass: {
+            popup: 'dark-modal-swal',
+            confirmButton: 'btn btn-danger px-4 py-2 me-2',
+            cancelButton: 'btn btn-link text-white text-decoration-none px-4 py-2'
+          },
+          buttonsStyling: false
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url; // Submit to payment_delete view
+            
+            const csrfToken = getCookie('csrftoken');
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+          }
+        });
+      });
+    });
+});
+</script>
 {% endblock %}

@@ -8,6 +8,7 @@ from django.db.models import Count, Q
 from datetime import date as datetime_date
 from apps.batches.models import Batch
 from apps.students.models import StudentProfile
+from apps.students.models import StudentAdmission
 from apps.teachers.models import TeacherProfile
 from .models import Attendance
 
@@ -198,26 +199,34 @@ def attendance_list(request):
     if not (is_admin or is_teacher or is_center):
         return HttpResponseForbidden("Access Denied: Admins, Center users, or Teachers only.")
         
-    attendances = Attendance.objects.all().select_related('student', 'batch', 'batch__course', 'marked_by')
+    attendances = Attendance.objects.all().select_related(
+        'student',
+        'student__course',
+        'student__center',
+        'batch',
+        'batch__course',
+        'marked_by'
+    )
     
     if is_teacher:
         teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
         attendances = attendances.filter(batch__teacher=teacher_profile)
         batches = Batch.objects.filter(teacher=teacher_profile)
-        students = StudentProfile.objects.filter(batch__in=batches)
+        student_user_ids = StudentProfile.objects.filter(batch__in=batches).values_list('user_id', flat=True)
+        students = StudentAdmission.objects.filter(user_id__in=student_user_ids).order_by('student_name')
     elif is_center:
         center = request.user.center
         if not center:
             attendances = Attendance.objects.none()
             batches = Batch.objects.none()
-            students = StudentProfile.objects.none()
+            students = StudentAdmission.objects.none()
         else:
-            attendances = attendances.filter(batch__center=center)
+            attendances = attendances.filter(student__center=center)
             batches = Batch.objects.filter(course__assignments__center=center, course__assignments__is_active=True)
-            students = StudentProfile.objects.filter(batch__center=center)
+            students = StudentAdmission.objects.filter(center=center, status='Approved').order_by('student_name')
     else:
         batches = Batch.objects.all()
-        students = StudentProfile.objects.all()
+        students = StudentAdmission.objects.filter(status='Approved').order_by('student_name')
         
     batch_id = request.GET.get('batch')
     student_id = request.GET.get('student')
@@ -242,7 +251,7 @@ def attendance_list(request):
     if date_filter:
         attendances = attendances.filter(date=date_filter)
         
-    attendances = attendances.order_by('-date', 'student__full_name')
+    attendances = attendances.order_by('-date', 'student__student_name')
     
     # CSV Export
     if request.GET.get('export') == 'csv':
@@ -262,9 +271,9 @@ def attendance_list(request):
             marked_by_name = att.marked_by.full_name if att.marked_by else 'Admin'
             student_pct = pct_map.get(att.student_id, 0.0)
             writer.writerow([
-                att.student.full_name,
-                att.batch.name,
-                att.batch.course.name,
+                att.student.student_name,
+                att.batch.name if att.batch else (att.timetable_name or '-'),
+                att.student.course.name if att.student.course else '-',
                 att.date.strftime('%Y-%m-%d'),
                 att.status.capitalize(),
                 f"{student_pct}%",
@@ -311,33 +320,31 @@ def attendance_create(request):
     
     if student_id:
         if request.user.role == 'center':
-            student_obj = get_object_or_404(StudentProfile, id=student_id, batch__center=request.user.center)
+            student_obj = get_object_or_404(StudentAdmission, id=student_id, center=request.user.center)
         else:
-            student_obj = get_object_or_404(StudentProfile, id=student_id)
+            student_obj = get_object_or_404(StudentAdmission, id=student_id)
             
-        if student_obj.batch:
-            initial['student'] = student_obj
-            initial['batch'] = student_obj.batch
+        initial['student'] = student_obj
             
-            # Fetch summary card details
-            att_stats = Attendance.objects.filter(student=student_obj).aggregate(
-                total=Count('id'),
-                present=Count('id', filter=Q(status='present')),
-                absent=Count('id', filter=Q(status='absent'))
-            )
-            total = att_stats['total']
-            present = att_stats['present']
-            absent = att_stats['absent']
-            pct = round((present / total * 100), 1) if total > 0 else 0.0
-            
-            student_summary = {
-                'student_name': student_obj.full_name,
-                'batch_name': student_obj.batch.name,
-                'course_name': student_obj.batch.course.name if student_obj.batch.course else '-',
-                'attendance_pct': pct,
-                'present_count': present,
-                'absent_count': absent
-            }
+        # Fetch summary card details
+        att_stats = Attendance.objects.filter(student=student_obj).aggregate(
+            total=Count('id'),
+            present=Count('id', filter=Q(status='present')),
+            absent=Count('id', filter=Q(status='absent'))
+        )
+        total = att_stats['total']
+        present = att_stats['present']
+        absent = att_stats['absent']
+        pct = round((present / total * 100), 1) if total > 0 else 0.0
+
+        student_summary = {
+            'student_name': student_obj.student_name,
+            'batch_name': student_obj.timetable_course or '-',
+            'course_name': student_obj.course.name if student_obj.course else '-',
+            'attendance_pct': pct,
+            'present_count': present,
+            'absent_count': absent
+        }
             
     if request.method == 'POST':
         form = AttendanceForm(request.POST, user=request.user)
@@ -365,8 +372,8 @@ def attendance_edit(request, pk):
     
     # Check center isolation
     if request.user.role == 'center':
-        if not attendance.batch or not attendance.batch.course or attendance.batch.center != request.user.center:
-            return HttpResponseForbidden("Access Denied: You do not manage this batch's attendance.")
+        if attendance.student.center != request.user.center:
+            return HttpResponseForbidden("Access Denied: You do not manage this student's attendance.")
             
     from .forms import AttendanceForm
     
@@ -383,9 +390,9 @@ def attendance_edit(request, pk):
     pct = round((present / total * 100), 1) if total > 0 else 0.0
     
     student_summary = {
-        'student_name': student_obj.full_name,
-        'batch_name': attendance.batch.name if attendance.batch else '-',
-        'course_name': attendance.batch.course.name if (attendance.batch and attendance.batch.course) else '-',
+        'student_name': student_obj.student_name,
+        'batch_name': attendance.batch.name if attendance.batch else (attendance.timetable_name or student_obj.timetable_course or '-'),
+        'course_name': student_obj.course.name if student_obj.course else '-',
         'attendance_pct': pct,
         'present_count': present,
         'absent_count': absent

@@ -57,7 +57,10 @@ class SubjectForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.user:
             if self.user.role == 'center':
-                self.fields['course'].queryset = Course.objects.filter(center=self.user.center)
+                self.fields['course'].queryset = Course.objects.filter(
+                    assignments__center=self.user.center,
+                    assignments__is_active=True
+                ).distinct().order_by('name')
             else:
                 self.fields['course'].queryset = Course.objects.all()
 

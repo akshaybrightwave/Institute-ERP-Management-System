@@ -8,6 +8,7 @@
 <style>
   /* ── Global ERP Theme Variables ── */
   body.erp-shell {
+    --app-navbar-height: 0px;
     --erp-bg-body: #0a0b10;
     --erp-bg-sidebar: #0d0e12;
     --erp-bg-content: #0a0b10;
@@ -84,6 +85,7 @@
     z-index: 600;
     display: flex;
     flex-direction: column;
+    padding-bottom: 1rem;
     scrollbar-width: thin;
     scrollbar-color: #2a2a4a transparent;
   }
@@ -103,12 +105,12 @@
     align-items: center;
     gap: 10px;
     padding: 0.85rem 1.2rem;
-    color: var(--erp-text-primary);
+    color: var(--erp-text-sidebar);
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 700;
-    background: #1a1a32;
-    border-left: 3px solid #4a6cf7;
+    background: transparent;
+    border-left: 3px solid transparent;
   }
 
   .erp-shell .sidebar-dash-item i {
@@ -116,9 +118,11 @@
     color: #4a6cf7;
   }
 
-  .erp-shell .sidebar-dash-item:hover {
+  .erp-shell .sidebar-dash-item:hover,
+  .erp-shell .sidebar-dash-item.active {
     color: var(--erp-text-primary);
     background: #1e1e3a;
+    border-left-color: #4a6cf7;
   }
 
   /* Section label */
@@ -136,14 +140,16 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 0.65rem 1.2rem;
+    min-height: 42px;
+    padding: 0.65rem 1.2rem 0.65rem calc(1.2rem - 3px);
     color: var(--erp-text-sidebar);
     text-decoration: none;
     font-size: 0.88rem;
     font-weight: 500;
     cursor: pointer;
     background: transparent;
-    border: none;
+    border: 0;
+    border-left: 3px solid transparent;
     width: 100%;
     text-align: left;
     transition: background 0.15s, color 0.15s;
@@ -155,6 +161,21 @@
     text-decoration: none;
   }
 
+  .erp-shell a.sidebar-item.active {
+    color: var(--erp-text-primary);
+    background: rgba(74, 108, 247, 0.14);
+    border-left-color: #4a6cf7;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .erp-shell button.sidebar-item.active {
+    color: #dbe3ff;
+    background: rgba(74, 108, 247, 0.07);
+    border-left-color: rgba(74, 108, 247, 0.45);
+    font-weight: 650;
+  }
+
   .erp-shell .sidebar-item i.si-icon {
     font-size: 1rem;
     flex-shrink: 0;
@@ -162,6 +183,10 @@
 
   .erp-shell .sidebar-item .si-label {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .erp-shell .sidebar-item .si-arrow {
@@ -176,20 +201,24 @@
   }
 
   .erp-shell .sidebar-item[aria-expanded="true"] {
-    color: var(--erp-text-primary);
+    color: #dbe3ff;
   }
 
   /* Sub-item */
   .erp-shell .sidebar-sub {
     padding-left: 0;
-    margin: 0;
+    margin: 0 0 0 1.45rem;
+    border-left: 1px solid rgba(74, 108, 247, 0.18);
   }
 
   .erp-shell .sidebar-sub a {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 0.6rem 1.2rem 0.6rem 2.5rem;
+    margin: 2px 0.45rem 2px 0;
+    padding: 0.55rem 0.85rem;
+    border-left: 2px solid transparent;
+    border-radius: 0 6px 6px 0;
     color: #a0aec0;
     font-size: 0.88rem;
     text-decoration: none;
@@ -203,41 +232,119 @@
 
   .erp-shell .sidebar-sub a.active {
     color: #ffffff !important;
-    background: rgba(74, 108, 247, 0.15) !important;
-    font-weight: 500;
+    background: rgba(74, 108, 247, 0.20) !important;
+    border-left-color: #4a6cf7;
+    font-weight: 700;
   }
 
   .erp-shell .sidebar-sub a::before {
     display: none;
   }
 
-  /* Sidebar footer */
-  .erp-shell .sidebar-footer {
-    margin-top: auto;
-    padding: 1rem 1.2rem;
-    border-top: 1px solid var(--erp-border-color);
-  }
-
-  .erp-shell .btn-login-centre {
+  .erp-shell .student-sidebar-head {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    padding: 0.5rem 1rem;
-    border: 1px solid #3a3aaa;
-    border-radius: 8px;
-    color: #8080d0;
-    font-size: 0.82rem;
-    font-weight: 600;
+    gap: 10px;
+    padding: 1rem 1rem 0.95rem;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
     text-decoration: none;
-    background: transparent;
-    transition: background 0.2s, color 0.2s;
+    color: var(--erp-text-primary);
   }
 
-  .erp-shell .btn-login-centre:hover {
-    background: #1a1a3a;
-    color: #a0a0ff;
+  body.erp-shell .navbar-examly {
+    display: none !important;
+  }
+
+  .erp-shell .student-sidebar-photo,
+  .erp-shell .student-sidebar-photo-fallback {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    object-fit: cover;
+    background: #1e2332;
+  }
+
+  .erp-shell .student-sidebar-photo-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #9aa7c7;
+    font-size: 1.2rem;
+  }
+
+  .erp-shell .student-sidebar-name {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1.15;
+  }
+
+  .erp-shell .student-sidebar-name strong {
+    display: block;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    font-weight: 800;
+  }
+
+  .erp-shell .student-sidebar-badge {
+    width: fit-content;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(46, 228, 141, 0.18);
+    color: #2ee48d;
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+
+  .erp-shell .erp-dashboard-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.45rem;
+  }
+
+  .erp-shell .erp-top-switch {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .erp-shell .erp-top-switch a {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 0.9rem;
+    border: 1px solid #363676;
+    border-radius: 8px;
+    color: #b6b6ff;
+    background: transparent;
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .erp-shell .erp-top-switch a.active,
+  .erp-shell .erp-top-switch a:hover {
+    color: #ffffff;
+    border-color: #4a46f3;
+    background: linear-gradient(135deg, #315bd6 0%, #4a46f3 100%);
+  }
+
+  @media (max-width: 575.98px) {
+    .erp-shell .erp-dashboard-head {
+      flex-direction: column;
+    }
   }
 
   /* ══════════════════════════════════════
@@ -419,6 +526,10 @@
 
   .erp-shell .bg-g-navy {
     background: linear-gradient(145deg, #071348 0%, #11277f 100%);
+  }
+
+  .erp-shell .bg-g-cyan {
+    background: linear-gradient(145deg, #087f8c 0%, #0db9ce 100%);
   }
 
   /* ── Section divider ── */
@@ -888,72 +999,104 @@
 <aside class="erp-sidebar">
 
   {% if request.user.role == 'student' %}
-  <!-- Student Dashboard -->
-  <a href="{% url 'student_dashboard' %}" class="sidebar-dash-item {% if request.resolver_match.url_name == 'student_dashboard' %}active{% endif %}">
-    <i class="bi bi-grid-1x2-fill"></i>
-    <span>Dashboard</span>
+  <a href="{% url 'student_profile' %}" class="student-sidebar-head">
+    {% if request.user.student_admission.photo %}
+    <img src="{{ request.user.student_admission.photo.url }}" alt="{{ request.user.student_admission.student_name }}" class="student-sidebar-photo">
+    {% elif request.user.studentprofile.profile_picture %}
+    <img src="{{ request.user.studentprofile.profile_picture.url }}" alt="{{ request.user.studentprofile.full_name }}" class="student-sidebar-photo">
+    {% else %}
+    <span class="student-sidebar-photo-fallback"><i class="bi bi-person-fill"></i></span>
+    {% endif %}
+    <span class="student-sidebar-name">
+      <strong>{{ request.user.student_admission.student_name|default:request.user.studentprofile.full_name|default:request.user.get_full_name|default:request.user.username }}</strong>
+      <span class="student-sidebar-badge">Student</span>
+    </span>
   </a>
 
   <div class="sidebar-section">Student Portal</div>
 
   <!-- Profile -->
-  <a href="{% url 'student_profile' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_profile' %}active{% endif %}">
+  <a href="{% url 'student_profile' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_profile' and request.GET.tab != 'fees' or request.resolver_match.url_name == 'edit_student_profile' %}active{% endif %}">
     <i class="bi bi-person-fill si-icon"></i>
     <span class="si-label">Profile</span>
   </a>
 
   <!-- ID Card -->
-  <a href="{% url 'student_id_card' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}">
+  <a href="{% url 'student_id_card' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_id_card' %}active{% endif %}">
     <i class="bi bi-person-badge si-icon"></i>
     <span class="si-label">ID Card</span>
   </a>
 
   <!-- Attendance -->
-  <a href="{% url 'student_my_attendance' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_my_attendance' %}active{% endif %}">
+  <a href="{% url 'student_my_attendance' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_my_attendance' %}active{% endif %}">
     <i class="bi bi-calendar-check si-icon"></i>
     <span class="si-label">Attendance</span>
   </a>
 
   <!-- Admit Card -->
-  <a href="{% url 'admit_card_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' %}active{% endif %}">
+  <a href="{% url 'admit_card_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_view' %}active{% endif %}">
     <i class="bi bi-file-earmark-spreadsheet si-icon"></i>
     <span class="si-label">Admit Card</span>
   </a>
 
   <!-- Marksheet -->
-  <a href="{% url 'result_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'result_list' %}active{% endif %}">
+  <a href="{% url 'result_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_view' %}active{% endif %}">
     <i class="bi bi-file-earmark-bar-graph si-icon"></i>
     <span class="si-label">Marksheet</span>
   </a>
 
   <!-- Certificate -->
-  <a href="{% url 'certificate_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'certificate_list' %}active{% endif %}">
+  <a href="{% url 'certificate_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'certificate_list' or request.resolver_match.url_name == 'certificate_detail' %}active{% endif %}">
     <i class="bi bi-award si-icon"></i>
     <span class="si-label">Certificate</span>
   </a>
 
   <!-- Fee Record -->
-  <a href="{% url 'fees_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'fees_list' %}active{% endif %}">
+  <a href="{% url 'student_profile' %}?tab=fees"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_profile' and request.GET.tab == 'fees' or request.resolver_match.url_name == 'payment_receipt' %}active{% endif %}">
     <i class="bi bi-credit-card si-icon"></i>
     <span class="si-label">Fee Record</span>
   </a>
 
   <!-- Study Material -->
-  <a href="{% url 'study_material_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' %}active{% endif %}">
+  <a href="{% url 'study_material_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' or request.resolver_match.url_name == 'study_material_download' %}active{% endif %}">
     <i class="bi bi-book si-icon"></i>
     <span class="si-label">Study Material</span>
   </a>
 
   <!-- Exam Area -->
-  <a href="{% url 'student_exam_list' %}" class="sidebar-item {% if request.resolver_match.url_name == 'student_exam_list' %}active{% endif %}">
+  <a href="{% url 'student_exam_list' %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_exam_list' or request.resolver_match.url_name == 'exam_instructions' or request.resolver_match.url_name == 'attempt_exam' or request.resolver_match.url_name == 'submit_exam' or request.resolver_match.url_name == 'student_exam_result' or request.resolver_match.url_name == 'student_exam_history' or request.resolver_match.url_name == 'delete_student_exam_attempt' %}active{% endif %}">
     <i class="bi bi-journal-text si-icon"></i>
     <span class="si-label">Exam Area</span>
   </a>
   {% else %}
 
+  <a href="{% if request.user.role == 'center' %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="student-sidebar-head">
+    {% if request.user.role == 'center' and request.user.center.logo_doc %}
+    <img src="{{ request.user.center.logo_doc.url }}" alt="{{ request.user.center.name }}" class="student-sidebar-photo">
+    {% elif request.user.role == 'center' and request.user.center.owner_image %}
+    <img src="{{ request.user.center.owner_image.url }}" alt="{{ request.user.center.name }}" class="student-sidebar-photo">
+    {% else %}
+    <span class="student-sidebar-photo-fallback"><i class="bi bi-person-workspace"></i></span>
+    {% endif %}
+    <span class="student-sidebar-name">
+      <strong>{% if request.user.role == 'center' %}{{ request.user.center.name|default:request.user.username }}{% else %}{{ request.user.get_full_name|default:request.user.username }}{% endif %}</strong>
+      <span class="student-sidebar-badge">{% if request.user.role == 'center' %}Center{% else %}Admin{% endif %}</span>
+    </span>
+  </a>
+
   <!-- Dashboard -->
-  <a href="{% if request.user.role == 'center' %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}" class="sidebar-dash-item">
-    <i class="bi bi-grid-1x2-fill"></i>
+  <a href="{% if request.user.role == 'center' %}{% url 'center_dashboard' %}{% else %}{% url 'admin_dashboard' %}{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'admin_dashboard' or request.resolver_match.url_name == 'center_dashboard' %}active{% endif %}">
+    <i class="bi bi-grid-1x2-fill si-icon"></i>
     <span>Dashboard</span>
   </a>
 
@@ -962,31 +1105,35 @@
   <div class="sidebar-section">Academics</div>
 
   <!-- Course Area -->
-  <button class="sidebar-item" type="button" data-bs-toggle="collapse" data-bs-target="#sbCourseArea"
-    aria-expanded="false">
+  <button
+    class="sidebar-item{% if request.resolver_match.url_name == 'category_list' or request.resolver_match.url_name == 'category_edit' or request.resolver_match.url_name == 'category_delete' or request.resolver_match.url_name == 'course_list' or request.resolver_match.url_name == 'course_create' or request.resolver_match.url_name == 'course_edit' or request.resolver_match.url_name == 'course_delete' or request.resolver_match.url_name == 'subject_list' or request.resolver_match.url_name == 'subject_edit' or request.resolver_match.url_name == 'subject_delete' or request.resolver_match.url_name == 'arrange_subjects' %} active{% else %} collapsed{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbCourseArea"
+    aria-expanded="{% if request.resolver_match.url_name == 'category_list' or request.resolver_match.url_name == 'category_edit' or request.resolver_match.url_name == 'category_delete' or request.resolver_match.url_name == 'course_list' or request.resolver_match.url_name == 'course_create' or request.resolver_match.url_name == 'course_edit' or request.resolver_match.url_name == 'course_delete' or request.resolver_match.url_name == 'subject_list' or request.resolver_match.url_name == 'subject_edit' or request.resolver_match.url_name == 'subject_delete' or request.resolver_match.url_name == 'arrange_subjects' %}true{% else %}false{% endif %}">
     <i class="bi bi-journal-bookmark si-icon"></i>
     <span class="si-label">Course Area</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbCourseArea">
-    <a href="{% url 'category_list' %}" {% if request.resolver_match.url_name == 'category_list' %} class="active" {% endif %}><i class="bi bi-tags me-2"></i>Category</a>
-    <a href="{% url 'course_list' %}" {% if request.resolver_match.url_name == 'course_list' %} class="active" {% endif %}><i class="bi bi-journal-bookmark me-2"></i>Manage Course</a>
-    <a href="{% url 'subject_list' %}" {% if request.resolver_match.url_name == 'subject_list' %} class="active" {% endif %}><i class="bi bi-book me-2"></i>Manage Subject(s)</a>
+  <div
+    class="collapse sidebar-sub{% if request.resolver_match.url_name == 'category_list' or request.resolver_match.url_name == 'category_edit' or request.resolver_match.url_name == 'category_delete' or request.resolver_match.url_name == 'course_list' or request.resolver_match.url_name == 'course_create' or request.resolver_match.url_name == 'course_edit' or request.resolver_match.url_name == 'course_delete' or request.resolver_match.url_name == 'subject_list' or request.resolver_match.url_name == 'subject_edit' or request.resolver_match.url_name == 'subject_delete' or request.resolver_match.url_name == 'arrange_subjects' %} show{% endif %}"
+    id="sbCourseArea">
+    <a href="{% url 'category_list' %}" {% if request.resolver_match.url_name == 'category_list' or request.resolver_match.url_name == 'category_edit' or request.resolver_match.url_name == 'category_delete' %} class="active" {% endif %}><i class="bi bi-tags me-2"></i>Category</a>
+    <a href="{% url 'course_list' %}" {% if request.resolver_match.url_name == 'course_list' or request.resolver_match.url_name == 'course_create' or request.resolver_match.url_name == 'course_edit' or request.resolver_match.url_name == 'course_delete' %} class="active" {% endif %}><i class="bi bi-journal-bookmark me-2"></i>Manage Course</a>
+    <a href="{% url 'subject_list' %}" {% if request.resolver_match.url_name == 'subject_list' or request.resolver_match.url_name == 'subject_edit' or request.resolver_match.url_name == 'subject_delete' %} class="active" {% endif %}><i class="bi bi-book me-2"></i>Manage Subject(s)</a>
     <a href="{% url 'arrange_subjects' %}" {% if request.resolver_match.url_name == 'arrange_subjects' %} class="active"
       {% endif %}><i class="bi bi-journal-check me-2"></i>Arrange Subjects</a>
   </div>
 
   <!-- Academics -->
   <button
-    class="sidebar-item{% if request.resolver_match.url_name not in 'timetable_list session_list occupation_list' %} collapsed{% endif %}"
+    class="sidebar-item{% if request.resolver_match.url_name == 'timetable_list' or request.resolver_match.url_name == 'session_list' or request.resolver_match.url_name == 'occupation_list' %} active{% else %} collapsed{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbAcademics"
-    aria-expanded="{% if request.resolver_match.url_name in 'timetable_list session_list occupation_list' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name == 'timetable_list' or request.resolver_match.url_name == 'session_list' or request.resolver_match.url_name == 'occupation_list' %}true{% else %}false{% endif %}">
     <i class="bi bi-mortarboard si-icon"></i>
     <span class="si-label">Academics</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub{% if request.resolver_match.url_name in 'timetable_list session_list occupation_list' %} show{% endif %}"
+    class="collapse sidebar-sub{% if request.resolver_match.url_name == 'timetable_list' or request.resolver_match.url_name == 'session_list' or request.resolver_match.url_name == 'occupation_list' %} show{% endif %}"
     id="sbAcademics">
     <a href="{% url 'timetable_list' %}" {% if request.resolver_match.url_name == 'timetable_list' %} class="active" {% endif %}><i class="bi bi-clock me-2"></i>Time table</a>
     <a href="{% url 'session_list' %}" {% if request.resolver_match.url_name == 'session_list' %} class="active" {% endif %}><i class="bi bi-calendar3 me-2"></i>Session</a>
@@ -996,13 +1143,14 @@
   <!-- ── EXAM SLOT ── -->
   <div class="sidebar-section">Exam Slot</div>
 
-  <a href="{% url 'center_list' %}" class="sidebar-item">
+  <a href="{% url 'exam_centre_list' %}"
+    class="sidebar-item{% if request.resolver_match.url_name == 'exam_centre_list' or request.resolver_match.url_name == 'exam_centre_edit' or request.resolver_match.url_name == 'exam_centre_delete' %} active{% endif %}">
     <i class="bi bi-people si-icon"></i>
     <span class="si-label">Exam Centre</span>
   </a>
 
   <a href="{% url 'exam_schedule_list' %}"
-    class="sidebar-item{% if request.resolver_match.url_name == 'exam_schedule_list' %} active{% endif %}">
+    class="sidebar-item{% if request.resolver_match.url_name == 'exam_schedule_list' or request.resolver_match.url_name == 'exam_schedule_edit' or request.resolver_match.url_name == 'exam_schedule_delete' %} active{% endif %}">
     <i class="bi bi-clock si-icon"></i>
     <span class="si-label">Exam Schedule</span>
   </a>
@@ -1012,15 +1160,15 @@
   <div class="sidebar-section">Student Area</div>
 
   <button
-    class="sidebar-item{% if request.resolver_match.url_name not in 'student_admission,student_details,student_id_card,student_pending_list,student_approved_list,student_cancelled_list,passout_student_list' %} collapsed{% endif %}"
+    class="sidebar-item{% if request.resolver_match.url_name == 'student_admission' or request.resolver_match.url_name == 'student_details' or request.resolver_match.url_name == 'student_id_card' or request.resolver_match.url_name == 'student_pending_list' or request.resolver_match.url_name == 'student_approved_list' or request.resolver_match.url_name == 'student_cancelled_list' or request.resolver_match.url_name == 'student_list_by_center' or request.resolver_match.url_name == 'passout_student_list' %} active{% else %} collapsed{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbStudentInfo"
-    aria-expanded="{% if request.resolver_match.url_name in 'student_admission,student_details,student_id_card,student_pending_list,student_approved_list,student_cancelled_list,student_list_by_center,passout_student_list' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name == 'student_admission' or request.resolver_match.url_name == 'student_details' or request.resolver_match.url_name == 'student_id_card' or request.resolver_match.url_name == 'student_pending_list' or request.resolver_match.url_name == 'student_approved_list' or request.resolver_match.url_name == 'student_cancelled_list' or request.resolver_match.url_name == 'student_list_by_center' or request.resolver_match.url_name == 'passout_student_list' %}true{% else %}false{% endif %}">
     <i class="bi bi-person-vcard si-icon"></i>
     <span class="si-label">Student Information</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub{% if request.resolver_match.url_name in 'student_admission,student_details,student_id_card,student_pending_list,student_approved_list,student_cancelled_list,student_list_by_center,passout_student_list' %} show{% endif %}"
+    class="collapse sidebar-sub{% if request.resolver_match.url_name == 'student_admission' or request.resolver_match.url_name == 'student_details' or request.resolver_match.url_name == 'student_id_card' or request.resolver_match.url_name == 'student_pending_list' or request.resolver_match.url_name == 'student_approved_list' or request.resolver_match.url_name == 'student_cancelled_list' or request.resolver_match.url_name == 'student_list_by_center' or request.resolver_match.url_name == 'passout_student_list' %} show{% endif %}"
     id="sbStudentInfo">
     <a href="{% url 'student_id_card' %}" {% if request.resolver_match.url_name == 'student_id_card' %} class="active" {% endif %}><i class="bi bi-person-badge me-2"></i>Student ID Card</a>
     <a href="{% url 'student_details' %}" {% if request.resolver_match.url_name == 'student_details' %} class="active" {% endif %}><i class="bi bi-search me-2"></i>Student Details</a>
@@ -1035,13 +1183,13 @@
 
     <!-- Collapsible List Student(s) -->
     <a href="#sbListStudents" data-bs-toggle="collapse"
-      class="d-flex justify-content-between align-items-center {% if request.resolver_match.url_name in 'student_pending_list,student_approved_list,student_cancelled_list' %}active{% endif %}"
-      aria-expanded="{% if request.resolver_match.url_name in 'student_pending_list,student_approved_list,student_cancelled_list' %}true{% else %}false{% endif %}">
+      class="d-flex justify-content-between align-items-center {% if request.resolver_match.url_name == 'student_pending_list' or request.resolver_match.url_name == 'student_approved_list' or request.resolver_match.url_name == 'student_cancelled_list' %}active{% endif %}"
+      aria-expanded="{% if request.resolver_match.url_name == 'student_pending_list' or request.resolver_match.url_name == 'student_approved_list' or request.resolver_match.url_name == 'student_cancelled_list' %}true{% else %}false{% endif %}">
       <span><i class="bi bi-people me-2"></i>List Student(s)</span>
       <i class="bi bi-chevron-down" style="font-size: 0.8rem;"></i>
     </a>
     <div
-      class="collapse{% if request.resolver_match.url_name in 'student_pending_list,student_approved_list,student_cancelled_list' %} show{% endif %}"
+      class="collapse{% if request.resolver_match.url_name == 'student_pending_list' or request.resolver_match.url_name == 'student_approved_list' or request.resolver_match.url_name == 'student_cancelled_list' %} show{% endif %}"
       id="sbListStudents" style="background: rgba(0,0,0,0.15);">
       <a href="{% url 'student_pending_list' %}"
         class="ps-5 {% if request.resolver_match.url_name == 'student_pending_list' %}active{% endif %}"
@@ -1065,15 +1213,15 @@
 
   <!-- Fees Collection -->
   <button
-    class="sidebar-item {% if request.resolver_match.url_name in 'payment_create,search_fees_payment,fees_list' %}active{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'payment_create' or request.resolver_match.url_name == 'search_fees_payment' or request.resolver_match.url_name == 'fees_list' or request.resolver_match.url_name == 'payment_edit' or request.resolver_match.url_name == 'payment_delete' or request.resolver_match.url_name == 'payment_receipt' %}active{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbFees"
-    aria-expanded="{% if request.resolver_match.url_name in 'payment_create,search_fees_payment,fees_list' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name == 'payment_create' or request.resolver_match.url_name == 'search_fees_payment' or request.resolver_match.url_name == 'fees_list' or request.resolver_match.url_name == 'payment_edit' or request.resolver_match.url_name == 'payment_delete' or request.resolver_match.url_name == 'payment_receipt' %}true{% else %}false{% endif %}">
     <i class="bi bi-cash-coin si-icon"></i>
     <span class="si-label">Fees Collection</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'payment_create,search_fees_payment,fees_list' %}show{% endif %}"
+    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'payment_create' or request.resolver_match.url_name == 'search_fees_payment' or request.resolver_match.url_name == 'fees_list' or request.resolver_match.url_name == 'payment_edit' or request.resolver_match.url_name == 'payment_delete' or request.resolver_match.url_name == 'payment_receipt' %}show{% endif %}"
     id="sbFees">
     <a href="{% url 'payment_create' %}"
       class="{% if request.resolver_match.url_name == 'payment_create' %}active{% endif %}">Collect Fee</a>
@@ -1103,15 +1251,15 @@
 
   <!-- Admit Card -->
   <button
-    class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}active{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' or request.resolver_match.url_name == 'admit_card_delete' %}active{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbAdmitCard"
-    aria-expanded="{% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' or request.resolver_match.url_name == 'admit_card_delete' %}true{% else %}false{% endif %}">
     <i class="bi bi-card-text si-icon"></i>
     <span class="si-label">Admit Card</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' %}show{% endif %}"
+    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'admit_card_list' or request.resolver_match.url_name == 'admit_card_create' or request.resolver_match.url_name == 'admit_card_view' or request.resolver_match.url_name == 'admit_card_delete' %}show{% endif %}"
     id="sbAdmitCard">
     <a href="{% url 'admit_card_create' %}"
       class="{% if request.resolver_match.url_name == 'admit_card_create' %}active{% endif %}">
@@ -1125,15 +1273,15 @@
 
   <!-- Result -->
   <button
-    class="sidebar-item {% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' %}active{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' or request.resolver_match.url_name == 'result_edit' or request.resolver_match.url_name == 'result_delete' %}active{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbResult"
-    aria-expanded="{% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' or request.resolver_match.url_name == 'result_edit' or request.resolver_match.url_name == 'result_delete' %}true{% else %}false{% endif %}">
     <i class="bi bi-file-earmark-bar-graph si-icon"></i>
     <span class="si-label">Result</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' %}show{% endif %}"
+    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'result_list' or request.resolver_match.url_name == 'result_create' or request.resolver_match.url_name == 'result_view' or request.resolver_match.url_name == 'result_edit' or request.resolver_match.url_name == 'result_delete' %}show{% endif %}"
     id="sbResult">
     <a href="{% url 'result_create' %}"
       class="{% if request.resolver_match.url_name == 'result_create' %}active{% endif %}">
@@ -1146,13 +1294,17 @@
   </div>
 
   <!-- Student Certificate -->
-  <button class="sidebar-item" type="button" data-bs-toggle="collapse" data-bs-target="#sbCertificate"
-    aria-expanded="false">
+  <button
+    class="sidebar-item{% if request.resolver_match.url_name == 'certificate_create' or request.resolver_match.url_name == 'certificate_list' or request.resolver_match.url_name == 'certificate_detail' or request.resolver_match.url_name == 'certificate_delete' %} active{% else %} collapsed{% endif %}"
+    type="button" data-bs-toggle="collapse" data-bs-target="#sbCertificate"
+    aria-expanded="{% if request.resolver_match.url_name == 'certificate_create' or request.resolver_match.url_name == 'certificate_list' or request.resolver_match.url_name == 'certificate_detail' or request.resolver_match.url_name == 'certificate_delete' %}true{% else %}false{% endif %}">
     <i class="bi bi-patch-check si-icon"></i>
     <span class="si-label">Student Certificate</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
-  <div class="collapse sidebar-sub" id="sbCertificate">
+  <div
+    class="collapse sidebar-sub{% if request.resolver_match.url_name == 'certificate_create' or request.resolver_match.url_name == 'certificate_list' or request.resolver_match.url_name == 'certificate_detail' or request.resolver_match.url_name == 'certificate_delete' %} show{% endif %}"
+    id="sbCertificate">
     <a href="{% url 'certificate_create' %}"
       class="{% if request.resolver_match.url_name == 'certificate_create' %}active{% endif %}">
       <i class="bi bi-calendar-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Generate Certificate
@@ -1165,7 +1317,7 @@
 
   <!-- Study Material -->
   <a href="{% url 'study_material_list' %}"
-    class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' %}active{% endif %}">
+    class="sidebar-item {% if request.resolver_match.url_name == 'study_material_list' or request.resolver_match.url_name == 'study_material_edit' or request.resolver_match.url_name == 'study_material_delete' or request.resolver_match.url_name == 'study_material_download' %}active{% endif %}">
     <i class="bi bi-book si-icon"></i>
     <span class="si-label">Study Material</span>
   </a>
@@ -1186,13 +1338,11 @@
     class="collapse sidebar-sub {% if request.resolver_match.url_name in 'exam_list,add_exam,exam_detail,edit_exam,question_list,add_question,edit_question,import_questions' %}show{% endif %}"
     id="sbOnlineExam">
     {% if request.user.role == 'center' %}
-    <a href="{% url 'add_exam' %}"
-      class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
+    <a href="{% url 'add_exam' %}" class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
       <i class="bi bi-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Request
     </a>
     {% else %}
-    <a href="{% url 'add_exam' %}"
-      class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
+    <a href="{% url 'add_exam' %}" class="{% if request.resolver_match.url_name == 'add_exam' %}active{% endif %}">
       <i class="bi bi-plus me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Create
     </a>
     {% endif %}
@@ -1202,7 +1352,7 @@
     </a>
   </div>
 
-  {% if request.user.role != 'center' %}
+  {% if request.user.role == 'admin' or request.user.role == 'center' %}
   <!-- Assign Exam -->
   <button
     class="sidebar-item {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}active{% endif %}"
@@ -1215,10 +1365,11 @@
   <div
     class="collapse sidebar-sub {% if request.resolver_match.url_name in 'assign_exam_center,assign_exam_student' %}show{% endif %}"
     id="sbAssignExam">
-    <a href="#"
-      class="{% if request.resolver_match.url_name == 'assign_exam_center' %}active{% endif %}">
+    {% if request.user.role == 'admin' %}
+    <a href="{% url 'assign_exam_center' %}" class="{% if request.resolver_match.url_name == 'assign_exam_center' %}active{% endif %}">
       <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Center
     </a>
+    {% endif %}
     <a href="{% url 'assign_exam_student' %}"
       class="{% if request.resolver_match.url_name == 'assign_exam_student' %}active{% endif %}">
       <i class="bi bi-receipt me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>To Student
@@ -1233,14 +1384,7 @@
     <span class="si-label">Student Exam(S)</span>
   </a>
 
-  {% if request.user.role != 'center' %}
-  <!-- Exam Centre — independent master module -->
-  <a href="{% url 'exam_centre_list' %}"
-    class="sidebar-item {% if request.resolver_match.url_name == 'exam_centre_list' %}active{% endif %}">
-    <i class="bi bi-geo-alt-fill si-icon"></i>
-    <span class="si-label">Exam Centre</span>
-  </a>
-  {% endif %}
+
 
   <!-- ── CENTER AREA ── -->
   {% if request.user.role != 'center' %}
@@ -1263,25 +1407,29 @@
     </a>
     <a href="{% url 'assign_courses' %}"
       class="{% if request.resolver_match.url_name == 'assign_courses' %}active{% endif %}">
-      <i class="bi bi-journal-plus text-info me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Assign Courses
+      <i class="bi bi-journal-plus text-info me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Assign
+      Courses
     </a>
     <a href="{% url 'pending_centers' %}"
       class="{% if request.resolver_match.url_name == 'pending_centers' %}active{% endif %}">
-      <i class="bi bi-clipboard-minus text-warning me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Pending Centers
+      <i class="bi bi-clipboard-minus text-warning me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Pending
+      Centers
     </a>
     <a href="{% url 'center_info_list' %}"
       class="{% if request.resolver_match.url_name == 'center_info_list' %}active{% endif %}">
-      <i class="bi bi-clipboard-check text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List Center
+      <i class="bi bi-clipboard-check text-primary me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>List
+      Center
     </a>
     <a href="{% url 'deleted_centers' %}"
       class="{% if request.resolver_match.url_name == 'deleted_centers' %}active{% endif %}">
-      <i class="bi bi-clipboard-x text-danger me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Deleted Center List
+      <i class="bi bi-clipboard-x text-danger me-2" style="font-size: 0.95rem; vertical-align: middle;"></i>Deleted
+      Center List
     </a>
   </div>
 
   <!-- Center Certificate -->
   <a href="{% url 'center_certificate_create' %}"
-    class="sidebar-item {% if request.resolver_match.url_name == 'center_certificate_create' or request.resolver_match.url_name == 'center_certificate_list' %}active{% endif %}">
+    class="sidebar-item {% if request.resolver_match.url_name == 'center_certificate_create' or request.resolver_match.url_name == 'center_certificate_list' or request.resolver_match.url_name == 'center_certificate_detail' or request.resolver_match.url_name == 'center_certificate_edit' or request.resolver_match.url_name == 'center_certificate_delete' %}active{% endif %}">
     <i class="bi bi-award si-icon"></i>
     <span class="si-label">Center Certificate</span>
   </a>
@@ -1290,15 +1438,15 @@
   <div class="sidebar-section">Payment Area</div>
 
   <button
-    class="sidebar-item {% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}active{% endif %}"
+    class="sidebar-item {% if request.resolver_match.url_name == 'student_payment_setting' or request.resolver_match.url_name == 'center_payment_setting' %}active{% endif %}"
     type="button" data-bs-toggle="collapse" data-bs-target="#sbPaymentSetting"
-    aria-expanded="{% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}true{% else %}false{% endif %}">
+    aria-expanded="{% if request.resolver_match.url_name == 'student_payment_setting' or request.resolver_match.url_name == 'center_payment_setting' %}true{% else %}false{% endif %}">
     <i class="bi bi-bank si-icon"></i>
     <span class="si-label">Payment Setting</span>
     <i class="bi bi-chevron-down si-arrow"></i>
   </button>
   <div
-    class="collapse sidebar-sub {% if request.resolver_match.url_name in 'student_payment_setting,center_payment_setting' %}show{% endif %}"
+    class="collapse sidebar-sub {% if request.resolver_match.url_name == 'student_payment_setting' or request.resolver_match.url_name == 'center_payment_setting' %}show{% endif %}"
     id="sbPaymentSetting">
     <a href="{% url 'student_payment_setting' %}"
       class="{% if request.resolver_match.url_name == 'student_payment_setting' %}active{% endif %}">
@@ -1310,14 +1458,15 @@
     </a>
   </div>
 
-  <!-- Footer: Login as centre -->
+  {% endif %}
+  {% endif %}
+
   <div class="sidebar-footer">
-    <a href="{% url 'center_list' %}" class="btn-login-centre">
-      <i class="bi bi-box-arrow-in-right"></i> Login as centre
+    <a href="{% url 'logout' %}" class="sidebar-item">
+      <i class="bi bi-box-arrow-right si-icon"></i>
+      <span class="si-label">Logout</span>
     </a>
   </div>
-  {% endif %}
-  {% endif %}
 
 </aside>
 
@@ -1327,15 +1476,29 @@
 <div class="erp-content">
   {% block erp_content %}
   <!-- Header -->
-  <div class="mb-4">
-    <div class="dash-breadcrumb mb-1">
-      <a href="{% url 'home' %}">Home</a>
-      <span style="margin:0 6px;">&mdash;</span>
-      <a href="#">Admin</a>
-      <span style="margin:0 6px;">&mdash;</span>
-      <span class="current">Dashboard</span>
+  <div class="erp-dashboard-head">
+    <div>
+      <div class="dash-breadcrumb mb-1">
+        <a href="{% url 'home' %}">Home</a>
+        <span style="margin:0 6px;">&mdash;</span>
+        <a href="#">Admin</a>
+        <span style="margin:0 6px;">&mdash;</span>
+        <span class="current">Dashboard</span>
+      </div>
+      <h1 class="dash-title">Dashboard</h1>
     </div>
-    <h1 class="dash-title">Dashboard</h1>
+    {% if request.user.role == 'admin' %}
+    <div class="erp-top-switch" aria-label="Portal switcher">
+      <a href="{% url 'admin_dashboard' %}" class="active">
+        <i class="bi bi-grid-1x2"></i>
+        ERP
+      </a>
+      <a href="{% url 'management_admin_dashboard' %}">
+        <i class="bi bi-headset"></i>
+        Management
+      </a>
+    </div>
+    {% endif %}
   </div>
 
   <!-- ══ ROW 1: Students & Courses ══ -->
@@ -1349,7 +1512,7 @@
           <div class="erp-card-number">{{ active_students }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-mortarboard-fill"></i></div>
         </div>
-        <a href="{% url 'user_list' %}?role=student" class="erp-card-footer">
+        <a href="{% url 'student_approved_list' %}" class="erp-card-footer">
           <i class="bi bi-list-ul"></i> View List
         </a>
       </div>
@@ -1357,7 +1520,7 @@
 
     <!-- Card 2: Passout Student(s) -->
     <div class="col">
-      <div class="erp-card bg-g-teal">
+      <div class="erp-card bg-g-cyan">
         <div class="erp-card-body">
           <div class="erp-card-title">Passout Student(s)</div>
           <div class="erp-card-number">{{ total_certificates }}</div>
@@ -1526,14 +1689,14 @@
 
     <!-- Card 13: Total Pending Center(s) -->
     <div class="col">
-      <div class="erp-card bg-g-dred">
+      <div class="erp-card bg-g-teal">
         <div class="erp-card-body">
           <div class="erp-card-title">Total Pending Center(s)</div>
           <div class="erp-card-number">{{ total_pending_centers }}</div>
           <div class="erp-card-bg-icon"><i class="bi bi-clipboard-minus"></i></div>
         </div>
         <a href="{% url 'pending_centers' %}" class="erp-card-footer">
-          <i class="bi bi-eye-fill"></i> View
+          <i class="bi bi-list-ul"></i> View List
         </a>
       </div>
     </div>
@@ -1582,214 +1745,120 @@
 
   </div>
 
-  <!-- ══ ANALYTICS ══ -->
-  <div class="section-label">Institutional Analytics</div>
-  <div class="row g-3 mb-4 row-cols-2 row-cols-sm-3 row-cols-xl-7">
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Attendance Rate</div>
-          <div class="rate-value">{{ attendance_rate }}%</div>
+  <!-- ══ ADMISSION TREND CHART ══ -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="erp-card bg-g-card p-4" style="background: var(--erp-bg-card); border-radius: 14px; border: 1px solid var(--erp-border-color);">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="mb-0 fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>Student Admission Trend</h5>
+          <select id="trendYearSelect" class="form-select form-select-sm w-auto" style="background-color: var(--erp-bg-input); color: var(--erp-text-primary); border-color: var(--erp-border-input);">
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+          </select>
         </div>
-        <div class="rate-icon text-warning"><i class="bi bi-percent"></i></div>
+        <div style="height: 320px; width: 100%;">
+          <canvas id="admissionTrendChart"></canvas>
+        </div>
       </div>
     </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Fee Collection Rate</div>
-          <div class="rate-value">{{ fee_collection_rate }}%</div>
-        </div>
-        <div class="rate-icon text-success"><i class="bi bi-cash-stack"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Exam Pass Rate</div>
-          <div class="rate-value">{{ exam_pass_rate }}%</div>
-        </div>
-        <div class="rate-icon text-danger"><i class="bi bi-graph-up-arrow"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Pending Fee Students</div>
-          <div class="rate-value">{{ students_with_pending_fees }}</div>
-        </div>
-        <div class="rate-icon text-warning"><i class="bi bi-people-fill"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Revoked Certificates</div>
-          <div class="rate-value">{{ revoked_certificates_count }}</div>
-        </div>
-        <div class="rate-icon text-danger"><i class="bi bi-x-octagon-fill"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Eligible Students</div>
-          <div class="rate-value">{{ eligible_students_count }}</div>
-        </div>
-        <div class="rate-icon text-info"><i class="bi bi-person-check"></i></div>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="rate-card d-flex align-items-center justify-content-between gap-2">
-        <div>
-          <div class="rate-label">Certs Issued</div>
-          <div class="rate-value">{{ certificate_issuance_count }}</div>
-        </div>
-        <div class="rate-icon text-primary"><i class="bi bi-award-fill"></i></div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ══ QUICK ACTIONS ══ -->
-  <div class="section-label">Quick Actions</div>
-  <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-lg-4">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const ctx = document.getElementById('admissionTrendChart');
+      if (!ctx) return;
+      
+      let trendChart = null;
+      const yearSelect = document.getElementById('trendYearSelect');
+      
+      const currentYear = new Date().getFullYear();
+      if(Array.from(yearSelect.options).some(opt => opt.value == currentYear)) {
+          yearSelect.value = currentYear;
+      } else {
+          const opt = document.createElement('option');
+          opt.value = currentYear;
+          opt.text = currentYear;
+          yearSelect.add(opt, yearSelect.options[0]);
+          yearSelect.value = currentYear;
+      }
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-people-fill"></i></div>
-        <h6>Manage Users</h6>
-        <p>Add, edit and remove students and teachers from your institute.</p>
-        <a href="{% url 'user_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Users
-        </a>
-      </div>
-    </div>
+      function fetchTrendData(year) {
+          fetch(`?action=admission_trend&year=${year}`, {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          })
+          .then(response => response.json())
+          .then(data => {
+              renderChart(data.data);
+          })
+          .catch(err => console.error("Error fetching trend data:", err));
+      }
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-journal-text"></i></div>
-        <h6>Manage Exams</h6>
-        <p>Create, edit and delete exams across the platform.</p>
-        <a href="{% url 'exam_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Exams
-        </a>
-      </div>
-    </div>
+      function renderChart(dataArr) {
+          if (trendChart) {
+              trendChart.destroy();
+          }
+          trendChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                  datasets: [{
+                      label: 'Admissions',
+                      data: dataArr,
+                      borderColor: '#3b82f6',
+                      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                      borderWidth: 2,
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: '#3b82f6',
+                      pointRadius: 4,
+                      pointHoverRadius: 6
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                          mode: 'index',
+                          intersect: false,
+                          backgroundColor: '#1e293b',
+                          titleColor: '#f8fafc',
+                          bodyColor: '#cbd5e1',
+                          borderColor: '#334155',
+                          borderWidth: 1
+                      }
+                  },
+                  scales: {
+                      x: {
+                          grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                          ticks: { color: '#94a3b8' }
+                      },
+                      y: {
+                          beginAtZero: true,
+                          grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+                          ticks: { color: '#94a3b8', stepSize: 1 }
+                      }
+                  },
+                  interaction: {
+                      mode: 'nearest',
+                      axis: 'x',
+                      intersect: false
+                  }
+              }
+          });
+      }
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-person-plus-fill"></i></div>
-        <h6>Add New User</h6>
-        <p>Quickly onboard a new student or teacher account.</p>
-        <a href="{% url 'user_list' %}" class="btn-qa btn-qa-outline">
-          <i class="bi bi-plus-circle"></i> Add User
-        </a>
-      </div>
-    </div>
+      yearSelect.addEventListener('change', function() {
+          fetchTrendData(this.value);
+      });
 
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-envelope-paper-fill"></i></div>
-        <h6>Feedback Inbox</h6>
-        <p>Read and respond to messages submitted via the contact form.</p>
-        <a href="{% url 'feedback_list' %}" class="btn-qa btn-qa-outline">
-          <i class="bi bi-envelope-open"></i> View Feedback
-        </a>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══ ERP MANAGEMENT ══ -->
-  <div class="section-label">ERP Management</div>
-  <div class="row g-3 mb-5 row-cols-1 row-cols-sm-2 row-cols-lg-4">
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-building text-primary"></i></div>
-        <h6>Manage Centers</h6>
-        <p>Add, edit, and delete centers across the institute.</p>
-        <a href="{% url 'center_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Centers
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-journal-bookmark text-primary"></i></div>
-        <h6>Manage Courses</h6>
-        <p>Configure training courses, durations, and pricing.</p>
-        <a href="{% url 'course_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Courses
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-calendar-event text-primary"></i></div>
-        <h6>Manage Batches</h6>
-        <p>Organize schedules, assign teachers, and manage active student groups.</p>
-        <a href="{% url 'batch_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Batches
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-clock-history text-primary"></i></div>
-        <h6>Manage Attendance</h6>
-        <p>Filter, search, and view attendance logs across all batches.</p>
-        <a href="{% url 'attendance_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Attendance
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-wallet2 text-primary"></i></div>
-        <h6>Manage Fees</h6>
-        <p>Track course payments, collection logs, and student balances.</p>
-        <a href="{% url 'fees_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Fees
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-award text-primary"></i></div>
-        <h6>Manage Certificates</h6>
-        <p>Verify eligibility, issue course certificates, and view/revoke logs.</p>
-        <a href="{% url 'certificate_list' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Certificates
-        </a>
-      </div>
-    </div>
-
-    <div class="col">
-      <div class="qa-card">
-        <div class="qa-icon"><i class="bi bi-bar-chart-line text-primary"></i></div>
-        <h6>Reports &amp; Analytics</h6>
-        <p>Access summary charts, audits, logs, academic and fee analytics reports.</p>
-        <a href="{% url 'reports_dashboard' %}" class="btn-qa btn-qa-primary">
-          <i class="bi bi-arrow-right-circle"></i> Go to Reports
-        </a>
-      </div>
-    </div>
-
-  </div>
+      fetchTrendData(yearSelect.value);
+  });
+  </script>
 
   {% endblock %}
 </div><!-- /erp-content -->
