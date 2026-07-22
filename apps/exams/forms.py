@@ -107,8 +107,9 @@ class ExamForm(forms.ModelForm):
                 ).distinct().order_by('name')
             else:
                 self.fields['course'].queryset = Course.objects.filter(
-                    Q(center_id=center_id) | Q(center__isnull=True)
-                ).order_by('name')
+                    assignments__center_id=center_id,
+                    assignments__is_active=True
+                ).distinct().order_by('name')
         
         if course_id:
             try:

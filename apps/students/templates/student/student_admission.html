@@ -590,4 +590,76 @@ stateEl.addEventListener('change', function() {
   populateDistricts(this.value, '');
 });
 </script>
+
+{% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
+<script>
+(function() {
+  const centerEl = document.getElementById('id_center');
+  const courseEl = document.getElementById('id_course');
+  const selectedCourseId = '{{ form.course.value|default:"" }}';
+
+  if (!centerEl || !courseEl) {
+    return;
+  }
+
+  function resetCourses(label) {
+    courseEl.innerHTML = '';
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = label || 'Select a Course';
+    courseEl.appendChild(option);
+  }
+
+  function loadAssignedCourses(centerId, preserveCourseId) {
+    if (!centerId) {
+      resetCourses('Select a Center first');
+      return;
+    }
+
+    resetCourses('Loading courses...');
+    fetch(`/centers/api/center-courses/${centerId}/`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Unable to load courses');
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        const courses = (data.assigned_courses || []).filter(function(course) {
+          return course.is_active !== false;
+        });
+
+        resetCourses(courses.length ? 'Select a Course' : 'No assigned courses found');
+
+        courses.forEach(function(course) {
+          const option = document.createElement('option');
+          option.value = course.id;
+          option.textContent = `${course.name} (${course.duration})`;
+          if (String(course.id) === String(preserveCourseId)) {
+            option.selected = true;
+          }
+          courseEl.appendChild(option);
+        });
+      })
+      .catch(function() {
+        resetCourses('Unable to load assigned courses');
+      });
+  }
+
+  centerEl.addEventListener('change', function() {
+    loadAssignedCourses(this.value, '');
+  });
+
+  if (centerEl.value) {
+    loadAssignedCourses(centerEl.value, selectedCourseId);
+  } else {
+    resetCourses('Select a Center first');
+  }
+})();
+</script>
+{% endif %}
 {% endblock %}

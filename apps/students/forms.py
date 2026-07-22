@@ -56,27 +56,43 @@ class StudentAdmissionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         from apps.academics.models import TimeTable
         from apps.centers.models import Center
+        from apps.centers.models import CenterCourseAssignment
+        from apps.courses.models import Course
         self.fields['center'].empty_label = "Select a Center"
         self.fields['course'].empty_label = "Select a Course"
+        self.fields['course'].queryset = Course.objects.none()
         
         if user and user.role == 'center':
             if user.center:
                 self.fields['center'].queryset = Center.objects.filter(id=user.center.id)
                 self.fields['center'].initial = user.center
                 self.fields['center'].empty_label = None
-                from apps.courses.models import Course
                 self.fields['course'].queryset = Course.objects.filter(
                     assignments__center=user.center,
                     assignments__is_active=True
                 ).distinct().order_by('name')
             else:
                 self.fields['center'].queryset = Center.objects.none()
-                from apps.courses.models import Course
                 self.fields['course'].queryset = Course.objects.none()
         else:
             self.fields['center'].queryset = Center.objects.filter(
                 center_user__is_active=True
             ).order_by('name')
+            selected_center_id = None
+            center_field_name = self.add_prefix('center')
+            if self.data:
+                selected_center_id = self.data.get(center_field_name)
+            elif self.instance and self.instance.pk and self.instance.center_id:
+                selected_center_id = self.instance.center_id
+
+            if selected_center_id:
+                assigned_course_ids = CenterCourseAssignment.objects.filter(
+                    center_id=selected_center_id,
+                    is_active=True
+                ).values_list('course_id', flat=True)
+                self.fields['course'].queryset = Course.objects.filter(
+                    id__in=assigned_course_ids
+                ).order_by('name')
 
         self.fields['timetable_course'].widget = forms.Select(
             choices=[('', 'Select a Course')] + [(t.timetable_name, t.timetable_name) for t in TimeTable.objects.all()],
@@ -136,4 +152,14 @@ class StudentAdmissionForm(forms.ModelForm):
         user = getattr(self, 'user', None)
         if user and hasattr(user, 'role') and user.role == 'center' and getattr(user, 'center', None):
             cleaned_data['center'] = user.center
+        center = cleaned_data.get('center')
+        course = cleaned_data.get('course')
+        if center and course:
+            from apps.centers.models import CenterCourseAssignment
+            if not CenterCourseAssignment.objects.filter(
+                center=center,
+                course=course,
+                is_active=True
+            ).exists():
+                self.add_error('course', 'Selected course is not assigned to the selected center.')
         return cleaned_data
