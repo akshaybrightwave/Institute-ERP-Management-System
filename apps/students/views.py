@@ -280,7 +280,7 @@ def exam_instructions_view(request, exam_id):
     if request.user.role != 'student':
         return redirect('login')
 
-    admission = StudentAdmission.objects.filter(user=request.user).first()
+    admission = StudentAdmission.objects.select_related('center').filter(user=request.user).first()
     if not admission:
         return HttpResponseForbidden("Access Denied: No student admission record found.")
 
@@ -311,7 +311,7 @@ def attempt_exam(request, exam_id):
     if request.user.role != 'student':
         return redirect('login')
 
-    admission = StudentAdmission.objects.filter(user=request.user).first()
+    admission = StudentAdmission.objects.select_related('center').filter(user=request.user).first()
     if not admission:
         return HttpResponseForbidden("Access Denied: No student admission record found.")
 
@@ -331,8 +331,31 @@ def attempt_exam(request, exam_id):
         messages.error(request, "This exam is closed and no longer accepts new attempts.")
         return redirect('exam_instructions', exam_id=exam.id)
 
-    # Start the clock: create attempt if needed
-    attempt = in_progress_attempt or StudentExamAttempt.objects.create(student=request.user, exam=exam)
+    # Start the clock: create attempt if needed. For a new retake, charge the
+    # student's center wallet once before creating the new attempt.
+    if in_progress_attempt:
+        attempt = in_progress_attempt
+    else:
+        if completed_attempt and exam.allow_retake:
+            if not admission.center:
+                messages.error(request, "Re-exam cannot start because your admission is not linked to a center.")
+                return redirect('exam_instructions', exam_id=exam.id)
+
+            from django.db import transaction
+            from apps.fees.services import deduct_center_wallet_for_student_fee
+
+            try:
+                with transaction.atomic():
+                    deducted_amount = deduct_center_wallet_for_student_fee(admission.center, 'Re-Exam Fees')
+                    attempt = StudentExamAttempt.objects.create(student=request.user, exam=exam)
+            except ValueError as exc:
+                messages.error(request, str(exc))
+                return redirect('exam_instructions', exam_id=exam.id)
+
+            if deducted_amount > 0:
+                messages.success(request, f"Re-exam fee Rs.{deducted_amount:.2f} deducted from center wallet.")
+        else:
+            attempt = StudentExamAttempt.objects.create(student=request.user, exam=exam)
 
     questions = exam.questions.all().order_by('?')
     total_marks = sum(question.marks for question in questions)
@@ -362,7 +385,7 @@ def submit_exam(request, exam_id):
         if request.user.role != 'student':
             return redirect('login')
 
-        admission = StudentAdmission.objects.filter(user=request.user).first()
+        admission = StudentAdmission.objects.select_related('center').filter(user=request.user).first()
         if not admission:
             return HttpResponseForbidden("Access Denied: No student admission record found.")
 
