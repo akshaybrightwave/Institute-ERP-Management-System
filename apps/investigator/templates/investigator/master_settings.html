@@ -1,0 +1,50 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Master Settings | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-sliders text-primary me-2"></i>Master Settings</h2>
+            <p>Manage investigation dropdown data used in report forms.</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-tags fs-3 text-primary"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">Fraud Types</h5>
+                            <p class="text-muted mb-0">Financial Fraud, Mobile Fraud, UPI Fraud, and more.</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'investigator_fraud_type_list' %}" class="btn btn-primary">
+                        <i class="bi bi-gear me-1"></i>Manage Fraud Types
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-building fs-3 text-primary"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">Police Stations</h5>
+                            <p class="text-muted mb-0">Manage station names for clean report dropdowns.</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'investigator_police_station_list' %}" class="btn btn-primary">
+                        <i class="bi bi-gear me-1"></i>Manage Police Stations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

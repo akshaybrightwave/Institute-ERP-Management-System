@@ -13,6 +13,8 @@
                         <div class="feature-icon">
                             {% if role == 'teacher' %}
                                 <i class="bi bi-person-badge-fill"></i>
+                            {% elif role == 'investigator' %}
+                                <i class="bi bi-shield-check"></i>
                             {% else %}
                                 <i class="bi bi-person-plus-fill"></i>
                             {% endif %}
@@ -143,7 +145,7 @@
                                     {% endfor %}
                                 </div>
                             </div>
-                        {% else %}
+                        {% elif role == 'teacher' %}
                             <!-- Teacher Form Design -->
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -194,6 +196,52 @@
                                     </select>
                                     <small class="text-muted">Batch assignment for teachers is managed in Batch settings.</small>
                                 </div>
+                            </div>
+                        {% else %}
+                            <!-- Investigator Form Design -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Username <span class="text-danger">*</span></label>
+                                    {{ form.username|add_class:"form-control" }}
+                                    {% for error in form.username.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                                    {{ form.email|add_class:"form-control" }}
+                                    {% for error in form.email.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label d-flex align-items-center gap-1">
+                                        Password <span class="text-danger">*</span>
+                                        <span class="text-primary" 
+                                              style="cursor: pointer;"
+                                              data-bs-toggle="tooltip" 
+                                              data-bs-html="true" 
+                                              title="Password requirements:<br>&bull; Minimum 8 characters<br>&bull; Cannot be a common password<br>&bull; Cannot be entirely numeric<br>&bull; Cannot be too similar to username or email">
+                                            <i class="bi bi-info-circle"></i>
+                                        </span>
+                                    </label>
+                                    {{ form.password1|add_class:"form-control" }}
+                                    {% for error in form.password1.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                    {{ form.password2|add_class:"form-control" }}
+                                    {% for error in form.password2.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="alert alert-info mb-0">
+                                Investigator users can log in to the Investigator Panel only. Report forms will be added in the next phases.
                             </div>
                         {% endif %}
 

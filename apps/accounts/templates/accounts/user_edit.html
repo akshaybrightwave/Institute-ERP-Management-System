@@ -143,7 +143,7 @@
                                     {% endfor %}
                                 </div>
                             </div>
-                        {% else %}
+                        {% elif edited_user.role == 'teacher' %}
                             <!-- Teacher Form Design -->
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -187,6 +187,54 @@
                                         <option selected>Select Batch</option>
                                     </select>
                                     <small class="text-muted">Batch assignment for teachers is managed in Batch settings.</small>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Investigator Form Design -->
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Username <span class="text-danger">*</span></label>
+                                    {{ form.username|add_class:"form-control" }}
+                                    {% for error in form.username.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email <span class="text-danger">*</span></label>
+                                    {{ form.email|add_class:"form-control" }}
+                                    {% for error in form.email.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Password</label>
+                                    {{ form.password1|add_class:"form-control" }}
+                                    {% if form.password1.help_text %}
+                                        <small class="text-muted d-block mt-1">{{ form.password1.help_text|safe }}</small>
+                                    {% endif %}
+                                    {% for error in form.password1.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Confirm Password</label>
+                                    {{ form.password2|add_class:"form-control" }}
+                                    {% for error in form.password2.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3 d-flex align-items-center mt-2">
+                                    <div class="form-check">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">Active Status</label>
+                                    </div>
+                                    {% for error in form.is_active.errors %}
+                                        <p class="text-danger small mt-1 mb-0">{{ error }}</p>
+                                    {% endfor %}
                                 </div>
                             </div>
                         {% endif %}

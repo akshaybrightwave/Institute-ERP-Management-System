@@ -5,6 +5,8 @@ from .forms import (
     CenterEditForm,
     CenterSignupForm,
     FeedbackForm,
+    InvestigatorEditForm,
+    InvestigatorSignupForm,
     StudentEditForm,
     StudentSignupForm,
     SuperAdminUserCreationForm,
@@ -37,6 +39,7 @@ ROLE_DASHBOARD_URLS = {
     'hr': 'hr:dashboard',
     'telecaller': 'management_dashboard',
     'counselor': 'counselor_dashboard',
+    'investigator': 'investigator_dashboard',
 }
 
 
@@ -494,7 +497,7 @@ def user_list(request):
         users = users.filter(
             Q(username__icontains=query) | Q(email__icontains=query)
         )
-    if role in ('student', 'teacher', 'center'):
+    if role in ('student', 'teacher', 'center', 'investigator'):
         users = users.filter(role=role)
     if selected_batch_id:
         users = users.filter(studentprofile__batch_id=selected_batch_id)
@@ -529,6 +532,8 @@ def user_add(request):
         form_class = TeacherSignupForm
     elif role == 'center':
         form_class = CenterSignupForm
+    elif role == 'investigator' and request.user.role == 'admin':
+        form_class = InvestigatorSignupForm
     else:
         return HttpResponseForbidden("Invalid role.")
 
@@ -592,6 +597,8 @@ def user_edit(request, user_id):
         form_class = TeacherEditForm
     elif user.role == 'center':
         form_class = CenterEditForm
+    elif user.role == 'investigator' and request.user.role == 'admin':
+        form_class = InvestigatorEditForm
     else:
         return HttpResponseForbidden("Invalid user type.")
 

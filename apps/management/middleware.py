@@ -34,7 +34,7 @@ class PortalAccessMiddleware:
                 return HttpResponseForbidden("Access Denied: You only have access to the Management Portal.")
 
         # ERP roles (center, teacher, student) isolation: can NOT access /management/*
-        elif role in ('center', 'teacher', 'student'):
+        elif role in ('center', 'teacher', 'student', 'investigator'):
             if path.startswith('/management/'):
                 return HttpResponseForbidden("Access Denied: You do not have access to the Management Portal.")
 

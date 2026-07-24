@@ -7,7 +7,7 @@
     <div class="page-header">
         <div>
             <h2><i class="bi bi-people-fill text-primary me-2"></i>User Management</h2>
-            <p>Manage student, teacher, and center accounts for your institute.</p>
+            <p>Manage student, teacher, center, and investigator accounts for your institute.</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{% url 'user_add' %}?role=student" class="btn btn-primary">
@@ -19,6 +19,9 @@
             {% if request.user.role == 'admin' %}
             <a href="{% url 'user_add' %}?role=center" class="btn btn-outline-primary">
                 <i class="bi bi-building-fill me-1"></i> Add Center
+            </a>
+            <a href="{% url 'user_add' %}?role=investigator" class="btn btn-outline-primary">
+                <i class="bi bi-shield-check me-1"></i> Add Investigator
             </a>
             {% endif %}
         </div>
@@ -36,6 +39,9 @@
                         <option value="student" {% if role == 'student' %}selected{% endif %}>Student</option>
                         <option value="teacher" {% if role == 'teacher' %}selected{% endif %}>Teacher</option>
                         <option value="center" {% if role == 'center' %}selected{% endif %}>Center</option>
+                        {% if request.user.role == 'admin' %}
+                        <option value="investigator" {% if role == 'investigator' %}selected{% endif %}>Investigator</option>
+                        {% endif %}
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -87,6 +93,8 @@
                                     <span class="badge-soft-success">Student</span>
                                 {% elif user.get_role_display == "Teacher" %}
                                     <span class="badge-soft-warning">Teacher</span>
+                                {% elif user.role == 'investigator' %}
+                                    <span class="badge-soft-primary">Investigator</span>
                                 {% else %}
                                     <span class="badge-soft-primary">{{ user.get_role_display }}</span>
                                 {% endif %}

@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     'apps.admit_card',
     'apps.results',
     'apps.study_material',
+    'apps.investigator',
 ]
 
 MIDDLEWARE = [

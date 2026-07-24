@@ -29,6 +29,7 @@ class User(AbstractUser):
         ('hr', 'HR'),
         ('telecaller', 'Telecaller'),
         ('counselor', 'Counselor'),
+        ('investigator', 'Investigator'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     center = models.OneToOneField(
