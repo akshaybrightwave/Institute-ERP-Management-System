@@ -16,6 +16,23 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-person-plus fs-3 text-primary"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">User Management</h5>
+                            <p class="text-muted mb-0">Create investigator login accounts with username and password.</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'investigator_user_management' %}" class="btn btn-primary">
+                        <i class="bi bi-person-check me-1"></i>Manage Investigators
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
                         <i class="bi bi-tags fs-3 text-primary"></i>
                         <div>
                             <h5 class="fw-bold mb-1">Fraud Types</h5>
@@ -41,6 +58,40 @@
                     </div>
                     <a href="{% url 'investigator_police_station_list' %}" class="btn btn-primary">
                         <i class="bi bi-gear me-1"></i>Manage Police Stations
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-person-lines-fill fs-3 text-primary"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">Investigator-wise Report</h5>
+                            <p class="text-muted mb-0">View recovery and case work data for one investigator.</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'investigator_wise_report' %}" class="btn btn-primary">
+                        <i class="bi bi-file-earmark-spreadsheet me-1"></i>Open Report
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <i class="bi bi-file-earmark-spreadsheet fs-3 text-primary"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">Universal Report</h5>
+                            <p class="text-muted mb-0">View all investigation data in one approved-data report.</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'investigator_universal_report' %}" class="btn btn-primary">
+                        <i class="bi bi-file-earmark-text me-1"></i>Open Report
                     </a>
                 </div>
             </div>

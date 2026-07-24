@@ -26,7 +26,7 @@ Investigator will enter investigation data through two forms.
 7. Admin reviews submitted reports.
 8. Admin approves or rejects reports.
 9. Approved reports appear in final reports.
-10. Admin exports student-wise, month-wise, or universal reports.
+10. Admin exports investigator-wise, month-wise, or universal reports.
 
 ---
 
@@ -107,9 +107,9 @@ Admin should see:
 - Case Work Reports
 - Settings
 
-Student-wise report, universal report, approval/review, and export/print should not be separate sidebar links in Phase 2. Keep them inside the correct pages later:
+Investigator-wise report, universal report, approval/review, and export/print should not be separate sidebar links in Phase 2. Keep them inside the correct pages later:
 
-- Student-wise report: inside Recovery Reports or reporting area later
+- Investigator-wise report: inside Recovery Reports or reporting area later
 - Universal report: inside Recovery Reports or reporting area later
 - Approval / Review: inside Settings or report detail later
 - Export / Print: inside report pages later
@@ -189,6 +189,8 @@ Do not start Phase 4 until dropdown master data is ready.
 
 # Phase 4: Recovery Report Form
 
+Status: Completed
+
 ## Goal
 
 Create the first form like the monthly recovery table.
@@ -201,7 +203,7 @@ Required fields:
 - Report month
 - Report year
 - Entry date
-- Student
+- Investigator name
 - Police station
 - Type of fraud
 - Mobile recovery count
@@ -216,7 +218,9 @@ Required fields:
 
 - Report number should auto-generate.
 - Example: INV-REC-2026-0001
-- Student should be selected from existing student records if available.
+- Investigator name should come automatically from the logged-in investigator.
+- Investigator should not type or edit name manually.
+- Recovery report should not require or show ERP Student selection.
 - Mobile recovery should be a number.
 - Financial recovery should be an amount.
 - Total mobile recovery should calculate automatically.
@@ -243,24 +247,26 @@ Allow useful proof files:
 
 ## Phase 4 Completion Checklist
 
-- Investigator can add recovery report.
-- Investigator can save as Draft.
-- Investigator can Submit report.
-- Submitted by is stored automatically.
-- Submitted date is stored automatically.
-- Report number is generated automatically.
-- Admin can view all recovery reports.
-- Investigator can view only own recovery reports.
-- Totals are calculated automatically.
-- Attachment upload works.
-- Admin can approve recovery report.
-- Admin can reject recovery report with remarks.
+- Done: Investigator can add recovery report.
+- Done: Investigator can save as Draft.
+- Done: Investigator can Submit report.
+- Done: Submitted by is stored automatically.
+- Done: Submitted date is stored automatically.
+- Done: Report number is generated automatically.
+- Done: Admin can view all recovery reports.
+- Done: Investigator can view only own recovery reports.
+- Done: Totals are calculated automatically.
+- Done: Attachment upload works.
+- Done: Admin can approve recovery report.
+- Done: Admin can reject recovery report with remarks.
 
 Do not start Phase 5 until Recovery Report is fully working.
 
 ---
 
 # Phase 5: Recovery Report Listing
+
+Status: Completed
 
 ## Goal
 
@@ -272,7 +278,6 @@ Admin should see all recovery reports with:
 
 - Report number
 - Month/year
-- Student name
 - Investigator name
 - Police station
 - Fraud type
@@ -288,7 +293,7 @@ Investigator should see only own recovery reports with:
 
 - Report number
 - Month/year
-- Student name
+- Investigator name
 - Police station
 - Fraud type
 - Mobile recovery
@@ -301,7 +306,6 @@ Investigator should see only own recovery reports with:
 
 Add filters:
 
-- Student name
 - Investigator name
 - Police station
 - Fraud type
@@ -317,7 +321,7 @@ Admin:
 - Edit
 - Approve
 - Reject
-- Archive
+- Delete
 - Export
 
 Investigator:
@@ -330,18 +334,20 @@ Investigator:
 
 ## Phase 5 Completion Checklist
 
-- Admin listing shows all records.
-- Investigator listing shows only own records.
-- Filters work correctly.
-- Edit rules work correctly.
-- Approved reports cannot be edited by Investigator.
-- Rejected reports show admin remarks.
+- Done: Admin listing shows all records.
+- Done: Investigator listing shows only own records.
+- Done: Filters work correctly.
+- Done: Edit rules work correctly.
+- Done: Approved reports cannot be edited by Investigator.
+- Done: Rejected reports show admin remarks.
 
 Do not start Phase 6 until listing and filters are complete.
 
 ---
 
 # Phase 6: Case Work Report Form
+
+Status: Completed
 
 ## Goal
 
@@ -406,23 +412,25 @@ Managed lost mobile complaints, complaint transfers, and missing mobile complain
 
 ## Phase 6 Completion Checklist
 
-- Investigator can add case work report.
-- Investigator can add multiple work titles and descriptions.
-- Investigator can save as Draft.
-- Investigator can Submit report.
-- Submitted by is stored automatically.
-- Submitted date is stored automatically.
-- Report number is generated automatically.
-- Admin can view all case work reports.
-- Investigator can view only own case work reports.
-- Admin can approve case work report.
-- Admin can reject case work report with remarks.
+- Done: Investigator can add case work report.
+- Done: Investigator can add multiple work titles and descriptions.
+- Done: Investigator can save as Draft.
+- Done: Investigator can Submit report.
+- Done: Submitted by is stored automatically.
+- Done: Submitted date is stored automatically.
+- Done: Report number is generated automatically.
+- Done: Admin can view all case work reports.
+- Done: Investigator can view only own case work reports.
+- Done: Admin can approve case work report.
+- Done: Admin can reject case work report with remarks.
 
 Do not start Phase 7 until Case Work Report is fully working.
 
 ---
 
 # Phase 7: Case Work Report Listing
+
+Status: Completed
 
 ## Goal
 
@@ -433,7 +441,7 @@ Create listing page for case work reports.
 Admin should see:
 
 - Report number
-- Name
+- Investigator name
 - Case no
 - Police station
 - Investigating officer
@@ -448,7 +456,7 @@ Admin should see:
 Investigator should see:
 
 - Report number
-- Name
+- Investigator name
 - Case no
 - Police station
 - Investigating officer
@@ -461,7 +469,7 @@ Investigator should see:
 
 Add filters:
 
-- Name
+- Investigator name
 - Case no
 - Investigator name
 - Police station
@@ -472,19 +480,21 @@ Add filters:
 
 ## Phase 7 Completion Checklist
 
-- Admin listing shows all case work reports.
-- Investigator listing shows only own case work reports.
-- Filters work correctly.
-- Admin can view full case report.
-- Investigator can view own full case report.
-- Approved reports cannot be edited by Investigator.
-- Rejected reports show admin remarks.
+- Done: Admin listing shows all case work reports.
+- Done: Investigator listing shows only own case work reports.
+- Done: Filters work correctly.
+- Done: Admin can view full case report.
+- Done: Investigator can view own full case report.
+- Done: Approved reports cannot be edited by Investigator.
+- Done: Rejected reports show admin remarks.
 
 Do not start Phase 8 until listing and filters are complete.
 
 ---
 
 # Phase 8: Dashboard
+
+Status: Completed
 
 ## Goal
 
@@ -497,7 +507,7 @@ Admin should see:
 - Total investigators
 - Total recovery reports
 - Total case work reports
-- Total students involved
+- Investigators involved
 - Total mobile recovery
 - Total financial recovery
 - Pending approval count
@@ -510,7 +520,7 @@ Investigator should see only own data:
 
 - My recovery reports
 - My case work reports
-- My students/cases
+- My total reports
 - My mobile recovery total
 - My financial recovery total
 - My pending reports
@@ -527,28 +537,30 @@ Add filters:
 
 ## Phase 8 Completion Checklist
 
-- Admin dashboard counts all data.
-- Investigator dashboard counts only own data.
-- Mobile recovery total is correct.
-- Financial recovery total is correct.
-- Pending approval count is correct.
-- Month/year filter works.
+- Done: Admin dashboard counts all data.
+- Done: Investigator dashboard counts only own data.
+- Done: Mobile recovery total is correct.
+- Done: Financial recovery total is correct.
+- Done: Pending approval count is correct.
+- Done: Month/year filter works.
 
 Do not start Phase 9 until dashboard numbers are correct.
 
 ---
 
-# Phase 9: Student-wise Report
+# Phase 9: Investigator-wise Report
+
+Status: Completed
 
 ## Goal
 
-Admin should see full investigation data for one student.
+Admin should see full investigation data for one investigator.
 
-## Student-wise Report Should Show
+## Investigator-wise Report Should Show
 
-- Student details
-- Recovery reports for that student
-- Case work reports linked to that student if available
+- Investigator details
+- Recovery reports for that investigator
+- Case work reports linked to that investigator if available
 - Mobile recovery total
 - Financial recovery total
 - Police station details
@@ -559,24 +571,26 @@ Admin should see full investigation data for one student.
 
 Add filters:
 
-- Student
+- Investigator name
 - Month
 - Year
 - Approval status
 
 ## Phase 9 Completion Checklist
 
-- Admin can select student.
-- Student recovery data appears correctly.
-- Student case work data appears correctly if linked.
-- Totals are correct.
-- Export student-wise report works.
+- Done: Admin can search/select investigator.
+- Done: Investigator recovery data appears correctly.
+- Done: Investigator case work data appears correctly if linked.
+- Done: Totals are correct.
+- Done: Export investigator-wise report works.
 
-Do not start Phase 10 until student-wise report is complete.
+Do not start Phase 10 until investigator-wise report is complete.
 
 ---
 
 # Phase 10: Universal Report
+
+Status: Completed
 
 ## Goal
 
@@ -588,7 +602,6 @@ Create one final report page where Admin can see all approved investigation data
 - All approved case work reports
 - Month-wise data
 - Investigator-wise data
-- Student-wise data
 - Police-station-wise data
 - Fraud-type-wise data
 
@@ -599,7 +612,7 @@ Add filters:
 - Month
 - Year
 - Investigator
-- Student
+- Investigator name
 - Police station
 - Fraud type
 - Case status
@@ -612,11 +625,11 @@ Admin can optionally filter Draft, Submitted, or Rejected data if needed.
 
 ## Phase 10 Completion Checklist
 
-- Universal Report shows approved data by default.
-- Filters work correctly.
-- Month-wise report matches first image format.
-- Case work report matches second image format.
-- Totals are correct.
+- Done: Universal Report shows approved data by default.
+- Done: Filters work correctly.
+- Done: Month-wise report matches first image format.
+- Done: Case work report matches second image format.
+- Done: Totals are correct.
 
 Do not start Phase 11 until universal report is accurate.
 
@@ -624,9 +637,13 @@ Do not start Phase 11 until universal report is accurate.
 
 # Phase 11: Export and Print
 
+Status: Completed
+
 ## Goal
 
 Add export buttons.
+
+PDF is now generated as a direct `.pdf` download. Excel is generated as a real `.xlsx` download.
 
 ## Export Types
 
@@ -641,7 +658,7 @@ Case Work Report:
 - PDF export
 - Print
 
-Student-wise Report:
+Investigator-wise Report:
 
 - Excel export
 - PDF export
@@ -658,9 +675,8 @@ Universal Report:
 Admin can export:
 
 - All data
-- Student-wise data
-- Month-wise data
 - Investigator-wise data
+- Month-wise data
 - Police-station-wise data
 - Universal report
 
@@ -675,19 +691,57 @@ Only allow this if required by business rule.
 
 ## Phase 11 Completion Checklist
 
-- Recovery Excel export works.
-- Recovery PDF export works.
-- Case Work PDF export works.
-- Student-wise export works.
-- Universal export works.
-- Export respects user permissions.
-- Investigator cannot export other investigators' data.
+- Done: Recovery Excel export works in official recovery table format.
+- Done: Recovery direct PDF export works in official recovery table format.
+- Done: Recovery print page works.
+- Done: Case Work Excel export works in official case-work block format.
+- Done: Case Work direct PDF export works in official case-work block format.
+- Done: Case Work print page works.
+- Done: Investigator-wise Excel export works with separate Recovery and Case Work sheets.
+- Done: Investigator-wise direct PDF export works with separate Recovery and Case Work sections.
+- Done: Investigator-wise print page works.
+- Done: Universal Excel export works with Summary, Recovery, and Case Work sheets.
+- Done: Universal direct PDF export works with separate Recovery and Case Work sections.
+- Done: Universal print page works.
+- Done: Export respects user permissions.
+- Done: Investigator cannot export other investigators' data.
 
 Do not start Phase 12 until exports are working.
 
 ---
 
-# Phase 12: Final Testing
+# Phase 12: Investigator User Management
+
+Status: Completed
+
+## Goal
+
+Add a dedicated admin page inside Investigator Panel to create investigator login accounts.
+
+## Rules
+
+- Admin can create only Investigator users from this page.
+- Role selection is not shown.
+- Backend always saves role as `investigator`.
+- Admin sets username and password.
+- Password is saved using Django password hashing.
+- Created investigator can login with the admin-created username and password.
+- Investigator users can be activated or deactivated by admin.
+- Investigator users can be edited and password can be reset by admin.
+
+## Completion Checklist
+
+- Done: User Management page added inside Investigator Panel.
+- Done: Add Investigator form added.
+- Done: Role is fixed to `investigator`.
+- Done: Investigator login works using created credentials.
+- Done: Admin can edit investigator details and reset password.
+- Done: Admin can activate or deactivate investigator accounts.
+- Done: Investigator users cannot access admin-only user management page.
+
+---
+
+# Phase 13: Final Testing
 
 ## Goal
 
@@ -726,7 +780,7 @@ Check:
 - Forms are correct.
 - Listings are correct.
 - Dashboard is correct.
-- Student-wise report is correct.
+- Investigator-wise report is correct.
 - Universal report is correct.
 - Export is correct.
 - Approval workflow is correct.
@@ -748,7 +802,7 @@ Suggested fields:
 - report_month
 - report_year
 - entry_date
-- student_id
+- name (auto-filled investigator name)
 - police_station_id
 - fraud_type_id
 - mobile_recovery_count
@@ -768,7 +822,7 @@ Suggested fields:
 
 - id
 - report_number
-- name
+- name (auto-filled investigator name)
 - case_no
 - police_station_id
 - investigating_officer
@@ -831,7 +885,7 @@ Follow this order:
 6. Case work form
 7. Case work listing
 8. Dashboard
-9. Student-wise report
+9. Investigator-wise report
 10. Universal report
 11. Export
 12. Final testing

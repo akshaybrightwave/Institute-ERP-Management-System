@@ -1,0 +1,173 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}{{ title }} | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<style>
+    .work-item-card {
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+</style>
+
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-file-earmark-plus text-primary me-2"></i>{{ title }}</h2>
+            <p>Add case work report and multiple work description blocks.</p>
+        </div>
+        <a href="{% url 'investigator_case_work_reports' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-1"></i>Case Work Reports
+        </a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% if report %}
+                <div class="mb-3">
+                    <label class="form-label">Report Number</label>
+                    <input type="text" class="form-control" value="{{ report.report_number }}" readonly>
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Investigator Name</label>
+                        <input type="text" class="form-control" value="{{ investigator_display_name }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Case No <span class="text-danger">*</span></label>
+                        {{ form.case_no }}
+                        {% for error in form.case_no.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Police Station <span class="text-danger">*</span></label>
+                        {{ form.police_station }}
+                        {% for error in form.police_station.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Investigating Officer <span class="text-danger">*</span></label>
+                        {{ form.investigating_officer }}
+                        {% for error in form.investigating_officer.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Case Status <span class="text-danger">*</span></label>
+                        {{ form.case_status }}
+                        {% for error in form.case_status.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Entry Date <span class="text-danger">*</span></label>
+                        {{ form.entry_date }}
+                        {% for error in form.entry_date.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Attachment</label>
+                        {{ form.attachment }}
+                        <div class="text-muted small mt-1">Allowed: PDF, image, Excel, Word document.</div>
+                        {% for error in form.attachment.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Work Descriptions</h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-work-item">
+                        <i class="bi bi-plus-circle me-1"></i>Add More Work
+                    </button>
+                </div>
+
+                {{ formset.management_form }}
+                {% if formset.non_form_errors %}
+                <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+                {% endif %}
+                <div id="work-items">
+                    {% for item_form in formset %}
+                    <div class="work-item-card">
+                        {% for hidden in item_form.hidden_fields %}{{ hidden }}{% endfor %}
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Work Title</label>
+                                {{ item_form.work_title }}
+                                {% for error in item_form.work_title.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Work Description</label>
+                                {{ item_form.work_description }}
+                                {% for error in item_form.work_description.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                {% if item_form.DELETE %}
+                                <div class="form-check">
+                                    {{ item_form.DELETE }}
+                                    <label class="form-check-label">Remove</label>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <template id="empty-work-item-template">
+                    <div class="work-item-card">
+                        {% for hidden in formset.empty_form.hidden_fields %}{{ hidden }}{% endfor %}
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Work Title</label>
+                                {{ formset.empty_form.work_title }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Work Description</label>
+                                {{ formset.empty_form.work_description }}
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                {% if formset.empty_form.DELETE %}
+                                <div class="form-check">
+                                    {{ formset.empty_form.DELETE }}
+                                    <label class="form-check-label">Remove</label>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">
+                    <i class="bi bi-save me-1"></i>Save Draft
+                </button>
+                <button type="submit" name="action" value="submit" class="btn btn-primary">
+                    <i class="bi bi-send-check me-1"></i>Submit Report
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const addButton = document.getElementById('add-work-item');
+    const container = document.getElementById('work-items');
+    const totalForms = document.getElementById('id_work_items-TOTAL_FORMS');
+    const template = document.getElementById('empty-work-item-template');
+
+    addButton.addEventListener('click', function () {
+        const index = parseInt(totalForms.value, 10);
+        const html = template.innerHTML.replace(/__prefix__/g, index);
+        container.insertAdjacentHTML('beforeend', html);
+        totalForms.value = index + 1;
+    });
+});
+</script>
+{% endblock %}

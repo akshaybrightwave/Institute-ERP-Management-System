@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            color: #000;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 13px;
+            margin: 20px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .toolbar button {
+            background: #fff;
+            border: 1px solid #444;
+            cursor: pointer;
+            padding: 7px 12px;
+        }
+
+        .report-title {
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        .report-subtitle {
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            margin: 2px 0 14px;
+        }
+
+        .zone-title {
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #999;
+            padding: 3px 6px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .text-center { text-align: center; }
+        .text-end { text-align: right; }
+        .fw-bold { font-weight: 700; }
+        .mt-18 { margin-top: 18px; }
+        .mb-8 { margin-bottom: 8px; }
+        .w-45 { width: 45%; }
+
+        .recovery-table {
+            font-size: 12px;
+        }
+
+        .recovery-table td {
+            height: 20px;
+        }
+
+        .total-table {
+            margin-top: 24px;
+            width: 360px;
+        }
+
+        .case-report {
+            font-size: 14px;
+            line-height: 1.15;
+            margin: 0 auto;
+            max-width: 900px;
+        }
+
+        .case-table td {
+            padding: 2px 6px;
+            vertical-align: top;
+        }
+
+        .case-heading {
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .work-title {
+            font-weight: 700;
+            text-decoration: underline;
+        }
+
+        .work-description {
+            white-space: pre-line;
+        }
+
+        @media print {
+            .toolbar { display: none; }
+            body { margin: 8mm; }
+            @page { margin: 8mm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button onclick="window.print()">Print / Save PDF</button>
+        <button onclick="history.back()">Back</button>
+    </div>
+
+    {% if print_type == 'case_work' or print_type == 'investigator_wise' or print_type == 'universal' %}
+    {% if case_reports %}
+    <div class="case-report">
+        <h1 class="report-title">THANE CITY CYBER CELL REPORT</h1>
+        <div class="report-subtitle">{{ print_period }}</div>
+
+        <table class="case-table">
+            <tbody>
+                {% for report in case_reports %}
+                <tr>
+                    <td class="case-heading">{{ forloop.counter }}) {{ report.name }} - {{ report.police_station.name }}</td>
+                </tr>
+                <tr>
+                    <td><span class="fw-bold">{{ forloop.counter }}) Case No.:</span> {{ report.case_no }}</td>
+                </tr>
+                <tr>
+                    <td>Police Station: {{ report.police_station.name }}</td>
+                </tr>
+                <tr>
+                    <td>Investigating Officer: {{ report.investigating_officer }}</td>
+                </tr>
+                <tr>
+                    <td>Work Description:</td>
+                </tr>
+                {% for item in report.work_items.all %}
+                <tr>
+                    <td>
+                        <div class="work-title">{{ item.work_title }}</div>
+                        <div class="work-description">{{ item.work_description }}</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td>-</td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if print_type == 'recovery' or print_type == 'investigator_wise' or print_type == 'universal' %}
+    {% if recovery_reports %}
+    <div class="mt-18">
+        <div class="zone-title">ZONE - 1</div>
+        <table class="recovery-table">
+            <thead>
+                <tr>
+                    <th colspan="6">
+                        {{ print_period }}
+                    </th>
+                </tr>
+                <tr>
+                    <th>Sr.N</th>
+                    <th>Name</th>
+                    <th>Name of the Police Station</th>
+                    <th>Types of Fraud</th>
+                    <th>Mobile Recovery</th>
+                    <th>Financial Recovery</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in recovery_reports %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>{{ report.name }}</td>
+                    <td>{{ report.police_station.name }}</td>
+                    <td>{{ report.fraud_type.name|default:"-" }}</td>
+                    <td class="text-center">
+                        {% if report.mobile_recovery_count %}{{ report.mobile_recovery_count }} Mobile{% if report.mobile_recovery_count != 1 %}s{% endif %}{% else %}-{% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if report.financial_recovery_amount %}Rs. {{ report.financial_recovery_amount }} /-{% else %}-{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <table class="total-table">
+            <tbody>
+                <tr>
+                    <th colspan="2">Total</th>
+                </tr>
+                <tr>
+                    <td>Total Mobile Recovery</td>
+                    <td>
+                        {{ totals.mobile }} Mobile{% if totals.mobile != 1 %}s{% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Total Financial Recovery</td>
+                    <td>Rs. {{ totals.financial }} /-</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if not recovery_reports and not case_reports %}
+    <p>No records found.</p>
+    {% endif %}
+</body>
+</html>

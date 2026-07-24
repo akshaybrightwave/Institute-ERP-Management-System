@@ -1,0 +1,53 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Export / Print | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-download text-primary me-2"></i>Export / Print</h2>
+            <p>Open report pages to download Excel, PDF, or print official reports.</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-2">Recovery Reports</h5>
+                    <p class="text-muted">Export or print recovery report listings with filters.</p>
+                    <a href="{% url 'investigator_recovery_reports' %}" class="btn btn-primary">Open Recovery Reports</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-2">Case Work Reports</h5>
+                    <p class="text-muted">Export or print case work report listings with filters.</p>
+                    <a href="{% url 'investigator_case_work_reports' %}" class="btn btn-primary">Open Case Work Reports</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-2">Investigator-wise Report</h5>
+                    <p class="text-muted">Export or print one investigator's full report.</p>
+                    <a href="{% url 'investigator_wise_report' %}" class="btn btn-primary">Open Investigator-wise Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-2">Universal Report</h5>
+                    <p class="text-muted">Export or print the complete admin report.</p>
+                    <a href="{% url 'investigator_universal_report' %}" class="btn btn-primary">Open Universal Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

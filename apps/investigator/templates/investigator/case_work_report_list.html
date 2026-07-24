@@ -1,0 +1,324 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}{{ title }} | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<style>
+    .case-filter-panel .form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .case-list-table {
+        table-layout: fixed;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .case-list-table th {
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .case-list-table td {
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .col-report { width: 13%; }
+    .col-name { width: 12%; }
+    .col-case { width: 10%; }
+    .col-station { width: 14%; }
+    .col-officer { width: 12%; }
+    .col-case-status { width: 10%; }
+    .col-approval { width: 9%; }
+    .col-submitted { width: 10%; }
+    .col-actions { width: 10%; }
+
+    .case-list-table .cell-main {
+        font-weight: 700;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .case-list-table .cell-sub {
+        color: #9aa7c7;
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 2px;
+        overflow-wrap: anywhere;
+    }
+
+    .case-status-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .case-status-pill.status-pending { background: rgba(255, 193, 7, 0.18); color: #ffd66b; }
+    .case-status-pill.status-progress { background: rgba(13, 202, 240, 0.16); color: #7dd3fc; }
+    .case-status-pill.status-completed { background: rgba(25, 135, 84, 0.18); color: #21c36b; }
+    .case-status-pill.status-closed { background: rgba(148, 163, 184, 0.18); color: #cbd5e1; }
+
+    .case-approval-pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .case-approval-pill.status-approved { background: rgba(25, 135, 84, 0.18); color: #21c36b; }
+    .case-approval-pill.status-submitted { background: rgba(79, 70, 229, 0.18); color: #aeb8ff; }
+    .case-approval-pill.status-rejected { background: rgba(220, 53, 69, 0.18); color: #ff8794; }
+    .case-approval-pill.status-draft { background: rgba(255, 193, 7, 0.18); color: #ffd66b; }
+
+    .case-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .case-actions .btn {
+        align-items: center;
+        display: inline-flex;
+        height: 30px;
+        justify-content: center;
+        padding: 0;
+        width: 34px;
+    }
+
+    .case-actions form {
+        margin: 0;
+    }
+
+    @media (max-width: 1199.98px) {
+        .case-list-table {
+            min-width: 1060px;
+        }
+    }
+</style>
+
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-card-checklist text-primary me-2"></i>{{ title }}</h2>
+            <p>View and manage case work reports.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <a href="{% url 'investigator_case_work_export' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            <a href="{% url 'investigator_case_work_pdf' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-danger">
+                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+            </a>
+            <a href="{% url 'investigator_case_work_print' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-primary" target="_blank">
+                <i class="bi bi-printer me-1"></i>Print
+            </a>
+            <a href="{% url 'investigator_case_work_add' %}" class="btn btn-primary">
+                <i class="bi bi-file-earmark-plus me-1"></i>Add Case Work Report
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm case-filter-panel mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Investigator Name</label>
+                    <input type="text" name="name" value="{{ filters.name }}" class="form-control" placeholder="Search investigator">
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Case No</label>
+                    <input type="text" name="case_no" value="{{ filters.case_no }}" class="form-control" placeholder="Search case no">
+                </div>
+                {% if request.user.role == 'admin' %}
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Submitted By</label>
+                    <input type="text" name="investigator_name" value="{{ filters.investigator_name }}" class="form-control" placeholder="Name or username">
+                </div>
+                {% endif %}
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Police Station</label>
+                    <select name="police_station" class="form-select">
+                        <option value="">All</option>
+                        {% for item in police_stations %}
+                        <option value="{{ item.pk }}" {% if filters.police_station == item.pk|stringformat:"s" %}selected{% endif %}>{{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Investigating Officer</label>
+                    <input type="text" name="investigating_officer" value="{{ filters.investigating_officer }}" class="form-control" placeholder="Search officer">
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Case Status</label>
+                    <select name="case_status" class="form-select">
+                        <option value="">All</option>
+                        {% for value,label in case_status_choices %}
+                        <option value="{{ value }}" {% if filters.case_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Approval</label>
+                    <select name="approval_status" class="form-select">
+                        <option value="">All</option>
+                        {% for value,label in approval_status_choices %}
+                        <option value="{{ value }}" {% if filters.approval_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Month</label>
+                    <select name="month" class="form-select">
+                        <option value="">All</option>
+                        {% for month in month_choices %}
+                        <option value="{{ month }}" {% if filters.month == month|stringformat:"s" %}selected{% endif %}>{{ month }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Year</label>
+                    <select name="year" class="form-select">
+                        <option value="">All</option>
+                        {% for year in year_choices %}
+                        <option value="{{ year }}" {% if filters.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    {% if query_string %}
+                    <a href="{% url 'investigator_case_work_reports' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-examly table-hover align-middle mb-0 case-list-table">
+                    <thead>
+                        <tr>
+                            <th class="col-report">Report No</th>
+                            <th class="col-name">Investigator Name</th>
+                            <th class="col-case">Case No</th>
+                            <th class="col-station">Police Station</th>
+                            <th class="col-officer">Officer</th>
+                            <th class="col-case-status">Case Status</th>
+                            <th class="col-approval">Approval</th>
+                            <th class="col-submitted">Submitted</th>
+                            <th class="col-actions text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in page_obj %}
+                        <tr>
+                            <td>
+                                <div class="cell-main">{{ report.report_number }}</div>
+                                <div class="cell-sub">{{ report.entry_date|date:"d M Y" }}</div>
+                            </td>
+                            <td><div class="cell-main">{{ report.name }}</div></td>
+                            <td><div class="cell-main">{{ report.case_no }}</div></td>
+                            <td><div class="cell-main">{{ report.police_station.name }}</div></td>
+                            <td><div class="cell-main">{{ report.investigating_officer }}</div></td>
+                            <td>
+                                {% if report.case_status == 'In Progress' %}
+                                <span class="case-status-pill status-progress">In Progress</span>
+                                {% elif report.case_status == 'Completed' %}
+                                <span class="case-status-pill status-completed">Completed</span>
+                                {% elif report.case_status == 'Closed' %}
+                                <span class="case-status-pill status-closed">Closed</span>
+                                {% else %}
+                                <span class="case-status-pill status-pending">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if report.approval_status == 'Approved' %}
+                                <span class="case-approval-pill status-approved">Approved</span>
+                                {% elif report.approval_status == 'Rejected' %}
+                                <span class="case-approval-pill status-rejected">Rejected</span>
+                                {% elif report.approval_status == 'Submitted' %}
+                                <span class="case-approval-pill status-submitted">Submitted</span>
+                                {% else %}
+                                <span class="case-approval-pill status-draft">Draft</span>
+                                {% endif %}
+                                {% if report.approval_status == 'Rejected' and report.admin_remarks %}
+                                <div class="cell-sub">Remarks: {{ report.admin_remarks }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if report.submitted_at %}
+                                <div class="cell-main">{{ report.submitted_at|date:"d M Y" }}</div>
+                                <div class="cell-sub">{{ report.submitted_at|date:"h:i A" }}</div>
+                                {% else %}
+                                <span class="text-muted">Not submitted</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="case-actions">
+                                    <a href="{% url 'investigator_case_work_detail' report.pk %}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if request.user.role == 'admin' or report.can_investigator_edit %}
+                                    <a href="{% url 'investigator_case_work_edit' report.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if request.user.role == 'admin' %}
+                                    <form method="post" action="{% url 'investigator_case_work_delete' report.pk %}" onsubmit="return confirm('Permanently delete this case work report?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="p-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <p class="mb-0">No case work reports found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if page_obj.has_other_pages %}
+            <div class="p-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="text-muted small">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} records
+                </div>
+                <div class="d-flex gap-2">
+                    {% if page_obj.has_previous %}
+                    <a class="btn btn-sm btn-outline-primary" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                    {% endif %}
+                    {% if page_obj.has_next %}
+                    <a class="btn btn-sm btn-outline-primary" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

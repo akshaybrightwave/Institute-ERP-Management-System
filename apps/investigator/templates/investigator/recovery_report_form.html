@@ -1,0 +1,91 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}{{ title }} | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-clipboard-plus text-primary me-2"></i>{{ title }}</h2>
+            <p>Enter recovery report details. Totals are calculated from the numeric fields.</p>
+        </div>
+        <a href="{% url 'investigator_recovery_reports' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-1"></i>Recovery Reports
+        </a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% if report %}
+                <div class="mb-3">
+                    <label class="form-label">Report Number</label>
+                    <input type="text" class="form-control" value="{{ report.report_number }}" readonly>
+                </div>
+                {% endif %}
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Report Month <span class="text-danger">*</span></label>
+                        {{ form.report_month }}
+                        {% for error in form.report_month.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Report Year <span class="text-danger">*</span></label>
+                        {{ form.report_year }}
+                        {% for error in form.report_year.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Entry Date <span class="text-danger">*</span></label>
+                        {{ form.entry_date }}
+                        {% for error in form.entry_date.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Investigator Name</label>
+                        <input type="text" class="form-control" value="{{ investigator_display_name }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Police Station <span class="text-danger">*</span></label>
+                        {{ form.police_station }}
+                        {% for error in form.police_station.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Type of Fraud <span class="text-danger">*</span></label>
+                        {{ form.fraud_type }}
+                        {% for error in form.fraud_type.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Mobile Recovery <span class="text-danger">*</span></label>
+                        {{ form.mobile_recovery_count }}
+                        {% for error in form.mobile_recovery_count.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Financial Recovery <span class="text-danger">*</span></label>
+                        {{ form.financial_recovery_amount }}
+                        {% for error in form.financial_recovery_amount.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Attachment</label>
+                        {{ form.attachment }}
+                        <div class="text-muted small mt-1">Allowed: PDF, image, Excel, Word document.</div>
+                        {% for error in form.attachment.errors %}<p class="text-danger small mt-1 mb-0">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-white d-flex justify-content-end gap-2">
+                <button type="submit" name="action" value="draft" class="btn btn-outline-secondary">
+                    <i class="bi bi-save me-1"></i>Save Draft
+                </button>
+                <button type="submit" name="action" value="submit" class="btn btn-primary">
+                    <i class="bi bi-send-check me-1"></i>Submit Report
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

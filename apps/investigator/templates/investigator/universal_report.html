@@ -1,0 +1,304 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Universal Report | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<style>
+    .universal-filter-panel .form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .universal-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .universal-stat-card {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.25);
+        padding: 14px;
+        min-height: 88px;
+    }
+
+    .stat-label {
+        color: #9aa7c7;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .dark-report-table th {
+        color: #9fb4de;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .dark-report-table td {
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .dark-report-table .total-row td,
+    .dark-report-table .total-row th {
+        border-top: 1px solid rgba(148, 163, 184, 0.28);
+        font-weight: 800;
+    }
+
+    .cell-main {
+        font-weight: 700;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .cell-sub {
+        color: #9aa7c7;
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 2px;
+    }
+
+    @media (max-width: 1199.98px) {
+        .universal-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .universal-stat-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-file-earmark-spreadsheet text-primary me-2"></i>Universal Report</h2>
+            <p>All investigation data in one admin report. Approved data is shown by default.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <a href="{% url 'investigator_universal_report_export' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            <a href="{% url 'investigator_universal_report_pdf' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-danger">
+                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+            </a>
+            <a href="{% url 'investigator_universal_report_print' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-outline-primary" target="_blank">
+                <i class="bi bi-printer me-1"></i>Print
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm universal-filter-panel mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Month</label>
+                    <select name="month" class="form-select">
+                        <option value="">All</option>
+                        {% for month in month_choices %}
+                        <option value="{{ month }}" {% if filters.month == month|stringformat:"s" %}selected{% endif %}>{{ month }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Year</label>
+                    <select name="year" class="form-select">
+                        <option value="">All</option>
+                        {% for year in year_choices %}
+                        <option value="{{ year }}" {% if filters.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Investigator</label>
+                    <select name="investigator" class="form-select">
+                        <option value="">All</option>
+                        {% for investigator in investigators %}
+                        <option value="{{ investigator.pk }}" {% if filters.investigator == investigator.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ investigator.get_full_name|default:investigator.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Investigator Name</label>
+                    <input type="text" name="investigator_name" value="{{ filters.investigator_name }}" class="form-control" placeholder="Search name">
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Police Station</label>
+                    <select name="police_station" class="form-select">
+                        <option value="">All</option>
+                        {% for station in police_stations %}
+                        <option value="{{ station.pk }}" {% if filters.police_station == station.pk|stringformat:"s" %}selected{% endif %}>{{ station.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Fraud Type</label>
+                    <select name="fraud_type" class="form-select">
+                        <option value="">All</option>
+                        {% for fraud_type in fraud_types %}
+                        <option value="{{ fraud_type.pk }}" {% if filters.fraud_type == fraud_type.pk|stringformat:"s" %}selected{% endif %}>{{ fraud_type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Case Status</label>
+                    <select name="case_status" class="form-select">
+                        <option value="">All</option>
+                        {% for value,label in case_status_choices %}
+                        <option value="{{ value }}" {% if filters.case_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label">Approval</label>
+                    <select name="approval_status" class="form-select">
+                        <option value="">All</option>
+                        {% for value,label in approval_status_choices %}
+                        <option value="{{ value }}" {% if filters.approval_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-1"></i>Apply
+                    </button>
+                    <a href="{% url 'investigator_universal_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="universal-stat-grid mb-3">
+        <div class="universal-stat-card">
+            <div class="stat-label">Recovery Reports</div>
+            <div class="stat-value">{{ totals.recovery_count }}</div>
+        </div>
+        <div class="universal-stat-card">
+            <div class="stat-label">Case Work Reports</div>
+            <div class="stat-value">{{ totals.case_count }}</div>
+        </div>
+        <div class="universal-stat-card">
+            <div class="stat-label">Investigators</div>
+            <div class="stat-value">{{ totals.investigators }}</div>
+        </div>
+        <div class="universal-stat-card">
+            <div class="stat-label">Mobile Recovery</div>
+            <div class="stat-value">{{ totals.mobile }}</div>
+        </div>
+        <div class="universal-stat-card">
+            <div class="stat-label">Financial Recovery</div>
+            <div class="stat-value">Rs. {{ totals.financial }}</div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Recovery Reports</h5>
+            <div class="table-responsive">
+                <table class="table table-examly dark-report-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sr.No</th>
+                            <th>Investigator Name</th>
+                            <th>Name of the Police Station</th>
+                            <th>Types of Fraud</th>
+                            <th>Mobile Recovery</th>
+                            <th>Financial Recovery</th>
+                            <th>Approval Status</th>
+                            <th>Report No</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in recovery_reports %}
+                        <tr>
+                            <td class="text-center">{{ forloop.counter }}</td>
+                            <td>{{ report.name }}</td>
+                            <td>{{ report.police_station.name }}</td>
+                            <td>{{ report.fraud_type.name }}</td>
+                            <td class="text-center">{{ report.mobile_recovery_count }}</td>
+                            <td class="text-end">Rs. {{ report.financial_recovery_amount }} /-</td>
+                            <td class="text-center">{{ report.approval_status }}</td>
+                            <td>{{ report.report_number }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-muted text-center py-4">No recovery reports found.</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="total-row">
+                            <th colspan="4">Total</th>
+                            <td class="text-center">{{ totals.mobile }}</td>
+                            <td class="text-end">Rs. {{ totals.financial }} /-</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Case Work Reports</h5>
+            <div class="table-responsive">
+                <table class="table table-examly dark-report-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Report No</th>
+                            <th>Investigator Name</th>
+                            <th>Case No</th>
+                            <th>Police Station</th>
+                            <th>Officer</th>
+                            <th>Case Status</th>
+                            <th>Approval</th>
+                            <th>Submitted</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in case_reports %}
+                        <tr>
+                            <td class="cell-main">{{ report.report_number }}</td>
+                            <td>{{ report.name }}</td>
+                            <td>{{ report.case_no }}</td>
+                            <td>{{ report.police_station.name }}</td>
+                            <td>{{ report.investigating_officer }}</td>
+                            <td>{{ report.case_status }}</td>
+                            <td>{{ report.approval_status }}</td>
+                            <td>
+                                {% if report.submitted_at %}
+                                <div class="cell-main">{{ report.submitted_at|date:"d M Y" }}</div>
+                                <div class="cell-sub">{{ report.submitted_at|date:"h:i A" }}</div>
+                                {% else %}
+                                <span class="text-muted">Not submitted</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'investigator_case_work_detail' report.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-muted text-center py-4">No case work reports found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

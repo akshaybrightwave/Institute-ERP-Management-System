@@ -1,0 +1,291 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}Investigator-wise Report | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<style>
+    .wise-filter-panel .form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .wise-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .wise-stat-card {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.25);
+        padding: 14px;
+        min-height: 88px;
+    }
+
+    .wise-stat-label {
+        color: #9aa7c7;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .wise-stat-value {
+        font-size: 24px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .wise-table th {
+        color: #9fb4de;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .wise-table td {
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .cell-main {
+        font-weight: 700;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .cell-sub {
+        color: #9aa7c7;
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 2px;
+    }
+
+    @media (max-width: 1199.98px) {
+        .wise-stat-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .wise-stat-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <h2><i class="bi bi-person-lines-fill text-primary me-2"></i>Investigator-wise Report</h2>
+            <p>Review recovery and case work data for one investigator.</p>
+        </div>
+        {% if selected_investigator %}
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <a href="{% url 'investigator_wise_report_export' %}?investigator={{ filters.investigator }}{% if filters.month %}&month={{ filters.month }}{% endif %}{% if filters.year %}&year={{ filters.year }}{% endif %}{% if filters.approval_status %}&approval_status={{ filters.approval_status }}{% endif %}" class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Excel
+            </a>
+            <a href="{% url 'investigator_wise_report_pdf' %}?investigator={{ filters.investigator }}{% if filters.month %}&month={{ filters.month }}{% endif %}{% if filters.year %}&year={{ filters.year }}{% endif %}{% if filters.approval_status %}&approval_status={{ filters.approval_status }}{% endif %}" class="btn btn-outline-danger">
+                <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+            </a>
+            <a href="{% url 'investigator_wise_report_print' %}?investigator={{ filters.investigator }}{% if filters.month %}&month={{ filters.month }}{% endif %}{% if filters.year %}&year={{ filters.year }}{% endif %}{% if filters.approval_status %}&approval_status={{ filters.approval_status }}{% endif %}" class="btn btn-outline-primary" target="_blank">
+                <i class="bi bi-printer me-1"></i>Print
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="card border-0 shadow-sm wise-filter-panel mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label">Investigator <span class="text-danger">*</span></label>
+                    <select name="investigator" class="form-select">
+                        <option value="">Select investigator</option>
+                        {% for investigator in investigators %}
+                        <option value="{{ investigator.pk }}" {% if filters.investigator == investigator.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ investigator.get_full_name|default:investigator.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Month</label>
+                    <select name="month" class="form-select">
+                        <option value="">All</option>
+                        {% for month in month_choices %}
+                        <option value="{{ month }}" {% if filters.month == month|stringformat:"s" %}selected{% endif %}>{{ month }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Year</label>
+                    <select name="year" class="form-select">
+                        <option value="">All</option>
+                        {% for year in year_choices %}
+                        <option value="{{ year }}" {% if filters.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Approval Status</label>
+                    <select name="approval_status" class="form-select">
+                        <option value="">All</option>
+                        {% for value,label in approval_status_choices %}
+                        <option value="{{ value }}" {% if filters.approval_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-1"></i>Apply
+                    </button>
+                    {% if filters.investigator or filters.month or filters.year or filters.approval_status %}
+                    <a href="{% url 'investigator_wise_report' %}" class="btn btn-outline-secondary">
+                        Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if selected_investigator %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Investigator Details</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="cell-sub">Name</div>
+                    <div class="cell-main">{{ selected_investigator.get_full_name|default:selected_investigator.username }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="cell-sub">Username</div>
+                    <div class="cell-main">{{ selected_investigator.username }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="cell-sub">Email</div>
+                    <div class="cell-main">{{ selected_investigator.email|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="wise-stat-grid mb-3">
+        <div class="wise-stat-card">
+            <div class="wise-stat-label">Recovery Reports</div>
+            <div class="wise-stat-value">{{ totals.recovery_count }}</div>
+        </div>
+        <div class="wise-stat-card">
+            <div class="wise-stat-label">Case Work Reports</div>
+            <div class="wise-stat-value">{{ totals.case_count }}</div>
+        </div>
+        <div class="wise-stat-card">
+            <div class="wise-stat-label">Mobile Recovery</div>
+            <div class="wise-stat-value">{{ totals.mobile }}</div>
+        </div>
+        <div class="wise-stat-card">
+            <div class="wise-stat-label">Financial Recovery</div>
+            <div class="wise-stat-value">Rs. {{ totals.financial }}</div>
+        </div>
+        <div class="wise-stat-card">
+            <div class="wise-stat-label">Police Stations</div>
+            <div class="wise-stat-value">{{ totals.police_station_count }}</div>
+        </div>
+        <div class="wise-stat-card">
+            <div class="wise-stat-label">Fraud Types</div>
+            <div class="wise-stat-value">{{ totals.fraud_type_count }}</div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Recovery Reports</h5>
+            <div class="table-responsive">
+                <table class="table table-examly wise-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Report No</th>
+                            <th>Month/Year</th>
+                            <th>Police Station</th>
+                            <th>Fraud Type</th>
+                            <th>Mobile</th>
+                            <th>Financial</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in recovery_reports %}
+                        <tr>
+                            <td class="cell-main">{{ report.report_number }}</td>
+                            <td>{{ report.report_month }}/{{ report.report_year }}</td>
+                            <td>{{ report.police_station.name }}</td>
+                            <td>{{ report.fraud_type.name }}</td>
+                            <td>{{ report.mobile_recovery_count }}</td>
+                            <td>Rs. {{ report.financial_recovery_amount }}</td>
+                            <td>{{ report.approval_status }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'investigator_recovery_detail' report.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-muted text-center py-4">No recovery reports found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Case Work Reports</h5>
+            <div class="table-responsive">
+                <table class="table table-examly wise-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Report No</th>
+                            <th>Case No</th>
+                            <th>Police Station</th>
+                            <th>Officer</th>
+                            <th>Case Status</th>
+                            <th>Approval</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in case_reports %}
+                        <tr>
+                            <td class="cell-main">{{ report.report_number }}</td>
+                            <td>{{ report.case_no }}</td>
+                            <td>{{ report.police_station.name }}</td>
+                            <td>{{ report.investigating_officer }}</td>
+                            <td>{{ report.case_status }}</td>
+                            <td>{{ report.approval_status }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'investigator_case_work_detail' report.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-muted text-center py-4">No case work reports found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="bi bi-person-search"></i>
+        <p class="mb-0">Select an investigator to view the complete report.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

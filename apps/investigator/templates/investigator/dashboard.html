@@ -3,20 +3,275 @@
 {% block title %}Investigator Dashboard | Examly{% endblock %}
 
 {% block erp_content %}
+<style>
+    .dashboard-filter-panel .form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .investigator-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .investigator-stat-card {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.25);
+        padding: 16px;
+        min-height: 96px;
+    }
+
+    .stat-label {
+        color: #9aa7c7;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        font-size: 26px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .stat-sub {
+        color: #9aa7c7;
+        font-size: 12px;
+        margin-top: 6px;
+    }
+
+    .dashboard-table th {
+        color: #9fb4de;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .dashboard-table td {
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .cell-main {
+        font-weight: 700;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .cell-sub {
+        color: #9aa7c7;
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 2px;
+    }
+
+    @media (max-width: 1199.98px) {
+        .investigator-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .investigator-stat-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
 <div class="container py-2">
     <div class="page-header">
         <div>
             <h2><i class="bi bi-shield-check text-primary me-2"></i>Investigator Dashboard</h2>
-            <p>Investigator Panel menu structure is ready. Data forms will be added in the next phases.</p>
+            <p>Track recovery, case work, and approval status.</p>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm dashboard-filter-panel mb-3">
         <div class="card-body">
-            <h5 class="fw-bold mb-2">Phase 2 Menu Ready</h5>
-            <p class="text-muted mb-0">
-                Use the sidebar to open the Investigator Panel pages. Current pages are placeholders until their phases are implemented.
-            </p>
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Month</label>
+                    <select name="month" class="form-select">
+                        <option value="">All</option>
+                        {% for month in month_choices %}
+                        <option value="{{ month }}" {% if filters.month == month|stringformat:"s" %}selected{% endif %}>{{ month }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Year</label>
+                    <select name="year" class="form-select">
+                        <option value="">All</option>
+                        {% for year in year_choices %}
+                        <option value="{{ year }}" {% if filters.year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label">Approval Status</label>
+                    <select name="approval_status" class="form-select">
+                        <option value="">All</option>
+                        {% for value,label in approval_status_choices %}
+                        <option value="{{ value }}" {% if filters.approval_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-search me-1"></i>Filter
+                    </button>
+                    {% if filters.month or filters.year or filters.approval_status %}
+                    <a href="{% url 'investigator_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="investigator-stat-grid mb-4">
+        {% if request.user.role == 'admin' %}
+        <div class="investigator-stat-card">
+            <div class="stat-label">Total Investigators</div>
+            <div class="stat-value">{{ stats.total_investigators }}</div>
+            <div class="stat-sub">Active investigator users</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">Investigators Involved</div>
+            <div class="stat-value">{{ stats.investigators_involved }}</div>
+            <div class="stat-sub">In current result</div>
+        </div>
+        {% else %}
+        <div class="investigator-stat-card">
+            <div class="stat-label">My Total Reports</div>
+            <div class="stat-value">{{ stats.total_reports }}</div>
+            <div class="stat-sub">Recovery and case work</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">My Cases</div>
+            <div class="stat-value">{{ stats.case_work_reports }}</div>
+            <div class="stat-sub">Case work reports</div>
+        </div>
+        {% endif %}
+
+        <div class="investigator-stat-card">
+            <div class="stat-label">{% if request.user.role == 'admin' %}Recovery Reports{% else %}My Recovery Reports{% endif %}</div>
+            <div class="stat-value">{{ stats.recovery_reports }}</div>
+            <div class="stat-sub">Total recovery entries</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">{% if request.user.role == 'admin' %}Case Work Reports{% else %}My Case Work Reports{% endif %}</div>
+            <div class="stat-value">{{ stats.case_work_reports }}</div>
+            <div class="stat-sub">Total case entries</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">Mobile Recovery</div>
+            <div class="stat-value">{{ stats.mobile_recovery }}</div>
+            <div class="stat-sub">From recovery reports</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">Financial Recovery</div>
+            <div class="stat-value">Rs. {{ stats.financial_recovery }}</div>
+            <div class="stat-sub">From recovery reports</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">Pending Approval</div>
+            <div class="stat-value">{{ stats.submitted_reports }}</div>
+            <div class="stat-sub">Submitted reports</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">Approved Reports</div>
+            <div class="stat-value">{{ stats.approved_reports }}</div>
+            <div class="stat-sub">Approved by admin</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">Rejected Reports</div>
+            <div class="stat-value">{{ stats.rejected_reports }}</div>
+            <div class="stat-sub">Needs correction</div>
+        </div>
+        <div class="investigator-stat-card">
+            <div class="stat-label">Draft Reports</div>
+            <div class="stat-value">{{ stats.draft_reports }}</div>
+            <div class="stat-sub">Not submitted</div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Recent Recovery Reports</h5>
+                    <div class="table-responsive">
+                        <table class="table table-examly dashboard-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Report No</th>
+                                    <th>Police Station</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Recovery</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in recent_recovery_reports %}
+                                <tr>
+                                    <td>
+                                        <div class="cell-main">{{ report.report_number }}</div>
+                                        <div class="cell-sub">{{ report.report_month }}/{{ report.report_year }}</div>
+                                    </td>
+                                    <td>{{ report.police_station.name }}</td>
+                                    <td>{{ report.approval_status }}</td>
+                                    <td class="text-end">
+                                        <div class="cell-main">{{ report.mobile_recovery_count }}</div>
+                                        <div class="cell-sub">Rs. {{ report.financial_recovery_amount }}</div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-muted text-center py-4">No recovery reports found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Recent Case Work Reports</h5>
+                    <div class="table-responsive">
+                        <table class="table table-examly dashboard-table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Report No</th>
+                                    <th>Case No</th>
+                                    <th>Case Status</th>
+                                    <th>Approval</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in recent_case_reports %}
+                                <tr>
+                                    <td>
+                                        <div class="cell-main">{{ report.report_number }}</div>
+                                        <div class="cell-sub">{{ report.entry_date|date:"d M Y" }}</div>
+                                    </td>
+                                    <td>{{ report.case_no }}</td>
+                                    <td>{{ report.case_status }}</td>
+                                    <td>{{ report.approval_status }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-muted text-center py-4">No case work reports found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

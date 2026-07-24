@@ -1,0 +1,250 @@
+{% extends 'accounts/admin_dashboard.html' %}
+
+{% block title %}{{ report.report_number }} | Investigator Panel{% endblock %}
+
+{% block erp_content %}
+<style>
+    .recovery-status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .recovery-status-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .recovery-status-badge.status-approved { background: rgba(25, 135, 84, 0.18); color: #21c36b; }
+    .recovery-status-badge.status-submitted { background: rgba(79, 70, 229, 0.18); color: #aeb8ff; }
+    .recovery-status-badge.status-rejected { background: rgba(220, 53, 69, 0.18); color: #ff8794; }
+    .recovery-status-badge.status-draft { background: rgba(255, 193, 7, 0.18); color: #ffd66b; }
+
+    .recovery-alert {
+        border-radius: 8px;
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        background: rgba(127, 29, 29, 0.32);
+        color: #fecaca;
+        margin-bottom: 22px;
+        padding: 14px 16px;
+    }
+
+    .recovery-alert strong {
+        color: #ffffff;
+    }
+
+    .recovery-alert-info {
+        border-color: rgba(96, 165, 250, 0.35);
+        background: rgba(30, 64, 175, 0.28);
+        color: #bfdbfe;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px 24px;
+    }
+
+    .detail-label {
+        color: #9aa7c7;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .detail-value {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .recovery-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    .summary-tile {
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 8px;
+        padding: 16px;
+        background: rgba(15, 23, 42, 0.25);
+    }
+
+    .summary-value {
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .action-card .btn,
+    .review-card .btn {
+        white-space: nowrap;
+    }
+
+    @media (max-width: 991.98px) {
+        .detail-grid,
+        .recovery-summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="container py-2">
+    <div class="page-header">
+        <div>
+            <div class="recovery-status-row">
+                <h2 class="mb-0"><i class="bi bi-file-earmark-text text-primary me-2"></i>{{ report.report_number }}</h2>
+                {% if report.approval_status == 'Approved' %}
+                <span class="recovery-status-badge status-approved">Approved</span>
+                {% elif report.approval_status == 'Submitted' %}
+                <span class="recovery-status-badge status-submitted">Submitted</span>
+                {% elif report.approval_status == 'Rejected' %}
+                <span class="recovery-status-badge status-rejected">Rejected</span>
+                {% else %}
+                <span class="recovery-status-badge status-draft">Draft</span>
+                {% endif %}
+            </div>
+            <p class="mb-0 mt-2">Recovery report details.</p>
+        </div>
+        <a href="{% url 'investigator_recovery_reports' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    {% if report.approval_status == 'Rejected' %}
+    <div class="recovery-alert">
+        <strong>Admin rejected this report.</strong>
+        {% if report.admin_remarks %}{{ report.admin_remarks }}{% else %}No remarks provided.{% endif %}
+        {% if request.user.role == 'investigator' %} Edit the report and submit it again.{% endif %}
+    </div>
+    {% elif report.approval_status == 'Submitted' and request.user.role == 'investigator' %}
+    <div class="recovery-alert recovery-alert-info">
+        This report has been submitted to Admin for review. Editing is locked until Admin rejects it.
+    </div>
+    {% endif %}
+
+    <div class="row g-4 mt-1">
+        <div class="{% if request.user.role == 'admin' and report.approval_status == 'Submitted' %}col-lg-8{% elif request.user.role == 'investigator' and show_actions %}col-lg-9{% else %}col-lg-12{% endif %}">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Report Details</h5>
+                    <div class="detail-grid">
+                        <div>
+                            <div class="detail-label">Month/Year</div>
+                            <div class="detail-value">{{ report.report_month }}/{{ report.report_year }}</div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Entry Date</div>
+                            <div class="detail-value">{{ report.entry_date|date:"d M Y" }}</div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Submitted Date</div>
+                            <div class="detail-value">
+                                {% if report.submitted_at %}{{ report.submitted_at|date:"d M Y, h:i A" }}{% else %}Not submitted{% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Investigator Name</div>
+                            <div class="detail-value">{{ report.name|default:"-" }}</div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Submitted By</div>
+                            <div class="detail-value">{{ report.submitted_by.get_full_name|default:report.submitted_by.username }}</div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Attachment</div>
+                            <div class="detail-value">
+                                {% if report.attachment %}
+                                <a href="{{ report.attachment.url }}" target="_blank">Open attachment</a>
+                                {% else %}
+                                No attachment
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Police Station</div>
+                            <div class="detail-value">{{ report.police_station.name }}</div>
+                        </div>
+                        <div>
+                            <div class="detail-label">Type of Fraud</div>
+                            <div class="detail-value">{{ report.fraud_type.name }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Recovery Summary</h5>
+                    <div class="recovery-summary-grid">
+                        <div class="summary-tile">
+                            <div class="detail-label">Total Mobile Recovery</div>
+                            <div class="summary-value">{{ report.mobile_recovery_count }}</div>
+                        </div>
+                        <div class="summary-tile">
+                            <div class="detail-label">Total Financial Recovery</div>
+                            <div class="summary-value">Rs. {{ report.financial_recovery_amount }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if request.user.role == 'investigator' and show_actions %}
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm action-card mb-4">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Actions</h5>
+                    <div class="d-grid gap-2">
+                        {% if can_edit %}
+                        <a href="{% url 'investigator_recovery_edit' report.pk %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil-square me-1"></i>Edit
+                        </a>
+                        {% endif %}
+                        {% if request.user.role == 'investigator' and report.can_investigator_edit %}
+                        <form method="post" action="{% url 'investigator_recovery_submit' report.pk %}" class="m-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-send-check me-1"></i>{% if report.approval_status == 'Rejected' %}Submit Again{% else %}Submit{% endif %}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if request.user.role == 'admin' and report.approval_status == 'Submitted' %}
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm review-card">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">Admin Review</h5>
+                    <form method="post" action="{% url 'investigator_recovery_review' report.pk 'approve' %}" class="mb-3">
+                        {% csrf_token %}
+                        <label class="form-label">Remarks</label>
+                        <textarea name="admin_remarks" class="form-control mb-3" rows="3"></textarea>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-circle me-1"></i>Approve
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'investigator_recovery_review' report.pk 'reject' %}">
+                        {% csrf_token %}
+                        <label class="form-label">Rejection Remarks <span class="text-danger">*</span></label>
+                        <textarea name="admin_remarks" class="form-control mb-3" rows="3" required></textarea>
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="bi bi-x-circle me-1"></i>Reject
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
